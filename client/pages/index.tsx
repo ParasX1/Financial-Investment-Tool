@@ -5,7 +5,7 @@ import Image from 'next/image'
 function index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
-  const logo = require('../images/logo.png');
+  const logo = require('@/assets/logo.png');
 
   useEffect(() => {
     fetch("http://localhost:8080/api/home")
