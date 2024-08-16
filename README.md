@@ -5,6 +5,7 @@ The Financial Investment Tool is a web-based platform for investors and portfoli
 We use a monorepo to hold both our frontend and backend code.
 
 **Frontend**
+
 We use npm and nextjs to run our friend. In the `client` folder, use
 
 ```
@@ -20,6 +21,7 @@ npm run dev
 to compile and host the frontend locally.
 
 **Backend**
+
 We use flask to run our backend.
 
 Enable the virtual environment with
