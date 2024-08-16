@@ -13,7 +13,7 @@ import {
 } from "@nextui-org/react";
 import Image from "next/image";
 
-function index() {
+function Index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
@@ -78,4 +78,4 @@ function index() {
   );
 }
 
-export default index;
+export default Index;
