@@ -26,6 +26,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: restore dependencies
+      run: 'npm install'
     # - run: npm ci
     - name: build
       working-directory: ./client
