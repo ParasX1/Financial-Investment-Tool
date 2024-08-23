@@ -4,12 +4,55 @@
 
 @layer base {
   body {
-    background: linear-gradient(
-      to bottom,
-      rgb(255, 255, 255),
-      rgb(153, 255, 204)
-    );
+    background-color: white;
     min-height: 100vh;
     margin: 0;
+  }
+
+  .two-column {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    background-color: white;
+  }
+  .two-rows {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    background-color: rgb(255, 255, 255);
+  }
+  
+  .left-column {
+    flex: 1;
+    padding: 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .right-column {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .right-column img {
+    width: 100%;
+    height: auto;
+    background-color: white;
+  }
+  .title-text {
+    font-weight: bold; 
+    font-size: 72px;
+  }
+  .button-container{
+    display: flex; 
+    align-items: center;
   }
 }
