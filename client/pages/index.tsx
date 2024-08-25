@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import Modal from "react-bootstrap/Modal";
+import ModalLogin from "@/components/Modal/ModalLogin";
 import {
   Navbar,
   NavbarBrand,
@@ -11,12 +13,22 @@ import {
   CardBody,
   CardFooter,
 } from "@nextui-org/react";
-import Image from "next/image";
+import ModalSignUp from "@/components/Modal/ModalSignUp";
+
 
 function Index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
+
+  // Signup-Login Modal
+  const [showSignUp, setSignUp] = useState(false);
+  const [showLogIn, setShowLogIn] =useState(false);
+  const handleLoginShow = () => setShowLogIn(true);
+  const handleLoginClose = () => setShowLogIn(false);
+
+  const handleSignUpShow = () => setSignUp(true);
+  const handleSignUpClose = () => setSignUp(false);
 
   useEffect(() => {
     fetch("http://localhost:8080/api/home")
@@ -26,6 +38,7 @@ function Index() {
         setList(data.testList);
       });
   }, []);
+
 
   return (
     <div>
@@ -57,12 +70,27 @@ function Index() {
         </NavbarContent>
         <NavbarContent justify="end">
           <NavbarItem className="hidden lg:flex">
-            <Link href="#">Login</Link>
+            <>
+              <Button color="primary" href="#" variant="flat" onClick={handleLoginShow}>
+                Log In
+              </Button>
+
+              <ModalLogin
+                show={showLogIn}
+                onHide={handleLoginClose}/>
+            </>
           </NavbarItem>
           <NavbarItem>
-            <Button as={Link} color="primary" href="#" variant="flat">
+            <>
+            <Button color="primary" variant="flat" onClick={handleSignUpShow}>
               Sign Up
             </Button>
+
+              <ModalSignUp
+                show={showSignUp}
+                onHide={handleSignUpClose}/>
+            </>
+
           </NavbarItem>
         </NavbarContent>
       </Navbar>
@@ -73,11 +101,11 @@ function Index() {
           <p>Descriptions add later</p>
           <Spacer y={3} />
           <div className="button-container">
-            <Button radius="full" className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
+            <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg" color="primary">
               Button1
             </Button>
             <Spacer x={3} />
-            <Button radius="full" className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
+            <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
               Button2
             </Button>
           </div>
@@ -90,10 +118,6 @@ function Index() {
       <div className="two-rows">
       <p>Descriptions add later</p>
       </div>
-
-
-      
-
     </div>
   );
 }
