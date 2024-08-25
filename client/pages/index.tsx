@@ -14,12 +14,15 @@ import {
   CardFooter,
 } from "@nextui-org/react";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
+import Image from 'next/image';
+
 
 
 function Index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
+  const team = require("@/assets/team.png");
 
   // Signup-Login Modal
   const [showSignUp, setSignUp] = useState(false);
@@ -118,7 +121,36 @@ function Index() {
       <div className="two-rows">
       <p>Descriptions add later</p>
       </div>
+
+      <div>
+        <div className="about-us-wrapper">
+          <div className="about-us-container">
+            <h1 className="about-us-heading">About Us</h1>
+            <div className="about-us-flex-container">
+
+              <Image src={team} alt="Team Picture" width="700" />
+              <div className="about-us-text">
+                <br></br>
+                <p>
+                  We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms
+                  (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
+                  for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or
+                  coding smart financial solutions, we’ve got it covered.
+                  <br></br>
+                  <br></br>
+                  With FIT, we’re on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
+                  or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you’re making informed
+                  decisions. From tracking volatility to backtesting trading strategies, our app is designed to give you the edge in
+                  your financial game.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    
   );
 }
 
