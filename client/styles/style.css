@@ -1,0 +1,25 @@
+
+.home-container {
+    display: flex;
+    align-items: center; /* Aligns items vertically centered */
+    gap: 20px; /* Adds space between the image and text */
+    padding: 20px; /* Adds padding around the container */
+  }
+  
+  .home-image {
+    max-width: 100%; /* Ensures image scales responsively */
+    height: auto; /* Maintains aspect ratio of the image */
+  }
+  
+  .home-text {
+    flex: 1; /* Allows text block to take up remaining space */
+  }
+  
+  .home-text h1 {
+    margin-top: 0; /* Removes top margin from the heading */
+  }
+  
+  .home-text p {
+    line-height: 1.6; /* Improves readability by increasing line height */
+  }
+  
