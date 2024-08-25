@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import Modal from "react-bootstrap/Modal";
+import ModalLogin from "@/components/Modal/ModalLogin";
 import {
   Navbar,
   NavbarBrand,
@@ -132,6 +134,8 @@ function TextGrid() {
       </Box>
   );
 }
+import ModalSignUp from "@/components/Modal/ModalSignUp";
+import Image from 'next/image';
 
 
 
@@ -141,6 +145,16 @@ function Index() {
   const logo = require("@/assets/logo.png");
   const img1 = require("@/assets/gridBackground1.png");
   const imgStar = require("@/assets/star.png");
+  const team = require("@/assets/team.png");
+
+  // Signup-Login Modal
+  const [showSignUp, setSignUp] = useState(false);
+  const [showLogIn, setShowLogIn] =useState(false);
+  const handleLoginShow = () => setShowLogIn(true);
+  const handleLoginClose = () => setShowLogIn(false);
+
+  const handleSignUpShow = () => setSignUp(true);
+  const handleSignUpClose = () => setSignUp(false);
 
   useEffect(() => {
     fetch("http://localhost:8080/api/home")
@@ -150,6 +164,7 @@ function Index() {
         setList(data.testList);
       });
   }, []);
+
 
   return (
     <div>
@@ -181,12 +196,27 @@ function Index() {
         </NavbarContent>
         <NavbarContent justify="end">
           <NavbarItem className="hidden lg:flex">
-            <Link href="#">Login</Link>
+            <>
+              <Button color="primary" href="#" variant="flat" onClick={handleLoginShow}>
+                Log In
+              </Button>
+
+              <ModalLogin
+                show={showLogIn}
+                onHide={handleLoginClose}/>
+            </>
           </NavbarItem>
           <NavbarItem>
-            <Button as={Link} color="primary" href="#" variant="flat">
+            <>
+            <Button color="primary" variant="flat" onClick={handleSignUpShow}>
               Sign Up
             </Button>
+
+              <ModalSignUp
+                show={showSignUp}
+                onHide={handleSignUpClose}/>
+            </>
+
           </NavbarItem>
         </NavbarContent>
       </Navbar>
@@ -202,11 +232,11 @@ function Index() {
           <p>Descriptions add later</p>
           <Spacer y={3} />
           <div className="button-container">
-            <Button radius="full" className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
+            <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg" color="primary">
               Button1
             </Button>
             <Spacer x={3} />
-            <Button radius="full" className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
+            <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
               Button2
             </Button>
           </div>
@@ -327,7 +357,35 @@ function Index() {
                 </MUIButton>
             </Box>
         </Box>
+      <div>
+        <div className="about-us-wrapper">
+          <div className="about-us-container">
+            <h1 className="about-us-heading">About Us</h1>
+            <div className="about-us-flex-container">
+
+              <Image src={team} alt="Team Picture" width="700" />
+              <div className="about-us-text">
+                <br></br>
+                <p>
+                  We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms
+                  (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
+                  for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or
+                  coding smart financial solutions, we’ve got it covered.
+                  <br></br>
+                  <br></br>
+                  With FIT, we’re on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
+                  or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you’re making informed
+                  decisions. From tracking volatility to backtesting trading strategies, our app is designed to give you the edge in
+                  your financial game.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    
   );
 }
 
