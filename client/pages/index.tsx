@@ -111,9 +111,9 @@ function Index() {
           <div className="about-us-text">
             <br></br>
             <p>
-              We're a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms 
+              We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms 
               (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
-              for winning now drives us to create the ultimate financial investment tool—FIT. Whether it's clutching rounds or 
+              for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or 
               coding smart financial solutions, we’ve got it covered.
               <br></br>
               <br></br>
