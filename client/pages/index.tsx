@@ -12,11 +12,133 @@ import {
   CardFooter,
 } from "@nextui-org/react";
 import Image from "next/image";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+function TextGrid() {
+  // Import images using require
+  const img1 = require("@/assets/gridBackground1.png");
+  const img2 = require("@/assets/gridBackground1.png");
+  const img3 = require("@/assets/gridBackground1.png");
+  const img4 = require("@/assets/gridBackground1.png");
+  const img5 = require("@/assets/gridBackground1.png");
+  const img6 = require("@/assets/gridBackground1.png");
+
+  const items = [
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Volatility
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              Measures the degree of variation in trading prices over time.
+            </Typography>
+          </Box>
+      ), image: img1 },
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Sharpe Ratio
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              A measure of risk-adjusted return.
+            </Typography>
+          </Box>
+      ), image: img1 },
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Value at Risk (VaR)
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              Quantifies the potential loss on an investment over a specific period.
+            </Typography>
+          </Box>
+      ), image: img1 },
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Cumulative Returns
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              Shows the total returns of an investment over a specific time period.
+            </Typography>
+          </Box>
+      ), image: img1 },
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Drawdown and Maximum Drawdown
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              Measures the peak-to-trough decline during a specific period.
+            </Typography>
+          </Box>
+      ), image: img1 },
+    { text: (
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+              Correlation Matrix
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
+              Examines the relationships between different stocks in the portfolio.
+            </Typography>
+          </Box>
+      ), image: img1 },
+  ];
+
+  return (
+      <Box sx={{ padding: 4 }}>
+        <Grid container spacing={2}>
+          {items.map((item, index) => (
+              <Grid item xs={4} key={index}>
+                <Box
+                    sx={{
+                      position: "relative",
+                      height: 250, // Set a fixed height for the boxes
+                      border: "1px solid grey",
+                      overflow: "hidden",
+                    }}
+                >
+                  <Image
+                      src={item.image}
+                      alt={`Image for box ${index + 1}`}
+                      layout="fill" // Makes the image take up the full box
+                      objectFit="cover" // Ensures the image covers the entire box
+                  />
+                  <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)", // Covers the entire image with a dark overlay
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 1,
+                      }}
+                  >
+                    {item.text}
+                  </Box>
+                </Box>
+              </Grid>
+          ))}
+        </Grid>
+      </Box>
+  );
+}
+
+
 
 function Index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
+  const img1 = require("@/assets/gridBackground1.png");
+  const imgStar = require("@/assets/star.png");
 
   useEffect(() => {
     fetch("http://localhost:8080/api/home")
@@ -69,11 +191,123 @@ function Index() {
           </NavbarItem>
         </NavbarContent>
       </Navbar>
+
       <div>{message}</div>
 
       {list.map((item, index) => (
         <div key={index}>{item}</div>
       ))}
+
+      {/* WHOLE SECTION WITH BLACK BACKGROUND */}
+      <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
+
+        {/* HEADER AND IMPORTANT POINTS */}
+        <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={6}>
+              <Typography variant="h3" sx={{ fontWeight: "bold", color: "white" }}>
+                Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
+              </Typography>
+              <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu lorem non erat facilisis molestie. Fusce viverra purus lorem, at tempus ipsum dictum ac. Donec ut dui sit amet velit consectetur condimentum.
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Grid container spacing={2}>
+                <Grid item xs={4}>
+                  <Image src={imgStar} alt="Logo" height="80" />
+                  <Box sx={{ textAlign: "left" }}>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                      Important point
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "white" }}>
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Image src={imgStar} alt="Logo" height="80" />
+                  <Box sx={{ textAlign: "left" }}>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                      Important point
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "white" }}>
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Image src={imgStar} alt="Logo" height="80" />
+                  <Box sx={{ textAlign: "left" }}>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                      Important point
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "white" }}>
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Box>
+
+
+        {/* TOOL INFO SECTION */}
+        <Box
+            sx={{
+              position: "relative",
+              width: "calc(100% - 60px)",
+              height: "350px",
+              border: "1px solid grey",
+              overflow: "hidden",
+              margin: "0 auto",
+              marginBottom: 8,
+            }}
+        >
+          <Image
+              src={img1}
+              alt="Generational Wealth"
+              layout="fill"
+              objectFit="cover"
+          />
+        </Box>
+
+        {/* HEADER ABOVE THE GRID */}
+        <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
+          <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
+            Analysis made easy
+          </Typography>
+        </Box>
+
+        {/* TOOL INFO GRID BOXES */}
+        <TextGrid />
+
+
+        {/* TAGLINE AND BUTTON SECTION */}
+        <Box sx={{ backgroundColor: "black", padding: 4, textAlign: "center" }}>
+          <Typography variant="h4" sx={{ fontWeight: "bold", color: "white" }}>
+            Get financially <span style={{ color: "#007bff" }}>FIT.</span> today
+          </Typography>
+          <Button
+              sx={{
+                marginTop: 2,
+                backgroundColor: "#007bff",
+                color: "white",
+                padding: "10px 20px",
+                borderRadius: "8px",
+              }}
+          >
+            Get FIT
+          </Button>
+        </Box>
+
+
+
+      </Box>
     </div>
   );
 }
