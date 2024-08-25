@@ -194,113 +194,6 @@ function Index() {
         <div key={index}>{item}</div>
       ))}
 
-      {/* WHOLE SECTION WITH BLACK BACKGROUND */}
-      <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
-
-        {/* HEADER AND IMPORTANT POINTS */}
-        <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={6}>
-              <Typography variant="h3" sx={{ fontWeight: "bold", color: "white" }}>
-                Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
-              </Typography>
-              <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu lorem non erat facilisis molestie. Fusce viverra purus lorem, at tempus ipsum dictum ac. Donec ut dui sit amet velit consectetur condimentum.
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <Image src={imgStar} alt="Logo" height="80" />
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                      Important point
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "white" }}>
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={4}>
-                  <Image src={imgStar} alt="Logo" height="80" />
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                      Important point
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "white" }}>
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={4}>
-                  <Image src={imgStar} alt="Logo" height="80" />
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                      Important point
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "white" }}>
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Box>
-
-
-        {/* TOOL INFO SECTION */}
-        <Box
-            sx={{
-              position: "relative",
-              width: "calc(100% - 60px)",
-              height: "350px",
-              border: "1px solid grey",
-              overflow: "hidden",
-              margin: "0 auto",
-              marginBottom: 8,
-            }}
-        >
-          <Image
-              src={img1}
-              alt="Generational Wealth"
-              layout="fill"
-              objectFit="cover"
-          />
-        </Box>
-
-        {/* HEADER ABOVE THE GRID */}
-        <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
-          <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
-            Analysis made easy
-          </Typography>
-        </Box>
-
-        {/* TOOL INFO GRID BOXES */}
-        <TextGrid />
-
-
-        {/* TAGLINE AND BUTTON SECTION */}
-        <Box sx={{ backgroundColor: "black", padding: 4, textAlign: "center" }}>
-          <Typography variant="h4" sx={{ fontWeight: "bold", color: "white" }}>
-            Get financially <span style={{ color: "#007bff" }}>FIT.</span> today
-          </Typography>
-          <Button
-              sx={{
-                marginTop: 2,
-                backgroundColor: "#007bff",
-                color: "white",
-                padding: "10px 20px",
-                borderRadius: "8px",
-              }}
-          >
-            Get FIT
-          </Button>
-        </Box>
-      </Box>
       <div className="two-column">
         <div className="left-column">
           <h1 className="title-text">FIT</h1>
@@ -322,8 +215,116 @@ function Index() {
       </div>
 
       <div className="two-rows">
-      <p>Descriptions add later</p>
+        <p>Descriptions add later</p>
       </div>
+
+        {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
+        <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
+
+            {/* HEADER AND IMPORTANT POINTS */}
+            <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={6}>
+                        <Typography variant="h3" sx={{ fontWeight: "bold", color: "white" }}>
+                            Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
+                        </Typography>
+                        <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu lorem non erat facilisis molestie. Fusce viverra purus lorem, at tempus ipsum dictum ac. Donec ut dui sit amet velit consectetur condimentum.
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <Image src={imgStar} alt="Logo" height="80" />
+                                <Box sx={{ textAlign: "left" }}>
+                                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                                        Important point
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "white" }}>
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={4}>
+                                <Image src={imgStar} alt="Logo" height="80" />
+                                <Box sx={{ textAlign: "left" }}>
+                                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                                        Important point
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "white" }}>
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={4}>
+                                <Image src={imgStar} alt="Logo" height="80" />
+                                <Box sx={{ textAlign: "left" }}>
+                                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+                                        Important point
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "white" }}>
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Box>
+
+
+            {/* TOOL INFO SECTION */}
+            <Box
+                sx={{
+                    position: "relative",
+                    width: "calc(100% - 60px)",
+                    height: "350px",
+                    border: "1px solid grey",
+                    overflow: "hidden",
+                    margin: "0 auto",
+                    marginBottom: 8,
+                }}
+            >
+                <Image
+                    src={img1}
+                    alt="Generational Wealth"
+                    layout="fill"
+                    objectFit="cover"
+                />
+            </Box>
+
+            {/* HEADER ABOVE THE GRID */}
+            <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
+                <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
+                    Analysis made easy
+                </Typography>
+            </Box>
+
+            {/* TOOL INFO GRID BOXES */}
+            <TextGrid />
+
+
+            {/* TAGLINE AND BUTTON SECTION */}
+            <Box sx={{ backgroundColor: "black", padding: 4, textAlign: "center" }}>
+                <Typography variant="h4" sx={{ fontWeight: "bold", color: "white" }}>
+                    Get financially <span style={{ color: "#007bff" }}>FIT.</span> today
+                </Typography>
+                <Button
+                    sx={{
+                        marginTop: 2,
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        padding: "10px 20px",
+                        borderRadius: "8px",
+                    }}
+                >
+                    Get FIT
+                </Button>
+            </Box>
+        </Box>
     </div>
   );
 }
