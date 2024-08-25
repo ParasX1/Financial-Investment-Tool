@@ -18,7 +18,7 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
-
+import ModalSignUp from "@/components/Modal/ModalSignUp";
 
 function TextGrid() {
   // Import images using require
@@ -134,10 +134,6 @@ function TextGrid() {
       </Box>
   );
 }
-import ModalSignUp from "@/components/Modal/ModalSignUp";
-import Image from 'next/image';
-
-
 
 function Index() {
   const [message, setMessage] = useState("Loading");
