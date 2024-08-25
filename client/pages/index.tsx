@@ -15,6 +15,8 @@ import Image from "next/image";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { Button as MUIButton } from '@mui/material';
+
 
 function TextGrid() {
   // Import images using require
@@ -312,7 +314,7 @@ function Index() {
                 <Typography variant="h4" sx={{ fontWeight: "bold", color: "white" }}>
                     Get financially <span style={{ color: "#007bff" }}>FIT.</span> today
                 </Typography>
-                <Button
+                <MUIButton
                     sx={{
                         marginTop: 2,
                         backgroundColor: "#007bff",
@@ -322,7 +324,7 @@ function Index() {
                     }}
                 >
                     Get FIT
-                </Button>
+                </MUIButton>
             </Box>
         </Box>
     </div>
