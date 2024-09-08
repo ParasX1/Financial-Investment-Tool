@@ -32,43 +32,43 @@ function Footer(){
             <div className={styles.column}>
                 <ul>
                     <li className={styles.firstLi}>
-                        Use cases
+                        <a> Use cases </a>
                     </li>
-                    <li> UI design </li>
-                    <li> UX design </li>
-                    <li> Wireframing </li>
-                    <li> Diagramming </li>
-                    <li> Brainstorming </li>
-                    <li> Online Whiteboard </li>
-                    <li> Contacts </li>
+                    <li> <a> UI design </a></li>
+                    <li> <a> UX design </a> </li>
+                    <li> <a> Wireframing </a> </li>
+                    <li> <a> Diagramming </a> </li>
+                    <li> <a> Brainstorming </a> </li>
+                    <li> <a> Online Whiteboard </a> </li>
+                    <li> <a> Contacts </a> </li>
                 </ul>
             </div>
             <div className={styles.column}>
                 <ul>
                     <li className={styles.firstLi}>
-                        Explore
+                        <a> Explore </a>
                     </li>
-                    <li> Design </li>
-                    <li> Prototyping </li>
-                    <li> Development Features </li>
-                    <li> Design Systems</li>
-                    <li> Collaboration Features </li>
-                    <li> Design Process</li>
-                    <li> FigJam </li>
+                    <li> <a> Design </a> </li>
+                    <li> <a> Prototyping </a> </li>
+                    <li> <a> Development Features </a> </li>
+                    <li> <a> Design Systems </a> </li>
+                    <li> <a> Collaboration Features </a> </li>
+                    <li> <a> Design Process </a></li>
+                    <li> <a> FigJam </a> </li>
                 </ul>
             </div>
             <div className={styles.column}>
             <ul>
                     <li className={styles.firstLi}>
-                        Resources
+                        <a> Resources </a>
                     </li>
-                    <li> Blog </li>
-                    <li> Best Practices </li>
-                    <li> Colors </li>
-                    <li> Color wheel </li>
-                    <li> Support </li>
-                    <li> Developers </li>
-                    <li> Resource Library </li>
+                    <li> <a> Blog </a> </li>
+                    <li> <a> Best Practices </a> </li>
+                    <li> <a> Colors </a> </li>
+                    <li> <a> Color wheel </a> </li>
+                    <li> <a> Support </a> </li>
+                    <li> <a> Developers </a> </li>
+                    <li> <a> Resource Library </a> </li>
                 </ul>
             </div>
         </div>
