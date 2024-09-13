@@ -100,4 +100,18 @@
   .about-us-text p {
   line-height: 1.6;
   }
+
+  /* Define a CSS class with hover effect */
+  li.hoverable {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    padding: 5px 0 5px 5px; /* Top 5px, Right 0px, Bottom 5px, Left 5px */
+    transition: background-color 0.3s ease; /* Optional: smooth transition */
+  }
+
+  li.hoverable:hover {
+    background-color: gray; /* Change background color on hover */
+  }
+
 }
