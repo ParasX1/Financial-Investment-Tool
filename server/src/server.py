@@ -5,12 +5,12 @@ from metrics import calculate_sharpe_ratio, calculate_volatility
 app = Flask(__name__)
 CORS(app)
 
-# @app.route("/api/home", methods=['GET'])
-# def return_home():
-#     return jsonify({
-#         'test': "test",
-#         'testList': ['1', '2', '3']
-#     })
+@app.route("/api/home", methods=['GET'])
+def return_home():
+    return jsonify({
+        'test': "test",
+        'testList': ['1', '2', '3']
+    })
 
 @app.route("/api/metrics/sharpe_ratio", methods=['POST'])
 def get_sharpe_ratio():
