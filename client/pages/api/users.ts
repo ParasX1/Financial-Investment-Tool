@@ -1,4 +1,4 @@
-export async function fetchUserStocks(userId: string) {
+export async function getUserStocks(userId: string) {
     const headers: Headers = new Headers()
     headers.set('Content-Type', 'application/json')
     return fetch("http://localhost:8080/api/stocks/get", {

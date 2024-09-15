@@ -3,6 +3,7 @@ from flask_cors import CORS
 
 from supabase import create_client, Client
 
+# TODO: REMOVE
 url: str = "https://vhfrriohobjzsvdxehph.supabase.co"
 key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZoZnJyaW9ob2JqenN2ZHhlaHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU2MjEwMzksImV4cCI6MjA0MTE5NzAzOX0._Vrt3F1KuqIXfWXf-PuXFSNc5JbTUxATatM_hOMCuyA"
 supabase: Client = create_client(url, key)
@@ -11,36 +12,33 @@ supabase: Client = create_client(url, key)
 app = Flask(__name__)
 CORS(app)
 
-@app.route("/api/home", methods=['GET'])
-def return_home():
-    return jsonify({
-        'test': "test",
-        'testList': ['1', '2', '3']
-    })
-
 @app.route("/api/stocks/get", methods=["POST"])
 def stocks_get():
     data = request.json
     userid = data["id"]
+    try:
+        response = (supabase.table("Users")
+                    .select("*")
+                    .eq("id", userid)
+                    .single()
+                    .execute()
+                )
 
-    response = (supabase.table("Users")
-                .select("*")
-                .eq("id", userid)
-                .single()
-                .execute()
-            )
+        if response.data == []:
+            return jsonify({
+                "stocks": ""
+            })
 
-    if not response:
-        return jsonify({
-            "stocks": ""
+        stocks = response.data["stocks"]
+        resp = jsonify({
+            "stocks": stocks
         })
 
-    stocks = response.data["stocks"]
-    resp = jsonify({
-        "stocks": stocks
-    })
-
-    return resp
+        return resp
+    except:
+        return jsonify({
+            "stocks":[]
+        })
 
 @app.route("/api/stocks/set", methods=["POST"])
 def stocks_set():
@@ -54,7 +52,7 @@ def stocks_set():
                 })
                 .eq("id", userid).execute())
 
-    if not response:
+    if response.data == []:
         return jsonify({"response": "FAIL"})
     else:
         return jsonify({"response": "OK"})
