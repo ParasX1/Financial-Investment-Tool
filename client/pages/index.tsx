@@ -20,6 +20,7 @@ import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
+import { fetchUserStocks, setUserStocks, StockAction } from "./api/users"
 
 
 function TextGrid() {
@@ -147,7 +148,7 @@ function Index() {
 
   // Signup-Login Modal
   const [showSignUp, setSignUp] = useState(false);
-  const [showLogIn, setShowLogIn] =useState(false);
+  const [showLogIn, setShowLogIn] = useState(false);
   const handleLoginShow = () => setShowLogIn(true);
   const handleLoginClose = () => setShowLogIn(false);
 
@@ -155,14 +156,9 @@ function Index() {
   const handleSignUpClose = () => setSignUp(false);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/home")
-      .then((response) => response.json())
-      .then((data) => {
-        setMessage(data.test);
-        setList(data.testList);
-      });
+    //fetchUserStocks("1").then(data => console.log(data))
+    setUserStocks("2", ["poo"]).then(data => console.log(data))
   }, []);
-
 
   return (
     <div>
