@@ -20,7 +20,7 @@ CORS(app)
 # Example stock tickers, market index, and date range for testing
 start_date = '2023-01-01'
 end_date = '2024-01-01'
-stock_tickers = ['AAPL']
+stock_tickers = ['AAPL', 'GOOGL']
 market_ticker = 'SPY'
 risk_free_rate = 0.01
 

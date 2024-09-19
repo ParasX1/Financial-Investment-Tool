@@ -239,10 +239,9 @@ def calculate_value_at_risk(stock_tickers, start_date, end_date, confidence_leve
     returns = stock_data.pct_change().dropna()
     vars = {}
     for ticker in stock_tickers:
-        # Calculate the VaR at the specified confidence level
-        sorted_returns = returns[ticker].sort_values()
-        var = np.percentile(sorted_returns, confidence_level * 100)
-        vars[ticker] = var
+        # Rolling window of 21 days to calculate VaR over time
+        var_series = returns[ticker].rolling(window=21).apply(lambda x: np.percentile(x, (1 - confidence_level) * 100))
+        vars[ticker] = var_series.dropna().to_dict()  # Convert Pandas Series to dict
     return vars
 
 # Function to calculate the Efficient Frontier
@@ -257,7 +256,7 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date):
     - end_date (str): End date for fetching the stock data (format: 'YYYY-MM-DD').
 
     Returns:
-    - list: List of tuples where each tuple contains expected return and risk for a particular portfolio weight combination.
+    - dict: Dictionary containing lists of portfolio returns, risks, and Sharpe ratios.
     """
     stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
     returns = stock_data.pct_change().dropna()
@@ -278,4 +277,11 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date):
         results[1, i] = portfolio_stddev
         results[2, i] = results[0, i] / results[1, i]  # Sharpe ratio
     
-    return results
+    # Convert numpy arrays to lists for JSON serialization
+    efficient_frontier = {
+        'returns': results[0].tolist(),
+        'risks': results[1].tolist(),
+        'sharpe_ratios': results[2].tolist()
+    }
+    
+    return efficient_frontier
