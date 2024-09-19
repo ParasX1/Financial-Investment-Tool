@@ -20,11 +20,11 @@ CORS(app)
 # Example stock tickers, market index, and date range for testing
 start_date = '2023-01-01'
 end_date = '2024-01-01'
-stock_tickers = ['AAPL', 'GOOGL']
+stock_tickers = ['AAPL', 'GOOGL', 'MSFT']
 market_ticker = 'SPY'
 risk_free_rate = 0.01
 
-@app.route("/api/stock_data", methods=['GET'])
+@app.route("/api/fetch_data", methods=['GET'])
 def get_stock_data():
     stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
     stock_data_json = stock_data.to_dict()
@@ -88,4 +88,4 @@ def get_efficient_frontier():
     return jsonify(efficient_frontier)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
