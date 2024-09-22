@@ -44,10 +44,6 @@ function ModalSignUp({ show, onHide, setSignUp }) {
     // @ts-ignore
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Email: " + email);
-        console.log("First name: " + fname);
-        console.log("Last name: " + lname);
-        console.log("User Signed Up successfully");
         handleSignUp(e);
         setSignUp(false);
     }

@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import Sidebar from "@/components/sidebar";
+import supabase from "@/components/supabase"
 
 
 function TextGrid() {
@@ -150,40 +151,40 @@ function Index() {
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
 
-  // const [session, setSession] = useState(null);
+  const [session, setSession] = useState(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-      fetch("http://localhost:8080/api/home")
-          .then((response) => response.json())
-          .then((data) => {
-              setMessage(data.test);
-              setList(data.testList);
-          });
-      }, []);
+  // useEffect(() => {
+  //     fetch("http://localhost:8080/api/home")
+  //         .then((response) => response.json())
+  //         .then((data) => {
+  //             setMessage(data.test);
+  //             setList(data.testList);
+  //         });
+  //     }, []);
 
 
-    // useEffect(() => {
-    //     supabase.auth.getSession().then(({ data: { session } }) => {
-    //         // @ts-ignore
-    //         setSession(session)
-    //     })
-    //
-    //     const {
-    //         data: { subscription },
-    //     } = supabase.auth.onAuthStateChange((_event, session) => {
-    //         // @ts-ignore
-    //         setSession(session)
-    //     })
-    //
-    //     return () => subscription.unsubscribe()
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // },[])
-    //
-    // if (session) {
-    //     // move to profile dashboard, else stay on home page.
-    //
-    // }
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        return () => subscription.unsubscribe()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[])
+
+    if (session) {
+        // move to profile dashboard, else stay on home page.
+
+    }
 
 
   return (
