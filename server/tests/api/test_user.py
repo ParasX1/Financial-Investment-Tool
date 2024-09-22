@@ -2,7 +2,7 @@ import pytest
 import os
 from src.server import create_app
 
-RUNNING_CI = False
+RUNNING_CI = True
 
 # these are to connect to the local instance
 # ie. not the production db
