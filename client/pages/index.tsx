@@ -168,7 +168,7 @@ function Index() {
     <div>
       <div style={{ display: "flex" }}>
         <Sidebar />
-        <div style={{ flex: 1, paddingLeft: "50px" }}>
+        <div style={{ flex: 1, paddingLeft: "200px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
             <NavbarContent className="hidden sm:flex gap-4" justify="start">
