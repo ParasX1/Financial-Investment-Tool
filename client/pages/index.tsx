@@ -19,7 +19,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
-import Footer from "@/components/footer";
+import Footer from "@/components/Footer";
 
 function TextGrid() {
   // Import images using require
