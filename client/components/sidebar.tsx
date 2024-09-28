@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
+import Link from 'next/link';
 
 const logo = require("@/assets/SidebarIcons/F.png");
 const logoExpanded = require("@/assets/SidebarIcons/FIT.png");
@@ -71,13 +72,20 @@ const Sidebar = () => {
       {/* Top section: Logo and Portfolio */}
       <div style={{ flexShrink: 0 }}>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
+
+
           <li className="hoverable">
-            {showText ? (
-              <Image src={logo} alt="Logo" width={25} height={25} /> 
-            ) : (
-              <Image src={logo} alt="Logo" width={25} height={25}  />
-            )}
+              <Link href="/dashboardView">
+                  {showText ? (
+                      <Image src={logo} alt="Logo" width={25} height={25} />
+                  ) : (
+                      <Image src={logo} alt="Logo" width={25} height={25}  />
+                  )}
+              </Link>
+
           </li>
+
+
           <li className="hoverable">
             <Image src={portfolio} alt="Portfolio" height={25} width={25} />
             {showText && <span style={{ marginLeft: '10px' }}>Portfolio</span>} {/* Show text with delay */}
