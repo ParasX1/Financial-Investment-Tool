@@ -1,6 +1,6 @@
 // components/CardComponent.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import { Box, Button } from '@mui/material';
 
@@ -21,18 +21,36 @@ const CardComponent: React.FC<CardComponentProps> = ({
                                                          onSwap,
                                                          height,
                                                      }) => {
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const buttonBackgroundColor = '#777'; // Grey background color
     const buttonHoverColor = '#555'; // Darker grey on hover
+
+    const handleFullscreenToggle = () => {
+        setIsFullscreen(!isFullscreen);
+    };
+
+    // Optional: Prevent background scrolling when in fullscreen mode
+    useEffect(() => {
+        if (isFullscreen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, [isFullscreen]);
 
     return (
         <Box
             sx={{
-                position: 'relative',
-                width: '100%',
-                height: height || 400, // Increased default height
+                position: isFullscreen ? 'fixed' : 'relative',
+                top: isFullscreen ? 0 : 'unset',
+                left: isFullscreen ? 0 : 'unset',
+                width: isFullscreen ? '100vw' : '100%',
+                height: isFullscreen ? '100vh' : height || 400,
                 backgroundColor: '#333',
                 border: '1px solid #555',
                 overflow: 'hidden',
+                zIndex: isFullscreen ? 1000 : 'unset',
             }}
         >
             {content ? (
@@ -66,7 +84,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
                 </Button>
             )}
 
-            {/* Swap and Clear buttons */}
+            {/* Swap, Clear, and Fullscreen buttons */}
             <Box
                 sx={{
                     position: 'absolute',
@@ -81,11 +99,13 @@ const CardComponent: React.FC<CardComponentProps> = ({
                     size="small"
                     onClick={() => onSwap(index)}
                     sx={{
+                        width: 32,
+                        height: 32,
                         minWidth: 'unset',
-                        padding: '4px',
+                        padding: 0,
                         backgroundColor: buttonBackgroundColor,
                         color: 'white',
-                        fontSize: '16px',
+                        fontSize: '18px',
                         '&:hover': {
                             backgroundColor: buttonHoverColor,
                         },
@@ -98,17 +118,38 @@ const CardComponent: React.FC<CardComponentProps> = ({
                     size="small"
                     onClick={() => onClear(index)}
                     sx={{
+                        width: 32,
+                        height: 32,
                         minWidth: 'unset',
-                        padding: '4px',
+                        padding: 0,
                         backgroundColor: buttonBackgroundColor,
                         color: 'white',
-                        fontSize: '16px',
+                        fontSize: '18px',
                         '&:hover': {
                             backgroundColor: buttonHoverColor,
                         },
                     }}
                 >
                     ×
+                </Button>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleFullscreenToggle}
+                    sx={{
+                        width: 32,
+                        height: 32,
+                        minWidth: 'unset',
+                        padding: 0,
+                        backgroundColor: buttonBackgroundColor,
+                        color: 'white',
+                        fontSize: '18px',
+                        '&:hover': {
+                            backgroundColor: buttonHoverColor,
+                        },
+                    }}
+                >
+                    {isFullscreen ? '⤡' : '⤢'}
                 </Button>
             </Box>
         </Box>
