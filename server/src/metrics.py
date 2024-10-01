@@ -1,13 +1,14 @@
-# Import necessary libraries
-import yfinance as yf   # Library to fetch stock data from Yahoo Finance
-import numpy as np      
-import pandas as pd     
-import matplotlib.pyplot as plt 
+# metrics.py
 
-# Function to fetch stock data
+# Import necessary libraries
+import yfinance as yf   # Used to fetch stock data from Yahoo Finance
+import numpy as np      # Used for numerical calculations
+import pandas as pd     # Used for data manipulation
+
+# Function to fetch full stock data
 def fetch_stock_data(stock_tickers, start_date, end_date):
     """
-    Fetches adjusted closing price for the provided stock tickers over a given date range.
+    Fetches full stock data (Open, High, Low, Close, Adj Close, Volume) for the provided stock tickers over a given date range.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to fetch data for.
@@ -15,19 +16,28 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
     - end_date (str): The end date for fetching the data (format: 'YYYY-MM-DD').
 
     Returns:
-    - pd.DataFrame: DataFrame where each column represents the adjusted closing price for each stock.
+    - pd.DataFrame: MultiIndex DataFrame where each column represents a data field (Open, High, Low, Close, Adj Close, Volume) for each stock.
     """
-    stock_data = {}
-    for ticker in stock_tickers:
-        # Fetch adjusted closing prices for each ticker
-        df = yf.download(ticker, start=start_date, end=end_date)['Adj Close']
-        stock_data[ticker] = df
-    df = pd.DataFrame(stock_data)
-    # Convert index (datetime) to string format
-    df.index = df.index.strftime('%Y-%m-%d')
-    return df
+    # Fetch data for the provided stock tickers
+    stock_data = yf.download(
+        stock_tickers,
+        start=start_date,
+        end=end_date,
+        group_by='ticker',  # Group data by ticker symbol
+        auto_adjust=False   # Do not adjust prices for dividends or splits
+    )
+    
+    # Ensure the DataFrame has MultiIndex columns for consistency
+    if not isinstance(stock_data.columns, pd.MultiIndex):
+        # If only one ticker is provided, the columns are not MultiIndex by default
+        stock_data = pd.concat({stock_tickers[0]: stock_data}, axis=1)
+    
+    # Convert the index (dates) to string format for consistency in JSON serialization
+    stock_data.index = stock_data.index.strftime('%Y-%m-%d')
+    
+    return stock_data
 
-# Function to calculate Beta for stocks
+# Function to calculate Beta
 def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     """
     Calculates the Beta of each stock compared to the market.
@@ -35,72 +45,125 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate Beta for.
-    - market_ticker (str): Market index ticker (e.g., '^GSPC' for S&P 500) to compare against.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
+    - market_ticker (str): Market index ticker to compare against.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
 
     Returns:
     - dict: Dictionary with stock tickers as keys and their respective Beta values as values.
     """
-    # Fetch stock and market data
-    stock_data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
-    # Calculate daily returns
-    returns = stock_data.pct_change().dropna()
-    market_returns = returns[market_ticker]
+    # Fetch data for the stocks and the market index
+    data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
+    
+    # Extract adjusted close prices
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
+    # Calculate daily returns for stocks and market
+    stock_returns = adj_close[stock_tickers].pct_change().dropna()
+    market_returns = adj_close[market_ticker].pct_change().dropna()
+    
+    # Align the indices to ensure both DataFrames have the same dates
+    common_index = stock_returns.index.intersection(market_returns.index)
+    stock_returns = stock_returns.loc[common_index]
+    market_returns = market_returns.loc[common_index]
+    
     betas = {}
-    for ticker in stock_tickers:
-        # Calculate covariance between stock and market returns
-        cov_matrix = np.cov(returns[ticker], market_returns)
-        # Beta = Cov(stock, market) / Var(market)
-        beta = cov_matrix[0, 1] / cov_matrix[1, 1]
+    for ticker in stock_returns.columns:
+        # Calculate the covariance between the stock and the market returns
+        covariance = np.cov(stock_returns[ticker], market_returns)[0][1]
+        
+        # Calculate the variance of the market returns
+        market_variance = market_returns.var()
+        
+        # Calculate Beta: Beta = Covariance(stock, market) / Variance(market)
+        beta = covariance / market_variance
+        
         betas[ticker] = beta
+    
     return betas
 
-# Function to calculate Alpha for stocks
-def calculate_alpha(stock_tickers, benchmark_returns, start_date, end_date, risk_free_rate=0.01):
+# Function to calculate Alpha
+def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_free_rate=0.01):
     """
-    Calculates the Alpha of each stock. Alpha measures the stock's performance relative to the benchmark.
+    Calculates the Alpha of each stock compared to the market.
+    Alpha measures the stock's performance relative to the expected return based on Beta.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate Alpha for.
-    - benchmark_returns (pd.Series): Returns of the benchmark (e.g., market returns).
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
-    - risk_free_rate (float): Risk-free rate used in the calculation (default: 0.01).
+    - market_ticker (str): Market index ticker to compare against.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
 
     Returns:
     - dict: Dictionary with stock tickers as keys and their respective Alpha values as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
+    # First, calculate Betas for the stocks
+    betas = calculate_beta(stock_tickers, market_ticker, start_date, end_date)
+    
+    # Fetch data for stocks and market
+    data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
+    # Calculate daily returns
+    stock_returns = adj_close[stock_tickers].pct_change().dropna()
+    market_returns = adj_close[market_ticker].pct_change().dropna()
+    
+    # Align indices
+    common_index = stock_returns.index.intersection(market_returns.index)
+    stock_returns = stock_returns.loc[common_index]
+    market_returns = market_returns.loc[common_index]
+    
     alphas = {}
-    for ticker in stock_tickers:
-        stock_return = returns[ticker].mean() * 252
-        benchmark_return = benchmark_returns.mean() * 252
-        beta = calculate_beta([ticker], benchmark_returns.name, start_date, end_date)[ticker]
-        alpha = stock_return - (risk_free_rate + beta * (benchmark_return - risk_free_rate))
+    for ticker in stock_returns.columns:
+        # Calculate the average annualized return for the stock
+        stock_avg_return = stock_returns[ticker].mean() * 252  # 252 trading days in a year
+        
+        # Calculate the average annualized return for the market
+        market_avg_return = market_returns.mean() * 252
+        
+        # Retrieve Beta for the stock
+        beta = betas[ticker]
+        
+        # Calculate the expected return using the Capital Asset Pricing Model (CAPM)
+        # Expected Return = Risk-Free Rate + Beta * (Market Return - Risk-Free Rate)
+        expected_return = risk_free_rate + beta * (market_avg_return - risk_free_rate)
+        
+        # Calculate Alpha: Alpha = Actual Return - Expected Return
+        alpha = stock_avg_return - expected_return
+        
         alphas[ticker] = alpha
+    
     return alphas
 
 # Function to calculate Drawdown
 def calculate_drawdown(stock_tickers, start_date, end_date):
     """
-    Calculates the drawdown for each stock. Drawdown is the decline from the stock's peak.
+    Calculates the drawdown for each stock.
+    Drawdown is the decline from a historical peak in price.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate drawdown for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective drawdown values as values.
+    - dict: Dictionary with stock tickers as keys and their respective drawdown Series as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
+    # Fetch adjusted close prices
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
     drawdowns = {}
-    for ticker in stock_tickers:
-        # Drawdown = (Stock price / Maximum price up to that point) - 1
-        cumulative_return = (stock_data[ticker] / stock_data[ticker].cummax() - 1).dropna()
-        drawdowns[ticker] = cumulative_return
+    for ticker in adj_close.columns:
+        # Calculate the cumulative maximum up to each point in time
+        cumulative_max = adj_close[ticker].cummax()
+        
+        # Calculate drawdown: (Current Price - Cumulative Max Price) / Cumulative Max Price
+        drawdown = (adj_close[ticker] - cumulative_max) / cumulative_max
+        
+        drawdowns[ticker] = drawdown
+    
     return drawdowns
 
 # Function to calculate Cumulative Return
@@ -110,178 +173,376 @@ def calculate_cumulative_return(stock_tickers, start_date, end_date):
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate cumulative return for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective cumulative returns as values.
+    - dict: Dictionary with stock tickers as keys and their respective cumulative return Series as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
+    # Fetch adjusted close prices
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
     cumulative_returns = {}
-    for ticker in stock_tickers:
-        # Cumulative return = (Current price / Initial price) - 1
-        cumulative_return = (stock_data[ticker] / stock_data[ticker].iloc[0]) - 1
+    for ticker in adj_close.columns:
+        # Calculate cumulative return: (Current Price / Initial Price) - 1
+        cumulative_return = adj_close[ticker] / adj_close[ticker].iloc[0] - 1
+        
         cumulative_returns[ticker] = cumulative_return
+    
     return cumulative_returns
 
 # Function to calculate Sortino Ratio
 def calculate_sortino_ratio(stock_tickers, start_date, end_date, risk_free_rate=0.01):
     """
-    Calculates the Sortino Ratio for each stock. The Sortino Ratio is a variation of the Sharpe Ratio
-    but focuses on downside risk.
+    Calculates the Sortino Ratio for each stock.
+    The Sortino Ratio measures risk-adjusted return focusing on downside risk.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate Sortino Ratio for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
-    - risk_free_rate (float): Risk-free rate used in the calculation (default: 0.01).
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective Sortino Ratio values as values.
+    - dict: Dictionary with stock tickers as keys and their respective Sortino Ratios as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
+    
     sortino_ratios = {}
-    for ticker in stock_tickers:
-        # Calculate downside deviation (standard deviation of negative returns)
-        negative_returns = returns[returns[ticker] < 0][ticker]
-        downside_deviation = negative_returns.std() * np.sqrt(252)
-        # Excess return = Annualized return - Risk-free rate
-        excess_return = returns[ticker].mean() * 252 - risk_free_rate
-        sortino_ratios[ticker] = excess_return / downside_deviation
+    for ticker in stock_returns.columns:
+        returns = stock_returns[ticker]
+        
+        # Calculate the average annualized return
+        avg_return = returns.mean() * 252
+        
+        # Isolate the negative returns (downside returns)
+        downside_returns = returns[returns < 0]
+        
+        if downside_returns.empty:
+            # If there are no negative returns, the downside deviation is zero
+            sortino_ratios[ticker] = np.inf  # Infinite Sortino Ratio
+            continue
+        
+        # Calculate the annualized downside deviation
+        downside_deviation = downside_returns.std() * np.sqrt(252)
+        
+        # Calculate the Sortino Ratio: (Average Return - Risk-Free Rate) / Downside Deviation
+        sortino_ratio = (avg_return - risk_free_rate) / downside_deviation
+        
+        sortino_ratios[ticker] = sortino_ratio
+    
     return sortino_ratios
 
-# Function to calculate correlation with the market
+# Function to calculate Correlation with Market
 def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, end_date):
     """
-    Calculates the correlation between each stock and the market.
+    Calculates the rolling correlation between each stock and the market.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate correlation for.
     - market_ticker (str): Market index ticker to compare against.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their rolling correlations with the market as values.
+    - dict: Dictionary with stock tickers as keys and their respective correlation Series as values.
     """
-    stock_data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
-    returns = stock_data.pct_change().dropna()
-    market_returns = returns[market_ticker]
+    # Fetch adjusted close prices
+    data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
+    # Calculate daily returns
+    stock_returns = adj_close[stock_tickers].pct_change()
+    market_returns = adj_close[market_ticker].pct_change()
+    
     correlations = {}
-    for ticker in stock_tickers:
-        # Calculate rolling correlation between stock and market
-        correlation = returns[ticker].rolling(window=21).corr(market_returns).dropna()
-        correlations[ticker] = correlation
+    for ticker in stock_returns.columns:
+        # Calculate rolling correlation over a 21-day window (approximately one month)
+        rolling_corr = stock_returns[ticker].rolling(window=21).corr(market_returns)
+        
+        correlations[ticker] = rolling_corr
+    
     return correlations
 
 # Function to calculate Sharpe Ratio
 def calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate=0.01):
     """
-    Calculates the Sharpe Ratio for each stock. The Sharpe Ratio measures risk-adjusted returns.
+    Calculates the Sharpe Ratio for each stock.
+    The Sharpe Ratio measures risk-adjusted return considering both upside and downside volatility.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate Sharpe Ratio for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
-    - risk_free_rate (float): Risk-free rate used in the calculation (default: 0.01).
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
 
     Returns:
     - dict: Dictionary with stock tickers as keys and their respective Sharpe Ratios as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
+    
     sharpe_ratios = {}
-    for ticker in stock_tickers:
-        # Calculate annualized return and annualized standard deviation
-        excess_return = returns[ticker].mean() * 252 - risk_free_rate
-        annualized_std = returns[ticker].std() * np.sqrt(252)
-        sharpe_ratios[ticker] = excess_return / annualized_std
+    for ticker in stock_returns.columns:
+        # Calculate average annualized return
+        avg_return = stock_returns[ticker].mean() * 252
+        
+        # Calculate annualized standard deviation (volatility)
+        std_dev = stock_returns[ticker].std() * np.sqrt(252)
+        
+        # Calculate Sharpe Ratio: (Average Return - Risk-Free Rate) / Standard Deviation
+        sharpe_ratio = (avg_return - risk_free_rate) / std_dev
+        
+        sharpe_ratios[ticker] = sharpe_ratio
+    
     return sharpe_ratios
 
 # Function to calculate Volatility
 def calculate_volatility(stock_tickers, start_date, end_date):
     """
-    Calculates the annualized volatility for each stock. Volatility measures the price fluctuations of the stock.
+    Calculates the annualized volatility for each stock.
+    Volatility is the standard deviation of returns, indicating the degree of variation.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate volatility for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective annualized volatility values as values.
+    - dict: Dictionary with stock tickers as keys and their respective volatility values as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
+    
     volatilities = {}
-    for ticker in stock_tickers:
-        # Annualized volatility = standard deviation of daily returns * sqrt(252)
-        volatilities[ticker] = returns[ticker].std() * np.sqrt(252)
+    for ticker in stock_returns.columns:
+        # Calculate annualized volatility: Standard Deviation * sqrt(252)
+        volatility = stock_returns[ticker].std() * np.sqrt(252)
+        
+        volatilities[ticker] = volatility
+    
     return volatilities
 
 # Function to calculate Value at Risk (VaR)
 def calculate_value_at_risk(stock_tickers, start_date, end_date, confidence_level=0.05):
     """
-    Calculates the Value at Risk (VaR) for each stock at a given confidence level. 
-    VaR measures the maximum potential loss over a period within a given confidence level.
+    Calculates the Value at Risk (VaR) for each stock.
+    VaR estimates the potential loss over a given time period within a certain confidence interval.
 
     Parameters:
     - stock_tickers (list): List of stock tickers to calculate VaR for.
-    - start_date (str): Start date for the calculation (format: 'YYYY-MM-DD').
-    - end_date (str): End date for the calculation (format: 'YYYY-MM-DD').
-    - confidence_level (float): The confidence level for calculating VaR (default: 0.05).
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - confidence_level (float): The confidence level for calculating VaR (e.g., 0.05 for 95% confidence).
 
     Returns:
     - dict: Dictionary with stock tickers as keys and their respective VaR values as values.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
+    
     vars = {}
-    for ticker in stock_tickers:
-        # Rolling window of 21 days to calculate VaR over time
-        var_series = returns[ticker].rolling(window=21).apply(lambda x: np.percentile(x, (1 - confidence_level) * 100))
-        vars[ticker] = var_series.dropna().to_dict()  # Convert Pandas Series to dict
+    for ticker in stock_returns.columns:
+        # Calculate the VaR at the specified confidence level
+        # VaR is the percentile of the distribution of returns
+        var = np.percentile(stock_returns[ticker], 100 * confidence_level)
+        
+        vars[ticker] = var
+    
     return vars
 
-# Function to calculate the Efficient Frontier
-def calculate_efficient_frontier(stock_tickers, start_date, end_date):
+# Function to calculate Efficient Frontier
+def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfolios=10000, risk_free_rate=0.01):
     """
-    Calculates the Efficient Frontier for a given set of stocks. The Efficient Frontier shows the best possible return
-    for a given level of risk, or the lowest risk for a given return.
+    Calculates the Efficient Frontier for a given set of stocks.
+    The Efficient Frontier represents portfolios that offer the highest expected return for a defined level of risk.
 
     Parameters:
-    - stock_tickers (list): List of stock tickers to calculate the Efficient Frontier for.
-    - start_date (str): Start date for fetching the stock data (format: 'YYYY-MM-DD').
-    - end_date (str): End date for fetching the stock data (format: 'YYYY-MM-DD').
+    - stock_tickers (list): List of stock tickers to include in the portfolios.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - num_portfolios (int): Number of random portfolios to simulate.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
 
     Returns:
     - dict: Dictionary containing lists of portfolio returns, risks, and Sharpe ratios.
     """
-    stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-    returns = stock_data.pct_change().dropna()
-    mean_returns = returns.mean() * 252  # Annualized mean returns
-    cov_matrix = returns.cov() * 252  # Annualized covariance matrix
-
-    num_portfolios = 10000
-    results = np.zeros((3, num_portfolios))
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
     
-    for i in range(num_portfolios):
-        weights = np.random.random(len(stock_tickers))
+    # Calculate annualized mean returns and covariance matrix
+    mean_returns = stock_returns.mean() * 252
+    cov_matrix = stock_returns.cov() * 252
+    
+    results = {'returns': [], 'risks': [], 'sharpe_ratios': []}
+    num_assets = len(stock_tickers)
+    
+    for _ in range(num_portfolios):
+        # Generate random weights that sum to 1
+        weights = np.random.random(num_assets)
         weights /= np.sum(weights)
         
+        # Calculate expected portfolio return
         portfolio_return = np.dot(weights, mean_returns)
-        portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
         
-        results[0, i] = portfolio_return
-        results[1, i] = portfolio_stddev
-        results[2, i] = results[0, i] / results[1, i]  # Sharpe ratio
+        # Calculate expected portfolio risk (standard deviation)
+        portfolio_risk = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+        
+        # Calculate Sharpe Ratio for the portfolio
+        sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_risk
+        
+        # Store the results
+        results['returns'].append(portfolio_return)
+        results['risks'].append(portfolio_risk)
+        results['sharpe_ratios'].append(sharpe_ratio)
     
-    # Convert numpy arrays to lists for JSON serialization
-    efficient_frontier = {
-        'returns': results[0].tolist(),
-        'risks': results[1].tolist(),
-        'sharpe_ratios': results[2].tolist()
-    }
+    return results
+
+# Function to calculate Treynor Ratio
+def calculate_treynor_ratio(stock_tickers, market_ticker, start_date, end_date, risk_free_rate=0.01):
+    """
+    Calculates the Treynor Ratio for each stock.
+    The Treynor Ratio measures returns earned in excess of that which could have been earned on a riskless investment per unit of market risk.
+
+    Parameters:
+    - stock_tickers (list): List of stock tickers to calculate Treynor Ratio for.
+    - market_ticker (str): Market index ticker to compare against.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
+
+    Returns:
+    - dict: Dictionary with stock tickers as keys and their respective Treynor Ratios as values.
+    """
+    # Calculate Betas for the stocks
+    betas = calculate_beta(stock_tickers, market_ticker, start_date, end_date)
     
-    return efficient_frontier
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers, start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    stock_returns = adj_close.pct_change().dropna()
+    
+    treynor_ratios = {}
+    for ticker in stock_returns.columns:
+        # Calculate average annualized return
+        avg_return = stock_returns[ticker].mean() * 252
+        
+        # Retrieve Beta for the stock
+        beta = betas[ticker]
+        
+        # Calculate Treynor Ratio: (Average Return - Risk-Free Rate) / Beta
+        treynor_ratio = (avg_return - risk_free_rate) / beta
+        
+        treynor_ratios[ticker] = treynor_ratio
+    
+    return treynor_ratios
+
+# Function to calculate Jensen's Alpha
+def calculate_jensens_alpha(stock_tickers, market_ticker, start_date, end_date, risk_free_rate=0.01):
+    """
+    Calculates Jensen's Alpha for each stock.
+    Jensen's Alpha measures the excess return of a stock over the expected return predicted by the Capital Asset Pricing Model (CAPM).
+
+    Parameters:
+    - stock_tickers (list): List of stock tickers to calculate Jensen's Alpha for.
+    - market_ticker (str): Market index ticker to compare against.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+    - risk_free_rate (float): Risk-free rate used in the calculation.
+
+    Returns:
+    - dict: Dictionary with stock tickers as keys and their respective Jensen's Alpha values as values.
+    """
+    # Calculate Betas for the stocks
+    betas = calculate_beta(stock_tickers, market_ticker, start_date, end_date)
+    
+    # Fetch adjusted close prices and calculate daily returns
+    data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
+    stock_returns = adj_close[stock_tickers].pct_change().dropna()
+    market_returns = adj_close[market_ticker].pct_change().dropna()
+    
+    # Align indices
+    common_index = stock_returns.index.intersection(market_returns.index)
+    stock_returns = stock_returns.loc[common_index]
+    market_returns = market_returns.loc[common_index]
+    
+    # Calculate average annualized market return
+    market_avg_return = market_returns.mean() * 252
+    
+    jensens_alphas = {}
+    for ticker in stock_returns.columns:
+        # Calculate average annualized stock return
+        stock_avg_return = stock_returns[ticker].mean() * 252
+        
+        # Retrieve Beta for the stock
+        beta = betas[ticker]
+        
+        # Calculate expected return using CAPM
+        expected_return = risk_free_rate + beta * (market_avg_return - risk_free_rate)
+        
+        # Calculate Jensen's Alpha: Actual Return - Expected Return
+        alpha = stock_avg_return - expected_return
+        
+        jensens_alphas[ticker] = alpha
+    
+    return jensens_alphas
+
+# Function to calculate Information Ratio
+def calculate_information_ratio(stock_tickers, benchmark_ticker, start_date, end_date):
+    """
+    Calculates the Information Ratio for each stock.
+    The Information Ratio measures the portfolio's ability to generate excess returns relative to a benchmark, adjusted for the consistency of those returns.
+
+    Parameters:
+    - stock_tickers (list): List of stock tickers to calculate Information Ratio for.
+    - benchmark_ticker (str): Benchmark index ticker to compare against.
+    - start_date (str): Start date for data fetching.
+    - end_date (str): End date for data fetching.
+
+    Returns:
+    - dict: Dictionary with stock tickers as keys and their respective Information Ratios as values.
+    """
+    # Fetch adjusted close prices
+    data = fetch_stock_data(stock_tickers + [benchmark_ticker], start_date, end_date)
+    adj_close = data.xs('Adj Close', level=1, axis=1)
+    
+    # Calculate daily returns
+    stock_returns = adj_close[stock_tickers].pct_change().dropna()
+    benchmark_returns = adj_close[benchmark_ticker].pct_change().dropna()
+    
+    # Align indices
+    common_index = stock_returns.index.intersection(benchmark_returns.index)
+    stock_returns = stock_returns.loc[common_index]
+    benchmark_returns = benchmark_returns.loc[common_index]
+    
+    information_ratios = {}
+    for ticker in stock_returns.columns:
+        # Calculate the active return: Stock Return - Benchmark Return
+        active_return = stock_returns[ticker] - benchmark_returns
+        
+        # Calculate average annualized active return
+        avg_active_return = active_return.mean() * 252
+        
+        # Calculate tracking error (standard deviation of active returns)
+        tracking_error = active_return.std() * np.sqrt(252)
+        
+        # Calculate Information Ratio: Average Active Return / Tracking Error
+        information_ratio = avg_active_return / tracking_error
+        
+        information_ratios[ticker] = information_ratio
+    
+    return information_ratios

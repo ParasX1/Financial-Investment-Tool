@@ -1,13 +1,14 @@
 # Python virtual environment
-venv/
+.venv/
 
 # Node.js dependencies
 /client/node_modules/
+node_modules/
 
 # IDE and editor settings
-.client/.idea/
+/client/.idea/
+/.idea/
 
 # Next.js build output
 /client/.next/
-
-node_modules
+.next/
