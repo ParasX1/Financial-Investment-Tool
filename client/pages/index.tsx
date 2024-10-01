@@ -155,11 +155,6 @@ function Index() {
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
 
-  useEffect(() => {
-    //fetchUserStocks("1").then(data => console.log(data))
-    getUserStocks("2").then(data => console.log(data))
-  }, []);
-
   return (
     <div>
       <div style={{ display: "flex" }}>
