@@ -146,21 +146,6 @@ function Index() {
   const img1 = require("@/assets/gridBackground1.png");
   const imgStar = require("@/assets/star.png");
   const team = require("@/assets/team.png");
-  const exampleData = [
-    { label: 'Apples', value: 50 },
-    { label: 'Bananas', value: 80 },
-    { label: 'Cherries', value: 30 },
-    { label: 'Dates', value: 70 },
-    { label: 'Elderberries', value: 45 },
-  ];
-  const timeSeriesData = [
-    { date: new Date('2024-01-01'), value: 50 },
-    { date: new Date('2024-01-02'), value: 55 },
-    { date: new Date('2024-01-03'), value: 60 },
-    { date: new Date('2024-01-04'), value: 40 },
-    { date: new Date('2024-01-05'), value: 75 },
-    { date: new Date('2024-01-06'), value: 85 },
-  ];
   // Signup-Login Modal
   const [showSignUp, setSignUp] = useState(false);
   const [showLogIn, setShowLogIn] =useState(false);
@@ -238,8 +223,6 @@ function Index() {
               </NavbarItem>
             </NavbarContent>
           </Navbar>
-          <BarGraph data={exampleData} width={600} height={400}/>
-          <LineGraph data={timeSeriesData} width={600} height={400} />,
           <div className="two-column">
             <div className="left-column">
               <h1 className="title-text">FIT</h1>
