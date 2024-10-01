@@ -1,5 +1,6 @@
 # Python virtual environment
-.venv/
+venv/
+server/venv/
 
 # Node.js dependencies
 /client/node_modules/
@@ -11,4 +12,5 @@ node_modules/
 
 # Next.js build output
 /client/.next/
-.next/
+
+client/.idea
