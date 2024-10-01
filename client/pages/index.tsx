@@ -19,8 +19,11 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
+import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
-import { getUserStocks, setUserStocks, StockAction } from "./api/users"
+import 'boxicons/css/boxicons.min.css';
+import LineGraph from "@/components/linegraph";
+
 
 
 function TextGrid() {
@@ -31,7 +34,6 @@ function TextGrid() {
   const img4 = require("@/assets/gridBackground1.png");
   const img5 = require("@/assets/gridBackground1.png");
   const img6 = require("@/assets/gridBackground1.png");
-
   const items = [
     { text: (
           <Box>
@@ -145,7 +147,6 @@ function Index() {
   const img1 = require("@/assets/gridBackground1.png");
   const imgStar = require("@/assets/star.png");
   const team = require("@/assets/team.png");
-
   // Signup-Login Modal
   const [showSignUp, setSignUp] = useState(false);
   const [showLogIn, setShowLogIn] = useState(false);
@@ -213,12 +214,6 @@ function Index() {
               </NavbarItem>
             </NavbarContent>
           </Navbar>
-          <div>{message}</div>
-
-          {list.map((item, index) => (
-            <div key={index}>{item}</div>
-          ))}
-
           <div className="two-column">
             <div className="left-column">
               <h1 className="title-text">FIT</h1>
