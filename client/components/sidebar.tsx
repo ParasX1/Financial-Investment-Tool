@@ -75,7 +75,7 @@ const Sidebar = () => {
               <Image src={logo} alt="Logo" width={25} height={25}  />
             )}
           </li>
-            <li className="hoverable" onClick={() => navigateToPage('/portfolio')}>
+            <li className="hoverable" onClick={() => navigateToPage('/dashboardView')}>
                 <i className='bx bx-pie-chart-alt-2' style={{ fontSize: '30px' }}></i>
                 {showText && <span style={{ marginLeft: '10px' }}>Portfolio</span>} {/* Show text with delay */}
             </li>
