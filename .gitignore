@@ -10,3 +10,4 @@ venv/
 # Next.js build output
 /client/.next/
 
+node_modules
