@@ -25,6 +25,7 @@ import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 
 
+
 function TextGrid() {
   // Import images using require
   const img1 = require("@/assets/gridBackground1.png");
@@ -148,22 +149,12 @@ function Index() {
   const team = require("@/assets/team.png");
   // Signup-Login Modal
   const [showSignUp, setSignUp] = useState(false);
-  const [showLogIn, setShowLogIn] =useState(false);
+  const [showLogIn, setShowLogIn] = useState(false);
   const handleLoginShow = () => setShowLogIn(true);
   const handleLoginClose = () => setShowLogIn(false);
 
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
-
-  // useEffect(() => {
-  //   fetch("http://localhost:8080/api/home")
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       setMessage(data.test);
-  //       setList(data.testList);
-  //     });
-  // }, []);
-
 
   return (
     <div>
