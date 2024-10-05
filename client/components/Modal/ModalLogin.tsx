@@ -5,6 +5,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 // @ts-ignore
 function ModalLogin(props) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
     return(
         <Modal
             {...props}

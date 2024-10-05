@@ -1,17 +1,12 @@
 import React, { useEffect, useState } from "react";
-import Modal from "react-bootstrap/Modal";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import {
   Navbar,
-  NavbarBrand,
   NavbarContent,
   NavbarItem,
   Link,
   Button,
   Spacer,
-  Card,
-  CardBody,
-  CardFooter,
 } from "@nextui-org/react";
 import Image from "next/image";
 import Grid from "@mui/material/Grid";
@@ -19,14 +14,18 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
+
 import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import TextGrid from "@/components/TextGrid";
+import supabase from "@/components/supabase"
+
 
 
 function Index() {
+
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
@@ -41,6 +40,42 @@ function Index() {
 
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
+
+  const [session, setSession] = useState(null);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // useEffect(() => {
+  //     fetch("http://localhost:8080/api/home")
+  //         .then((response) => response.json())
+  //         .then((data) => {
+  //             setMessage(data.test);
+  //             setList(data.testList);
+  //         });
+  //     }, []);
+
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        return () => subscription.unsubscribe()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[])
+
+    if (session) {
+        // move to profile dashboard, else stay on home page.
+
+    }
+
 
   return (
     <div>
@@ -94,7 +129,8 @@ function Index() {
 
                   <ModalSignUp
                     show={showSignUp}
-                    onHide={handleSignUpClose}/>
+                    onHide={handleSignUpClose}
+                    setSignUp={setSignUp}/>
                 </>
 
               </NavbarItem>
@@ -261,7 +297,7 @@ function Index() {
       </div>
     </div>
 
-    
+
   );
 }
 
