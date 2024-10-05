@@ -1,0 +1,28 @@
+
+.main {
+    background-color: #D9D9D9;
+    display: "flex";
+    /* flex-wrap: nowrap; */
+    width: "100%";
+    
+
+}
+
+
+.column {
+    width: 22%;
+    /* background-color: aqua; */
+    display: inline-flex;
+    padding-left: 4vw;
+    padding-top: 18px;
+}
+
+
+.attribute{
+    text-decoration: none;
+}
+
+.firstLi {
+    font-weight: bold;
+    padding-bottom: 10px;
+}
