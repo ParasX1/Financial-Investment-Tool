@@ -4,7 +4,6 @@ import {
   Navbar,
   NavbarContent,
   NavbarItem,
-  Link,
   Button,
   Spacer,
 } from "@nextui-org/react";
@@ -14,13 +13,15 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
-
 import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import TextGrid from "@/components/TextGrid";
-import supabase from "@/components/supabase"
+import supabase from "@/components/supabase";
+import Link from 'next/link';
+import { useRouter } from 'next/router'
+import DashboardView from "@/pages/dashboardView";
 
 
 
@@ -40,18 +41,10 @@ function Index() {
 
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
+  const router = useRouter();
+
 
   const [session, setSession] = useState(null);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // useEffect(() => {
-  //     fetch("http://localhost:8080/api/home")
-  //         .then((response) => response.json())
-  //         .then((data) => {
-  //             setMessage(data.test);
-  //             setList(data.testList);
-  //         });
-  //     }, []);
 
 
     useEffect(() => {
@@ -72,15 +65,18 @@ function Index() {
     },[])
 
     if (session) {
-        // move to profile dashboard, else stay on home page.
-
+        router.push("/dashboardView");
     }
 
 
+
+
+
+
   return (
-    <div>
+        <div>
       <div style={{ display: "flex" }}>
-        <Sidebar />
+        {/*<Sidebar />*/}
         <div style={{ flex: 1, paddingLeft: "50px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
@@ -118,7 +114,8 @@ function Index() {
 
                   <ModalLogin
                     show={showLogIn}
-                    onHide={handleLoginClose}/>
+                    onHide={handleLoginClose}
+                    setLogin={setShowLogIn}/>
                 </>
               </NavbarItem>
               <NavbarItem>
@@ -296,8 +293,6 @@ function Index() {
         </div>
       </div>
     </div>
-
-
   );
 }
 

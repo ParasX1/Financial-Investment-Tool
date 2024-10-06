@@ -1,6 +1,7 @@
 // pages/dashboardView.tsx
 
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
+// @ts-ignore
 import Sidebar from '@/components/Sidebar';
 import {
     Navbar,
@@ -17,17 +18,30 @@ import { Grid, Box } from '@mui/material';
 import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
+import supabase from "@/components/supabase";
 
 const DashboardView: React.FC = () => {
     // Signup-Login Modal states and handlers
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setLogIn] = useState(false);
+    const [session, setSession] = useState(null);
 
-    const handleLoginShow = () => setLogIn(true);
-    const handleLoginClose = () => setLogIn(false);
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            // @ts-ignore
+            setSession(session)
+        })
 
-    const handleSignUpShow = () => setSignUp(true);
-    const handleSignUpClose = () => setSignUp(false);
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        return () => subscription.unsubscribe()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[])
 
     // State for the card contents
     const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
@@ -90,24 +104,6 @@ const DashboardView: React.FC = () => {
                                 <NextUILink color="foreground" href="#">
                                     People
                                 </NextUILink>
-                            </NavbarItem>
-                        </NavbarContent>
-                        <NavbarContent justify="end">
-                            <NavbarItem className="hidden lg:flex">
-                                <>
-                                    <NextUIButton color="primary" href="#" variant="flat" onClick={handleLoginShow}>
-                                        Log In
-                                    </NextUIButton>
-                                    <ModalLogin show={showLogIn} onHide={handleLoginClose} />
-                                </>
-                            </NavbarItem>
-                            <NavbarItem>
-                                <>
-                                    <NextUIButton color="primary" variant="flat" onClick={handleSignUpShow}>
-                                        Sign Up
-                                    </NextUIButton>
-                                    <ModalSignUp show={showSignUp} onHide={handleSignUpClose} />
-                                </>
                             </NavbarItem>
                         </NavbarContent>
                     </Navbar>
