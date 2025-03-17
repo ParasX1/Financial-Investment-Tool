@@ -34,4 +34,21 @@
     margin-bottom: 8px;
     object-fit: contain;
   }
+
+  .socialRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+  }
   
+  .socialIcon {
+    width: 30px;
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .socialIcon:hover {
+    transform: scale(1.1);
+  }
