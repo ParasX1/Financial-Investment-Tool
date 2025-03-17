@@ -2,14 +2,21 @@
 import React from 'react'
 import styles from "../styles/footer.module.css";
 
+import FITLogo from '../assets/SidebarIcons/F.png';
+
 
 function Footer(){
     return(
         <div className={styles.main} >
             <div className={styles.column}>
                 <ul>
+                    {/* 2. Replace the "FIT" text with an <img> tag */}
                     <li>
-                        FIT
+                        <img 
+                            src={FITLogo.src} 
+                            alt="FIT Logo" 
+                            className={styles.fitLogo} 
+                        />
                     </li>
                     <li>
                         {/* X  */}
