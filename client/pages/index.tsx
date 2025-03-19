@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
-import Modal from "react-bootstrap/Modal";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import {
   Navbar,
-  NavbarBrand,
   NavbarContent,
   NavbarItem,
-  Link,
   Button,
   Spacer,
-  Card,
-  CardBody,
-  CardFooter,
 } from "@nextui-org/react";
 import Image from "next/image";
 import Typography from "@mui/material/Typography";
@@ -30,6 +24,7 @@ import { StaticImageData } from 'next/image';
 
 
 function Index() {
+
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
@@ -44,6 +39,37 @@ function Index() {
 
   const handleSignUpShow = () => setSignUp(true);
   const handleSignUpClose = () => setSignUp(false);
+  const router = useRouter();
+
+
+  const [session, setSession] = useState(null);
+
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            // @ts-ignore
+            setSession(session)
+        })
+
+        return () => subscription.unsubscribe()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[])
+
+    if (session) {
+        router.push("/dashboardView");
+    }
+
+
+
+
+
 
   // State for the card contents
       const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
@@ -77,9 +103,9 @@ function Index() {
       };
 
   return (
-    <div>
+        <div>
       <div style={{ display: "flex" }}>
-        <Sidebar />
+        {/*<Sidebar />*/}
         <div style={{ flex: 1, paddingLeft: "50px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
@@ -117,7 +143,8 @@ function Index() {
 
                   <ModalLogin
                     show={showLogIn}
-                    onHide={handleLoginClose}/>
+                    onHide={handleLoginClose}
+                    setLogin={setShowLogIn}/>
                 </>
               </NavbarItem>
               <NavbarItem>
@@ -128,7 +155,8 @@ function Index() {
 
                   <ModalSignUp
                     show={showSignUp}
-                    onHide={handleSignUpClose}/>
+                    onHide={handleSignUpClose}
+                    setSignUp={setSignUp}/>
                 </>
 
               </NavbarItem>
@@ -343,8 +371,6 @@ function Index() {
         </div>
       </div>
     </div>
-
-    
   );
 }
 
