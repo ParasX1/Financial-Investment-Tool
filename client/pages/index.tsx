@@ -17,6 +17,7 @@ import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
+import OHLCChart from "@/components/ohlc";
 import TextGrid from "@/components/TextGrid";
 import supabase from "@/components/supabase";
 import Link from 'next/link';
@@ -156,7 +157,12 @@ function Index() {
           <div className="two-rows">
             <p>Descriptions add later</p>
           </div>
-
+          
+          <OHLCChart data={[
+      { date: '2024-03-01', open: 120, high: 130, low: 115, close: 125 },
+      { date: '2024-03-02', open: 125, high: 135, low: 123, close: 128 },
+      { date: '2024-03-03', open: 128, high: 140, low: 126, close: 136 },
+    ]}/>
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
             <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
 
