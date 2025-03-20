@@ -16,6 +16,12 @@ import Sidebar from "@/components/sidebar"; // Adjust the path to match where Si
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import TextGrid from "@/components/TextGrid";
+
+import supabase from "@/components/supabase";
+import Link from 'next/link';
+import { useRouter } from 'next/router'
+import DashboardView from "@/pages/dashboardView";
+
 import CardComponent from '@/components/CardComponent';
 import { Grid, Box } from '@mui/material';
 import img1 from '@/assets/gridBackground1.png';
