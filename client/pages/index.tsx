@@ -105,7 +105,8 @@ function Index() {
   return (
         <div>
       <div style={{ display: "flex" }}>
-        {/*<Sidebar />*/}
+        <Sidebar />
+
         <div style={{ flex: 1, paddingLeft: "50px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
