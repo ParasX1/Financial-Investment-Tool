@@ -11,6 +11,7 @@ import Image from "next/image";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
+import Footer from "@/components/Footer";
 import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
@@ -377,6 +378,8 @@ function Index() {
           </div>
         </div>
       </div>
+
+    <Footer ></Footer>
     </div>
   );
 }
