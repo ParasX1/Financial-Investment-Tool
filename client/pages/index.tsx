@@ -15,15 +15,13 @@ import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
-import TextGrid from "@/components/TextGrid";
-
-import supabase from "@/components/supabase";
 import Link from 'next/link';
 import { useRouter } from 'next/router'
 import DashboardView from "@/pages/dashboardView";
-
-import CardComponent from '@/components/CardComponent';
+import supabase from "@/components/supabase";
+import TextGrid from "@/components/TextGrid";
 import { Grid, Box } from '@mui/material';
+
 import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
@@ -70,44 +68,9 @@ function Index() {
 
     if (session) {
         router.push("/dashboardView");
+        return null;
     }
-
-
-
-
-
-
-  // State for the card contents
-      const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
-          [null, null, null, null, null, null]
-      );
-  
-      // Functions to handle card actions
-      const handleLoadImage = (index: number) => {
-          const newContents = [...cardContents];
-          if (index <= 2) {
-              newContents[index] = teamImage;
-          } else {
-              newContents[index] = img1;
-          }
-          setCardContents(newContents);
-      };
-  
-      const handleClear = (index: number) => {
-          const newContents = [...cardContents];
-          newContents[index] = null;
-          setCardContents(newContents);
-      };
-  
-      const handleSwap = (index: number) => {
-          if (index === 0) return; // No need to swap with self
-          const newContents = [...cardContents];
-          const temp = newContents[0];
-          newContents[0] = newContents[index];
-          newContents[index] = temp;
-          setCardContents(newContents);
-      };
-
+    
   return (
         <div>
       <div style={{ display: "flex" }}>
@@ -163,6 +126,7 @@ function Index() {
               </NavbarItem>
             </NavbarContent>
           </Navbar>
+
           <div className="two-column">
             <div className="left-column">
               <h1 className="title-text">FIT</h1>
@@ -187,53 +151,9 @@ function Index() {
             <p>Descriptions add later</p>
           </div>
 
-          {/* Main content area */}
-          <div id="dashboard" style={{ padding: '20px' }}>
-              <Grid container spacing={2}>
-                  {/* Card 1 */}
-                  <Grid item xs={12} md={8}>
-                      <CardComponent
-                          index={0}
-                          content={cardContents[0]}
-                          onLoadImage={handleLoadImage}
-                          onClear={handleClear}
-                          onSwap={handleSwap}
-                          height={816} // Adjusted height
-                      />
-                  </Grid>
-                  {/* Cards 2 and 3 */}
-                  <Grid item xs={12} md={4}>
-                      <Grid container direction="column" spacing={2}>
-                          {[1, 2].map((index) => (
-                              <Grid item key={index}>
-                                  <CardComponent
-                                      index={index}
-                                      content={cardContents[index]}
-                                      onLoadImage={handleLoadImage}
-                                      onClear={handleClear}
-                                      onSwap={handleSwap}
-                                  />
-                              </Grid>
-                          ))}
-                      </Grid>
-                  </Grid>
-                  {/* Cards 4, 5, and 6 */}
-                  <Grid item xs={12}>
-                      <Grid container spacing={2}>
-                          {[3, 4, 5].map((index) => (
-                              <Grid item xs={12} sm={4} key={index}>
-                                  <CardComponent
-                                      index={index}
-                                      content={cardContents[index]}
-                                      onLoadImage={handleLoadImage}
-                                      onClear={handleClear}
-                                      onSwap={handleSwap}
-                                  />
-                              </Grid>
-                          ))}
-                      </Grid>
-                  </Grid>
-              </Grid>
+          {/* Embed DashboardView to display the dashboard charts */}
+          <div id="dashboard" style={{ padding: "20px" }}>
+          <DashboardView hideNavbar={true} />
           </div>
 
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}

@@ -38,7 +38,12 @@ export interface ChartState {
     image?: StaticImageData | null;
 }
 
-const DashboardView: React.FC = () => {
+// Accept a prop to optionally hide the Navbar.
+interface DashboardViewProps {
+    hideNavbar?: boolean;
+}
+
+const DashboardView: React.FC<DashboardViewProps> = ({ hideNavbar = false }) => {
     // Signup-Login Modal states and handlers
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setLogIn] = useState(false);
@@ -107,34 +112,36 @@ const DashboardView: React.FC = () => {
             <div style={{ display: 'flex' }}>
                 <Sidebar />
                 <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
-                    {/* Navbar at the top */}
-                    <Navbar maxWidth={'full'}>
-                        <NavbarContent className="hidden sm:flex gap-4" justify="start">
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    About Us
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink href="search" color="foreground">
-                                    Services
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    Tools
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    People
-                                </NextUILink>
-                            </NavbarItem>
-                        </NavbarContent>
-                    </Navbar>
+                    {/* Conditionally render Navbar only if hideNavbar is false */}
+                    {!hideNavbar && (
+                        <Navbar maxWidth={'full'}>
+                            <NavbarContent className="hidden sm:flex gap-4" justify="start">
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        About Us
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink href="search" color="foreground">
+                                        Services
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        Tools
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        People
+                                    </NextUILink>
+                                </NavbarItem>
+                            </NavbarContent>
+                        </Navbar>
+                    )}
 
                     {/* Main content area */}
                     <div style={{ padding: '20px' }}>
