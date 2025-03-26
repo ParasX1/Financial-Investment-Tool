@@ -6,7 +6,7 @@ import { Box, Button } from '@mui/material';
 
 interface CardComponentProps {
     index: number;
-    content: StaticImageData | null;
+    content: StaticImageData | React.ReactNode | null;
     onLoadImage: (index: number) => void;
     onClear: (index: number) => void;
     onSwap: (index: number) => void;
@@ -53,14 +53,18 @@ const CardComponent: React.FC<CardComponentProps> = ({
                 zIndex: isFullscreen ? 1000 : 'unset',
             }}
         >
-            {content ? (
-                <Image
-                    src={content}
-                    alt={`Card ${index + 1}`}
-                    layout="fill"
-                    objectFit="cover"
-                />
-            ) : (
+      {content ? (
+        typeof content === 'object' && 'src' in content ? (
+          <Image
+            src={content as StaticImageData}
+            alt={`Card ${index + 1}`}
+            layout="fill"
+            objectFit="cover"
+          />
+        ) : (
+          <>{content}</>
+        )
+      ) : (
                 <Button
                     variant="contained"
                     onClick={() => onLoadImage(index)}
