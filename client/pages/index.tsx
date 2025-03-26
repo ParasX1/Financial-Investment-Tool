@@ -8,8 +8,6 @@ import {
   Spacer,
 } from "@nextui-org/react";
 import Image from "next/image";
-import Grid from "@mui/material/Grid";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
@@ -19,11 +17,17 @@ import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import OHLCChart from "@/components/ohlc";
 import TextGrid from "@/components/TextGrid";
+
 import supabase from "@/components/supabase";
 import Link from 'next/link';
 import { useRouter } from 'next/router'
 import DashboardView from "@/pages/dashboardView";
 
+import CardComponent from '@/components/CardComponent';
+import { Grid, Box } from '@mui/material';
+import img1 from '@/assets/gridBackground1.png';
+import teamImage from '@/assets/team.png';
+import { StaticImageData } from 'next/image';
 
 
 function Index() {
@@ -74,35 +78,61 @@ function Index() {
 
 
 
+  // State for the card contents
+      const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
+          [null, null, null, null, null, null]
+      );
+  
+      // Functions to handle card actions
+      const handleLoadImage = (index: number) => {
+          const newContents = [...cardContents];
+          if (index <= 2) {
+              newContents[index] = teamImage;
+          } else {
+              newContents[index] = img1;
+          }
+          setCardContents(newContents);
+      };
+  
+      const handleClear = (index: number) => {
+          const newContents = [...cardContents];
+          newContents[index] = null;
+          setCardContents(newContents);
+      };
+  
+      const handleSwap = (index: number) => {
+          if (index === 0) return; // No need to swap with self
+          const newContents = [...cardContents];
+          const temp = newContents[0];
+          newContents[0] = newContents[index];
+          newContents[index] = temp;
+          setCardContents(newContents);
+      };
+
   return (
         <div>
       <div style={{ display: "flex" }}>
-        {/*<Sidebar />*/}
+        <Sidebar />
+
         <div style={{ flex: 1, paddingLeft: "50px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
             <NavbarContent className="hidden sm:flex gap-4" justify="start">
-              <NavbarItem>
-                <Link color="foreground" href="#">
-                  About Us
+            <NavbarItem>
+                <Link color="foreground" href="#dashboard">
+                  Dashboard
                 </Link>
               </NavbarItem>
               <Spacer x={6} />
               <NavbarItem>
-                <Link href="search" color="foreground">
-                  Services
-                </Link>
-              </NavbarItem>
-              <Spacer x={6} />
-              <NavbarItem>
-                <Link color="foreground" href="#">
+                <Link color="foreground" href="#tools">
                   Tools
                 </Link>
               </NavbarItem>
               <Spacer x={6} />
               <NavbarItem>
-                <Link color="foreground" href="#">
-                  People
+                <Link color="foreground" href="#about">
+                  About Us
                 </Link>
               </NavbarItem>
             </NavbarContent>
@@ -157,12 +187,55 @@ function Index() {
           <div className="two-rows">
             <p>Descriptions add later</p>
           </div>
-          
-          <OHLCChart data={[
-      { date: '2024-03-01', open: 120, high: 130, low: 115, close: 125 },
-      { date: '2024-03-02', open: 125, high: 135, low: 123, close: 128 },
-      { date: '2024-03-03', open: 128, high: 140, low: 126, close: 136 },
-    ]}/>
+          {/* Main content area */}
+          <div id="dashboard" style={{ padding: '20px' }}>
+              <Grid container spacing={2}>
+                  {/* Card 1 */}
+                  <Grid item xs={12} md={8}>
+                      <CardComponent
+                          index={0}
+                          content={cardContents[0]}
+                          onLoadImage={handleLoadImage}
+                          onClear={handleClear}
+                          onSwap={handleSwap}
+                          height={816} // Adjusted height
+                      />
+                  </Grid>
+                  {/* Cards 2 and 3 */}
+                  <Grid item xs={12} md={4}>
+                      <Grid container direction="column" spacing={2}>
+                          {[1, 2].map((index) => (
+                              <Grid item key={index}>
+                                  <CardComponent
+                                      index={index}
+                                      content={cardContents[index]}
+                                      onLoadImage={handleLoadImage}
+                                      onClear={handleClear}
+                                      onSwap={handleSwap}
+                                  />
+                              </Grid>
+                          ))}
+                      </Grid>
+                  </Grid>
+                  {/* Cards 4, 5, and 6 */}
+                  <Grid item xs={12}>
+                      <Grid container spacing={2}>
+                          {[3, 4, 5].map((index) => (
+                              <Grid item xs={12} sm={4} key={index}>
+                                  <CardComponent
+                                      index={index}
+                                      content={cardContents[index]}
+                                      onLoadImage={handleLoadImage}
+                                      onClear={handleClear}
+                                      onSwap={handleSwap}
+                                  />
+                              </Grid>
+                          ))}
+                      </Grid>
+                  </Grid>
+              </Grid>
+          </div>
+
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
             <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
 
@@ -170,7 +243,7 @@ function Index() {
                 <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={6}>
-                            <Typography variant="h3" sx={{ fontWeight: "bold", color: "white" }}>
+                            <Typography variant="h3" id="tools" sx={{ fontWeight: "bold", color: "white" }}>
                                 Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
                             </Typography>
                             <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
@@ -242,7 +315,7 @@ function Index() {
                 </Box>
 
                 {/* HEADER ABOVE THE GRID */}
-                <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
+                <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0}}>
                     <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
                         Analysis made easy
                     </Typography>
@@ -273,7 +346,7 @@ function Index() {
           <div>
             <div className="about-us-wrapper">
               <div className="about-us-container">
-                <h1 className="about-us-heading">About Us</h1>
+                <h1 className="about-us-heading" id="about">About Us</h1>
                 <div className="about-us-flex-container">
 
                   <Image src={team} alt="Team Picture" width="700" />
