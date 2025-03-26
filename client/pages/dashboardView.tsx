@@ -20,7 +20,30 @@ import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
 
-const DashboardView: React.FC = () => {
+// Define the chart state for each card.
+export type ChartType =
+    | 'BetaAnalysis'
+    | 'AlphaComparison'
+    | 'MaxDrawdownAnalysis'
+    | 'CumulativeReturnComparison'
+    | 'SortinoRatioVisualization'
+    | 'MarketCorrelationAnalysis'
+    | 'SharpeRatioMatrix'
+    | 'ValueAtRiskAnalysis'
+    | 'EfficientFrontierVisualization'
+    | null;
+
+export interface ChartState {
+    chartType: ChartType;
+    image?: StaticImageData | null;
+}
+
+// Accept a prop to optionally hide the Navbar.
+interface DashboardViewProps {
+    hideNavbar?: boolean;
+}
+
+const DashboardView: React.FC<DashboardViewProps> = ({ hideNavbar = false }) => {
     // Signup-Login Modal states and handlers
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setLogIn] = useState(false);
@@ -43,25 +66,35 @@ const DashboardView: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
-    // State for the card contents
-    const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
-        [null, null, null, null, null, null]
-    );
+    // Initialize card contents as an array of ChartState objects
+    const [cardContents, setCardContents] = useState<Array<ChartState>>([
+        { chartType: null, image: null },
+        { chartType: null, image: null },
+        { chartType: null, image: null },
+        { chartType: null, image: null },
+        { chartType: null, image: null },
+        { chartType: null, image: null },
+    ]);
+
+    // Function to update a card's chart type based on user selection
+    const handleSelectChartType = (index: number, selectedType: ChartType) => {
+        const newContents = [...cardContents];
+        newContents[index] = { ...newContents[index], chartType: selectedType };
+        setCardContents(newContents);
+    };
+  
 
     // Functions to handle card actions
     const handleLoadImage = (index: number) => {
         const newContents = [...cardContents];
-        if (index <= 2) {
-            newContents[index] = teamImage;
-        } else {
-            newContents[index] = img1;
-        }
+        newContents[index].image = index <= 2 ? teamImage : img1;
         setCardContents(newContents);
     };
 
     const handleClear = (index: number) => {
         const newContents = [...cardContents];
-        newContents[index] = null;
+        newContents[index].image = null;
+        newContents[index].chartType = null;
         setCardContents(newContents);
     };
 
@@ -79,87 +112,92 @@ const DashboardView: React.FC = () => {
             <div style={{ display: 'flex' }}>
                 <Sidebar />
                 <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
-                    {/* Navbar at the top */}
-                    <Navbar maxWidth={'full'}>
-                        <NavbarContent className="hidden sm:flex gap-4" justify="start">
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    About Us
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink href="search" color="foreground">
-                                    Services
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    Tools
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    People
-                                </NextUILink>
-                            </NavbarItem>
-                        </NavbarContent>
-                    </Navbar>
+                    {/* Conditionally render Navbar only if hideNavbar is false */}
+                    {!hideNavbar && (
+                        <Navbar maxWidth={'full'}>
+                            <NavbarContent className="hidden sm:flex gap-4" justify="start">
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        About Us
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink href="search" color="foreground">
+                                        Services
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        Tools
+                                    </NextUILink>
+                                </NavbarItem>
+                                <Spacer x={6} />
+                                <NavbarItem>
+                                    <NextUILink color="foreground" href="#">
+                                        People
+                                    </NextUILink>
+                                </NavbarItem>
+                            </NavbarContent>
+                        </Navbar>
+                    )}
 
                     {/* Main content area */}
                     <div style={{ padding: '20px' }}>
                         <Grid container spacing={2}>
-                            {/* Card 1 */}
-                            <Grid item xs={12} md={8}>
+                        {/* Card 1 */}
+                        <Grid item xs={12} md={8}>
+                            <CardComponent
+                            index={0}
+                            content={cardContents[0]}
+                            onSelectChartType={handleSelectChartType}
+                            onLoadImage={handleLoadImage}
+                            onClear={handleClear}
+                            onSwap={handleSwap}
+                            height={816} // Adjusted height
+                            />
+                        </Grid>
+                        {/* Cards 2 and 3 */}
+                        <Grid item xs={12} md={4}>
+                            <Grid container direction="column" spacing={2}>
+                            {[1, 2].map((index) => (
+                                <Grid item key={index}>
                                 <CardComponent
-                                    index={0}
-                                    content={cardContents[0]}
+                                    index={index}
+                                    content={cardContents[index]}
+                                    onSelectChartType={handleSelectChartType}
                                     onLoadImage={handleLoadImage}
                                     onClear={handleClear}
                                     onSwap={handleSwap}
-                                    height={816} // Adjusted height
                                 />
-                            </Grid>
-                            {/* Cards 2 and 3 */}
-                            <Grid item xs={12} md={4}>
-                                <Grid container direction="column" spacing={2}>
-                                    {[1, 2].map((index) => (
-                                        <Grid item key={index}>
-                                            <CardComponent
-                                                index={index}
-                                                content={cardContents[index]}
-                                                onLoadImage={handleLoadImage}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                            />
-                                        </Grid>
-                                    ))}
                                 </Grid>
-                            </Grid>
-                            {/* Cards 4, 5, and 6 */}
-                            <Grid item xs={12}>
-                                <Grid container spacing={2}>
-                                    {[3, 4, 5].map((index) => (
-                                        <Grid item xs={12} sm={4} key={index}>
-                                            <CardComponent
-                                                index={index}
-                                                content={cardContents[index]}
-                                                onLoadImage={handleLoadImage}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                            ))}
                             </Grid>
                         </Grid>
-                    </div>
-                </Box>
-            </div>
-        </div>
-    );
+                        {/* Cards 4, 5, and 6 */}
+                        <Grid item xs={12}>
+                            <Grid container spacing={2}>
+                            {[3, 4, 5].map((index) => (
+                                <Grid item xs={12} sm={4} key={index}>
+                                <CardComponent
+                                    index={index}
+                                    content={cardContents[index]}
+                                    onSelectChartType={handleSelectChartType}
+                                    onLoadImage={handleLoadImage}
+                                    onClear={handleClear}
+                                    onSwap={handleSwap}
+                                />
+                                </Grid>
+                            ))}
+                </Grid>
+              </Grid>
+            </Grid>
+          </div>
+        </Box>
+      </div>
+    </div>
+  );
 };
 
 export default DashboardView;

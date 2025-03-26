@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Image, { StaticImageData } from 'next/image';
-import { Box, Button } from '@mui/material';
+import { Box, Button, IconButton, Menu, MenuItem } from '@mui/material';
+import { ChartState, ChartType } from '@/pages/dashboardView';
 
 interface CardComponentProps {
     index: number;
-    content: StaticImageData | null;
+    content: ChartState;
+    onSelectChartType: (index: number, selectedType: ChartType) => void;
     onLoadImage: (index: number) => void;
     onClear: (index: number) => void;
     onSwap: (index: number) => void;
@@ -17,17 +19,33 @@ const CardComponent: React.FC<CardComponentProps> = ({
                                                          index,
                                                          content,
                                                          onLoadImage,
+                                                         onSelectChartType,
                                                          onClear,
                                                          onSwap,
                                                          height,
                                                      }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
 
     const buttonBackgroundColor = '#777'; // Grey background color
     const buttonHoverColor = '#555'; // Darker grey on hover
 
     const handleFullscreenToggle = () => {
         setIsFullscreen(!isFullscreen);
+    };
+
+    const handlePlusClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+    
+    const handleCloseMenu = () => {
+        setAnchorEl(null);
+    };
+    
+    const handleMenuSelect = (chartValue: ChartType) => {
+        onSelectChartType(index, chartValue);
+        handleCloseMenu();
     };
 
     // Optional: Prevent background scrolling when in fullscreen mode
@@ -52,37 +70,54 @@ const CardComponent: React.FC<CardComponentProps> = ({
                 overflow: 'hidden',
                 zIndex: isFullscreen ? 1000 : 'unset',
             }}
-        >
-            {content ? (
-                <Image
-                    src={content}
-                    alt={`Card ${index + 1}`}
-                    layout="fill"
-                    objectFit="cover"
-                />
-            ) : (
-                <Button
-                    variant="contained"
-                    onClick={() => onLoadImage(index)}
-                    sx={{
+            >
+                {content.chartType ? (
+                    // Render placeholder for the selected chart type
+                    <Box
+                        sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        color: 'white',
+                        fontSize: '24px',
+                        }}
+                    >
+                        Placeholder for {content.chartType}
+                    </Box>
+                    ) : (
+                    // Render plus button that opens the dropdown menu
+                    <IconButton
+                        onClick={handlePlusClick}
+                        sx={{
                         position: 'absolute',
                         top: 'calc(50% - 20px)',
                         left: 'calc(50% - 20px)',
                         width: 40,
                         height: 40,
-                        borderRadius: '50%',
-                        minWidth: 'unset',
-                        backgroundColor: buttonBackgroundColor,
+                        backgroundColor: '#777',
                         color: 'white',
-                        fontSize: '24px',
                         '&:hover': {
-                            backgroundColor: buttonHoverColor,
+                            backgroundColor: '#555',
                         },
-                    }}
-                >
-                    +
-                </Button>
-            )}
+                        }}
+                    >
+                        +
+                    </IconButton>
+                )}
+        
+                {/* Dropdown Menu for chart type selection */}
+                <Menu anchorEl={anchorEl} open={open} onClose={handleCloseMenu}>
+                    <MenuItem onClick={() => handleMenuSelect('BetaAnalysis')}>BetaAnalysis</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('AlphaComparison')}>AlphaComparison</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('MaxDrawdownAnalysis')}>MaxDrawdownAnalysis</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('CumulativeReturnComparison')}>CumulativeReturnComparison</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('SortinoRatioVisualization')}>SortinoRatioVisualization</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('MarketCorrelationAnalysis')}>MarketCorrelationAnalysis</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('SharpeRatioMatrix')}>SharpeRatioMatrix</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('ValueAtRiskAnalysis')}>ValueAtRiskAnalysis(VaR)</MenuItem>
+                    <MenuItem onClick={() => handleMenuSelect('EfficientFrontierVisualization')}>EfficientFrontierVisualization</MenuItem>
+                </Menu>
 
             {/* Swap, Clear, and Fullscreen buttons */}
             <Box
