@@ -16,6 +16,12 @@ import Sidebar from "@/components/sidebar"; // Adjust the path to match where Si
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import TextGrid from "@/components/TextGrid";
+
+import supabase from "@/components/supabase";
+import Link from 'next/link';
+import { useRouter } from 'next/router'
+import DashboardView from "@/pages/dashboardView";
+
 import CardComponent from '@/components/CardComponent';
 import { Grid, Box } from '@mui/material';
 import img1 from '@/assets/gridBackground1.png';
@@ -105,32 +111,27 @@ function Index() {
   return (
         <div>
       <div style={{ display: "flex" }}>
-        {/*<Sidebar />*/}
+        <Sidebar />
+
         <div style={{ flex: 1, paddingLeft: "50px" }}>
           {/* Your existing content here */}
           <Navbar maxWidth={'full'}>
             <NavbarContent className="hidden sm:flex gap-4" justify="start">
             <NavbarItem>
-                <Link color="foreground" href="#">
-                  About Us
+                <Link color="foreground" href="#dashboard">
+                  Dashboard
                 </Link>
               </NavbarItem>
               <Spacer x={6} />
               <NavbarItem>
-                <Link href="search" color="foreground">
-                  Services
-                </Link>
-              </NavbarItem>
-              <Spacer x={6} />
-              <NavbarItem>
-                <Link color="foreground" href="#">
+                <Link color="foreground" href="#tools">
                   Tools
                 </Link>
               </NavbarItem>
               <Spacer x={6} />
               <NavbarItem>
-                <Link color="foreground" href="#">
-                  People
+                <Link color="foreground" href="#about">
+                  About Us
                 </Link>
               </NavbarItem>
             </NavbarContent>
@@ -187,7 +188,7 @@ function Index() {
           </div>
 
           {/* Main content area */}
-          <div style={{ padding: '20px' }}>
+          <div id="dashboard" style={{ padding: '20px' }}>
               <Grid container spacing={2}>
                   {/* Card 1 */}
                   <Grid item xs={12} md={8}>
@@ -242,7 +243,7 @@ function Index() {
                 <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={6}>
-                            <Typography variant="h3" sx={{ fontWeight: "bold", color: "white" }}>
+                            <Typography variant="h3" id="tools" sx={{ fontWeight: "bold", color: "white" }}>
                                 Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
                             </Typography>
                             <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
@@ -345,7 +346,7 @@ function Index() {
           <div>
             <div className="about-us-wrapper">
               <div className="about-us-container">
-                <h1 className="about-us-heading">About Us</h1>
+                <h1 className="about-us-heading" id="about">About Us</h1>
                 <div className="about-us-flex-container">
 
                   <Image src={team} alt="Team Picture" width="700" />
