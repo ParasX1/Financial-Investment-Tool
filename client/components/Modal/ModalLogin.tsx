@@ -1,10 +1,11 @@
-import React, {Component, useState} from 'react'
+//import React, {Component, useState} from 'react'
+import React, {useState} from 'react'
 import {Button} from "@nextui-org/react";
 import Modal from "react-bootstrap/Modal";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import supabase from "@/components/supabase";
 import {useRouter} from "next/router";
-
+import type { FormEvent } from 'react';
 
 
 // @ts-ignore
@@ -13,35 +14,65 @@ function ModalLogin({ show, onHide, setLogin }) {
     const [password, setPassword] = useState("");
     const router = useRouter();
 
-    const handleLogin = async (e) => {
-        if (email == "" || password == "") {
+//     const handleLogin = async (e) => {
+//         if (email == "" || password == "") {
+//             alert("Please fill in the fields!");
+//         } else {
+//             // Sign user in through supabase
+//             const { error } = await supabase.auth.signInWithPassword({
+//                 email: email,
+//                 password: password,
+//             });
+
+//             if (error) {
+//                 alert("Sign in Error! " + error.message);
+//             } else {
+//                 console.log("Email: " + email);
+//                 console.log("User Signed In successfully");
+//             }
+//         }
+//     }
+
+    const handleLogin = async (): Promise<boolean> => {
+        if (!email || !password) {
             alert("Please fill in the fields!");
-        } else {
-            // Sign user in through supabase
-            const { error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
-
-            if (error) {
-                alert("Sign in Error! " + error.message);
-            } else {
-                console.log("Email: " + email);
-                console.log("User Signed In successfully");
-
-            }
+            return false;
         }
-
-    }
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Sign in Error! " + error.message);
+            return false;
+        } else {
+            console.log("Email:", email);
+            console.log("User Signed In successfully");
+            return true;
+        }
+    };
 
     // @ts-ignore
-    const handleSubmit = (e) => {
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     handleLogin(e);
+    //     setLogin(true);
+    //     router.push("/dashboardView");
+    // }
+
+    // const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    // e.preventDefault();
+    // const success = await handleLogin();
+    // if (success) {
+    //     setLogin(true);
+    //     router.push("/dashboardView");
+    //     }
+    // };
+    
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        handleLogin(e);
+        handleLogin();
         setLogin(true);
         router.push("/dashboardView");
-    }
-
+      };
+      
     return(
         <Modal
             show ={show}
