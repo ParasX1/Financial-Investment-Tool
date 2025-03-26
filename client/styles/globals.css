@@ -3,4 +3,116 @@
 @tailwind utilities;
 
 @layer base {
+  body {
+    background-color: white;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  .two-column {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    background-color: white;
+  }
+  .two-rows {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    background-color: rgb(255, 255, 255);
+  }
+  
+  .left-column {
+    flex: 1;
+    padding: 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .right-column {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .right-column img {
+    width: 100%;
+    height: auto;
+    background-color: white;
+  }
+  .title-text {
+    font-weight: bold; 
+    font-size: 72px;
+  }
+  .button-container{
+    display: flex; 
+    align-items: center;
+  }
+  .about-us-wrapper {
+    background-color: white;
+    padding: 40px 0;
+  }
+  
+  .about-us-container {
+  background-color: white;
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin: 0 auto;
+  max-width: 1200px;
+  }
+  
+  .about-us-flex-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  }
+  
+  .about-us-heading {
+  font-size: 2.5rem;
+  text-align: left;
+  margin-left: 20px;
+  margin-bottom: 20px;
+  align-self: flex-start;
+  }
+  
+  .about-us-image {
+  max-width: 100%;
+  height: auto;
+  }
+  
+  .about-us-text {
+  flex: 1;
+  text-align: center;
+  }
+  
+  .about-us-text p {
+  line-height: 1.6;
+  }
+
+  /* Define a CSS class with hover effect */
+  li.hoverable {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    padding: 5px 0 5px 5px; /* Top 5px, Right 0px, Bottom 5px, Left 5px */
+    transition: background-color 0.3s ease; /* Optional: smooth transition */
+    cursor: pointer;
+  }
+
+  li.hoverable:hover {
+    background-color: gray; /* Change background color on hover */
+  }
+
 }

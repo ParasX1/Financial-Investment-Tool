@@ -39,3 +39,35 @@ Then use python to run the backend
 python3 server.py
 ```
 
+## Testing
+
+### Mocking the supabase instance
+The supabase instance needs to be run locally to run the API tests. This prevents us from 
+going over our usage limits for basically no reason.
+
+Install the supabase CLI [as per the docs.](https://supabase.com/docs/guides/cli/getting-started?queryGroups=platform&platform=linux). 
+
+Install [Docker Desktop](https://docs.docker.com/desktop/)
+
+From the project root run
+
+```
+supabase start
+```
+On first run, this installs all the dependencies (which takes some time).
+
+Pull from the remote database with 
+
+```
+superbase db pull
+```
+
+The database password is in the discord.
+
+### Testing the backend API
+The tests rely on the local superbase database, currently there is no automated way of inserting test data into the
+database. This needs to be done by hand.
+
+Additionally, there is no configuration for running the local database on the CI, tests come with the boolean `RUNNING_CI`
+to determine whether to skip tests that rely on the local database. At this stage, it is more effort than its worth to
+run the supabase instance as a task and we will opt for local testing instead.
