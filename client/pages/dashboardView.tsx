@@ -19,59 +19,52 @@ import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
+import OHLCChart from '@/components/ohlc';
+import { Select, SelectItem } from "@nextui-org/react";
+import StockChartCard from '@/components/StockCardComponent';
+
 
 const DashboardView: React.FC = () => {
-    // Signup-Login Modal states and handlers
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setLogIn] = useState(false);
     const [session, setSession] = useState(null);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            // @ts-ignore
-            setSession(session)
-        })
+            setSession(session as any);
+        });
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            // @ts-ignore
-            setSession(session)
-        })
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session as any);
+        });
 
-        return () => subscription.unsubscribe()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[])
+        return () => subscription.unsubscribe();
+    }, []);
 
-    // State for the card contents
-    const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
-        [null, null, null, null, null, null]
-    );
+    // Instead of image content, now we use stock selection
+    const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>([
+        null, null, null, null, null, null,
+    ]);
 
-    // Functions to handle card actions
-    const handleLoadImage = (index: number) => {
-        const newContents = [...cardContents];
-        if (index <= 2) {
-            newContents[index] = teamImage;
-        } else {
-            newContents[index] = img1;
-        }
-        setCardContents(newContents);
+    const handleSelectStock = (index: number, stock: string) => {
+        const newStocks = [...selectedStocks];
+        newStocks[index] = stock;
+        setSelectedStocks(newStocks);
     };
 
     const handleClear = (index: number) => {
-        const newContents = [...cardContents];
-        newContents[index] = null;
-        setCardContents(newContents);
+        const newStocks = [...selectedStocks];
+        newStocks[index] = null;
+        setSelectedStocks(newStocks);
     };
 
     const handleSwap = (index: number) => {
-        if (index === 0) return; // No need to swap with self
-        const newContents = [...cardContents];
-        const temp = newContents[0];
-        newContents[0] = newContents[index];
-        newContents[index] = temp;
-        setCardContents(newContents);
+        if (index === 0) return;
+        const newStocks = [...selectedStocks];
+        const temp = newStocks[0];
+        newStocks[0] = newStocks[index];
+        newStocks[index] = temp;
+        setSelectedStocks(newStocks);
     };
 
     return (
@@ -79,7 +72,6 @@ const DashboardView: React.FC = () => {
             <div style={{ display: 'flex' }}>
                 <Sidebar />
                 <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
-                    {/* Navbar at the top */}
                     <Navbar maxWidth={'full'}>
                         <NavbarContent className="hidden sm:flex gap-4" justify="start">
                             <NavbarItem>
@@ -108,29 +100,29 @@ const DashboardView: React.FC = () => {
                         </NavbarContent>
                     </Navbar>
 
-                    {/* Main content area */}
                     <div style={{ padding: '20px' }}>
                         <Grid container spacing={2}>
-                            {/* Card 1 */}
+                            {/* Main Large Card */}
                             <Grid item xs={12} md={8}>
-                                <CardComponent
+                                <StockChartCard
                                     index={0}
-                                    content={cardContents[0]}
-                                    onLoadImage={handleLoadImage}
+                                    selectedStock={selectedStocks[0]}
+                                    onSelectStock={handleSelectStock}
                                     onClear={handleClear}
                                     onSwap={handleSwap}
-                                    height={816} // Adjusted height
+                                    height={816}
                                 />
                             </Grid>
-                            {/* Cards 2 and 3 */}
+
+                            {/* Vertical Stack of Cards */}
                             <Grid item xs={12} md={4}>
                                 <Grid container direction="column" spacing={2}>
                                     {[1, 2].map((index) => (
                                         <Grid item key={index}>
-                                            <CardComponent
+                                            <StockChartCard
                                                 index={index}
-                                                content={cardContents[index]}
-                                                onLoadImage={handleLoadImage}
+                                                selectedStock={selectedStocks[index]}
+                                                onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                             />
@@ -138,15 +130,16 @@ const DashboardView: React.FC = () => {
                                     ))}
                                 </Grid>
                             </Grid>
-                            {/* Cards 4, 5, and 6 */}
+
+                            {/* Bottom Row of Cards */}
                             <Grid item xs={12}>
                                 <Grid container spacing={2}>
                                     {[3, 4, 5].map((index) => (
                                         <Grid item xs={12} sm={4} key={index}>
-                                            <CardComponent
+                                            <StockChartCard
                                                 index={index}
-                                                content={cardContents[index]}
-                                                onLoadImage={handleLoadImage}
+                                                selectedStock={selectedStocks[index]}
+                                                onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                             />
