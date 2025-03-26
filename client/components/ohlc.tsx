@@ -29,7 +29,6 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
     const graphWidth = width - margin.left - margin.right;
     const graphHeight = height - margin.top - margin.bottom;
 
-    const parseDate = d3.timeParse("%Y-%m-%d");
     const xScale = d3.scaleBand()
       .domain(data.map(d => d.date))
       .range([0, graphWidth])
@@ -50,7 +49,18 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // OHLC lines
+    // Create tooltip div and style it
+    const tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "#f4f4f4")
+      .style("padding", "5px")
+      .style("border", "1px solid #d4d4d4")
+      .style("border-radius", "5px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+
+    // Draw OHLC vertical line
     g.selectAll(".ohlc")
       .data(data)
       .enter()
@@ -62,7 +72,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .attr("y1", d => yScale(d.low))
       .attr("y2", d => yScale(d.high));
 
-    // open tick
+    // Draw open tick
     g.selectAll(".open")
       .data(data)
       .enter()
@@ -73,7 +83,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .attr("y1", d => yScale(d.open))
       .attr("y2", d => yScale(d.open));
 
-    // close tick
+    // Draw close tick
     g.selectAll(".close")
       .data(data)
       .enter()
@@ -84,12 +94,54 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .attr("y1", d => yScale(d.close))
       .attr("y2", d => yScale(d.close));
 
+    // Append x-axis
     g.append('g')
       .attr('transform', `translate(0,${graphHeight})`)
       .call(d3.axisBottom(xScale));
 
+    // Append y-axis
     g.append('g')
       .call(d3.axisLeft(yScale));
+
+    // Add invisible rects for hover interaction
+    g.selectAll(".hover-rect")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("class", "hover-rect")
+      .attr("x", d => xScale(d.date)!)
+      .attr("width", xScale.bandwidth())
+      .attr("y", 0)
+      .attr("height", graphHeight)
+      .style("fill", "transparent")
+      .on("mouseover", function(event, d) {
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", 0.9);
+        tooltip.html(
+          `<strong>Date:</strong> ${d.date}<br/>
+           <strong>Open:</strong> ${d.open}<br/>
+           <strong>High:</strong> ${d.high}<br/>
+           <strong>Low:</strong> ${d.low}<br/>
+           <strong>Close:</strong> ${d.close}`
+        )
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mousemove", function(event) {
+        tooltip.style("left", (event.pageX + 10) + "px")
+               .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mouseout", function() {
+        tooltip.transition()
+          .duration(500)
+          .style("opacity", 0);
+      });
+
+    // Cleanup tooltip on component unmount or before next update
+    return () => {
+      tooltip.remove();
+    };
 
   }, [data, width, height, barColor]);
 
