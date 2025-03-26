@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import {
-  Navbar,
   NavbarContent,
   NavbarItem,
   Button,
@@ -12,11 +11,11 @@ import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import BarGraph from "@/components/bargraph";
-import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
+import Sidebar from "@/components/Sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
 import TextGrid from "@/components/TextGrid";
-
+import { Navbar } from "@/components/navbar";
 import supabase from "@/components/supabase";
 import Link from 'next/link';
 import { useRouter } from 'next/router'
@@ -114,61 +113,12 @@ function Index() {
         <Sidebar />
 
         <div style={{ flex: 1, paddingLeft: "50px" }}>
-          {/* Your existing content here */}
-          <Navbar maxWidth={'full'}>
-            <NavbarContent className="hidden sm:flex gap-4" justify="start">
-            <NavbarItem>
-                <Link color="foreground" href="#">
-                  About Us
-                </Link>
-              </NavbarItem>
-              <Spacer x={6} />
-              <NavbarItem>
-                <Link href="search" color="foreground">
-                  Services
-                </Link>
-              </NavbarItem>
-              <Spacer x={6} />
-              <NavbarItem>
-                <Link color="foreground" href="#">
-                  Tools
-                </Link>
-              </NavbarItem>
-              <Spacer x={6} />
-              <NavbarItem>
-                <Link color="foreground" href="#">
-                  People
-                </Link>
-              </NavbarItem>
-            </NavbarContent>
-            <NavbarContent justify="end">
-              <NavbarItem className="hidden lg:flex">
-                <>
-                  <Button color="primary" href="#" variant="flat" onClick={handleLoginShow}>
-                    Log In
-                  </Button>
+        <Navbar children={[
+            {label: "Dashboard", href: "#dashboard"},
+            {label: "Tools", href: "#tools"},
+            {label: "About Us", href: "#about"},
+          ]} />
 
-                  <ModalLogin
-                    show={showLogIn}
-                    onHide={handleLoginClose}
-                    setLogin={setShowLogIn}/>
-                </>
-              </NavbarItem>
-              <NavbarItem>
-                <>
-                <Button color="primary" variant="flat" onClick={handleSignUpShow}>
-                  Sign Up
-                </Button>
-
-                  <ModalSignUp
-                    show={showSignUp}
-                    onHide={handleSignUpClose}
-                    setSignUp={setSignUp}/>
-                </>
-
-              </NavbarItem>
-            </NavbarContent>
-          </Navbar>
           <div className="two-column">
             <div className="left-column">
               <h1 className="title-text">FIT</h1>
@@ -194,7 +144,7 @@ function Index() {
           </div>
 
           {/* Main content area */}
-          <div style={{ padding: '20px' }}>
+          <div id="dashboard" style={{ padding: '20px' }}>
               <Grid container spacing={2}>
                   {/* Card 1 */}
                   <Grid item xs={12} md={8}>
@@ -243,7 +193,7 @@ function Index() {
           </div>
 
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
-            <Box sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
+            <Box id="tools" sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
 
                 {/* HEADER AND IMPORTANT POINTS */}
                 <Box sx={{ padding: 2, paddingLeft: "30px", marginBottom: 3 }}>
@@ -352,7 +302,7 @@ function Index() {
           <div>
             <div className="about-us-wrapper">
               <div className="about-us-container">
-                <h1 className="about-us-heading">About Us</h1>
+                <h1 id="about" className="about-us-heading">About Us</h1>
                 <div className="about-us-flex-container">
 
                   <Image src={team} alt="Team Picture" width="700" />
