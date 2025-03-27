@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import OHLCChart from './ohlc';
+import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 
 type OHLCData = {
     date: string;
@@ -137,8 +138,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const handleChange = (event: SelectChangeEvent<string>) => {
     onSelectStock(index, event.target.value);
   };
-
+  const [showSettings, setShowSettings] = useState(false);
   // Measure the container size
+  const handleApplySettings = (settings: GraphSettings) => {
+    // Process settings as needed (e.g., update chart type, stock, and color)
+    console.log('New graph settings:', settings);
+  };
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -221,7 +226,22 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
           {isFullscreen ? '⤡' : '⤢'}
         </Button>
+        <Button
+        variant="contained"
+        size="small"
+        onClick={() => setShowSettings(true)}
+      >
+        +
+      </Button>
+
+      {/* Render the settings modal */}
+      <GraphSettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        onApply={handleApplySettings}
+      />
       </Box>
+      
     </Box>
   );
 };
