@@ -136,6 +136,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const [dimensions, setDimensions] = useState({ width: 500, height });
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate]   = useState(defaultEnd);
+  // TODO: When user changes startDate/endDate in this card,
+  // pass them to the fetchMetrics backend or update the chart data.
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -149,6 +151,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const handleApplySettings = (settings: GraphSettings) => {
     // Process settings as needed (e.g., update chart type, stock, and color)
     console.log('New graph settings:', settings);
+    // TODO: settings.metricParams.startDate/endDate,
+    //       settings.stockColour, settings.metricType
+    //       together pass to fetchMetrics(settings) and get new data graph
   };
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
@@ -193,6 +198,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           data={stockDataMap[selectedStock]}
           width={dimensions.width - 32} // subtract padding
           height={dimensions.height - 90} // subtract padding + dropdown height
+          // TODO: pass settings.stockColour instead of "#fc03d7"
+          // TODO: If metrics is not OHLC, call different chart components based on settings.metricType
           barColor="#fc03d7"
         />
       )}

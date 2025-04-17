@@ -13,7 +13,7 @@ import {
   Box
 } from '@mui/material';
 
-// Define metric types
+// Optional metric types
 export type MetricType =
   | 'BetaAnalysis'
   | 'AlphaComparison'
@@ -47,6 +47,7 @@ const defaultStart = new Date();
 const isoDateOnly = (d: Date) => d.toISOString().slice(0, 10);
 
 const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, onApply }) => {
+    // ————— Menu status —————
     const [metricType, setMetricType] = useState<MetricType>('BetaAnalysis');
     const [startDate, setStartDate] = useState<string>(isoDateOnly(defaultStart));
     const [endDate, setEndDate] = useState<string>(isoDateOnly(defaultStart));
@@ -54,7 +55,8 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
     const [riskFreeRate, setRiskFreeRate] = useState<number>(0.01);
     const [confidenceLevel, setConfidenceLevel] = useState<number>(0.05);
     const [stockColour, setStockColour] = useState<string>('#fc03d7');
-  
+
+    // After user clicks, collect parameters and callback
     const handleApply = () => {
       const params: GraphSettings['metricParams'] = { startDate, endDate };
       if (metricType === 'BetaAnalysis' || metricType === 'MarketCorrelationAnalysis') {
@@ -66,7 +68,8 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
       if (metricType === 'ValueAtRiskAnalysis') {
         params.confidenceLevel = confidenceLevel;
       }
-  
+
+      // Pass all Settings to the parent component
       onApply({ metricType, metricParams: params, stockColour});
       onClose();
     };

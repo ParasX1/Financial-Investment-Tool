@@ -70,6 +70,7 @@ const DashboardView: React.FC = () => {
     const [searchTags, setSearchTags] = useState<string[]>([]);
     const stockOptions = Object.keys(stockDataMap);
 
+    // global time range to initialize and pass to each card
     const [globalStart, setGlobalStart] = useState<string>(() => {
         // initialize to “now” in local ISO format YYYY‑MM‑DDThh:mm
         const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -121,7 +122,7 @@ const DashboardView: React.FC = () => {
                             alignItems: 'center',
                         }}
                     >
-                        {/* Stock Tag Section */}
+                        {/* Stock label input: Multiple select, free input */}
                         <Autocomplete
                             multiple
                             freeSolo
@@ -197,7 +198,7 @@ const DashboardView: React.FC = () => {
                         />
 
                         {/* Global Time Selection */}
-                        {/* ToDo: need link ime selection to graph */}
+                        {/* ToDo: Pass globalStart/globalEnd to each StockChartCard to initialize its own time range */}
                         <Tooltip title="Start" arrow>
                             <TextField
                                 type="datetime-local"
@@ -247,6 +248,7 @@ const DashboardView: React.FC = () => {
                                     onClear={handleClear}
                                     onSwap={handleSwap}
                                     height={816}
+                                    // TODO: As each card initial start/endDate
                                     defaultStart={globalStart}
                                     defaultEnd={globalEnd}
                                 />
