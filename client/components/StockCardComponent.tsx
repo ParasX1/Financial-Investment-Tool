@@ -181,22 +181,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         zIndex: isFullscreen ? 1000 : 'unset',
       }}
     >
-      <Select
-        fullWidth
-        value={selectedStock || ''}
-        displayEmpty
-        onChange={handleChange}
-        sx={{ mb: 2, backgroundColor: '#222', color: 'white' }}
-      >
-        <MenuItem value="" disabled>
-          Select a stock
-        </MenuItem>
-        {Object.keys(stockDataMap).map((symbol) => (
-          <MenuItem key={symbol} value={symbol}>
-            {symbol}
-          </MenuItem>
-        ))}
-      </Select>
 
       {selectedStock && (
         <OHLCChart
@@ -247,3 +231,5 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 };
 
 export default StockChartCard;
+export { stockDataMap };
+

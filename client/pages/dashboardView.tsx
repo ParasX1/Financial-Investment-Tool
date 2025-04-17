@@ -14,14 +14,14 @@ import {
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
-import { Grid, Box } from '@mui/material';
+import { Grid, Box, Autocomplete, TextField, Chip } from '@mui/material';
 import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
 import OHLCChart from '@/components/ohlc';
 import { Select, SelectItem } from "@nextui-org/react";
-import StockChartCard from '@/components/StockCardComponent';
+import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 
 
 const DashboardView: React.FC = () => {
@@ -67,6 +67,10 @@ const DashboardView: React.FC = () => {
         setSelectedStocks(newStocks);
     };
 
+    const [searchTags, setSearchTags] = useState<string[]>([]);
+    const stockOptions = Object.keys(stockDataMap);
+
+
     return (
         <div>
             <div style={{ display: 'flex' }}>
@@ -99,6 +103,90 @@ const DashboardView: React.FC = () => {
                             </NavbarItem>
                         </NavbarContent>
                     </Navbar>
+
+                     {/* Search Bar*/}
+                    <Box
+                        sx={{
+                            px: 2,
+                            py: 1,
+                            backgroundColor: '#111',
+                            borderBottom: '1px solid #333',
+                        }}
+                    >
+                        <Autocomplete
+                            multiple
+                            freeSolo
+                            options={stockOptions}
+                            value={searchTags}
+                            onChange={(_, newTags, reason, details) => {
+                                 // Updaate tag array
+                                setSearchTags(newTags as string[]);
+
+                                // If delete tag, clean the state
+                                if (reason === 'removeOption' && details?.option) {
+                                    const removed = details.option as string;
+                                    setSelectedStocks((prev) =>
+                                        prev.map((s) => (s === removed ? null : s))
+                                    );
+                                }
+                            }}
+                            sx={{
+                                flexGrow: 1,
+                                minWidth: 200,
+                                '& .MuiAutocomplete-inputRoot': {
+                                  flexWrap: 'wrap',
+                                },
+                              }}
+                  
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, idx) => {
+                                    const tagProps = getTagProps({ index: idx });
+                                    const isActive = selectedStocks[0] === option;
+                                    return(
+                                        <Chip
+                                            {...tagProps}   
+                                            key={option}
+                                            label={option}
+                                            size="small"
+                                            onClick={() => {
+                                                if (isActive) handleClear(0);
+                                                else handleSelectStock(0, option);
+                                                }
+                                            }
+                                            sx={{
+                                                mr: 0.5,
+                                                cursor: 'pointer',
+                                                bgcolor: isActive ? '#800080' : '#ddd',
+                                                color: isActive ? '#fff' : '#000',
+                                                '&:hover': {
+                                                    bgcolor: isActive ? '#9a0f9a' : '#ccc',
+                                                },
+                                        }}
+                                            
+                                        />
+                                    );
+                                })
+                            }
+                            renderInput={(params) => (
+                                <TextField
+                                {...params}
+                                placeholder="Search Stocks…"
+                                size="small"
+                                variant="outlined"
+                                InputProps={{
+                                    ...params.InputProps,
+                                    style: {
+                                      backgroundColor: 'white',
+                                      color: '#000',
+                                    },
+                                  }}
+                                  sx={{
+                                    minWidth: 150,
+                                  }}
+                                />
+                            )}
+                        />
+                    </Box>
 
                     <div style={{ padding: '20px' }}>
                         <Grid container spacing={2}>
