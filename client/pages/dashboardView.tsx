@@ -14,7 +14,7 @@ import {
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
-import { Grid, Box, Autocomplete, TextField, Chip } from '@mui/material';
+import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
 import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
@@ -70,11 +70,12 @@ const DashboardView: React.FC = () => {
     const [searchTags, setSearchTags] = useState<string[]>([]);
     const stockOptions = Object.keys(stockDataMap);
 
-    const [selectedDateTime, setSelectedDateTime] = useState<string>(() => {
+    const [globalStart, setGlobalStart] = useState<string>(() => {
         // initialize to “now” in local ISO format YYYY‑MM‑DDThh:mm
         const tzOffset = new Date().getTimezoneOffset() * 60000;
         return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
     });
+    const [globalEnd, setGlobalEnd] = useState<string>(globalStart);
 
     return (
         <div>
@@ -195,23 +196,43 @@ const DashboardView: React.FC = () => {
                             )}
                         />
 
-                        {/* Time Selection */}
+                        {/* Global Time Selection */}
                         {/* ToDo: need link ime selection to graph */}
+                        <Tooltip title="Start" arrow>
+                            <TextField
+                                type="datetime-local"
+                                variant="outlined"
+                                size="small"
+                                value={globalStart}
+                                onChange={e => setGlobalStart(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{
+                                    ml: 2,
+                                    backgroundColor: '#fff',
+                                    input: { color: '#000' },
+                                    '& .MuiOutlinedInput-root': { height: 40 },
+                                    minWidth: 200,
+                                }}
+                        />
+                      </Tooltip>
+
+                      <Tooltip title="End" arrow>
                         <TextField
-                            type="datetime-local"
-                            variant="outlined"
-                            size="small"
-                            value={selectedDateTime}
-                            onChange={e => setSelectedDateTime(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                ml: 2,
-                                backgroundColor: '#fff',
-                                input: { color: '#000' },
-                                '& .MuiOutlinedInput-root': { height: 40 },
-                                minWidth: 200,
-                            }}
-                      />
+                                type="datetime-local"
+                                variant="outlined"
+                                size="small"
+                                value={globalEnd}
+                                onChange={e => setGlobalEnd(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{
+                                    ml: 2,
+                                    backgroundColor: '#fff',
+                                    input: { color: '#000' },
+                                    '& .MuiOutlinedInput-root': { height: 40 },
+                                    minWidth: 200,
+                                }}
+                        />
+                      </Tooltip>
 
                     </Box>
 
@@ -226,6 +247,8 @@ const DashboardView: React.FC = () => {
                                     onClear={handleClear}
                                     onSwap={handleSwap}
                                     height={816}
+                                    defaultStart={globalStart}
+                                    defaultEnd={globalEnd}
                                 />
                             </Grid>
 
@@ -240,6 +263,8 @@ const DashboardView: React.FC = () => {
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
+                                                defaultStart={globalStart}
+                                                defaultEnd={globalEnd}
                                             />
                                         </Grid>
                                     ))}
@@ -257,6 +282,8 @@ const DashboardView: React.FC = () => {
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
+                                                defaultStart={globalStart}
+                                                defaultEnd={globalEnd}
                                             />
                                         </Grid>
                                     ))}

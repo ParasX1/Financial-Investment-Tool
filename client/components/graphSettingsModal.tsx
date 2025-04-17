@@ -10,13 +10,32 @@ import {
   Select,
   MenuItem,
   TextField,
+  Box
 } from '@mui/material';
 
-export interface GraphSettings {
-  graphType: string;
-  stockSymbol: string;
-  graphColor: string;
-}
+// Define metric types
+export type MetricType =
+  | 'BetaAnalysis'
+  | 'AlphaComparison'
+  | 'MaxDrawdownAnalysis'
+  | 'CumulativeReturnComparison'
+  | 'SortinoRatioVisualization'
+  | 'MarketCorrelationAnalysis'
+  | 'SharpeRatioMatrix'
+  | 'ValueAtRiskAnalysis'
+  | 'EfficientFrontierVisualization';
+
+  export interface GraphSettings {
+    metricType: MetricType;
+    metricParams: {
+      startDate: string;
+      endDate: string;
+      marketTicker?: string;
+      riskFreeRate?: number;
+      confidenceLevel?: number;
+    };
+    stockColour: string;
+  }
 
 interface GraphSettingsModalProps {
   open: boolean;
@@ -24,68 +43,136 @@ interface GraphSettingsModalProps {
   onApply: (settings: GraphSettings) => void;
 }
 
+const defaultStart = new Date();
+const isoDateOnly = (d: Date) => d.toISOString().slice(0, 10);
+
 const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, onApply }) => {
-  const [graphType, setGraphType] = useState<string>('OHLC');
-  const [stockSymbol, setStockSymbol] = useState<string>('');
-  const [graphColor, setGraphColor] = useState<string>('#fc03d7');
+    const [metricType, setMetricType] = useState<MetricType>('BetaAnalysis');
+    const [startDate, setStartDate] = useState<string>(isoDateOnly(defaultStart));
+    const [endDate, setEndDate] = useState<string>(isoDateOnly(defaultStart));
+    const [marketTicker, setMarketTicker] = useState<string>('AMZN');
+    const [riskFreeRate, setRiskFreeRate] = useState<number>(0.01);
+    const [confidenceLevel, setConfidenceLevel] = useState<number>(0.05);
+    const [stockColour, setStockColour] = useState<string>('#fc03d7');
+  
+    const handleApply = () => {
+      const params: GraphSettings['metricParams'] = { startDate, endDate };
+      if (metricType === 'BetaAnalysis' || metricType === 'MarketCorrelationAnalysis') {
+        params.marketTicker = marketTicker;
+      }
+      if (metricType === 'AlphaComparison' || metricType === 'SharpeRatioMatrix' || metricType === 'SortinoRatioVisualization') {
+        params.riskFreeRate = riskFreeRate;
+      }
+      if (metricType === 'ValueAtRiskAnalysis') {
+        params.confidenceLevel = confidenceLevel;
+      }
+  
+      onApply({ metricType, metricParams: params, stockColour});
+      onClose();
+    };
+  
 
-  const handleApply = () => {
-    onApply({ graphType, stockSymbol, graphColor });
-    onClose();
-  };
+    return (
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+          <DialogTitle>Metrics Settings</DialogTitle>
+          <DialogContent dividers>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="metric-type-label">Metric Type</InputLabel>
+              <Select
+                labelId="metric-type-label"
+                value={metricType}
+                label="Metric Type"
+                onChange={(e) => setMetricType(e.target.value as MetricType)}
+              >
+                <MenuItem value="BetaAnalysis">Beta Analysis</MenuItem>
+                <MenuItem value="AlphaComparison">Alpha Comparison</MenuItem>
+                <MenuItem value="MaxDrawdownAnalysis">Max Drawdown</MenuItem>
+                <MenuItem value="CumulativeReturnComparison">Cumulative Return</MenuItem>
+                <MenuItem value="SortinoRatioVisualization">Sortino Ratio</MenuItem>
+                <MenuItem value="MarketCorrelationAnalysis">Market Correlation</MenuItem>
+                <MenuItem value="SharpeRatioMatrix">Sharpe Ratio</MenuItem>
+                <MenuItem value="ValueAtRiskAnalysis">Value at Risk</MenuItem>
+                <MenuItem value="EfficientFrontierVisualization">Efficient Frontier</MenuItem>
+              </Select>
+            </FormControl>
+    
+            {/* Common date range inputs */}
+            <Box display="flex" gap={2}>
+              <TextField
+                label="Start Date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="End Date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                margin="normal"
+              />
+            </Box>
 
-  return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Graph Settings</DialogTitle>
-      <DialogContent>
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="graph-type-label">Graph Type</InputLabel>
-          <Select
-            labelId="graph-type-label"
-            value={graphType}
-            label="Graph Type"
-            onChange={(e) => setGraphType(e.target.value as string)}
-          >
-            <MenuItem value="OHLC">OHLC</MenuItem>
-            <MenuItem value="Line">Line</MenuItem>
-            <MenuItem value="Bar">Bar</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="stock-symbol-label">Stock</InputLabel>
-          <Select
-            labelId="stock-symbol-label"
-            value={stockSymbol}
-            label="Stock"
-            onChange={(e) => setStockSymbol(e.target.value as string)}
-          >
-            <MenuItem value="AAPL">AAPL</MenuItem>
-            <MenuItem value="GOOGL">GOOGL</MenuItem>
-            <MenuItem value="AMZN">AMZN</MenuItem>
-            <MenuItem value="MSFT">MSFT</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth margin="normal">
-          <TextField
-            label="Graph Color"
-            type="color"
-            value={graphColor}
-            onChange={(e) => setGraphColor(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-        </FormControl>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleApply} variant="contained">
-          Apply
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
+            <TextField
+                label="Series Color"
+                type="color"
+                value={stockColour}
+                onChange={e=>setStockColour(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                margin="normal"
+            />
+    
+            {/* Conditional inputs based on metricType */}
+            {['BetaAnalysis', 'MarketCorrelationAnalysis'].includes(metricType) && (
+              <TextField
+                label="Market Ticker"
+                placeholder="AMZN"
+                value={marketTicker}
+                onChange={(e) => setMarketTicker(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+            )}
+    
+            {['AlphaComparison', 'SharpeRatioMatrix', 'SortinoRatioVisualization'].includes(metricType) && (
+              <TextField
+                label="Risk-Free Rate"
+                type="number"
+                inputProps={{ step: 0.001, min: 0 }}
+                value={riskFreeRate}
+                onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
+                fullWidth
+                margin="normal"
+              />
+            )}
+    
+            {metricType === 'ValueAtRiskAnalysis' && (
+              <TextField
+                label="Confidence Level"
+                type="number"
+                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                value={confidenceLevel}
+                onChange={(e) => setConfidenceLevel(parseFloat(e.target.value) || 0)}
+                helperText="Enter a value between 0 and 1"
+                fullWidth
+                margin="normal"
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={handleApply} variant="contained">
+              Apply
+            </Button>
+          </DialogActions>
+        </Dialog>
+      );
+    };
+    
 export default GraphSettingsModal;

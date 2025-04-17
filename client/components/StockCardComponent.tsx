@@ -118,6 +118,8 @@ interface StockChartCardProps {
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
   height?: number;
+  defaultStart: string;
+  defaultEnd: string;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -127,9 +129,13 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   onClear,
   onSwap,
   height = 400,
+  defaultStart,
+  defaultEnd,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate]   = useState(defaultEnd);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
