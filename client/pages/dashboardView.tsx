@@ -70,6 +70,11 @@ const DashboardView: React.FC = () => {
     const [searchTags, setSearchTags] = useState<string[]>([]);
     const stockOptions = Object.keys(stockDataMap);
 
+    const [selectedDateTime, setSelectedDateTime] = useState<string>(() => {
+        // initialize to “now” in local ISO format YYYY‑MM‑DDThh:mm
+        const tzOffset = new Date().getTimezoneOffset() * 60000;
+        return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
+    });
 
     return (
         <div>
@@ -111,8 +116,11 @@ const DashboardView: React.FC = () => {
                             py: 1,
                             backgroundColor: '#111',
                             borderBottom: '1px solid #333',
+                            display: 'flex',
+                            alignItems: 'center',
                         }}
                     >
+                        {/* Stock Tag Section */}
                         <Autocomplete
                             multiple
                             freeSolo
@@ -186,6 +194,25 @@ const DashboardView: React.FC = () => {
                                 />
                             )}
                         />
+
+                        {/* Time Selection */}
+                        {/* ToDo: need link ime selection to graph */}
+                        <TextField
+                            type="datetime-local"
+                            variant="outlined"
+                            size="small"
+                            value={selectedDateTime}
+                            onChange={e => setSelectedDateTime(e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                ml: 2,
+                                backgroundColor: '#fff',
+                                input: { color: '#000' },
+                                '& .MuiOutlinedInput-root': { height: 40 },
+                                minWidth: 200,
+                            }}
+                      />
+
                     </Box>
 
                     <div style={{ padding: '20px' }}>
