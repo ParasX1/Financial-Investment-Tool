@@ -68,14 +68,14 @@ const Sidebar = () => {
       {/* Top section: Logo and Portfolio */}
       <div style={{ flexShrink: 0 }}>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          <li className="hoverable">
+          <li className="hoverable" onClick={() => navigateToPage('/')}>
             {showText ? (
               <Image src={logo} alt="Logo" width={25} height={25} /> 
             ) : (
               <Image src={logo} alt="Logo" width={25} height={25}  />
             )}
           </li>
-            <li className="hoverable" onClick={() => navigateToPage('/dashboardView')}>
+            <li className="hoverable" onClick={() => navigateToPage('/portfolio')}>
                 <i className='bx bx-pie-chart-alt-2' style={{ fontSize: '30px' }}></i>
                 {showText && <span style={{ marginLeft: '10px' }}>Portfolio</span>} {/* Show text with delay */}
             </li>

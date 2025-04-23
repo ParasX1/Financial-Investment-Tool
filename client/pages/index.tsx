@@ -7,6 +7,8 @@ import {
   Spacer,
 } from "@nextui-org/react";
 import Image from "next/image";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
@@ -21,11 +23,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router'
 import DashboardView from "@/pages/dashboardView";
 
-import CardComponent from '@/components/CardComponent';
-import { Grid, Box } from '@mui/material';
-import img1 from '@/assets/gridBackground1.png';
-import teamImage from '@/assets/team.png';
-import { StaticImageData } from 'next/image';
 
 
 function Index() {
@@ -76,42 +73,10 @@ function Index() {
 
 
 
-  // State for the card contents
-      const [cardContents, setCardContents] = useState<Array<StaticImageData | null>>(
-          [null, null, null, null, null, null]
-      );
-  
-      // Functions to handle card actions
-      const handleLoadImage = (index: number) => {
-          const newContents = [...cardContents];
-          if (index <= 2) {
-              newContents[index] = teamImage;
-          } else {
-              newContents[index] = img1;
-          }
-          setCardContents(newContents);
-      };
-  
-      const handleClear = (index: number) => {
-          const newContents = [...cardContents];
-          newContents[index] = null;
-          setCardContents(newContents);
-      };
-  
-      const handleSwap = (index: number) => {
-          if (index === 0) return; // No need to swap with self
-          const newContents = [...cardContents];
-          const temp = newContents[0];
-          newContents[0] = newContents[index];
-          newContents[index] = temp;
-          setCardContents(newContents);
-      };
-
   return (
         <div>
       <div style={{ display: "flex" }}>
         <Sidebar />
-
         <div style={{ flex: 1, paddingLeft: "50px" }}>
         <Navbar children={[
             {label: "Dashboard", href: "#dashboard"},
@@ -122,7 +87,9 @@ function Index() {
           <div className="two-column">
             <div className="left-column">
               <h1 className="title-text">FIT</h1>
-              <p>Descriptions add later</p>
+              <p>
+                The Financial Investment Tool (FIT) is an advanced web-based platform designed to help investors analyze stock market trends, track key performance metrics, and optimize their portfolios with data-driven insights.
+              </p>
               <Spacer y={3} />
               <div className="button-container">
                 <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg" color="primary">
@@ -140,8 +107,9 @@ function Index() {
           </div>
 
           <div className="two-rows">
-            <p>Descriptions add later</p>
-          </div>
+          <p>
+            FIT provides cutting-edge tools for investors, combining real-time data analysis, interactive charts, and AI-driven insights. Whether you're a beginner or a seasoned trader, our platform empowers you to make smarter financial decisions.
+          </p>
 
           {/* Main content area */}
           <div id="dashboard" style={{ padding: '20px' }}>
@@ -203,7 +171,8 @@ function Index() {
                                 Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
                             </Typography>
                             <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu lorem non erat facilisis molestie. Fusce viverra purus lorem, at tempus ipsum dictum ac. Donec ut dui sit amet velit consectetur condimentum.
+                            Take your trading skills to the next level with FIT. Our platform offers in-depth financial analytics, 
+                            stock trend forecasting, and portfolio optimization, helping you navigate the complexities of the market with confidence.
                             </Typography>
                         </Grid>
                         <Grid item xs={6}>
@@ -212,11 +181,10 @@ function Index() {
                                     <Image src={imgStar} alt="Logo" height="80" />
                                     <Box sx={{ textAlign: "left" }}>
                                         <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                                            Important point
+                                          Real-Time Market Insights
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "white" }}>
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                          Stay ahead with real-time data tracking and stock trend analysis, enabling you to make well-informed investment decisions.
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -224,11 +192,10 @@ function Index() {
                                     <Image src={imgStar} alt="Logo" height="80" />
                                     <Box sx={{ textAlign: "left" }}>
                                         <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                                            Important point
+                                        Performance Metrics
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "white" }}>
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                          ROI, volatility, Sharpe ratio, alpha, and beta—get a clear view of risk-adjusted returns and investment performance.
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -236,11 +203,10 @@ function Index() {
                                     <Image src={imgStar} alt="Logo" height="80" />
                                     <Box sx={{ textAlign: "left" }}>
                                         <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                                            Important point
+                                          Portfolio Optimization
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "white" }}>
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                          Optimize your portfolio with algorithms that balance risk and return using real-world data and simulation models.
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -271,9 +237,10 @@ function Index() {
                 </Box>
 
                 {/* HEADER ABOVE THE GRID */}
-                <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0}}>
+                <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
                     <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
-                        Analysis made easy
+                    Our platform combines real-time stock data, powerful visualizations, and machine learning-driven predictions to deliver unmatched insight into investment performance. 
+                    Customizable dashboards let you stay focused on what matters most—your financial growth.
                     </Typography>
                 </Box>
 

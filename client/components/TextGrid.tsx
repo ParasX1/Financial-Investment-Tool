@@ -38,7 +38,7 @@ const TextGrid: React.FC = () => {
                         Sharpe Ratio
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
-                        A measure of risk-adjusted return.
+                    Measures risk-adjusted return—how much excess return you receive for the extra volatility endured.
                     </Typography>
                 </Box>
             ),
@@ -80,7 +80,7 @@ const TextGrid: React.FC = () => {
                         Drawdown and Maximum Drawdown
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
-                        Measures the peak-to-trough decline during a specific period.
+                       Tracks the decline from a portfolio's peak to trough, indicating exposure to downside risk.
                     </Typography>
                 </Box>
             ),
