@@ -110,6 +110,7 @@ function Index() {
           <p>
             FIT provides cutting-edge tools for investors, combining real-time data analysis, interactive charts, and AI-driven insights. Whether you're a beginner or a seasoned trader, our platform empowers you to make smarter financial decisions.
           </p>
+          </div>
 
           {/* Main content area */}
           <div id="dashboard" style={{ padding: '20px' }}>
