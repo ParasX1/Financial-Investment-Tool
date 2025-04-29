@@ -76,6 +76,7 @@ export function Navbar({children} : NavbarProps) {
                     show={showSignUp}
                     onHide={handleSignUpClose}
                     setSignUp={setSignUp}
+                    setLogin={setShowLogIn}
                 />
             </NavbarItem>
           </>
