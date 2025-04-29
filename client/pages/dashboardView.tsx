@@ -2,7 +2,7 @@
 
 import React, {useEffect, useState} from 'react';
 // @ts-ignore
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/sidebar';
 import {
     Navbar,
     NavbarContent,

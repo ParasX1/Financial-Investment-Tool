@@ -3,6 +3,9 @@ import {Button} from "@nextui-org/react";
 import Modal from "react-bootstrap/Modal";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import supabase from "@/components/supabase";
+import {useRouter} from "next/router";
+import { loadGetInitialProps } from 'next/dist/shared/lib/utils';
+import {useAuth} from "@/components/authContext";
 
 // @ts-ignore
 function ModalSignUp({ show, onHide, setSignUp }) {
@@ -10,6 +13,8 @@ function ModalSignUp({ show, onHide, setSignUp }) {
     const [password, setPassword] = useState("");
     const [fname, setFname] = useState("");
     const [lname, setLname] = useState("");
+    const router = useRouter();
+    const {login} = useAuth();
 
     // @ts-ignore
     const handleSignUp = async (e) => {
@@ -30,22 +35,26 @@ function ModalSignUp({ show, onHide, setSignUp }) {
 
             if (error) {
                 alert("User already exists!");
+                return false;
             } else {
-
                 console.log("Email: " + email);
                 console.log("First name: " + fname);
                 console.log("Last name: " + lname);
                 console.log("User Signed Up successfully");
+                return true;
 
             }
         }
     }
 
     // @ts-ignore
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        handleSignUp(e);
-        setSignUp(false);
+        const succ = await handleSignUp(e);
+        //if (succ) {
+            login();
+            router.push("/dashboardView");
+        //}
     }
 
 

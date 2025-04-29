@@ -4,6 +4,7 @@ import Modal from "react-bootstrap/Modal";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import supabase from "@/components/supabase";
 import {useRouter} from "next/router";
+import {useAuth} from "@/components/authContext";
 
 
 
@@ -12,8 +13,9 @@ function ModalLogin({ show, onHide, setLogin }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
+    const {login} = useAuth();
 
-    const handleLogin = async (e) => {
+    const handleLogin = async () => {
         if (email == "" || password == "") {
             alert("Please fill in the fields!");
         } else {
@@ -25,9 +27,11 @@ function ModalLogin({ show, onHide, setLogin }) {
 
             if (error) {
                 alert("Sign in Error! " + error.message);
+                return false;
             } else {
                 console.log("Email: " + email);
                 console.log("User Signed In successfully");
+                return true;
 
             }
         }
@@ -35,11 +39,13 @@ function ModalLogin({ show, onHide, setLogin }) {
     }
 
     // @ts-ignore
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        handleLogin(e);
-        setLogin(true);
-        router.push("/dashboardView");
+        const succ = await handleLogin();
+        //if (succ) {
+            login();
+            router.push("/dashboardView");
+        //}
     }
 
     return(
