@@ -18,6 +18,7 @@ import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
+import OHLCChart from "@/components/ohlc";
 import TextGrid from "@/components/TextGrid";
 import supabase from "@/components/supabase";
 import Link from 'next/link';
@@ -157,9 +158,11 @@ function Index() {
           </div>
 
           <div className="two-rows">
+
           <p>
             FIT provides cutting-edge tools for investors, combining real-time data analysis, interactive charts, and AI-driven insights. Whether you're a beginner or a seasoned trader, our platform empowers you to make smarter financial decisions.
           </p>
+
 
           </div>
 
