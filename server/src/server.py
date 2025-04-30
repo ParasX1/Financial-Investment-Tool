@@ -2,7 +2,7 @@ import json
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from src.stocks import sanitiseStockJson
+from stocks import sanitiseStockJson
 
 from supabase import create_client, Client
 
@@ -12,7 +12,13 @@ def create_app():
     app.config.from_prefixed_env()
     CORS(app)
 
-    supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
+    # supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
+
+    SUPABASE_URL = "https://fybvhtuhpdmfzrtitptv.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YnZodHVocGRtZnpydGl0cHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjM5MTgsImV4cCI6MjA1NzgzOTkxOH0.bl3F6T-1m4ntsTeJRAPUb66QFL3fIZVBj0TGzMsnpK8"
+
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
     # returns a list of stocks the user holds
     # takes the user id as input
