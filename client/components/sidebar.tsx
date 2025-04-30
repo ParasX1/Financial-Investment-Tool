@@ -68,7 +68,7 @@ const Sidebar = () => {
       {/* Top section: Logo and Portfolio */}
       <div style={{ flexShrink: 0 }}>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          <li className="hoverable">
+          <li className="hoverable" onClick={() => navigateToPage('/')}>
             {showText ? (
               <Image src={logo} alt="Logo" width={25} height={25} /> 
             ) : (
