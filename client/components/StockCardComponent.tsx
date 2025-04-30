@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import OHLCChart from './ohlc';
+import BarGraph from './bargraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
+import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 
 type OHLCData = {
     date: string;
@@ -134,115 +136,115 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate]   = useState(defaultEnd);
-  // TODO: When user changes startDate/endDate in this card,
-  // pass them to the fetchMetrics backend or update the chart data.
+  const [showSettings, setShowSettings] = useState(false);
+
+  const [barColor, setBarColor]             = useState('#fc03d7');
+  const [chartData, setChartData]           = useState<MetricsResponse | null>(null);
+  const [dateRange, setDateRange]           = useState({ start: defaultStart, end: defaultEnd });
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleFullscreenToggle = () => setIsFullscreen(!isFullscreen);
+  const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
+
+  const handleApplySettings = async (settings: GraphSettings) => {
+    setBarColor(settings.stockColour);
+    setDateRange({
+      start: settings.metricParams.startDate,
+      end:   settings.metricParams.endDate,
+    });
+
+    if (!selectedStock) return;
+    const data = await fetchMetrics({ ticker: selectedStock, settings });
+    setChartData(data);
+  };
 
   const handleChange = (event: SelectChangeEvent<string>) => {
     onSelectStock(index, event.target.value);
   };
-  const [showSettings, setShowSettings] = useState(false);
-  // Measure the container size
-  const handleApplySettings = (settings: GraphSettings) => {
-    // Process settings as needed (e.g., update chart type, stock, and color)
-    console.log('New graph settings:', settings);
-    // TODO: settings.metricParams.startDate/endDate,
-    //       settings.stockColour, settings.metricType
-    //       together pass to fetchMetrics(settings) and get new data graph
-  };
+  // measure the container size
+
   useEffect(() => {
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        if (entry.contentRect) {
-          setDimensions({
-            width: entry.contentRect.width,
-            height: entry.contentRect.height,
-          });
-        }
-      }
+    if (!selectedStock) { setChartData(null); return; }
+    fetchMetrics({ ticker: selectedStock, settings: null }).then(setChartData);
+  }, [selectedStock]);
+
+  // resize observer
+  useEffect(() => {
+    const ob = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setDimensions({ width, height });
     });
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) observer.unobserve(containerRef.current);
-    };
+    if (containerRef.current) ob.observe(containerRef.current);
+    return () => ob.disconnect();
   }, []);
 
+  // choose chart component 
+  const renderChart = () => {
+    if (!chartData || !selectedStock) return null;
+
+    if (chartData.metricType === 'OHLC') {
+      const data = (chartData.series as any).ohlc;
+      return (
+        <OHLCChart
+          data={data}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      );
+    }
+
+    const points = (chartData.series as any).points;
+    const barData = points.map((p: any) => ({ label: p.date, value: p.value }));
+    return (
+      <BarGraph
+        data={barData}
+        width={dimensions.width - 32}
+        height={dimensions.height - 90}
+        barColor={barColor}
+      />
+    );
+  };
+
+  // render
   return (
     <Box
       ref={containerRef}
       sx={{
         position: isFullscreen ? 'fixed' : 'relative',
-        top: isFullscreen ? 0 : 'unset',
-        left: isFullscreen ? 0 : 'unset',
-        width: isFullscreen ? '100vw' : '100%',
-        height: isFullscreen ? '100vh' : height,
-        backgroundColor: '#111',
-        border: '1px solid #555',
-        padding: '1rem',
+        top:      isFullscreen ? 0 : 'unset',
+        left:     isFullscreen ? 0 : 'unset',
+        width:    isFullscreen ? '100vw' : '100%',
+        height:   isFullscreen ? '100vh' : height,
+        bgcolor:  '#111',
+        border:   '1px solid #555',
+        p:        '1rem',
         overflow: 'hidden',
-        zIndex: isFullscreen ? 1000 : 'unset',
+        zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
+      {renderChart()}
 
-      {selectedStock && (
-        <OHLCChart
-          data={stockDataMap[selectedStock]}
-          width={dimensions.width - 32} // subtract padding
-          height={dimensions.height - 90} // subtract padding + dropdown height
-          // TODO: pass settings.stockColour instead of "#fc03d7"
-          // TODO: If metrics is not OHLC, call different chart components based on settings.metricType
-          barColor="#fc03d7"
-        />
-      )}
-
-      {/* Controls */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          gap: 1,
-        }}
-      >
-        <Button variant="contained" size="small" onClick={() => onSwap(index)}>
-          ↔
-        </Button>
-        <Button variant="contained" size="small" onClick={() => onClear(index)}>
-          ×
-        </Button>
+      {/* controls */}
+      <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+        <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+        <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
         <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
           {isFullscreen ? '⤡' : '⤢'}
         </Button>
-        <Button
-        variant="contained"
-        size="small"
-        onClick={() => setShowSettings(true)}
-      >
-        +
-      </Button>
+        <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
+          ⚙︎
+        </Button>
+      </Box>
 
-      {/* Render the settings modal */}
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
         onApply={handleApplySettings}
       />
-      </Box>
-      
     </Box>
   );
 };
 
 export default StockChartCard;
 export { stockDataMap };
-
