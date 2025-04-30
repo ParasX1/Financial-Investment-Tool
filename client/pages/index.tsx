@@ -12,10 +12,12 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
+import Footer from "@/components/Footer";
 import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
 import LineGraph from "@/components/linegraph";
+import OHLCChart from "@/components/ohlc";
 import TextGrid from "@/components/TextGrid";
 import CardComponent from '@/components/CardComponent';
 import { Navbar } from "@/components/navbar";
@@ -128,7 +130,6 @@ function Index() {
               {/* PUT IMAGE IN THE FUTURE */}
             </div>
           </div>
-
           {/* Main content area */}
           <div id="dashboard" style={{ padding: '20px' }}>
               <Grid container spacing={2}>
@@ -312,6 +313,8 @@ function Index() {
           </div>
         </div>
       </div>
+
+    <Footer ></Footer>
     </div>
   );
 }
