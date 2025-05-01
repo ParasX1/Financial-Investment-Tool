@@ -3,9 +3,12 @@ import type { AppProps } from "next/app";
 import DashboardView from "@/pages/dashboardView";
 import React from "react";
 import Index from "@/pages/index";
+import { AuthProvider } from "@/components/authContext";
 
 export default function App({ Component, pageProps }: AppProps) {
     return (
+    <AuthProvider>
         <Component {...pageProps} />
+    </AuthProvider>
   )
 }

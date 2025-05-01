@@ -4,6 +4,8 @@ import Modal from "react-bootstrap/Modal";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import supabase from "@/components/supabase";
 import {useRouter} from "next/router";
+import {useAuth} from "@/components/authContext";
+import styles from '@/styles/login.module.css'
 
 
 
@@ -12,10 +14,12 @@ function ModalLogin({ show, onHide, setLogin }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
+    const {login} = useAuth();
 
-    const handleLogin = async (e) => {
+    const handleLogin = async () => {
         if (email == "" || password == "") {
             alert("Please fill in the fields!");
+            return false;
         } else {
             // Sign user in through supabase
             const { error } = await supabase.auth.signInWithPassword({
@@ -25,9 +29,11 @@ function ModalLogin({ show, onHide, setLogin }) {
 
             if (error) {
                 alert("Sign in Error! " + error.message);
+                return false;
             } else {
                 console.log("Email: " + email);
                 console.log("User Signed In successfully");
+                return true;
 
             }
         }
@@ -35,62 +41,57 @@ function ModalLogin({ show, onHide, setLogin }) {
     }
 
     // @ts-ignore
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        handleLogin(e);
-        setLogin(true);
-        router.push("/dashboardView");
+        const succ = await handleLogin();
+        //if (succ) {
+            login();
+            router.push("/dashboardView");
+        //}
     }
 
-    return(
+    return (
         <Modal
-            show ={show}
-            onHide ={onHide}
-            backdrop="static"
+            show={show}
+            onHide={onHide}
             keyboard={false}
-            size="lg"
-            centered>
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    Login
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
+            centered
+            className="text-center">
+            <Modal.Body className={styles.loginModal}>
+                <h2 className={styles.loginHeader}>FIT.</h2>
+                
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-3 mt-4">
-                        <label className="form-label">Email Address</label>
-                        <input type="email" className="form-control" placeholder="Enter Email" aria-describedby="emailHelp"
-                        onChange={(e) => setEmail(e.target.value)}/>
-
+                    <div className={styles.inputRow}>
+                        <input 
+                            type="email" 
+                            className={styles.inputFull}
+                            placeholder="Email Address"
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
                     </div>
 
-                    <div className="mb-3">
-                        <label className='form-label'>Password</label>
-                        <input type="password" placeholder="Enter Password"  className="form-control" required
-                               onChange={(e) => setPassword(e.target.value)}/>
-                    </div>
-                    <div>
-                        <a href="#">Forgot password?</a>
+                    <div className={styles.inputRow}>
+                        <input 
+                            type="text" 
+                            className={styles.inputFull}
+                            placeholder="Password"
+                            onChange={(e) => setPassword(e.target.value)} 
+                        />
                     </div>
 
-                    <div className="d-flex justify-content-center">
-                        <Button type="submit" className="btn btn-dark mt-md-4 w-100">
-                            Login
+                    <div className={styles.buttonRowTwo}>
+                        <Button type="submit" className={styles.buttonSubmit}>
+                            Log in
+                        </Button>
+                        <Button className={styles.buttonOutline}>
+                            Log in with Google
                         </Button>
                     </div>
-
-                    <div className="mt-3 d-flex justify-content-center">
-                        Not a member?&nbsp;<a href="#">Signup now</a>
-                    </div>
                 </form>
-
             </Modal.Body>
-            <Modal.Footer>
-            </Modal.Footer>
         </Modal>
     )
 }
-
 
 
 export default ModalLogin
