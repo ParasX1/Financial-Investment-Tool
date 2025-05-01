@@ -6,6 +6,10 @@ import {
 	Navbar as Nb,
 	Spacer
 } from "@nextui-org/react"
+import React, { useEffect, useState } from "react";
+import ModalLogin from "@/components/Modal/ModalLogin";
+import ModalSignUp from "@/components/Modal/ModalSignUp";
+import {useAuth} from "@/components/authContext";
 
 export interface NavbarElem {
     label: string
@@ -18,11 +22,18 @@ interface NavbarProps {
     children: NavbarElem[]
 }
 
+
 export function Navbar({children} : NavbarProps) {
-	// TODO: change the right side to adapt to whether the
-	// user is signed in or not ie. only show login/signup when they
-	// aren't signed in
-      return (
+    const {isLoggedIn, login, logout} = useAuth();
+    const [showSignUp, setSignUp] = useState(false);
+    const [showLogIn, setShowLogIn] = useState(false);
+    const handleLoginShow = () => setShowLogIn(true);
+    const handleLoginClose = () => setShowLogIn(false);
+
+    const handleSignUpShow = () => setSignUp(true);
+    const handleSignUpClose = () => setSignUp(false);
+  
+        return (
         <Nb maxWidth="full" shouldHideOnScroll>
           <NavbarContent className="hidden sm:flex gap-4" justify="center" >
             {children.map(child => (
@@ -52,5 +63,38 @@ export function Navbar({children} : NavbarProps) {
 			</NavbarContent>
 
         </Nb>
+            {isLoggedIn ? (
+            <NavbarItem>
+                <Button className="bg-black text-white" variant="flat" onClick={logout}>
+                    Log Out
+                </Button>
+            </NavbarItem>
+            ) : (
+            <>
+            <NavbarItem>
+                <Button className="bg-white text-black border-1 border-black" variant="flat" onClick={handleLoginShow}>
+                    Log In
+                </Button>
+                <ModalLogin
+                    show={showLogIn}
+                    onHide={handleLoginClose}
+                    setLogin={setShowLogIn}
+                />
+            </NavbarItem>
+            <NavbarItem>
+                <Button className="bg-black text-white" variant="flat" onClick={handleSignUpShow}>
+                    Sign Up
+                </Button>
+                <ModalSignUp
+                    show={showSignUp}
+                    onHide={handleSignUpClose}
+                    setSignUp={setSignUp}
+                    setLogin={setShowLogIn}
+                />
+            </NavbarItem>
+          </>
+        )}
+      </NavbarContent>
+    </Nb>
       )
 }
