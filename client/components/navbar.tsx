@@ -22,7 +22,6 @@ interface NavbarProps {
     children: NavbarElem[]
 }
 
-  
 
 export function Navbar({children} : NavbarProps) {
     const {isLoggedIn, login, logout} = useAuth();
@@ -50,6 +49,20 @@ export function Navbar({children} : NavbarProps) {
             </NavbarContent>
 
 			<NavbarContent justify="end">
+				<NavbarItem>
+                    <Link color="foreground" href="#">
+                        Login
+                    </Link>
+				</NavbarItem>
+                  <Spacer x={1} />
+				<NavbarItem>
+					<Button as={Link} color="primary" href="#" variant="flat">
+						Sign Up
+					</Button>
+				</NavbarItem>
+			</NavbarContent>
+
+        </Nb>
             {isLoggedIn ? (
             <NavbarItem>
                 <Button className="bg-black text-white" variant="flat" onClick={logout}>
