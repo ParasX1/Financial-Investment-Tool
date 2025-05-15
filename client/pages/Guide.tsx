@@ -98,7 +98,6 @@ const Guide: React.FC = () => {
           <section id="portfolio" style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                 Portfolio
-                {/* test */}
             </h2>
                 <p style={{ marginBottom: '1rem' }}>
                 Users can search and select a stock via the top search bar. 
