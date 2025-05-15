@@ -1,6 +1,6 @@
 // pages/dashboardView.tsx
 
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
 import {
@@ -15,19 +15,21 @@ import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
 import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
-import img1 from '@/assets/gridBackground1.png';
-import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
 import OHLCChart from '@/components/ohlc';
 import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
+import { GraphSettingsContext } from '@/components/GraphSettingsContext';
 
 
 const DashboardView: React.FC = () => {
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setLogIn] = useState(false);
     const [session, setSession] = useState(null);
+
+    const { settings, setSettings } = useContext(GraphSettingsContext);
+    const { selectedStocks, globalStart, globalEnd } = settings;
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,21 +43,17 @@ const DashboardView: React.FC = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Instead of image content, now we use stock selection
-    const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>([
-        null, null, null, null, null, null,
-    ]);
 
     const handleSelectStock = (index: number, stock: string) => {
         const newStocks = [...selectedStocks];
         newStocks[index] = stock;
-        setSelectedStocks(newStocks);
+        setSettings({ ...settings, selectedStocks: newStocks });
     };
 
     const handleClear = (index: number) => {
         const newStocks = [...selectedStocks];
         newStocks[index] = null;
-        setSelectedStocks(newStocks);
+        setSettings({ ...settings, selectedStocks: newStocks });
     };
 
     const handleSwap = (index: number) => {
@@ -64,19 +62,17 @@ const DashboardView: React.FC = () => {
         const temp = newStocks[0];
         newStocks[0] = newStocks[index];
         newStocks[index] = temp;
-        setSelectedStocks(newStocks);
+        setSettings({ ...settings, selectedStocks: newStocks });
     };
 
-    const [searchTags, setSearchTags] = useState<string[]>([]);
+    // Tags UI (optional local state for tags, not chart data)
+    const [searchTags, setSearchTags] = React.useState<string[]>([]);
     const stockOptions = Object.keys(stockDataMap);
 
-    // global time range to initialize and pass to each card
-    const [globalStart, setGlobalStart] = useState<string>(() => {
-        // initialize to “now” in local ISO format YYYY‑MM‑DDThh:mm
-        const tzOffset = new Date().getTimezoneOffset() * 60000;
-        return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
-    });
-    const [globalEnd, setGlobalEnd] = useState<string>(globalStart);
+    const handleTimeChange = (field: 'globalStart' | 'globalEnd', value: string) => {
+        setSettings({ ...settings, [field]: value });
+    };
+
 
     return (
         <div>
@@ -135,9 +131,8 @@ const DashboardView: React.FC = () => {
                                 // If delete tag, clean the state
                                 if (reason === 'removeOption' && details?.option) {
                                     const removed = details.option as string;
-                                    setSelectedStocks((prev) =>
-                                        prev.map((s) => (s === removed ? null : s))
-                                    );
+                                    const updated = selectedStocks.map(s => s === removed ? null : s);
+                                    setSettings({ ...settings, selectedStocks: updated });
                                 }
                             }}
                             sx={{
@@ -148,21 +143,19 @@ const DashboardView: React.FC = () => {
                                 },
                               }}
                   
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, idx) => {
-                                    const tagProps = getTagProps({ index: idx });
-                                    const isActive = selectedStocks[0] === option;
-                                    return(
-                                        <Chip
-                                            {...tagProps}   
-                                            key={option}
-                                            label={option}
-                                            size="small"
-                                            onClick={() => {
-                                                if (isActive) handleClear(0);
-                                                else handleSelectStock(0, option);
-                                                }
+                            renderTags={(value, getTagProps) => value.map((option, idx) => {
+                                const isActive = selectedStocks[0] === option;
+                                return(
+                                    <Chip
+                                    {...getTagProps({ index: idx })}
+                                    key={option}
+                                    label={option}
+                                    size="small"
+                                    onClick={() => {
+                                        if (isActive) handleClear(0);
+                                        else handleSelectStock(0, option);
                                             }
+                                        }        
                                             sx={{
                                                 mr: 0.5,
                                                 cursor: 'pointer',
@@ -205,7 +198,7 @@ const DashboardView: React.FC = () => {
                                 variant="outlined"
                                 size="small"
                                 value={globalStart}
-                                onChange={e => setGlobalStart(e.target.value)}
+                                onChange={e => handleTimeChange('globalStart', e.target.value)}
                                 InputLabelProps={{ shrink: true }}
                                 sx={{
                                     ml: 2,
@@ -223,7 +216,7 @@ const DashboardView: React.FC = () => {
                                 variant="outlined"
                                 size="small"
                                 value={globalEnd}
-                                onChange={e => setGlobalEnd(e.target.value)}
+                                onChange={e => handleTimeChange('globalEnd', e.target.value)}
                                 InputLabelProps={{ shrink: true }}
                                 sx={{
                                     ml: 2,
