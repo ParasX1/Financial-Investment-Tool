@@ -7,8 +7,8 @@ function Guide() {
       <Sidebar />
       <div style={{ flex: 1, paddingLeft: "50px" }}>
         {/* Your portfolio page content will go here */}
-        <h1>Market News</h1>
-        <p>This is where you can add your market news content.</p>
+        <h1>Guide</h1>
+        <p>This is where you can add your guide content.</p>
       </div>
     </div>
   );
