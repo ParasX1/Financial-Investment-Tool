@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import OHLCChart from './ohlc';
-import BarGraph from './bargraph';
-import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
+import GraphSettingsModal, { GraphSettings } from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 
 type OHLCData = {
@@ -122,6 +121,8 @@ interface StockChartCardProps {
   height?: number;
   defaultStart: string;
   defaultEnd: string;
+  color: string;
+  onSettingsChange: (index: number, settings: GraphSettings) => void;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -133,40 +134,51 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   height = 400,
   defaultStart,
   defaultEnd,
+  color,
+  onSettingsChange,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
   const [showSettings, setShowSettings] = useState(false);
 
-  const [barColor, setBarColor]             = useState('#fc03d7');
-  const [chartData, setChartData]           = useState<MetricsResponse | null>(null);
-  const [dateRange, setDateRange]           = useState({ start: defaultStart, end: defaultEnd });
+  const [settings, setSettings] = useState<GraphSettings>({
+      stockColour: color,
+      metricType: 'OHLC',
+      metricParams: { startDate: defaultStart, endDate: defaultEnd },
+    });
+    const [chartData, setChartData] = useState<MetricsResponse | null>(null);
+
+    useEffect(() => {
+      setSettings({
+        stockColour: color,
+        metricType: 'OHLC',
+        metricParams: {
+          startDate: defaultStart,
+          endDate:   defaultEnd,
+        },
+      });
+    }, [color, defaultStart, defaultEnd]);
+    
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
-  const handleApplySettings = async (settings: GraphSettings) => {
-    setBarColor(settings.stockColour);
-    setDateRange({
-      start: settings.metricParams.startDate,
-      end:   settings.metricParams.endDate,
-    });
+  const handleApplySettings = (newSettings: GraphSettings) => {
+      setSettings(newSettings);
+      onSettingsChange(index, newSettings);
+      setShowSettings(false);
+    };
 
-    if (!selectedStock) return;
-    const data = await fetchMetrics({ ticker: selectedStock, settings });
-    setChartData(data);
-  };
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
-    onSelectStock(index, event.target.value);
-  };
-  // measure the container size
 
   useEffect(() => {
-    if (!selectedStock) { setChartData(null); return; }
-    fetchMetrics({ ticker: selectedStock, settings: null }).then(setChartData);
-  }, [selectedStock]);
+      if (!selectedStock) {
+        setChartData(null);
+        return;
+      }
+      fetchMetrics({ ticker: selectedStock, settings }).then(setChartData);
+    }, [selectedStock, settings]);
 
   // resize observer
   useEffect(() => {
@@ -178,33 +190,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     return () => ob.disconnect();
   }, []);
 
-  // choose chart component 
-  const renderChart = () => {
-    if (!chartData || !selectedStock) return null;
 
-    if (chartData.metricType === 'OHLC') {
-      const data = (chartData.series as any).ohlc;
-      return (
-        <OHLCChart
-          data={data}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
-          barColor={barColor}
-        />
-      );
-    }
 
-    const points = (chartData.series as any).points;
-    const barData = points.map((p: any) => ({ label: p.date, value: p.value }));
-    return (
-      <BarGraph
-        data={barData}
-        width={dimensions.width - 32}
-        height={dimensions.height - 90}
-        barColor={barColor}
-      />
-    );
-  };
 
   // render
   return (
@@ -223,7 +210,14 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
-      {renderChart()}
+      {chartData && (
+        <OHLCChart
+          data={(chartData.series as any).ohlc as OHLCData[]}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={settings.stockColour}
+        />
+      )}
 
       {/* controls */}
       <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
