@@ -1,53 +1,71 @@
 import React from "react";
-import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
-
-import { Grid} from '@mui/material';
-
+import Sidebar from "@/components/sidebar";
+import { Box } from '@mui/material';
+import NewsCardComponent from '@/components/NewsCardComponent';
 
 const MarketNews: React.FC = () => {
-    
+  const handleSwap = (idx: number) => console.log('swap', idx);
+  const handleClear = (idx: number) => console.log('clear', idx);
+  const titles = [
+    'General News',    
+    'Watchlist News', 
+    'Regional News', 
+    'Industry News', 
+    'Commodity News',
+    'Portfolio News',
+    ];
 
-    return (
-        <div>
-            <div style={{ display: 'flex' }}>
-                <Sidebar />
-            
+  return (
+    <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Sidebar />
 
-            
-                    <div style={{ padding: '20px' }}>
-                        <Grid container spacing={2}>
-                            {/* Main Large Card */}
-                            <Grid item xs={12} md={8}>
-                                
-                            </Grid>
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          pl: '50px',
+          bgcolor: 'black',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
+        <Box sx={{ display: 'flex', flex: 3, gap: 1 }}>
+          <Box sx={{ flex: 2, display: 'flex' }}>
+            <NewsCardComponent
+              index={0}
+              title={titles[0]}
+              height="100%"
+            />
+          </Box>
 
-                            {/* Vertical Stack of Cards */}
-                            <Grid item xs={12} md={4}>
-                                <Grid container direction="column" spacing={2}>
-                                    {[1, 2].map((index) => (
-                                        <Grid item key={index}>
-                                            
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {[1].map(idx => (
+              <Box key={idx} sx={{ flex: 1, display: 'flex' }}>
+                <NewsCardComponent
+                  index={idx}
+                  title={titles[idx]}
+                  height="100%"
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
-                            {/* Bottom Row of Cards */}
-                            <Grid item xs={12}>
-                                <Grid container spacing={2}>
-                                    {[3, 4, 5].map((index) => (
-                                        <Grid item xs={12} sm={4} key={index}>
-                                            
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </div>
-            </div>
-        </div>
-    );
+        <Box sx={{ display: 'flex', flex: 2, gap: 1 }}>
+          {[2, 3, 4].map(idx => (
+            <Box key={idx} sx={{ flex: 1, display: 'flex' }}>
+              <NewsCardComponent
+                index={idx}
+                title={titles[idx]}
+                height="100%"
+              />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  );
 };
 
 export default MarketNews;
-
