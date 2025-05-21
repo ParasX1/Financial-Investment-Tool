@@ -4,6 +4,15 @@ import OHLCChart from './ohlc';
 import GraphSettingsModal, { GraphSettings } from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 
+const COLOR_PALETTE = [
+  "#fc03d7",
+  "#03fc9a",
+  "#fc9a03",
+  "#0375fc",
+  "#fc0303",
+  "#25fc03"
+];
+
 type OHLCData = {
     date: string;
     open: number;
@@ -114,7 +123,7 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
 
 interface StockChartCardProps {
   index: number;
-  selectedStock: string | null;
+  selectedStocks: string[];
   onSelectStock: (index: number, stock: string) => void;
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
@@ -127,7 +136,7 @@ interface StockChartCardProps {
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
   index,
-  selectedStock,
+  selectedStocks,
   onSelectStock,
   onClear,
   onSwap,
@@ -173,12 +182,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
 
   useEffect(() => {
-      if (!selectedStock) {
+      if (selectedStocks.length === 0) {
         setChartData(null);
         return;
       }
-      fetchMetrics({ ticker: selectedStock, settings }).then(setChartData);
-    }, [selectedStock, settings]);
+      fetchMetrics({ tickers: selectedStocks, settings }).then(setChartData);
+    }, [selectedStocks, settings]);
 
   // resize observer
   useEffect(() => {
@@ -212,10 +221,14 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     >
       {chartData && (
         <OHLCChart
-          data={(chartData.series as any).ohlc as OHLCData[]}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
-          barColor={settings.stockColour}
+          series={chartData.series.map((s, idx) => ({
+            name: s.ticker,
+            values: s.ohlc,
+            color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+          }))}
+          width={dimensions.width}
+          height={dimensions.height}
+          showGridLines={true}
         />
       )}
 

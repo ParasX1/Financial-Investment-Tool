@@ -36,22 +36,28 @@ const DashboardView: React.FC = () => {
     }, []);
 
     // Instead of image content, now we use stock selection
-    const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>(
-      Array(NUM_CARDS).fill(null)
+    // now we track an array of tickers per card
+    const [selectedStocks, setSelectedStocks] = useState<string[][]>(
+      Array(NUM_CARDS).fill([]).map(() => [])
     );
     
 
     const handleSelectStock = (index: number, stock: string) => {
-        const newStocks = [...selectedStocks];
-        newStocks[index] = stock;
+           const newStocks = selectedStocks.map((arr, i) =>
+             i === index
+               ? arr.includes(stock)
+                 ? arr 
+                 : [...arr, stock] 
+               : arr
+           );
         setSelectedStocks(newStocks);
     };
 
     const handleClear = (index: number) => {
-        const newStocks = [...selectedStocks];
-        newStocks[index] = null;
-        setSelectedStocks(newStocks);
-    };
+        setSelectedStocks(ss =>
+          ss.map((arr, i) => (i === index ? [] : arr))
+        );
+      };
 
     const handleSwap = (i: number) => {
       if (i === 0) return;
@@ -162,12 +168,12 @@ const DashboardView: React.FC = () => {
                                 setSearchTags(newTags as string[]);
 
                                 // If delete tag, clean the state
-                                if (reason === 'removeOption' && details?.option) {
-                                    const removed = details.option as string;
-                                    setSelectedStocks((prev) =>
-                                        prev.map((s) => (s === removed ? null : s))
-                                    );
-                                }
+                                if (reason === 'selectOption' && details?.option) {
+                                    handleSelectStock(0, details.option as string);
+                                    }
+                                    if (reason === 'removeOption' && details?.option) {
+                                      handleClear(0);
+                                  }
                             }}
                             sx={{
                                 flexGrow: 1,
@@ -180,7 +186,7 @@ const DashboardView: React.FC = () => {
                             renderTags={(value, getTagProps) =>
                                 value.map((option, idx) => {
                                     const tagProps = getTagProps({ index: idx });
-                                    const isActive = selectedStocks[0] === option;
+                                    const isActive = selectedStocks[0]?.includes(option);
                                     return(
                                         <Chip
                                             {...tagProps}   
@@ -271,7 +277,7 @@ const DashboardView: React.FC = () => {
                             <Grid item xs={12} md={8}>
                                 <StockChartCard
                                     index={0}
-                                    selectedStock={selectedStocks[0]}
+                                    selectedStocks={selectedStocks[0]}
                                     onSelectStock={handleSelectStock}
                                     onClear={handleClear}
                                     onSwap={handleSwap}
@@ -291,7 +297,7 @@ const DashboardView: React.FC = () => {
                                         <Grid item key={index}>
                                             <StockChartCard
                                                 index={index}
-                                                selectedStock={selectedStocks[index]}
+                                                selectedStocks={selectedStocks[index]}
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
@@ -312,7 +318,7 @@ const DashboardView: React.FC = () => {
                                         <Grid item xs={12} sm={4} key={index}>
                                             <StockChartCard
                                                 index={index}
-                                                selectedStock={selectedStocks[index]}
+                                                selectedStocks={selectedStocks[index]}
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
