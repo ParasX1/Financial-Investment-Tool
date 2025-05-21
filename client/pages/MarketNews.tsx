@@ -4,8 +4,6 @@ import { Box } from '@mui/material';
 import NewsCardComponent from '@/components/NewsCardComponent';
 
 const MarketNews: React.FC = () => {
-  const handleSwap = (idx: number) => console.log('swap', idx);
-  const handleClear = (idx: number) => console.log('clear', idx);
   const titles = [
     'General News',    
     'Watchlist News', 
