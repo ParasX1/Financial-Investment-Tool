@@ -27,7 +27,7 @@ const DashboardView: React.FC = () => {
     const [session, setSession] = useState(null);
 
     const { settings, setSettings } = useContext(GraphSettingsContext);
-    const { selectedStocks, globalStart, globalEnd } = settings;
+    const {globalStart, globalEnd } = settings;
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
