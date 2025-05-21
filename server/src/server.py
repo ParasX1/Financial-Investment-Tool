@@ -89,9 +89,25 @@ def create_app():
 
     @app.route("/api/fetch_data", methods=['GET'])
     def get_stock_data():
-        stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
-        stock_data_json = stock_data.to_dict()
-        return jsonify(stock_data_json)
+        # stock_data = fetch_stock_data(stock_tickers, start_date, end_date)
+        # stock_data_json = stock_data.to_dict()
+        # fixed_data = [
+        #         {'symbol': k[0], 'date': k[1], 'value': v}
+        #         for k, v in stock_data_json.items()
+        #     ]
+        # print(stock_data_json)
+        
+        response = (
+            supabase.table("stock_data")
+            .select("MSFT")
+            .execute()
+        )
+        
+        # print(response)
+        data = response.data
+        return(data)
+        # return jsonify(fixed_data)
+        # return jsonify(stock_data_json)
 
     @app.route("/api/beta", methods=['GET'])
     def get_beta():

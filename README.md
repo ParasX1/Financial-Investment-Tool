@@ -26,6 +26,7 @@ to compile and host the frontend locally.
 **Backend**
 
 We use flask to run our backend.
+Disregard Below - Do not use virtual environment
 
 Enable the virtual environment with
 
