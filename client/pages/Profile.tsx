@@ -49,15 +49,11 @@ function Profile(props) {
       <div className="flex flex-col flex-1 p-10">
 
         <div className="flex flex-row gap-6 items-start flex-nowrap">
-          <div className="bg-white rounded-xl shadow-md p-6 ml-10 w-1/3 h-full text-center">
+          <div className="bg-white rounded-xl shadow-md p-6 ml-10 w-1/3 h-full text-center flex flex-col justify-center">
             <img className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-black"/>
             <h2 className="text-xl font-semibold">example user {fname} {lname}</h2>
             <p className="text-gray-500">Software Engineer</p>
             <p className="text-gray-500">Reliability: 12345</p>
-            <div className="flex justify-center gap-3 mt-4">
-              <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-blue-700">Follow</button>
-              <button className="border border-black text-black px-4 py-2 rounded-md hover:bg-blue-50">Message</button>
-            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-6 w-2/3 h-full">
