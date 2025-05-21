@@ -1,27 +1,25 @@
 // pages/dashboardView.tsx
 
+
 import React, {useContext, useEffect, useState} from 'react';
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
 import {
-    Navbar,
-    NavbarContent,
-    NavbarItem,
-    Link as NextUILink,
-    Button as NextUIButton,
-    Spacer,
+  Navbar,
+  NavbarContent,
+  NavbarItem,
+  Link as NextUILink,
+  Spacer,
 } from '@nextui-org/react';
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
-import CardComponent from '@/components/CardComponent';
 import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
-import OHLCChart from '@/components/ohlc';
-import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import { GraphSettingsContext } from '@/components/GraphSettingsContext';
 
+const NUM_CARDS = 6;
 
 const DashboardView: React.FC = () => {
     const [showSignUp, setSignUp] = useState(false);
@@ -42,6 +40,11 @@ const DashboardView: React.FC = () => {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Instead of image content, now we use stock selection
+    const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>(
+      Array(NUM_CARDS).fill(null)
+    );
 
 
     const handleSelectStock = (index: number, stock: string) => {
@@ -64,6 +67,19 @@ const DashboardView: React.FC = () => {
         newStocks[index] = temp;
         setSettings({ ...settings, selectedStocks: newStocks });
     };
+    
+
+    const handleSettingsChange = (i: number, s: any) => {
+      setCardSettings(cs => {
+        const x = [...cs];
+        x[i] = {
+          color: s.stockColour,
+          start: s.metricParams.startDate,
+          end: s.metricParams.endDate,
+        };
+        return x;
+      });
+    };
 
     // Tags UI (optional local state for tags, not chart data)
     const [searchTags, setSearchTags] = React.useState<string[]>([]);
@@ -74,6 +90,18 @@ const DashboardView: React.FC = () => {
     };
 
 
+    const [cardSettings, setCardSettings] = useState<
+      { color: string; start: string; end: string }[]
+    >(() =>
+      Array(NUM_CARDS)
+        .fill(0)
+        .map(() => ({
+          color: '#fc03d7',
+          start: globalStart,
+          end: globalEnd,
+        }))
+    );
+      
     return (
         <div>
             <div style={{ display: 'flex' }}>
@@ -191,7 +219,6 @@ const DashboardView: React.FC = () => {
                         />
 
                         {/* Global Time Selection */}
-                        {/* ToDo: Pass globalStart/globalEnd to each StockChartCard to initialize its own time range */}
                         <Tooltip title="Start" arrow>
                             <TextField
                                 type="datetime-local"
@@ -241,9 +268,11 @@ const DashboardView: React.FC = () => {
                                     onClear={handleClear}
                                     onSwap={handleSwap}
                                     height={816}
-                                    // TODO: As each card initial start/endDate
-                                    defaultStart={globalStart}
-                                    defaultEnd={globalEnd}
+                                    defaultStart={cardSettings[0].start}
+                                    defaultEnd={cardSettings[0].end}
+                                    color={cardSettings[0].color}
+                                    onSettingsChange={handleSettingsChange}
+
                                 />
                             </Grid>
 
@@ -258,8 +287,10 @@ const DashboardView: React.FC = () => {
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
+                                                defaultStart={cardSettings[index].start}
+                                                defaultEnd={cardSettings[index].end}
+                                                color={cardSettings[index].color}
+                                                onSettingsChange={handleSettingsChange}                                                
                                             />
                                         </Grid>
                                     ))}
@@ -277,8 +308,10 @@ const DashboardView: React.FC = () => {
                                                 onSelectStock={handleSelectStock}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
+                                                defaultStart={cardSettings[index].start}
+                                                defaultEnd={cardSettings[index].end}
+                                                color={cardSettings[index].color}
+                                                onSettingsChange={handleSettingsChange}                                                
                                             />
                                         </Grid>
                                     ))}
