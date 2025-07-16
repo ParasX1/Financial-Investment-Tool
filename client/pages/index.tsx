@@ -103,7 +103,7 @@ function Index() {
       <div style={{ display: "flex" }}>
         <Sidebar />
         <div style={{ flex: 1, paddingLeft: "50px" }}>
-        <Navbar children={[
+        <Navbar items ={[
             {label: "Dashboard", href: "#dashboard"},
             {label: "Tools", href: "#tools"},
             {label: "About Us", href: "#about"},
