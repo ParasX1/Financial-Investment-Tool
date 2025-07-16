@@ -5,7 +5,7 @@ from flask_cors import CORS
 from src.stocks import sanitiseStockJson
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from metrics import (
+from src.metrics import (
     fetch_stock_data,
     calculate_beta,
     calculate_alpha,
