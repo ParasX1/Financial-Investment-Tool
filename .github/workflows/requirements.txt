@@ -1,0 +1,10 @@
+joblib==1.5.1
+numpy==2.3.0
+opencv-contrib-python==4.11.0.86
+pygame==2.6.1
+pytz==2025.2
+scikit-learn==1.7.0
+scipy==1.15.3
+setuptools==80.9.0
+threadpoolctl==3.6.0
+wheel==0.45.1
