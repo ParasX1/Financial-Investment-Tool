@@ -103,11 +103,11 @@ const Help: React.FC = () => {
                 Users can search and select a stock via the top search bar. 
                 </p>
                 <p style={{ marginBottom: '1rem' }}>
-                the main chart pane then displays the chosen ticker's data.
+                the main chart pane then displays the chosen ticker&apos;s data.
                 </p>
 
                 <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Main block:</strong> Renders the selected stock's interactive chart.</li>
+                <li><strong>Main block:</strong> Renders the selected stock&apos;s interactive chart.</li>
                 <li><strong>Mini blocks (x5):</strong> Swap any chart into the main pane using the ↔ button.</li>
                 <li><strong>Settings (⚙️):</strong> Adjust metric type, start/end dates, series color, and other metric‑specific parameters per pane.</li>
                 <li><strong>Sync:</strong> User-defined chart configurations automatically sync to the dashboard for consistent display.</li>

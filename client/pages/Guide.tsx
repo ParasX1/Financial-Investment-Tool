@@ -179,7 +179,7 @@ const Guide: React.FC = () => {
                 <li><strong>Metric Type:</strong> Select “Sortino Ratio”.</li>
                 <li><strong>Risk-Free Rate:</strong> Provide the annual risk-free rate. </li>
                 <li><strong>Date Range:</strong> Set the analysis period.
-                You'll see a time series of Sortino values—higher values indicate better downside risk-adjusted performance.</li>
+                You&apos;ll see a time series of Sortino values—higher values indicate better downside risk-adjusted performance.</li>
             </ul>
           </section>
 
@@ -228,7 +228,7 @@ const Guide: React.FC = () => {
                 <li><strong>Metric Type:</strong> Select “Value at Risk”.</li>
                 <li><strong>Confidence Level:</strong> Enter a decimal (e.g. 0.05 for 95% VaR). </li>
                 <li><strong>Date Range:</strong> Choose the period to analyze.
-                You'll see VaR over time, which tells you, for example, “on 5% of days I lost more than X%.”</li>
+                You&apos;ll see VaR over time, which tells you, for example, “on 5% of days I lost more than X%.”</li>
             </ul>
           </section>
 
@@ -243,7 +243,7 @@ const Guide: React.FC = () => {
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Choose “Efficient Frontier”.</li>
                 <li><strong>Date Range:</strong> Define your historical window.
-                After applying, you'll see a scatterplot of portfolio points with the frontier curve—use this to find the best trade-off between risk and return.</li>
+                After applying, you&apos;ll see a scatterplot of portfolio points with the frontier curve—use this to find the best trade-off between risk and return.</li>
             </ul>
           </section>
         </div>
