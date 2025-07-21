@@ -23,8 +23,7 @@ interface NavbarProps {
 }
 
   
-
-export function Navbar({items} : NavbarProps) {
+export function Navbar({ items } : NavbarProps) {
     const {isLoggedIn, login, logout} = useAuth();
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setShowLogIn] = useState(false);
