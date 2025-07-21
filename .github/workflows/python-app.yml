@@ -5,7 +5,7 @@ name: Backend CI
 
 on:
   push:
-    branches: ["main", "sidebar"]
+    branches: ["main", "CICD_fix"]
   pull_request:
     branches: ["main"]
 
