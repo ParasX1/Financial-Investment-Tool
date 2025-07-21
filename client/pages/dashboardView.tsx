@@ -243,8 +243,6 @@ const DashboardView: React.FC = () => {
                                     height={816}
                                     defaultStart={cardSettings[0].start}
                                     defaultEnd={cardSettings[0].end}
-                                    color={cardSettings[0].color}
-                                    onSettingsChange={handleSettingsChange}
 
                                 />
                             </Grid>
@@ -261,9 +259,7 @@ const DashboardView: React.FC = () => {
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                                 defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}
-                                                color={cardSettings[index].color}
-                                                onSettingsChange={handleSettingsChange}                                                
+                                                defaultEnd={cardSettings[index].end}                                               
                                             />
                                         </Grid>
                                     ))}
@@ -282,9 +278,7 @@ const DashboardView: React.FC = () => {
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                                 defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}
-                                                color={cardSettings[index].color}
-                                                onSettingsChange={handleSettingsChange}                                                
+                                                defaultEnd={cardSettings[index].end}                                                
                                             />
                                         </Grid>
                                     ))}
