@@ -1,10 +1,6 @@
-import json
-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from src.stocks import sanitiseStockJson
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 from src.metrics import (
     fetch_stock_data,
     calculate_beta,
@@ -48,7 +44,7 @@ def create_app():
                         .eq("id", userid)
                         .single()
                         .execute()
-            )
+                        )
             if response:
                 return response.data["stock_ids"]["stocks"], 200
             else:
@@ -68,15 +64,15 @@ def create_app():
             if not sanitiseStockJson(json):
                 raise KeyError("Invalid JSON")
             resp = (supabase.table("Users")
-                        .update({"stock_ids": json})
-                        .eq("id", userid)
-                        .execute()
-            )
+                    .update({"stock_ids": json})
+                    .eq("id", userid)
+                    .execute()
+                    )
             if not resp:
                 raise KeyError("Couldn't find table entry")
             return jsonify({"message": "OK"}), 200
         except KeyError as e:
-           return jsonify({
+            return jsonify({
                "error": f"Something went wrong: {e}"
            }), 500
         
@@ -172,3 +168,4 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True, port=8080)
+    
