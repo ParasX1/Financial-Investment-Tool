@@ -6,16 +6,15 @@ import {
 	Navbar as Nb,
 	Spacer
 } from "@nextui-org/react"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Fragment } from "react";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import {useAuth} from "@/components/authContext";
 
 export interface NavbarElem {
+    id: number
     label: string
     href: string 
-    // only supports jumping to other pages, can replace with
-    // action to have it do other things
 }
 
 interface NavbarProps {
@@ -37,14 +36,14 @@ export function Navbar({ items } : NavbarProps) {
         <Nb maxWidth="full" shouldHideOnScroll>
           <NavbarContent className="hidden sm:flex gap-4" justify="center" >
             {items.map(child => (
-                <>
+                <Fragment key={child.id}>
                 <NavbarItem>
                     <Link color="foreground" href={child.href}>
                         {child.label}
                     </Link>
                 </NavbarItem>
                   <Spacer x={6} />
-                </>
+                </Fragment>
             ))}
             </NavbarContent>
 
