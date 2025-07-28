@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -25,3 +24,4 @@ def log_error(message):
 
 def log_info(message):
     logging.info(message)
+    

@@ -80,7 +80,7 @@ const TextGrid: React.FC = () => {
                         Drawdown and Maximum Drawdown
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
-                       Tracks the decline from a portfolio's peak to trough, indicating exposure to downside risk.
+                       Tracks the decline from a portfolio&apos;s peak to trough, indicating exposure to downside risk.
                     </Typography>
                 </Box>
             ),
@@ -118,8 +118,8 @@ const TextGrid: React.FC = () => {
                             <Image
                                 src={item.image}
                                 alt={`Image for box ${index + 1}`}
-                                layout="fill"
-                                objectFit="cover"
+                                fill
+                                style={{ objectFit: "cover"}}
                             />
                             <Box
                                 sx={{

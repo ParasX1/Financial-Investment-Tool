@@ -11,3 +11,4 @@ def test_sanitisejson_badfields():
     assert not sanitiseStockJson(json.loads('{"stocks": [{"symbolID": 0}]}'))
     assert not sanitiseStockJson(json.loads('{"stocks": [{"volume": 0}]}'))
     assert not sanitiseStockJson(json.loads('{"stocks": [{"bad": 3, "volume": -69,"symbolID": 0}]}'))
+    

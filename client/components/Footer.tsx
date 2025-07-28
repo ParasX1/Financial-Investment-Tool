@@ -7,6 +7,7 @@ import InstagramIcon from '../assets/footer/Instagram.png';
 import LinkedInIcon from '../assets/footer/LinkedIn.png';
 import TwitterIcon from '../assets/footer/Twitter.png';
 import YouTubeIcon from '../assets/footer/YouTube.png'
+import Image from "next/image"
 
 function Footer(){
     return(
@@ -15,39 +16,49 @@ function Footer(){
                 <ul>
                     {/* 2. Replace the "FIT" text with an <img> tag */}
                     <li>
-                        <img 
+                        <Image 
                             src={FITLogo.src} 
                             alt="FIT Logo" 
-                            className={styles.fitLogo} 
+                            className={styles.fitLogo}
+                            width={20}
+                            height={20}
                         />
                     </li>
                     <li className={styles.socialRow}>
                         <a href="https://x.com" target="_blank" rel="noopener noreferrer">
-                            <img
+                            <Image
                                 src={TwitterIcon.src}
                                 alt="Twitter"
                                 className={styles.socialIcon}
+                                width={20}
+                                height={20}
                             />
                         </a>
                         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-                            <img
+                            <Image
                                 src={InstagramIcon.src}
                                 alt="Instagram"
                                 className={styles.socialIcon}
+                                width={20}
+                                height={20}
                             />
                         </a>
                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-                            <img
+                            <Image
                                 src={LinkedInIcon.src}
                                 alt="LinkedIn"
                                 className={styles.socialIcon}
+                                width={20}
+                                height={20}
                             />
                         </a>
                         <a href="https://youtube.com" target="_blank" rel="noopener noreferrer">
-                            <img
+                            <Image
                                 src={YouTubeIcon.src}
                                 alt="YouTube"
                                 className={styles.socialIcon}
+                                width={20}
+                                height={20}
                             />
                         </a>
                     </li>
