@@ -90,7 +90,6 @@ function Index() {
             </div>
           </div>
           
-
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
             <Box id="tools" sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
 
@@ -145,7 +144,6 @@ function Index() {
                         </Grid>
                     </Grid>
                 </Box>
-
 
                 {/* TOOL INFO SECTION */}
                 <Box
