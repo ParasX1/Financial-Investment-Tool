@@ -141,8 +141,13 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const [barColor, setBarColor]             = useState('#fc03d7');
   const [chartData, setChartData]           = useState<MetricsResponse | null>(null);
   const [dateRange, setDateRange]           = useState({ start: defaultStart, end: defaultEnd });
+  const [graphMade, setGraphMade]           = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const buttonBackgroundColor = '#777'; // Grey background color
+  const buttonHoverColor = '#555'; // Darker grey on hover
+
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
@@ -153,7 +158,21 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       end:   settings.metricParams.endDate,
     });
 
-    if (!selectedStock) return;
+    setGraphMade(true);
+
+    const sameData = settings.metricParams.startDate === dateRange.start
+                    && settings.metricParams.endDate === dateRange.end
+
+    if (sameData) {
+      console.log("Same Data")
+      return;
+    }
+
+    if (!selectedStock) {
+      console.log("No selected Stock")
+      return;
+    }
+    console.log("fetching data")
     const data = await fetchMetrics({ ticker: selectedStock, settings });
     setChartData(data);
   };
@@ -165,7 +184,15 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   useEffect(() => {
     if (!selectedStock) { setChartData(null); return; }
-    fetchMetrics({ ticker: selectedStock, settings: null }).then(setChartData);
+    fetchMetrics({ ticker: selectedStock, settings: {
+      metricType: 'BetaAnalysis',
+      metricParams : {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+      },
+      stockColour: barColor
+    }, 
+    }).then(setChartData);
   }, [selectedStock]);
 
   // resize observer
@@ -180,9 +207,14 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   // choose chart component 
   const renderChart = () => {
-    if (!chartData || !selectedStock) return null;
+    if (!chartData || !selectedStock){
+      console.log("No chart data or selected stock")
+      return null;
+    }
 
+    
     if (chartData.metricType === 'OHLC') {
+      console.log("Its rendering")
       const data = (chartData.series as any).ohlc;
       return (
         <OHLCChart
@@ -194,16 +226,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       );
     }
 
-    const points = (chartData.series as any).points;
-    const barData = points.map((p: any) => ({ label: p.date, value: p.value }));
-    return (
-      <BarGraph
-        data={barData}
-        width={dimensions.width - 32}
-        height={dimensions.height - 90}
-        barColor={barColor}
-      />
-    );
+    console.log("not type ohlc")
   };
 
   // render
@@ -223,20 +246,45 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
-      {renderChart()}
+          {/* controls */}
+          <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+            <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+            <Button variant="contained" size="small" onClick={() => {onClear(index); setGraphMade(false);}}>×</Button>
+            <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
+              {isFullscreen ? '⤡' : '⤢'}
+            </Button>
+          <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
+            ⚙︎
+          </Button>
+        </Box>
 
-      {/* controls */}
-      <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-        <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-        <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
-        <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
-          {isFullscreen ? '⤡' : '⤢'}
-        </Button>
-        <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
-          ⚙︎
-        </Button>
-      </Box>
-
+      {chartData && selectedStock && graphMade ? (
+        <>
+          {renderChart()}
+      </>
+      ) : (
+        <Button
+        variant="contained"
+        onClick={() => setShowSettings(true)}
+        sx={{
+          position: 'absolute',
+          top: 'calc(50% - 20px)',
+          left: 'calc(50% - 20px)',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          minWidth: 'unset',
+          backgroundColor: buttonBackgroundColor,
+          color: 'white',
+          fontSize: '24px',
+          '&:hover': {
+            backgroundColor: buttonHoverColor,
+          },
+        }}
+      >
+        +
+      </Button>
+    )}
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
