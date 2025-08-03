@@ -1,6 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Typography, CircularProgress } from '@mui/material';
-import { Article, fetchGeneralNews } from '@/services/news';
+import { Box, Button, Typography, CircularProgress,
+        Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem,
+        Card, CardMedia, CardContent, Grid } from '@mui/material';
+import {
+  fetchGeneralNews,
+  fetchRegionalNews,
+  fetchIndustryNews,
+  fetchCommodityNews,
+  Article
+} from '@/services/news';
+
+const regionalOptions  = [ 'au','cn','jp','us','gb' ];
+const industryOptions  = [ 'technology','health','finance','internet','pharmaceutical' ];
+const commodityOptions = [ 'gold','oil','wheat','copper','silver' ];
 
 export interface NewsCardComponentProps {
   index: number;
@@ -20,17 +32,44 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
 
+  const [openSettings, setOpenSettings] = useState(false);
+  const [param, setParam]               = useState<string>('');
+
+  // initial param
   useEffect(() => {
-    // Only general news
-    if (index !== 0) return;
-    setLoading(true);
-    fetchGeneralNews(15)
-      .then(data => setArticles(data))
-      .catch(e => setError((e as Error).message))
-      .finally(() => setLoading(false));
+    const key = ['general','watchlist','regional','industry','commodity'][index];
+    const saved = window.localStorage.getItem(`news-param-${key}`);
+    setParam(saved || '');
   }, [index]);
 
+  // Pull data
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    let p: Promise<Article[]>;
+    switch (index) {
+      case 0: p = fetchGeneralNews(10); break;
+      case 2: p = fetchRegionalNews(param || 'au',  10); break;
+      case 3: p = fetchIndustryNews(param || 'technology', 10); break;
+      case 4: p = fetchCommodityNews(param || 'gold', 10); break;
+      default:
+        p = Promise.resolve([]); // ToDo: watchlist or portfolio in following issues
+    }
+    p.then(setArticles)
+     .catch(e => setError((e as Error).message))
+     .finally(() => setLoading(false));
+  }, [index, param]);
+
+  const onSaveSettings = () => {
+    const key = ['general','watchlist','regional','industry','commodity'][index];
+    window.localStorage.setItem(`news-param-${key}`, param);
+    setOpenSettings(false);
+  };
+
+
   return (
+    <>
+
     <Box
       ref={containerRef}
       sx={{
@@ -49,21 +88,23 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
         flexDirection: 'column',
       }}
     >
-      {/* Title line */}
+      {/* Title + Controls */}
       <Box sx={{ position: 'relative' }}>
         <Typography variant="subtitle1" sx={{ color: 'white' }}>
           {title}
         </Typography>
 
         <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-          <Button variant="contained" size="small" onClick={() => setIsFullscreen(f => !f)}>
+            <Button variant="contained" size="small" onClick={() => setIsFullscreen(f => !f)}>
             {isFullscreen ? '⤡' : '⤢'}
           </Button>
-          <Button variant="contained" size="small">⚙︎</Button>
+            {index >= 2 && (
+              <Button variant="contained" size="small" onClick={()=>setOpenSettings(true)}>⚙︎</Button>
+            )}
         </Box>
       </Box>
 
-      {/* Information area */}
+      {/* Content */}
       <Box
         sx={{
           flex: 1,
@@ -85,32 +126,95 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
           </Typography>
         )}
 
-        {!loading && !error && articles.map(a => (
-          <Box key={a.id} sx={{ mb: 2 }}>
-            <a
-              href={a.url}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                color: '#4ea1ff',
-                textDecoration: 'none',
-                fontWeight: 500,
-              }}
-            >
-              {a.title}
-            </a>
-            <Typography variant="caption" component="div" sx={{ color: '#999', mt: 0.5 }}>
-              {new Date(a.publishedAt).toLocaleString()} · {a.source}
-            </Typography>
-            {a.summary && (
-              <Typography variant="body2" sx={{ mt: 0.5 }}>
-                {a.summary}
-              </Typography>
-            )}
-          </Box>
-        ))}
+        {!loading && !error && (
+            <Grid container spacing={2}>
+              {articles.map(a => (
+                <Grid item xs={12} sm={6} md={4} key={a.id}>
+                  <Card sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 2,
+                    boxShadow: 3,
+                    '&:hover': { boxShadow: 6 },
+                  }}>
+                    <CardMedia
+                      component="img"
+                      height="120"
+                      image={a.image ?? '/placeholder.jpg'}
+                      alt={a.title}
+                    />
+                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <Typography
+                        component="a"
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        variant="subtitle1"
+                        sx={{
+                          mb: 1,
+                          color: '#4ea1ff',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {a.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ flex: 1, mb: 1 }}
+                      >
+                        {a.summary}
+                      </Typography>
+                      <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}>
+                        <Typography variant="caption" sx={{ color: '#999' }}>
+                          {new Date(a.publishedAt).toLocaleDateString()}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#999' }}>
+                          {a.source}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
       </Box>
-    </Box>
+
+    {/* Settings Dialog */}
+      <Dialog open={openSettings} onClose={()=>setOpenSettings(false)}>
+        <DialogTitle>Set {title}</DialogTitle>
+        <DialogContent>
+          <Select
+            fullWidth
+            value={param}
+            onChange={e=>setParam(e.target.value)}
+          >
+            {(index === 2 ? regionalOptions
+             : index === 3 ? industryOptions
+             : commodityOptions
+            ).map(opt=>(
+              <MenuItem key={opt} value={opt}>
+                {opt.toUpperCase()}
+              </MenuItem>
+            ))}
+          </Select>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setOpenSettings(false)}>Cancel</Button>
+          <Button onClick={onSaveSettings}>Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      </>
   );
 };
 
