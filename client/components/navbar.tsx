@@ -19,12 +19,11 @@ export interface NavbarElem {
 }
 
 interface NavbarProps {
-    children: NavbarElem[]
+    items: NavbarElem[]
 }
 
   
-
-export function Navbar({children} : NavbarProps) {
+export function Navbar({ items } : NavbarProps) {
     const {isLoggedIn, login, logout} = useAuth();
     const [showSignUp, setSignUp] = useState(false);
     const [showLogIn, setShowLogIn] = useState(false);
@@ -37,7 +36,7 @@ export function Navbar({children} : NavbarProps) {
         return (
         <Nb maxWidth="full" shouldHideOnScroll>
           <NavbarContent className="hidden sm:flex gap-4" justify="center" >
-            {children.map(child => (
+            {items.map(child => (
                 <>
                 <NavbarItem>
                     <Link color="foreground" href={child.href}>
