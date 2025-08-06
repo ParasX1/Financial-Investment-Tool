@@ -107,17 +107,13 @@ const DashboardView: React.FC = () => {
 
         setActiveCards(prev => {
             const updated = [...prev];
-            const temp = updated[0];
-            updated[0] = updated[index];
-            updated[index] = temp;
+            [updated[0], updated[index]] = [updated[index], updated[0]];
             return updated;
         });
 
         setCardSettings(prev => {
             const updated = [...prev];
-            const temp = updated[0];
-            updated[0] = updated[index];
-            updated[index] = temp;
+            [updated[0], updated[index]] = [updated[index], updated[0]];
             return updated;
         });
     };
@@ -160,7 +156,7 @@ const DashboardView: React.FC = () => {
                                  // Update tag array
                                 setSearchTags(newTags as string[]);
                                 
-                                // Default stock to selected
+                                // Stock start selected
                                 if (reason === 'selectOption') {
                                     const selected = details?.option as string;
                                     setSelectedStocks(prev => prev.includes(selected)

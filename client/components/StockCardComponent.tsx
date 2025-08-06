@@ -138,8 +138,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   onActivate,
   onUpdateSettings,
   height = 400,
-  defaultStart,
-  defaultEnd,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
@@ -171,10 +169,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     onActivate(index);
 
     if (selectedStocks.length === 0) {
-      console.log("No selected Stocks")
       return;
     }
-    console.log("fetching data")
     const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
 
     const allData = await Promise.all(data);
@@ -221,7 +217,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   // choose chart component 
   const renderChart = () => {
     if (chartData.length === 0 || selectedStocks.length === 0){
-      console.log("No chart data or selected stock")
       return null;
     }
     
@@ -258,7 +253,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           {/* controls */}
           <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
             <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-            <Button variant="contained" size="small" onClick={() => {onClear(index);}}>×</Button>
+            <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
             <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
               {isFullscreen ? '⤡' : '⤢'}
             </Button>
