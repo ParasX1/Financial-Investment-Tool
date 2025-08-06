@@ -1,121 +1,103 @@
-import React, { useState } from "react";
-import Sidebar from "@/components/sidebar";
+import React, { useState } from 'react';
+import Sidebar from '@/components/sidebar';
 import {
   Box,
   Grid,
   Autocomplete,
   TextField,
   Chip,
-  Tooltip,
-} from "@mui/material";
-import NewsCardComponent from "@/components/NewsCardComponent";
-import StockChartCard, { stockDataMap } from "@/components/StockCardComponent";
-
+} from '@mui/material';
+import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
+import NewsCardComponent from '@/components/NewsCardComponent';
 
 export default function WatchlistPage() {
-  // stock search
   const stockOptions = Object.keys(stockDataMap);
-  const [searchTags, setSearchTags] = useState<string[]>([]);
-  const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>([
-    null,
-    null,
-  ]);
+  const [tags, setTags]     = useState<string[]>([]);
+  const [charts, setCharts] = useState<(string | null)[]>([null, null, null]);
 
-  const handleSelectStock = (idx: number, symbol: string) => {
-    setSelectedStocks((prev) => {
-      const next = [...prev];
-      next[idx] = symbol;
-      return next;
-    });
+  const sync = (t: string[]) =>
+    setCharts([t[0] ?? null, t[1] ?? null, t[2] ?? null]);
+
+  const onTagsChange = (_: any, t: string[]) => {
+    const limited = t.slice(0, 3);
+    setTags(limited);
+    sync(limited);
   };
 
-  const handleClear = (idx: number) => {
-    setSelectedStocks((prev) => {
+  const clearChart = (i: number) =>
+    setCharts(prev => {
       const next = [...prev];
-      next[idx] = null;
+      next[i] = null;
       return next;
     });
-  };
 
-  const newsTitles = ["Watchlist News • 1", "Watchlist News • 2"];
+  const swapVert = (i: number) => {
+    if (i === 0) return;
+    setCharts(([a, b, c]) =>
+      i === 1 ? [b, a, c] : [c, b, a]
+    );
+  };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
 
-      {/* Main content */}
-      <Box sx={{ flex: 1, pl: "50px", bgcolor: "black" }}>
-        {/* Search bar row */}
-        <Box
-          sx={{
-            px: 2,
-            py: 1,
-            borderBottom: "1px solid #333",
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}>
+      <Box sx={{ flex: 1, pl: '50px', bgcolor: 'black' }}>
+        {/* search bar */}
+        <Box sx={{
+          px: 2, py: 1, borderBottom: '1px solid #333',
+          display: 'flex', alignItems: 'center', gap: 2,
+        }}>
           <Autocomplete
-            multiple
-            freeSolo
+            multiple freeSolo
             options={stockOptions}
-            value={searchTags}
-            onChange={(_, newTags) => setSearchTags(newTags as string[])}
-            sx={{ flexGrow: 1, maxWidth: 400 }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, idx) => (
-                <Chip
-                  {...getTagProps({ index: idx })}
-                  key={option}
-                  label={option}
-                  size="small"
-                  sx={{ bgcolor: "#800080", color: "#fff" }}
-                  onClick={() => handleSelectStock(0, option)}
-                />
+            value={tags}
+            onChange={onTagsChange}
+            sx={{ flexGrow: 1, maxWidth: 500 }}
+            renderInput={p => (
+              <TextField {...p} placeholder="Add up to 3 tickers…"
+                size="small" variant="outlined"
+                sx={{ bgcolor: 'white', input: { color: '#000' } }} />
+            )}
+            renderTags={(v, getTagProps) =>
+              v.map((opt, i) => (
+                <Chip {...getTagProps({ index: i })}
+                  key={opt} label={opt} size="small"
+                  sx={{ bgcolor: '#800080', color: '#fff' }} />
               ))
             }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search Stocks…"
-                size="small"
-                variant="outlined"
-                sx={{ bgcolor: "white", input: { color: "#000" } }}
-              />
-            )}
           />
         </Box>
 
-        {/* 2×2 grid: (graph, news) × 2 */}
+        {/* 3 × 2 grid */}
         <Box sx={{ p: 2 }}>
           <Grid container spacing={2}>
-            {/* Row 1 */}
-            <Grid item xs={12} md={6}>
-              <StockChartCard
-                index={0}
-                selectedStock={selectedStocks[0]}
-                onSelectStock={(i, s) => handleSelectStock(0, s)}
-                onClear={() => handleClear(0)}
-                height={400}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <NewsCardComponent index={0} title={newsTitles[0]} height="400px" />
-            </Grid>
+            {[0, 1, 2].map(row => (
+              <React.Fragment key={row}>
+                {/* chart */}
+                <Grid item xs={12} md={6}>
+                  <StockChartCard
+                    index={row}
+                    selectedStock={charts[row]}
+                    onSelectStock={() => {}}
+                    onClear={() => clearChart(row)}
+                    onSwap={() => swapVert(row)}
+                    swapIcon="↕"
+                    height={350}
+                  />
+                </Grid>
 
-            {/* Row 2 */}
-            <Grid item xs={12} md={6}>
-              <StockChartCard
-                index={1}
-                selectedStock={selectedStocks[1]}
-                onSelectStock={(i, s) => handleSelectStock(1, s)}
-                onClear={() => handleClear(1)}
-                height={400}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <NewsCardComponent index={1} title={newsTitles[1]} height="400px" />
-            </Grid>
+                {/* news – index 1 == “watchlist” mode */}
+                <Grid item xs={12} md={6}>
+                  <NewsCardComponent
+                    index={1}
+                    title={charts[row] ? `News: ${charts[row]}` : 'Watchlist News'}
+                    height={350}
+                    filterTicker={charts[row] ?? undefined}
+                  />
+                </Grid>
+              </React.Fragment>
+            ))}
           </Grid>
         </Box>
       </Box>
