@@ -107,33 +107,6 @@ const DashboardView: React.FC = () => {
             <div style={{ display: 'flex' }}>
                 <Sidebar />
                 <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
-                    <Navbar maxWidth={'full'}>
-                        <NavbarContent className="hidden sm:flex gap-4" justify="start">
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    About Us
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink href="search" color="foreground">
-                                    Services
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    Tools
-                                </NextUILink>
-                            </NavbarItem>
-                            <Spacer x={6} />
-                            <NavbarItem>
-                                <NextUILink color="foreground" href="#">
-                                    People
-                                </NextUILink>
-                            </NavbarItem>
-                        </NavbarContent>
-                    </Navbar>
 
                      {/* Search Bar*/}
                     <Box
@@ -270,8 +243,6 @@ const DashboardView: React.FC = () => {
                                     height={816}
                                     defaultStart={cardSettings[0].start}
                                     defaultEnd={cardSettings[0].end}
-                                    color={cardSettings[0].color}
-                                    onSettingsChange={handleSettingsChange}
 
                                 />
                             </Grid>
@@ -288,9 +259,7 @@ const DashboardView: React.FC = () => {
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                                 defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}
-                                                color={cardSettings[index].color}
-                                                onSettingsChange={handleSettingsChange}                                                
+                                                defaultEnd={cardSettings[index].end}                                               
                                             />
                                         </Grid>
                                     ))}
@@ -309,9 +278,7 @@ const DashboardView: React.FC = () => {
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
                                                 defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}
-                                                color={cardSettings[index].color}
-                                                onSettingsChange={handleSettingsChange}                                                
+                                                defaultEnd={cardSettings[index].end}                                                
                                             />
                                         </Grid>
                                     ))}
