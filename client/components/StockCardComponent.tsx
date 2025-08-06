@@ -4,6 +4,7 @@ import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
+import { CardSettings } from '@/pages/dashboardView';
 
 type OHLCData = {
     date: string;
@@ -115,10 +116,13 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
 
 interface StockChartCardProps {
   index: number;
-  selectedStock: string | null;
-  onSelectStock: (index: number, stock: string) => void;
+  selectedStocks: string[];
+  isActive: boolean;
+  cardSettings: CardSettings;
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
+  onActivate: (index: number) => void;
+  onUpdateSettings: (index: number, settings: CardSettings) => void;
   height?: number;
   defaultStart: string;
   defaultEnd: string;
@@ -126,10 +130,13 @@ interface StockChartCardProps {
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
   index,
-  selectedStock,
-  onSelectStock,
+  selectedStocks,
+  isActive,
+  cardSettings,
   onClear,
   onSwap,
+  onActivate,
+  onUpdateSettings,
   height = 400,
   defaultStart,
   defaultEnd,
@@ -138,62 +145,68 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const [dimensions, setDimensions] = useState({ width: 500, height });
   const [showSettings, setShowSettings] = useState(false);
 
-  const [barColor, setBarColor]             = useState('#fc03d7');
-  const [chartData, setChartData]           = useState<MetricsResponse | null>(null);
-  const [dateRange, setDateRange]           = useState({ start: defaultStart, end: defaultEnd });
-  const [graphMade, setGraphMade]           = useState(false);
+  const [chartData, setChartData] = useState<MetricsResponse[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const buttonBackgroundColor = '#777'; // Grey background color
   const buttonHoverColor = '#555'; // Darker grey on hover
 
+  const { barColor, dateRange, metricType, graphMade } = cardSettings;
+  const showGraph = isActive && selectedStocks.length > 0 && graphMade;
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
   const handleApplySettings = async (settings: GraphSettings) => {
-    setBarColor(settings.stockColour);
-    setDateRange({
-      start: settings.metricParams.startDate,
-      end:   settings.metricParams.endDate,
+    onUpdateSettings(index, {
+      barColor: settings.stockColour,
+      dateRange: {
+        start: settings.metricParams.startDate,
+        end: settings.metricParams.endDate,
+      },
+      metricType: settings.metricType,
+      graphMade: true,
     });
 
-    setGraphMade(true);
+    onActivate(index);
 
-    const sameData = settings.metricParams.startDate === dateRange.start
-                    && settings.metricParams.endDate === dateRange.end
-
-    if (sameData) {
-      console.log("Same Data")
-      return;
-    }
-
-    if (!selectedStock) {
-      console.log("No selected Stock")
+    if (selectedStocks.length === 0) {
+      console.log("No selected Stocks")
       return;
     }
     console.log("fetching data")
-    const data = await fetchMetrics({ ticker: selectedStock, settings });
-    setChartData(data);
+    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
+
+    const allData = await Promise.all(data);
+    setChartData(allData);
   };
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
-    onSelectStock(index, event.target.value);
-  };
-  // measure the container size
+  useEffect (() => {
+    if (!isActive || selectedStocks.length === 0){
+      setChartData([]);
+      return
+    }
 
-  useEffect(() => {
-    if (!selectedStock) { setChartData(null); return; }
-    fetchMetrics({ ticker: selectedStock, settings: {
-      metricType: 'BetaAnalysis',
-      metricParams : {
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-      },
-      stockColour: barColor
-    }, 
-    }).then(setChartData);
-  }, [selectedStock]);
+    const fetchAllData = async () => {
+      const data = selectedStocks.map(ticker =>
+        fetchMetrics({ 
+          ticker, 
+          settings: {
+            metricType: metricType as any,
+            metricParams: {
+              startDate: dateRange.start,
+              endDate: dateRange.end,
+            },
+            stockColour: barColor
+          }
+        })
+      );
+
+      const allData = await Promise.all(data)
+      setChartData(allData)
+    };
+    fetchAllData();
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType]);
 
   // resize observer
   useEffect(() => {
@@ -207,26 +220,22 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   // choose chart component 
   const renderChart = () => {
-    if (!chartData || !selectedStock){
+    if (chartData.length === 0 || selectedStocks.length === 0){
       console.log("No chart data or selected stock")
       return null;
     }
-
     
-    if (chartData.metricType === 'OHLC') {
-      console.log("Its rendering")
-      const data = (chartData.series as any).ohlc;
-      return (
-        <OHLCChart
-          data={data}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
-          barColor={barColor}
-        />
-      );
-    }
-
-    console.log("not type ohlc")
+    return (
+      <OHLCChart
+        multiData={chartData.map((data, i) => ({
+          ticker: selectedStocks[i],
+          color: barColor,
+          data: (data.series as any).ohlc
+        }))}
+        width={dimensions.width - 32}
+        height={dimensions.height - 90}
+      />
+    );
   };
 
   // render
@@ -249,7 +258,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           {/* controls */}
           <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
             <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-            <Button variant="contained" size="small" onClick={() => {onClear(index); setGraphMade(false);}}>×</Button>
+            <Button variant="contained" size="small" onClick={() => {onClear(index);}}>×</Button>
             <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
               {isFullscreen ? '⤡' : '⤢'}
             </Button>
@@ -257,8 +266,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             ⚙︎
           </Button>
         </Box>
-
-      {chartData && selectedStock && graphMade ? (
+      {showGraph ? (
         <>
           {renderChart()}
       </>
