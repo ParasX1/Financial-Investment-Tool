@@ -112,64 +112,6 @@ function Index() {
               {/* PUT IMAGE IN THE FUTURE */}
             </div>
           </div>
-                {/* Graph section synced from Dashboard */}
-                <div id="dashboard" >
-                <div style={{ padding: '20px' }}>
-                        <Grid container spacing={2}>
-                            {/* Main Large Card */}
-                            <Grid item xs={12} md={8}>
-                                <StockChartCard
-                                    index={0}
-                                    selectedStock={selectedStocks[0]}
-                                    onSelectStock={handleSelectStock}
-                                    onClear={handleClear}
-                                    onSwap={handleSwap}
-                                    height={816}
-                                    defaultStart={globalStart}
-                                    defaultEnd={globalEnd}
-                                />
-                            </Grid>
-
-                            {/* Vertical Stack of Cards */}
-                            <Grid item xs={12} md={4}>
-                                <Grid container direction="column" spacing={2}>
-                                    {[1, 2].map((index) => (
-                                        <Grid item key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-
-                            {/* Bottom Row of Cards */}
-                            <Grid item xs={12}>
-                                <Grid container spacing={2}>
-                                    {[3, 4, 5].map((index) => (
-                                        <Grid item xs={12} sm={4} key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </div>
-        </div>
           
 
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}

@@ -4,6 +4,7 @@ import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
+import { CardSettings } from '@/pages/dashboardView';
 
 type OHLCData = {
     date: string;
@@ -115,10 +116,13 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
 
 interface StockChartCardProps {
   index: number;
-  selectedStock: string | null;
-  onSelectStock: (index: number, stock: string) => void;
+  selectedStocks: string[];
+  isActive: boolean;
+  cardSettings: CardSettings;
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
+  onActivate: (index: number) => void;
+  onUpdateSettings: (index: number, settings: CardSettings) => void;
   height?: number;
   defaultStart: string;
   defaultEnd: string;
@@ -126,47 +130,79 @@ interface StockChartCardProps {
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
   index,
-  selectedStock,
-  onSelectStock,
+  selectedStocks,
+  isActive,
+  cardSettings,
   onClear,
   onSwap,
+  onActivate,
+  onUpdateSettings,
   height = 400,
-  defaultStart,
-  defaultEnd,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
   const [showSettings, setShowSettings] = useState(false);
 
-  const [barColor, setBarColor]             = useState('#fc03d7');
-  const [chartData, setChartData]           = useState<MetricsResponse | null>(null);
-  const [dateRange, setDateRange]           = useState({ start: defaultStart, end: defaultEnd });
+  const [chartData, setChartData] = useState<MetricsResponse[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const buttonBackgroundColor = '#777'; // Grey background color
+  const buttonHoverColor = '#555'; // Darker grey on hover
+
+  const { barColor, dateRange, metricType, graphMade } = cardSettings;
+  const showGraph = isActive && selectedStocks.length > 0 && graphMade;
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
   const handleApplySettings = async (settings: GraphSettings) => {
-    setBarColor(settings.stockColour);
-    setDateRange({
-      start: settings.metricParams.startDate,
-      end:   settings.metricParams.endDate,
+    onUpdateSettings(index, {
+      barColor: settings.stockColour,
+      dateRange: {
+        start: settings.metricParams.startDate,
+        end: settings.metricParams.endDate,
+      },
+      metricType: settings.metricType,
+      graphMade: true,
     });
 
-    if (!selectedStock) return;
-    const data = await fetchMetrics({ ticker: selectedStock, settings });
-    setChartData(data);
+    onActivate(index);
+
+    if (selectedStocks.length === 0) {
+      return;
+    }
+    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
+
+    const allData = await Promise.all(data);
+    setChartData(allData);
   };
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
-    onSelectStock(index, event.target.value);
-  };
-  // measure the container size
+  useEffect (() => {
+    if (!isActive || selectedStocks.length === 0){
+      setChartData([]);
+      return
+    }
 
-  useEffect(() => {
-    if (!selectedStock) { setChartData(null); return; }
-    fetchMetrics({ ticker: selectedStock, settings: null }).then(setChartData);
-  }, [selectedStock]);
+    const fetchAllData = async () => {
+      const data = selectedStocks.map(ticker =>
+        fetchMetrics({ 
+          ticker, 
+          settings: {
+            metricType: metricType as any,
+            metricParams: {
+              startDate: dateRange.start,
+              endDate: dateRange.end,
+            },
+            stockColour: barColor
+          }
+        })
+      );
+
+      const allData = await Promise.all(data)
+      setChartData(allData)
+    };
+    fetchAllData();
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType]);
 
   // resize observer
   useEffect(() => {
@@ -180,28 +216,19 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   // choose chart component 
   const renderChart = () => {
-    if (!chartData || !selectedStock) return null;
-
-    if (chartData.metricType === 'OHLC') {
-      const data = (chartData.series as any).ohlc;
-      return (
-        <OHLCChart
-          data={data}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
-          barColor={barColor}
-        />
-      );
+    if (chartData.length === 0 || selectedStocks.length === 0){
+      return null;
     }
-
-    const points = (chartData.series as any).points;
-    const barData = points.map((p: any) => ({ label: p.date, value: p.value }));
+    
     return (
-      <BarGraph
-        data={barData}
+      <OHLCChart
+        multiData={chartData.map((data, i) => ({
+          ticker: selectedStocks[i],
+          color: barColor,
+          data: (data.series as any).ohlc
+        }))}
         width={dimensions.width - 32}
         height={dimensions.height - 90}
-        barColor={barColor}
       />
     );
   };
@@ -223,20 +250,44 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
-      {renderChart()}
-
-      {/* controls */}
-      <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-        <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-        <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
-        <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
-          {isFullscreen ? '⤡' : '⤢'}
-        </Button>
-        <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
-          ⚙︎
-        </Button>
-      </Box>
-
+          {/* controls */}
+          <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+            <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+            <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
+            <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
+              {isFullscreen ? '⤡' : '⤢'}
+            </Button>
+          <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
+            ⚙︎
+          </Button>
+        </Box>
+      {showGraph ? (
+        <>
+          {renderChart()}
+      </>
+      ) : (
+        <Button
+        variant="contained"
+        onClick={() => setShowSettings(true)}
+        sx={{
+          position: 'absolute',
+          top: 'calc(50% - 20px)',
+          left: 'calc(50% - 20px)',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          minWidth: 'unset',
+          backgroundColor: buttonBackgroundColor,
+          color: 'white',
+          fontSize: '24px',
+          '&:hover': {
+            backgroundColor: buttonHoverColor,
+          },
+        }}
+      >
+        +
+      </Button>
+    )}
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
