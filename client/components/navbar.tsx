@@ -6,16 +6,15 @@ import {
 	Navbar as Nb,
 	Spacer
 } from "@nextui-org/react"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Fragment } from "react";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import {useAuth} from "@/components/authContext";
 
 export interface NavbarElem {
+    id: number
     label: string
     href: string 
-    // only supports jumping to other pages, can replace with
-    // action to have it do other things
 }
 
 interface NavbarProps {
@@ -37,28 +36,28 @@ export function Navbar({ items } : NavbarProps) {
         <Nb maxWidth="full" shouldHideOnScroll>
           <NavbarContent className="hidden sm:flex gap-4" justify="center" >
             {items.map(child => (
-                <>
+                <Fragment key={child.id}>
                 <NavbarItem>
                     <Link color="foreground" href={child.href}>
                         {child.label}
                     </Link>
                 </NavbarItem>
                   <Spacer x={6} />
-                </>
+                </Fragment>
             ))}
             </NavbarContent>
 
 			<NavbarContent justify="end">
             {isLoggedIn ? (
             <NavbarItem>
-                <Button className="bg-black text-white" variant="flat" onClick={logout}>
+                <Button className="bg-black text-white" variant="flat" onPress={logout}>
                     Log Out
                 </Button>
             </NavbarItem>
             ) : (
             <>
             <NavbarItem>
-                <Button className="bg-white text-black border-1 border-black" variant="flat" onClick={handleLoginShow}>
+                <Button className="bg-white text-black border-1 border-black" variant="flat" onPress={handleLoginShow}>
                     Log In
                 </Button>
                 <ModalLogin
@@ -68,7 +67,7 @@ export function Navbar({ items } : NavbarProps) {
                 />
             </NavbarItem>
             <NavbarItem>
-                <Button className="bg-black text-white" variant="flat" onClick={handleSignUpShow}>
+                <Button className="bg-black text-white" variant="flat" onPress={handleSignUpShow}>
                     Sign Up
                 </Button>
                 <ModalSignUp
