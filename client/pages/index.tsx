@@ -12,18 +12,14 @@ import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import Footer from "@/components/Footer";
-import BarGraph from "@/components/bargraph";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
-import LineGraph from "@/components/linegraph";
-import OHLCChart from "@/components/ohlc";
 import TextGrid from "@/components/TextGrid";
 import { Navbar } from "@/components/navbar";
 import supabase from "@/components/supabase";
 import Link from 'next/link';
 import { useRouter } from 'next/router'
 import { GraphSettingsContext } from '@/components/GraphSettingsContext';
-import StockChartCard from '@/components/StockCardComponent';
 
 
 
@@ -39,7 +35,6 @@ function Index() {
   const router = useRouter();
   const [session, setSession] = useState(null);
   const { settings, setSettings } = useContext(GraphSettingsContext);
-  const { selectedStocks, globalStart, globalEnd } = settings;
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,24 +56,6 @@ function Index() {
     useEffect(() => {
         if (session) router.push('/dashboardView');
     }, [session]);
-
-    // Handlers mirror DashboardView
-    const handleSelectStock = (index: number, stock: string) => {
-        const newStocks = [...selectedStocks];
-        newStocks[index] = stock;
-        setSettings({ ...settings, selectedStocks: newStocks });
-    };
-    const handleClear = (index: number) => {
-        const newStocks = [...selectedStocks]; newStocks[index] = null;
-        setSettings({ ...settings, selectedStocks: newStocks });
-    };
-    const handleSwap = (index: number) => {
-        if (index === 0) return;
-        const newStocks = [...selectedStocks];
-        [newStocks[0], newStocks[index]] = [newStocks[index], newStocks[0]];
-        setSettings({ ...settings, selectedStocks: newStocks });
-    };
-
 
   return (
         <div>
@@ -112,66 +89,7 @@ function Index() {
               {/* PUT IMAGE IN THE FUTURE */}
             </div>
           </div>
-                {/* Graph section synced from Dashboard */}
-                <div id="dashboard" >
-                <div style={{ padding: '20px' }}>
-                        <Grid container spacing={2}>
-                            {/* Main Large Card */}
-                            <Grid item xs={12} md={8}>
-                                <StockChartCard
-                                    index={0}
-                                    selectedStock={selectedStocks[0]}
-                                    onSelectStock={handleSelectStock}
-                                    onClear={handleClear}
-                                    onSwap={handleSwap}
-                                    height={816}
-                                    defaultStart={globalStart}
-                                    defaultEnd={globalEnd}
-                                />
-                            </Grid>
-
-                            {/* Vertical Stack of Cards */}
-                            <Grid item xs={12} md={4}>
-                                <Grid container direction="column" spacing={2}>
-                                    {[1, 2].map((index) => (
-                                        <Grid item key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-
-                            {/* Bottom Row of Cards */}
-                            <Grid item xs={12}>
-                                <Grid container spacing={2}>
-                                    {[3, 4, 5].map((index) => (
-                                        <Grid item xs={12} sm={4} key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </div>
-        </div>
           
-
             {/* ANALYSIS TOOLS AND DESCRIPTIONS SECTION */}
             <Box id="tools" sx={{ backgroundColor: "black", padding: 4, marginBottom: 8 }}>
 
@@ -226,7 +144,6 @@ function Index() {
                         </Grid>
                     </Grid>
                 </Box>
-
 
                 {/* TOOL INFO SECTION */}
                 <Box

@@ -7,12 +7,12 @@ import Typography from '@mui/material/Typography';
 import Image from 'next/image';
 
 // Import all images
-import img1 from '@/assets/gridBackground1.png';
-import img2 from '@/assets/gridBackground1.png';
-import img3 from '@/assets/gridBackground1.png';
-import img4 from '@/assets/gridBackground1.png';
-import img5 from '@/assets/gridBackground1.png';
-import img6 from '@/assets/gridBackground1.png';
+import img1 from '@/assets/metrics/volatility.png';
+import img2 from '@/assets/metrics/sharpe_ratio.png';
+import img3 from '@/assets/metrics/var.png';
+import img4 from '@/assets/metrics/cumulative_returns.png';
+import img5 from '@/assets/metrics/drawdown.png';
+import img6 from '@/assets/metrics/correlation.png';
 
 const TextGrid: React.FC = () => {
     const items = [
