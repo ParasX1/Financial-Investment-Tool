@@ -1,0 +1,37 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { Article } from '@/services/news';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<{ articles?: Article[]; error?: string }>
+) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+
+  const apiKey   = process.env.NEXT_PUBLIC_NEWSAPI_KEY!;
+  const country  = (Array.isArray(req.query.country) ? req.query.country[0] : req.query.country) || 'au';
+  const pageSize = (Array.isArray(req.query.pageSize) ? req.query.pageSize[0] : req.query.pageSize) || '10';
+
+  const url = new URL('https://newsapi.org/v2/top-headlines');
+  url.searchParams.set('country', country);                // regional
+  url.searchParams.set('pageSize', pageSize);
+  url.searchParams.set('apiKey', apiKey);
+
+  try {
+    const r = await fetch(url.toString());
+    if (!r.ok) throw new Error(`NewsAPI ${r.status}`);
+    const data = await r.json();
+    const articles: Article[] = (data.articles || []).map((a: any) => ({
+      id:          a.url,
+      title:       a.title,
+      summary:     a.description || '',
+      url:         a.url,
+      image:       a.urlToImage || null,
+      publishedAt: a.publishedAt,
+      source:      a.source.name || 'Unknown'
+    }));
+    res.status(200).json({ articles });
+  } catch (e: any) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+}
