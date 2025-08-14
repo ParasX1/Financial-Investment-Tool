@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/sidebar';
 import {
   Box,
@@ -9,11 +9,13 @@ import {
 } from '@mui/material';
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import NewsCardComponent from '@/components/NewsCardComponent';
+import WatchlistCollapsibleCard from '@/components/WatchlistCollapsibleCard';
 
 export default function WatchlistPage() {
   const stockOptions = Object.keys(stockDataMap);
   const [tags, setTags]     = useState<string[]>([]);
   const [charts, setCharts] = useState<(string | null)[]>([null, null, null]);
+  const [collapsedRows, setCollapsedRows] = useState<boolean[]>([true, true, true]);
 
   const sync = (t: string[]) =>
     setCharts([t[0] ?? null, t[1] ?? null, t[2] ?? null]);
@@ -33,10 +35,17 @@ export default function WatchlistPage() {
 
   const swapVert = (i: number) => {
     if (i === 0) return;
-    setCharts(([a, b, c]) =>
-      i === 1 ? [b, a, c] : [c, b, a]
-    );
+    setCharts(([a, b, c]) => (i === 1 ? [b, a, c] : [c, b, a]));
+    setCollapsedRows(([a, b, c]) => (i === 1 ? [b, a, c] : [c, b, a]));
   };
+
+  const setRowCollapsed = (row: number, val: boolean) => {
+    setCollapsedRows(prev => {
+      const next = [...prev];
+      next[row] = val;
+      return next;
+    });
+  };  
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -72,32 +81,38 @@ export default function WatchlistPage() {
         {/* 3 × 2 grid */}
         <Box sx={{ p: 2 }}>
           <Grid container spacing={2}>
-            {[0, 1, 2].map(row => (
-              <React.Fragment key={row}>
-                {/* chart */}
-                <Grid item xs={12} md={6}>
-                  <StockChartCard
-                    index={row}
-                    selectedStock={charts[row]}
-                    onSelectStock={() => {}}
-                    onClear={() => clearChart(row)}
-                    onSwap={() => swapVert(row)}
-                    swapIcon="↕"
-                    height={350}
-                  />
-                </Grid>
+            {[0, 1, 2].map(row => {
+              const collapsed = collapsedRows[row];
+              const newsHeight = collapsed ? 110 : 350;
 
-                {/* news – index 1 == “watchlist” mode */}
-                <Grid item xs={12} md={6}>
-                  <NewsCardComponent
-                    index={1}
-                    title={charts[row] ? `News: ${charts[row]}` : 'Watchlist News'}
-                    height={350}
-                    filterTicker={charts[row] ?? undefined}
-                  />
-                </Grid>
-              </React.Fragment>
-            ))}
+              return (
+                <React.Fragment key={row}>
+                  {/* chart (collapsible) */}
+                  <Grid item xs={12} md={6}>
+                    <WatchlistCollapsibleCard
+                      index={row}
+                      selectedStock={charts[row]}
+                      onClear={clearChart}
+                      onSwap={swapVert}
+                      height={350}
+                      collapsed={collapsed}
+                      onCollapsedChange={(val) => setRowCollapsed(row, val)}
+                    />
+                  </Grid>
+
+                  {/* news – index 1 == watchlist mode */}
+                  <Grid item xs={12} md={6}>
+                    <NewsCardComponent
+                      index={1}
+                      title={charts[row] ? `News: ${charts[row]}` : 'Watchlist News'}
+                      height={newsHeight}
+                      // @ts-ignore 
+                      filterTicker={charts[row] ?? undefined}
+                    />
+                  </Grid>
+                </React.Fragment>
+              );
+            })}
           </Grid>
         </Box>
       </Box>
