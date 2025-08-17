@@ -113,7 +113,6 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
     MSFT: microsoftOHLCData,
   };
 
-
 interface StockChartCardProps {
   index: number;
   selectedStocks: string[];
@@ -156,6 +155,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
   const handleApplySettings = async (settings: GraphSettings) => {
+    
     onUpdateSettings(index, {
       barColor: settings.stockColour,
       dateRange: {
@@ -171,21 +171,24 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     if (selectedStocks.length === 0) {
       return;
     }
-    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
 
+    // Fetch data with the new settings
+    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
     const allData = await Promise.all(data);
     setChartData(allData);
   };
 
-  useEffect (() => {
-    if (!isActive || selectedStocks.length === 0){
+  useEffect(() => {
+
+    if (!isActive || selectedStocks.length === 0 || !graphMade) {
       setChartData([]);
-      return
+      return;
     }
 
     const fetchAllData = async () => {
+
       const data = selectedStocks.map(ticker =>
-        fetchMetrics({ 
+        fetchMetrics({
           ticker, 
           settings: {
             metricType: metricType as any,
@@ -198,11 +201,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         })
       );
 
-      const allData = await Promise.all(data)
-      setChartData(allData)
+      const allData = await Promise.all(data);
+      setChartData(allData);
     };
+
     fetchAllData();
-  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType]);
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade]);
 
   // resize observer
   useEffect(() => {
@@ -220,18 +224,30 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       return null;
     }
     
-    return (
-      <OHLCChart
-        multiData={chartData.map((data, i) => ({
-          ticker: selectedStocks[i],
-          color: barColor,
-          data: (data.series as any).ohlc
-        }))}
-        width={dimensions.width - 32}
-        height={dimensions.height - 90}
-      />
-    );
-  };
+    switch (metricType.toLowerCase()) {
+      case 'ohlc':
+        return (
+          <OHLCChart
+            multiData={chartData.map((data, i) => ({
+              ticker: selectedStocks[i],
+              color: barColor,
+              data: data.series.ohlc || []
+            }))}
+            width={dimensions.width - 32}
+            height={dimensions.height - 90}
+          />
+        );
+    /*
+    case 'betaanalysis':
+      Should be displayed as a bar chart.
+      Potentially regression line instead based on each day but calculate_beta() will need to be changed
+    */
+
+    default:
+      console.log('[renderChart] Unsupported metricType:', metricType);
+      return null;
+    };
+  }
 
   // render
   return (

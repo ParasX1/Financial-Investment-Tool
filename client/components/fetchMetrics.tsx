@@ -1,9 +1,14 @@
 import { GraphSettings } from './graphSettingsModal';
-import { stockDataMap } from './StockCardComponent';
 
 export interface MetricsResponse {
-    metricType: 'OHLC';
-    series: { ohlc: typeof stockDataMap[string] };
+    ticker: string;  
+    metricType: string;
+    series: {
+      ohlc?: Array<{date: string, open: number, high: number, low: number, close: number}>;
+      timeSeries?: Array<{date: string, value: number}>;
+      singleValue?: number;
+      portfolio?: {returns: number[], risks: number[], sharpe_ratios: number[]};
+    };
   }
 
 interface FetchMetricsRequest {
@@ -14,19 +19,79 @@ interface FetchMetricsRequest {
 export async function fetchMetrics(
   req: FetchMetricsRequest
 ): Promise<MetricsResponse> {
-  await new Promise((r) => setTimeout(r, 250));
 
-  const all = stockDataMap[req.ticker] ?? [];
-  if (req.settings) {
-    const { startDate, endDate } = req.settings.metricParams;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const filtered = all.filter((d) => {
-      const dt = new Date(d.date);
-      return dt >= start && dt <= end;
-    });
-    return { metricType: 'OHLC', series: { ohlc: filtered } };
+  if (!req.settings) {
+    throw new Error('Settings are required');
   }
 
-  return { metricType: 'OHLC', series: { ohlc: all } };
+  const { metricType, metricParams } = req.settings;
+  const { startDate, endDate } = metricParams;
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/metrics/${metricType.toLowerCase()}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        stock_tickers: [req.ticker],
+        start_date: startDate,
+        end_date: endDate,
+        market_ticker: 'SPY',
+        risk_free_rate: 0.01
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metrics ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return formatMetricsResponse(req.ticker, metricType, data);
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    throw error;
+  }
+}
+
+function formatMetricsResponse(ticker: string, metricType: string, data: any): MetricsResponse {
+  const response: MetricsResponse = {
+    ticker,
+    metricType,
+    series: {}
+  };
+  switch (metricType) {
+    case 'ohlc':
+      response.series.ohlc = data.ohlc || [];
+      break;
+    
+    case 'BetaAnalysis':
+    case 'AlphaComparison':
+    case 'SortinoRatioVisualization':
+    case 'SharpeRatioMatrix':
+    case 'ValueAtRiskAnalysis':
+      response.series.singleValue = data[ticker]
+      break;
+    
+    case 'MaxDrawdownAnalysis':
+    case 'CumulativeReturnComparison':
+    case 'MarketCorrelationAnalysis':
+      response.series.timeSeries = Object.entries(data[ticker] || {}).map(([date, value]) => ({
+        date,
+        value: value as number
+      }));
+      break;
+    
+    case 'EfficientFrontierVisualization':
+      response.series.portfolio = {
+        returns: data.returns || [],
+        risks: data.risks || [],
+        sharpe_ratios: data.sharpe_ratios || []
+      };
+      break;
+    
+      default:
+        throw new Error(`Unknown metric type: ${metricType}`);
+  }
+  return response;
 }
