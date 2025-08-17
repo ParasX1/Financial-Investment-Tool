@@ -7,6 +7,7 @@ import {
   fetchRegionalNews,
   fetchIndustryNews,
   fetchCommodityNews,
+  fetchTickerNews,
   Article
 } from '@/services/news';
 
@@ -18,12 +19,14 @@ export interface NewsCardComponentProps {
   index: number;
   title: string;
   height?: number | string;
+  filterTicker?: string;
 }
 
 const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
   index,
   height = 300,
   title,
+  filterTicker,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -49,6 +52,11 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
     let p: Promise<Article[]>;
     switch (index) {
       case 0: p = fetchGeneralNews(10); break;
+      case 1:
+        p = filterTicker
+          ? fetchTickerNews(filterTicker, 10)
+          : fetchGeneralNews(10);
+        break;
       case 2: p = fetchRegionalNews(param || 'au',  10); break;
       case 3: p = fetchIndustryNews(param || 'technology', 10); break;
       case 4: p = fetchCommodityNews(param || 'gold', 10); break;
