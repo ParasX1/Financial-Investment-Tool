@@ -5,9 +5,9 @@ def sanitiseStockJson(json):
     for stock in stocks:
         if len(stock.keys()) != 2:
             return False
-        if not "volume" in stock.keys():
+        if "volume" not in stock.keys():
             return False
-        if not "symbolID" in stock.keys():
+        if "symbolID" not in stock.keys():
             return False
 
         volume = stock["volume"]

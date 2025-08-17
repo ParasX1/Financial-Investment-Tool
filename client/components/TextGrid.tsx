@@ -118,8 +118,8 @@ const TextGrid: React.FC = () => {
                             <Image
                                 src={item.image}
                                 alt={`Image for box ${index + 1}`}
-                                layout="fill"
-                                objectFit="cover"
+                                fill
+                                style={{ objectFit: "cover"}}
                             />
                             <Box
                                 sx={{
