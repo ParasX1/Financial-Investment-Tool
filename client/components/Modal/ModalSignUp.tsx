@@ -1,4 +1,3 @@
-// components/Modal/ModalSignUp.tsx
 import React, { useState } from 'react'
 import { Button } from '@nextui-org/react'
 import Modal from 'react-bootstrap/Modal'

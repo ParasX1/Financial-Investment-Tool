@@ -1,6 +1,3 @@
-// pages/dashboardView.tsx
-
-
 import React, {useContext, useEffect, useState} from 'react';
 // @ts-ignore
 import Sidebar from '@/components/sidebar';

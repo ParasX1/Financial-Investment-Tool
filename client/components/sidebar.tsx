@@ -1,4 +1,3 @@
-// components/sidebar.tsx
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import 'boxicons/css/boxicons.min.css'
