@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext } from "react";
-import ModalLogin from "@/components/Modal/ModalLogin";
 import {
   NavbarContent,
   NavbarItem,
@@ -10,7 +9,6 @@ import Image from "next/image";
 import { Box, Grid} from '@mui/material';
 import Typography from "@mui/material/Typography";
 import { Button as MUIButton } from '@mui/material';
-import ModalSignUp from "@/components/Modal/ModalSignUp";
 import Footer from "@/components/Footer";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';
@@ -20,7 +18,9 @@ import supabase from "@/components/supabase";
 import Link from 'next/link';
 import { useRouter } from 'next/router'
 import { GraphSettingsContext } from '@/components/GraphSettingsContext';
-
+import ModalLogin from '@/components/Modal/ModalLogin';
+import ModalSignUp from '@/components/Modal/ModalSignUp';
+import { useAuth } from '@/components/authContext'
 
 
 function Index() {
@@ -32,30 +32,26 @@ function Index() {
   const imgStar = require("@/assets/star.png");
   const team = require("@/assets/team.png");
   // Signup-Login Modal
-  const router = useRouter();
+  const { user, loading } = useAuth()
+  const router = useRouter()
   const [session, setSession] = useState(null);
   const { settings, setSettings } = useContext(GraphSettingsContext);
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            // @ts-ignore
-            setSession(session)
-        })
+  useEffect(() => {
+    if (loading || !router.isReady || router.pathname !== '/index') return
+    if (!user) return
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            // @ts-ignore
-            setSession(session)
-        })
+    const stayParam = Array.isArray(router.query.stay)
+      ? router.query.stay[0]
+      : router.query.stay
 
-        return () => subscription.unsubscribe()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[])
+    if (stayParam !== '1') {
+      router.replace('/dashboardView')
+    }
+  }, [loading, user, router.isReady, router.pathname, router.query.stay])
 
-    useEffect(() => {
-        if (session) router.push('/dashboardView');
-    }, [session]);
+
+
 
   return (
         <div>
@@ -208,11 +204,11 @@ function Index() {
                       We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms
                       (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
                       for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or
-                      coding smart financial solutions, we’ve got it covered.
+                      coding smart financial solutions, we've got it covered.
                       <br></br>
                       <br></br>
-                      With FIT, we’re on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
-                      or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you’re making informed
+                      With FIT, we're on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
+                      or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you're making informed
                       decisions. From tracking volatility to backtesting trading strategies, our app is designed to give you the edge in
                       your financial game.
                     </p>

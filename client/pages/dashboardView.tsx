@@ -11,8 +11,6 @@ import {
   Link as NextUILink,
   Spacer,
 } from '@nextui-org/react';
-import ModalLogin from '@/components/Modal/ModalLogin';
-import ModalSignUp from '@/components/Modal/ModalSignUp';
 import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
@@ -22,24 +20,9 @@ import { GraphSettingsContext } from '@/components/GraphSettingsContext';
 const NUM_CARDS = 6;
 
 const DashboardView: React.FC = () => {
-    const [showSignUp, setSignUp] = useState(false);
-    const [showLogIn, setLogIn] = useState(false);
-    const [session, setSession] = useState(null);
 
     const { settings, setSettings } = useContext(GraphSettingsContext);
     const {globalStart, globalEnd } = settings;
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session as any);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session as any);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     // Instead of image content, now we use stock selection
     const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>(

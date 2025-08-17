@@ -1,138 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import Image from "next/image";
-import 'boxicons/css/boxicons.min.css';
-import { useRouter } from 'next/router'; // Use Next.js router
-import { useAuth } from "@/components/authContext";
+// components/sidebar.tsx
+import React, { useEffect, useState } from 'react'
+import Image from 'next/image'
+import 'boxicons/css/boxicons.min.css'
+import { useRouter } from 'next/router'
+import { useAuth } from '@/components/authContext'
+import ModalLogin from '@/components/Modal/ModalLogin'
+import ModalSignUp from '@/components/Modal/ModalSignUp'
 
-const logo = require("@/assets/SidebarIcons/F.png");
-const logoExpanded = require("@/assets/SidebarIcons/FIT.png");
+const logo = require('@/assets/SidebarIcons/F.png')
 
-const Sidebar = () => {
-  const {isLoggedIn, login, logout} = useAuth();
-  const [isHovered, setIsHovered] = useState(false);
-  const [showText, setShowText] = useState(false);
-  const router = useRouter(); // Initialize useRouter hook for navigation
+const Sidebar: React.FC = () => {
+  const { user, signOut } = useAuth()
+  const [isHovered, setIsHovered] = useState(false)
+  const [showText, setShowText] = useState(false)
+  const [showLogin, setShowLogin] = useState(false)
+  const [showSignup, setShowSignup] = useState(false)
+  const router = useRouter()
 
-  const paidPages = ['/dashboardView', '/TopPicks', '/MarketNews', '/Watchlist', '/Community', '/Guide'];
+  const gatedPages = ['/dashboardView', '/TopPicks', '/MarketNews', '/Watchlist', '/Community', '/Guide', '/Profile']
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | undefined; // Initialize as undefined
+    let t: ReturnType<typeof setTimeout> | undefined
     if (isHovered) {
-      timeout = setTimeout(() => setShowText(true), 145); // Show text after 500ms delay
+      t = setTimeout(() => setShowText(true), 145)
     } else {
-      if (timeout) {
-        clearTimeout(timeout); // Only clear timeout if it exists
-      }
-      setShowText(false); // Hide text immediately on hover out
+      if (t) clearTimeout(t)
+      setShowText(false)
     }
-    return () => {
-      if (timeout) {
-        clearTimeout(timeout); // Clear the timeout when the effect cleans up
-      }
-    };
-  }, [isHovered]);
+    return () => t && clearTimeout(t)
+  }, [isHovered])
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-
-  const handleClick = () => {
-    alert('List item clicked!');
-  };
+  const requireAuth = () => setShowLogin(true)
 
   const navigateToPage = (path: string) => {
-    if (paidPages.includes(path) && !isLoggedIn) {
+    if (!user && gatedPages.includes(path)) {
+      requireAuth()
+      return
     }
-    else {
-      router.push(path); // Use router.push to navigate to the specified path
-    }  
-  };
+    router.push(path)
+  }
 
-  const renderSidebarItem = (path: string, icon: string, label: string) => {
-    const isLocked = paidPages.includes(path) && !isLoggedIn;
+  const Item = (path: string, icon: string, label: string) => {
+    const locked = !user && gatedPages.includes(path)
     return (
       <li
+        key={label}
         className="hoverable"
-        onClick={() => !isLocked && navigateToPage(path)}
-        style={{ position: 'relative', opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }}
+        onClick={() => (!locked ? navigateToPage(path) : requireAuth())}
+        style={{
+          position: 'relative',
+          opacity: locked ? 0.5 : 1,
+          cursor: locked ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '6px 0',
+        }}
       >
-        <i className={`bx ${icon}`} style={{ fontSize: '30px' }}></i>
-        {showText && <span style={{ marginLeft: '10px' }}>{label}</span>}
-        {isLocked && showText && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px',
-            zIndex: 1,
-            borderRadius: '5px',
-          }}>
-          </div>
-        )}   
+        <i className={`bx ${icon}`} style={{ fontSize: 28 }} />
+        {showText && <span>{label}</span>}
       </li>
     )
   }
 
-
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        backgroundColor: 'black',
-        width: isHovered ? '200px' : '50px', // Expands width on hover
-        height: '100vh',
-        color: 'white',
-        padding: '10px',
-        position: 'fixed',  // Fixed position on the left
-        top: 0,
-        left: 0,
-        zIndex: 1000,  // High z-index to ensure it stays on top
-        transition: 'width 0.3s ease', // Smooth transition for the hover effect
-        display: 'flex',
-        flexDirection: 'column', // Stack items vertically
-        justifyContent: 'space-between', // Space between top and bottom sections
-      }}
-    >
-      {/* Top section: Logo and Portfolio */}
-      <div style={{ flexShrink: 0 }}>
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          <li className="hoverable" onClick={() => navigateToPage('/')}>
-            <Image src={logo} alt="Logo" width={25} height={25} /> 
-          </li>
-          {renderSidebarItem('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
-        </ul>
+    <>
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          backgroundColor: 'black',
+          width: isHovered ? '200px' : '50px',
+          height: '100vh',
+          color: 'white',
+          padding: '10px',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 1000,
+          transition: 'width 0.3s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        {/* Top */}
+        <div style={{ flexShrink: 0 }}>
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            <li className="hoverable" onClick={() => navigateToPage('/')}>
+              <Image src={logo} alt="Logo" width={25} height={25} />
+            </li>
+            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
+          </ul>
+        </div>
+
+        {/* Middle */}
+        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {Item('/TopPicks', 'bx-up-arrow-circle', 'Top Picks')}
+            {Item('/MarketNews', 'bx-news', 'Market News')}
+            {Item('/Watchlist', 'bx-list-ul', 'Watchlist')}
+            {Item('/Community', 'bx-group', 'Community')}
+            {Item('/Guide', 'bx-book-alt', 'Guide')}
+          </ul>
+        </div>
+
+        {/* Bottom */}
+        <div style={{ flexShrink: 0 }}>
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {Item('Help', 'bx-help-circle', 'Help')}
+            {Item('/Profile', 'bx-user-circle', 'Profile')}
+            {user &&
+              Item('#logout', 'bx-log-out', 'Log out') && (
+                <li
+                  onClick={() => signOut()}
+                  style={{ listStyleType: 'none', opacity: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                />
+              )}
+          </ul>
+        </div>
       </div>
 
-      <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {renderSidebarItem('/TopPicks', 'bx-up-arrow-circle', 'Top Picks')}
-          {renderSidebarItem('/MarketNews', 'bx-news', 'Market News')}
-          {renderSidebarItem('/Watchlist', 'bx-list-ul', 'Watchlist')}
-          {renderSidebarItem('/Community', 'bx-group', 'Community')}
-          {renderSidebarItem('/Guide', 'bx-book-alt', 'Guide')}
-        </ul>
-      </div>
+      <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
+      <ModalSignUp show={showSignup} onHide={() => setShowSignup(false)} setLogin={setShowLogin} />
+    </>
+  )
+}
 
-      <div style={{ flexShrink: 0 }}>
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {renderSidebarItem('Help', 'bx-help-circle', 'Help')}
-          {renderSidebarItem('/Profile', 'bx-user-circle', 'Profile')}
-        </ul>
-      </div>
-    </div>
-  );
-};
-
-export default Sidebar;
+export default Sidebar
