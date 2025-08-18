@@ -142,38 +142,38 @@ def create_app():
                 result = calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_free_rate)
                 return jsonify(result)
                 
-            elif metric_type == 'drawdown':
+            elif metric_type == 'maxdrawdownanalysis':
                 result = calculate_drawdown(stock_tickers, start_date, end_date)
                 result_json = {ticker: result[ticker].to_dict() for ticker in result}
                 return jsonify(result_json)
                 
-            elif metric_type == 'cumulative_return':
+            elif metric_type == 'cumulativereturncomparison':
                 result = calculate_cumulative_return(stock_tickers, start_date, end_date)
                 result_json = {ticker: result[ticker].to_dict() for ticker in result}
                 return jsonify(result_json)
                 
-            elif metric_type == 'sortino_ratio':
+            elif metric_type == 'sortinoratiovisualization':
                 result = calculate_sortino_ratio(stock_tickers, start_date, end_date, risk_free_rate)
                 return jsonify(result)
                 
-            elif metric_type == 'correlation':
+            elif metric_type == 'marketcorrelationanalysis':
                 result = calculate_correlation_with_market(stock_tickers, market_ticker, start_date, end_date)
                 result_json = {ticker: result[ticker].to_dict() for ticker in result}
                 return jsonify(result_json)
                 
-            elif metric_type == 'sharpe_ratio':
+            elif metric_type == 'sharperatiomatrix':
                 result = calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate)
                 return jsonify(result)
                 
-            elif metric_type == 'volatility':
+            elif metric_type == 'volatilityanalysis':
                 result = calculate_volatility(stock_tickers, start_date, end_date)
                 return jsonify(result)
                 
-            elif metric_type == 'value_at_risk':
+            elif metric_type == 'valueatriskanalysis':
                 result = calculate_value_at_risk(stock_tickers, start_date, end_date, confidence_level)
                 return jsonify(result)
                 
-            elif metric_type == 'efficient_frontier':
+            elif metric_type == 'efficientfrontiervisualization':
                 result = calculate_efficient_frontier(stock_tickers, start_date, end_date, risk_free_rate=risk_free_rate)
                 return jsonify(result)
 
@@ -223,7 +223,7 @@ def create_app():
         sharpe_ratios = calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate)
         return jsonify(sharpe_ratios)
 
-    @app.route("/api/volatility", methods=['GET'])
+    @app.route("/api/volatilityanalysis", methods=['GET'])
     def get_volatility():
         volatilities = calculate_volatility(stock_tickers, start_date, end_date)
         volatilities_json = {ticker: volatilities[ticker] for ticker in volatilities}

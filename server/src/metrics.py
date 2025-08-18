@@ -265,6 +265,7 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
         rolling_corr = stock_returns[ticker].rolling(window=21).corr(market_returns)
         
         correlations[ticker] = rolling_corr
+        print(correlations) #This returns NaN. Need to look into why
     
     return correlations
 
@@ -407,6 +408,7 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
         results['returns'].append(portfolio_return)
         results['risks'].append(portfolio_risk)
         results['sharpe_ratios'].append(sharpe_ratio)
+
     
     return results
 

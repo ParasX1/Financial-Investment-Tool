@@ -22,6 +22,7 @@ export type MetricType =
   | 'SortinoRatioVisualization'
   | 'MarketCorrelationAnalysis'
   | 'SharpeRatioMatrix'
+  | 'VolatilityAnalysis'
   | 'ValueAtRiskAnalysis'
   | 'EfficientFrontierVisualization';
 
@@ -77,7 +78,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
         stockColour
       };
 
-      
+    
       // Pass all Settings to the parent component
       onApply(settings);
       onClose();
@@ -108,6 +109,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 <MenuItem value="SortinoRatioVisualization">Sortino Ratio</MenuItem>
                 <MenuItem value="MarketCorrelationAnalysis">Market Correlation</MenuItem>
                 <MenuItem value="SharpeRatioMatrix">Sharpe Ratio</MenuItem>
+                <MenuItem value="VolatilityAnalysis">Volatility</MenuItem>
                 <MenuItem value="ValueAtRiskAnalysis">Value at Risk</MenuItem>
                 <MenuItem value="EfficientFrontierVisualization">Efficient Frontier</MenuItem>
               </Select>

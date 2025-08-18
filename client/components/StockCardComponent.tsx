@@ -239,8 +239,26 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         );
     /*
     case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
       Should be displayed as a bar chart.
-      Potentially regression line instead based on each day but calculate_beta() will need to be changed
+      Potentially regression line but related functions will need to be changed to calculate metric per day instead of overall
+    
+    case 'marketcorrelationanalysis':
+      This returns a series of values per day
+      Should be a line chart
+      Potentially a bar or heatmap if changed to overall stock
+
+    case 'maxdrawdownanalysis':
+    case 'cumulativereturncomparison':
+      This returns a series of values per day
+      Should be a line chart
+    
+    case 'efficientfrontieranalysis':
+      This should be displayed as a scatter plot.
     */
 
     default:

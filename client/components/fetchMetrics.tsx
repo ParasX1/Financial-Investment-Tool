@@ -70,6 +70,7 @@ function formatMetricsResponse(ticker: string, metricType: string, data: any): M
     case 'SortinoRatioVisualization':
     case 'SharpeRatioMatrix':
     case 'ValueAtRiskAnalysis':
+    case 'VolatilityAnalysis':
       response.series.singleValue = data[ticker]
       break;
     
