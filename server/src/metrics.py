@@ -57,7 +57,8 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     
     # Extract adjusted close prices
     adj_close = data.xs('Adj Close', level=1, axis=1)
-    
+    print(adj_close.columns.to_list())
+
     # Calculate daily returns for stocks and market
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
@@ -104,6 +105,7 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     # Fetch data for stocks and market
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
+    print(f"Adjusted Close Columns: {adj_close.columns.to_list()}")
     
     # Calculate daily returns
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
@@ -117,6 +119,7 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     alphas = {}
     for ticker in stock_returns.columns:
         # Calculate the average annualized return for the stock
+
         stock_avg_return = stock_returns[ticker].mean() * 252  # 252 trading days in a year
         
         # Calculate the average annualized return for the market

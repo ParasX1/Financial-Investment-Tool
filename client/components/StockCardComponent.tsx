@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
+import LineGraph from './linegraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
@@ -167,15 +168,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     });
 
     onActivate(index);
-
-    if (selectedStocks.length === 0) {
-      return;
-    }
-
-    // Fetch data with the new settings
-    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
-    const allData = await Promise.all(data);
-    setChartData(allData);
   };
 
   useEffect(() => {
@@ -237,6 +229,23 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             height={dimensions.height - 90}
           />
         );
+    case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
+      return (
+        <BarGraph
+          data={chartData.map(data => ({
+            label: data.ticker,
+            value: data.series.singleValue || 0
+          }))}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      )
     /*
     case 'betaanalysis':
     case 'alphacomparison':
