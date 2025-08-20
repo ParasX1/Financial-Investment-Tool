@@ -28,8 +28,16 @@ interface BarGraphProps {
         // scales 
         const xScale = d3.scaleBand().domain(data.map((d) => d.label))
             .range([0, graphWidth]).padding(0.2);
+        
+        const values = data.map((d) => d.value);
+        const minValue = d3.min(values)!;
+        const maxValue = d3.max(values)!;
+        const paddingFactor = 0.1; // So the smallest isnt on the x-axis looking missing
+        const paddedMin = minValue - (maxValue - minValue) * paddingFactor;
+        const paddedMax = maxValue + (maxValue - minValue) * paddingFactor;
+
         const yScale = d3.scaleLinear()
-            .domain([0, d3.max(data, (d) => d.value)!]).nice()
+            .domain([paddedMin, paddedMax]).nice()
             .range([graphHeight, 0]);
   
         const svg = d3.select(svgRef.current)

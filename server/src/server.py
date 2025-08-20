@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import traceback
 from src.stocks import sanitiseStockJson
 from src.metrics import (
     fetch_stock_data,
@@ -127,6 +128,7 @@ def create_app():
                         if ticker in result.columns.get_level_values(0):
                             ohlc_data.append({
                                 'date': date,
+                                'ticker': ticker,
                                 'open': result[(ticker, 'Open')].loc[date],
                                 'high': result[(ticker, 'High')].loc[date],
                                 'low': result[(ticker, 'Low')].loc[date],
@@ -181,6 +183,7 @@ def create_app():
                 return jsonify({"error": f"Unknown metric type: {metric_type}"}), 400
                 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"error": str(e)}), 500
 
     @app.route("/api/betaanalysis", methods=['GET'])

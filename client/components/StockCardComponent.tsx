@@ -181,7 +181,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
       const data = selectedStocks.map(ticker =>
         fetchMetrics({
-          ticker, 
+          tickers: [ticker],
           settings: {
             metricType: metricType as any,
             metricParams: {
@@ -229,6 +229,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             height={dimensions.height - 90}
           />
         );
+
     case 'betaanalysis':
     case 'alphacomparison':
     case 'sortinoratiovisualization':
@@ -237,15 +238,36 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     case 'valueatriskanalysis':
       return (
         <BarGraph
-          data={chartData.map(data => ({
-            label: data.ticker,
-            value: data.series.singleValue || 0
-          }))}
+          data={chartData.flatMap(data => {
+            const tickers = data.tickers || [];
+            const singleValue = data.series.singleValue || {};
+            return tickers.map(t => ({
+              label: t,
+              value: singleValue[t]
+            }));
+          })}
           width={dimensions.width - 32}
           height={dimensions.height - 90}
           barColor={barColor}
         />
-      )
+      );
+    
+    case 'marketcorrelationanalysis':
+    case 'cumulativereturncomparison':
+    case 'maxdrawdownanalysis':
+      return (
+        <LineGraph
+          data={chartData.flatMap((data, index) => ({
+            ticker: data.tickers[0],
+            values: (data.series.timeSeries?.[data.tickers[0]] || []).map(point => ({
+              date: new Date(point.date),
+              value: point.value
+            }))
+          }))}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+        />
+      );
     /*
     case 'betaanalysis':
     case 'alphacomparison':

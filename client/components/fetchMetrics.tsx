@@ -1,18 +1,18 @@
 import { GraphSettings } from './graphSettingsModal';
 
 export interface MetricsResponse {
-    ticker: string;  
+    tickers: string[];  
     metricType: string;
     series: {
-      ohlc?: Array<{date: string, open: number, high: number, low: number, close: number}>;
-      timeSeries?: Array<{date: string, value: number}>;
-      singleValue?: number;
+      ohlc?: Array<{date: string, ticker: string, open: number, high: number, low: number, close: number}>;
+      timeSeries?: {[ticker: string]: Array<{date: string, value: number}>};
+      singleValue?: { [ticker: string]: number };
       portfolio?: {returns: number[], risks: number[], sharpe_ratios: number[]};
     };
   }
 
 interface FetchMetricsRequest {
-  ticker: string;
+  tickers: string[];
   settings: GraphSettings | null;
 }
 
@@ -34,7 +34,7 @@ export async function fetchMetrics(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        stock_tickers: [req.ticker],
+        stock_tickers: req.tickers,
         start_date: startDate,
         end_date: endDate,
         market_ticker: 'SPY',
@@ -47,16 +47,16 @@ export async function fetchMetrics(
     }
 
     const data = await response.json();
-    return formatMetricsResponse(req.ticker, metricType, data);
+    return formatMetricsResponse(req.tickers, metricType, data);
   } catch (error) {
     console.error('Error fetching metrics:', error);
     throw error;
   }
 }
 
-function formatMetricsResponse(ticker: string, metricType: string, data: any): MetricsResponse {
+function formatMetricsResponse(tickers: string[], metricType: string, data: any): MetricsResponse {
   const response: MetricsResponse = {
-    ticker,
+    tickers,
     metricType,
     series: {}
   };
@@ -71,16 +71,22 @@ function formatMetricsResponse(ticker: string, metricType: string, data: any): M
     case 'SharpeRatioMatrix':
     case 'ValueAtRiskAnalysis':
     case 'VolatilityAnalysis':
-      response.series.singleValue = data[ticker]
+      response.series.singleValue = {}
+      tickers.forEach(ticker => {
+        response.series.singleValue![ticker] = data[ticker];
+      });
       break;
     
     case 'MaxDrawdownAnalysis':
     case 'CumulativeReturnComparison':
     case 'MarketCorrelationAnalysis':
-      response.series.timeSeries = Object.entries(data[ticker] || {}).map(([date, value]) => ({
-        date,
-        value: value as number
-      }));
+      response.series.timeSeries = {};
+      tickers.forEach(ticker => {
+        response.series.timeSeries![ticker] = Object.entries(data[ticker] || {}).map(([date, value]) => ({
+          date,
+          value: value as number
+        }));
+      });
       break;
     
     case 'EfficientFrontierVisualization':
