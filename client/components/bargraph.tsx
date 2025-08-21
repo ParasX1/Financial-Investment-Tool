@@ -39,13 +39,9 @@ interface BarGraphProps {
 
         if (values.length === 1) {
             const val = values[0];
-            if (val >= 0){
-                yMin = 0;
-                yMax = val + val * 0.1; // 10% padding
-            } else {
-                yMin = val - Math.abs(val) * 0.1;
-                yMax = 0;
-            }
+            const range = Math.abs(val) * 1.1; //10% padding
+            yMin = -range;
+            yMax = range;
         } else {
             yMin = minValue - (maxValue - minValue) * 0.1;
             yMax = maxValue + (maxValue - minValue) * 0.1;
@@ -81,11 +77,12 @@ interface BarGraphProps {
     const bars = g.selectAll('.bar')
         .data(data);
 
+    const zeroY = yScale(0);
     bars.enter()
         .append("rect")
         .attr("class", "bar")
         .attr("x", (d) => xScale(d.label)!)
-        .attr("y", graphHeight) // Start from the bottom
+        .attr("y", zeroY) // Start from the bottom
         .attr("width", xScale.bandwidth())
         .attr("height", 0) // Start with height 0
         .attr("fill", (d, i) => i === 0 ? barColor : lineColors[(i-1) % lineColors.length])
@@ -104,12 +101,12 @@ interface BarGraphProps {
         })
         .transition() // Animate the bars
         .duration(800)
-        .attr("y", (d) => yScale(d.value))
-        .attr("height", (d) => graphHeight - yScale(d.value));
+        .attr("y", (d) => d.value >= 0 ? yScale(d.value) : zeroY)
+        .attr("height", (d) => Math.abs(yScale(d.value) - zeroY));
 
     // Append axes
     g.append('g')
-        .attr('transform', `translate(0,${graphHeight})`)
+        .attr('transform', `translate(0,${yScale(0)})`)
         .call(d3.axisBottom(xScale));
     g.append('g')
         .call(d3.axisLeft(yScale));
