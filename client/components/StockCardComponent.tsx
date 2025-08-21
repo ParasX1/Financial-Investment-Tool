@@ -126,6 +126,8 @@ interface StockChartCardProps {
   height?: number;
   defaultStart: string;
   defaultEnd: string;
+  color: string;
+  onSettingsChange?: (index: number, settings: GraphSettings) => void;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -138,6 +140,10 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   onActivate,
   onUpdateSettings,
   height = 400,
+  defaultStart,
+  defaultEnd,
+  color,
+  onSettingsChange = () => {},
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
