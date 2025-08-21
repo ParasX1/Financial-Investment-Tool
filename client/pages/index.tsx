@@ -63,9 +63,9 @@ function Index() {
         <Sidebar />
         <div style={{ flex: 1, paddingLeft: "50px" }}>
         <Navbar items ={[
-            {label: "Dashboard", href: "#dashboard"},
-            {label: "Tools", href: "#tools"},
-            {label: "About Us", href: "#about"},
+            {id: 0, label: "Dashboard", href: "#dashboard"},
+            {id: 1, label: "Tools", href: "#tools"},
+            {id: 2, label: "About Us", href: "#about"},
           ]} />
 
           <div className="two-column">
@@ -160,8 +160,8 @@ function Index() {
                     <Image
                         src={img1}
                         alt="Generational Wealth"
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        style={{ objectFit: "cover"}}
                     />
                 </Box>
 

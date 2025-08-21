@@ -38,7 +38,7 @@ def runner(app):
 @pytest.mark.skipif(RUNNING_CI, reason="see README.md")
 def test_stocks_get(client):
     uid = "09d81817-63b1-4aac-9e6d-a690e2f3af91"
-    response = client.post("/api/stocks/get", json = {"id": uid})
+    response = client.post("/api/stocks/get", json={"id": uid})
     assert response.status_code == 200
     stock = response.json[0]
     assert stock["volume"] == 69
@@ -47,7 +47,7 @@ def test_stocks_get(client):
 @pytest.mark.skipif(RUNNING_CI, reason="see README.md")
 def test_stock_notexist(client):
     uid = "does not exist"
-    response = client.post("/api/stocks/get", json = {"id": uid})
+    response = client.post("/api/stocks/get", json={"id": uid})
     assert response.status_code == 404
 
 @pytest.mark.skipif(RUNNING_CI, reason="see README.md")
@@ -58,7 +58,7 @@ def test_stock_update(client):
             {"symbolID": 0, "volume": 1}
         ]
     })
-    response = client.post("/api/stocks/set", json = {"id": uid,"json": json})
+    response = client.post("/api/stocks/set", json={"id": uid,"json": json})
     assert response.status_code == 200
 
 @pytest.mark.skipif(RUNNING_CI, reason="see README.md")
@@ -69,5 +69,5 @@ def test_stock_update_noexist_symbol(client):
             {"symbolID": -10, "volume": 1}
         ]
     })
-    response = client.post("/api/stocks/set", json = {"id": uid,"json": json})
+    response = client.post("/api/stocks/set", json={"id": uid,"json": json})
     assert response.status_code == 200
