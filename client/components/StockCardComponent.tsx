@@ -179,9 +179,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
     const fetchAllData = async () => {
 
-      const data = selectedStocks.map(ticker =>
-        fetchMetrics({
-          tickers: [ticker],
+      const allData = await fetchMetrics({
+          tickers: selectedStocks,
           settings: {
             metricType: metricType as any,
             metricParams: {
@@ -189,12 +188,10 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               endDate: dateRange.end,
             },
             stockColour: barColor
-          }
-        })
-      );
+          },
+        });
 
-      const allData = await Promise.all(data);
-      setChartData(allData);
+      setChartData([allData]);
     };
 
     fetchAllData();

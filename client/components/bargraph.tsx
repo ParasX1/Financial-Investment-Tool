@@ -32,12 +32,25 @@ interface BarGraphProps {
         const values = data.map((d) => d.value);
         const minValue = d3.min(values)!;
         const maxValue = d3.max(values)!;
-        const paddingFactor = 0.1; // So the smallest isnt on the x-axis looking missing
-        const paddedMin = minValue - (maxValue - minValue) * paddingFactor;
-        const paddedMax = maxValue + (maxValue - minValue) * paddingFactor;
+
+        let yMin: number, yMax: number;
+
+        if (values.length === 1) {
+            const val = values[0];
+            if (val >= 0){
+                yMin = 0;
+                yMax = val + val * 0.1; // 10% padding
+            } else {
+                yMin = val - Math.abs(val) * 0.1;
+                yMax = 0;
+            }
+        } else {
+            yMin = minValue - (maxValue - minValue) * 0.1;
+            yMax = maxValue + (maxValue - minValue) * 0.1;
+        }
 
         const yScale = d3.scaleLinear()
-            .domain([paddedMin, paddedMax]).nice()
+            .domain([yMin, yMax]).nice()
             .range([graphHeight, 0]);
   
         const svg = d3.select(svgRef.current)
