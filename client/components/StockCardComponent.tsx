@@ -254,13 +254,15 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     case 'maxdrawdownanalysis':
       return (
         <LineGraph
-          data={chartData.flatMap((data, index) => ({
-            ticker: data.tickers[0],
-            values: (data.series.timeSeries?.[data.tickers[0]] || []).map(point => ({
-              date: new Date(point.date),
-              value: point.value
+          data={chartData.flatMap((data) =>
+            data.tickers.map(ticker => ({
+              ticker: ticker,
+              values: (data.series.timeSeries?.[ticker] || []).map(point => ({
+                date: new Date(point.date),
+                value: point.value
+              }))
             }))
-          }))}
+          )}
           width={dimensions.width - 32}
           height={dimensions.height - 90}
         />
