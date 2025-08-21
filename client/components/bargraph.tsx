@@ -7,13 +7,15 @@ interface BarGraphProps {
         width?: number;
         height?: number;
         barColor?: string;
+        lineColors?: string[];
     }
   
     const BarGraph: React.FC<BarGraphProps> = ({
         data,
         width = 500,
         height = 300,
-        barColor = '#800080',
+        barColor = '#fc03d7',
+        lineColors = ['#FF0000', '#008000', '#0000FF']
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -86,7 +88,7 @@ interface BarGraphProps {
         .attr("y", graphHeight) // Start from the bottom
         .attr("width", xScale.bandwidth())
         .attr("height", 0) // Start with height 0
-        .attr("fill", barColor)
+        .attr("fill", (d, i) => i === 0 ? barColor : lineColors[(i-1) % lineColors.length])
         .on("mouseover", function (event, d) {
             tooltip
             .style("display", "block")
