@@ -67,7 +67,7 @@ interface LineGraphProps {
 
     // Append line paths for each series
     data.forEach((series, i) => {
-        const lineColor = i === 0 ? mainColor : lineColors[i % lineColors.length];
+        const lineColor = i === 0 ? mainColor : lineColors[(i-1) % lineColors.length];
         g.append('path')
             .datum(series.values)
             .attr('fill', 'none')
