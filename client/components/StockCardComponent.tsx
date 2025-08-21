@@ -265,6 +265,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           )}
           width={dimensions.width - 32}
           height={dimensions.height - 90}
+          mainColor={barColor}
         />
       );
     /*

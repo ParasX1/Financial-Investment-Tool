@@ -5,6 +5,7 @@ interface LineGraphProps {
     data: {ticker: string; values: { date: Date; value: number }[]}[];
     width?: number;
     height?: number;
+    mainColor?: string;
     lineColors?: string[];
 }
 
@@ -12,7 +13,8 @@ interface LineGraphProps {
     data,
     width = 500,
     height = 300,
-    lineColors = ['#800080', '#FF0000', '#008000', '#0000FF'],
+    mainColor = '#fc03d7',
+    lineColors = ['#FF0000', '#008000', '#0000FF'],
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -65,7 +67,7 @@ interface LineGraphProps {
 
     // Append line paths for each series
     data.forEach((series, i) => {
-        const lineColor = lineColors[i % lineColors.length];
+        const lineColor = i === 0 ? mainColor : lineColors[i % lineColors.length];
         g.append('path')
             .datum(series.values)
             .attr('fill', 'none')
