@@ -35,21 +35,13 @@ interface BarGraphProps {
         const minValue = d3.min(values)!;
         const maxValue = d3.max(values)!;
 
-        let yMin: number, yMax: number;
-
-        if (values.length === 1) {
-            const val = values[0];
-            const range = Math.abs(val) * 1.1; //10% padding
-            yMin = -range;
-            yMax = range;
-        } else {
-            yMin = minValue - (maxValue - minValue) * 0.1;
-            yMax = maxValue + (maxValue - minValue) * 0.1;
-        }
+        const yMin = Math.min(0, minValue - (maxValue - minValue) * 0.1);
+        const yMax = Math.max(0, maxValue + (maxValue - minValue) * 0.1);
 
         const yScale = d3.scaleLinear()
-            .domain([yMin, yMax]).nice()
-            .range([graphHeight, 0]);
+            .domain([yMin, yMax])
+            .range([graphHeight, 0])
+            .nice();
   
         const svg = d3.select(svgRef.current)
         .attr('width', width)
