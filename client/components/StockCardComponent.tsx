@@ -6,6 +6,7 @@ import LineGraph from './linegraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
+import ScatterPlotGraph from './scatterplot';
 
 type OHLCData = {
     date: string;
@@ -268,6 +269,25 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           mainColor={barColor}
         />
       );
+    
+    case 'efficientfrontiervisualization':
+      return (
+      <ScatterPlotGraph
+        data={chartData.flatMap((data) => {
+          const portfolio = data.series.portfolio;
+          if (!portfolio) return [];
+
+          return portfolio.returns.map((point, i) => ({
+            risk: portfolio.risks[i],
+            return: portfolio.returns[i],
+            sharpe: portfolio.sharpe_ratios[i],
+          }));
+        })}
+        width={dimensions.width - 32}
+        height={dimensions.height - 90}
+        mainColor={barColor}
+      />
+    );
     /*
     case 'betaanalysis':
     case 'alphacomparison':

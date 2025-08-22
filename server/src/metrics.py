@@ -4,6 +4,7 @@
 import yfinance as yf   # Used to fetch stock data from Yahoo Finance
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
+import matplotlib.pyplot as plt
 
 # Function to fetch full stock data
 def fetch_stock_data(stock_tickers, start_date, end_date):
@@ -57,7 +58,6 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     
     # Extract adjusted close prices
     adj_close = data.xs('Adj Close', level=1, axis=1)
-    print(adj_close.columns.to_list())
 
     # Calculate daily returns for stocks and market
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
@@ -105,7 +105,6 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     # Fetch data for stocks and market
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
-    print(f"Adjusted Close Columns: {adj_close.columns.to_list()}")
     
     # Calculate daily returns
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
@@ -166,7 +165,7 @@ def calculate_drawdown(stock_tickers, start_date, end_date):
         drawdown = (adj_close[ticker] - cumulative_max) / cumulative_max
         
         drawdowns[ticker] = drawdown
-    
+
     return drawdowns
 
 # Function to calculate Cumulative Return
@@ -412,7 +411,13 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
         results['risks'].append(portfolio_risk)
         results['sharpe_ratios'].append(sharpe_ratio)
 
-    
+    # plt.scatter(results['risks'], results['returns'], c=results['sharpe_ratios'], cmap='viridis')
+    # plt.xlabel('Risks')
+    # plt.ylabel('Return')
+    # plt.title('Efficient Frontier')
+    # plt.colorbar(label='Sharpe Ratio')
+    # plt.show()
+
     return results
 
 # Function to calculate Treynor Ratio
