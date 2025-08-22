@@ -4,6 +4,7 @@
 import yfinance as yf   # Used to fetch stock data from Yahoo Finance
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
+import matplotlib.pyplot as plt
 
 # Function to fetch full stock data
 def fetch_stock_data(stock_tickers, start_date, end_date):
@@ -57,7 +58,7 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     
     # Extract adjusted close prices
     adj_close = data.xs('Adj Close', level=1, axis=1)
-    
+
     # Calculate daily returns for stocks and market
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
@@ -117,6 +118,7 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     alphas = {}
     for ticker in stock_returns.columns:
         # Calculate the average annualized return for the stock
+
         stock_avg_return = stock_returns[ticker].mean() * 252  # 252 trading days in a year
         
         # Calculate the average annualized return for the market
@@ -163,7 +165,7 @@ def calculate_drawdown(stock_tickers, start_date, end_date):
         drawdown = (adj_close[ticker] - cumulative_max) / cumulative_max
         
         drawdowns[ticker] = drawdown
-    
+
     return drawdowns
 
 # Function to calculate Cumulative Return
@@ -265,6 +267,7 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
         rolling_corr = stock_returns[ticker].rolling(window=21).corr(market_returns)
         
         correlations[ticker] = rolling_corr
+        print(correlations) #This returns NaN. Need to look into why
     
     return correlations
 
@@ -407,7 +410,14 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
         results['returns'].append(portfolio_return)
         results['risks'].append(portfolio_risk)
         results['sharpe_ratios'].append(sharpe_ratio)
-    
+
+    # plt.scatter(results['risks'], results['returns'], c=results['sharpe_ratios'], cmap='viridis')
+    # plt.xlabel('Risks')
+    # plt.ylabel('Return')
+    # plt.title('Efficient Frontier')
+    # plt.colorbar(label='Sharpe Ratio')
+    # plt.show()
+
     return results
 
 # Function to calculate Treynor Ratio

@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
+import LineGraph from './linegraph';
 import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
+import ScatterPlotGraph from './scatterplot';
 
 type OHLCData = {
     date: string;
@@ -113,7 +115,6 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
     MSFT: microsoftOHLCData,
   };
 
-
 interface StockChartCardProps {
   index: number;
   selectedStocks: string[];
@@ -162,6 +163,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
   const handleApplySettings = async (settings: GraphSettings) => {
+    
     onUpdateSettings(index, {
       barColor: settings.stockColour,
       dateRange: {
@@ -173,26 +175,19 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     });
 
     onActivate(index);
-
-    if (selectedStocks.length === 0) {
-      return;
-    }
-    const data = selectedStocks.map(ticker => fetchMetrics({ ticker, settings}));
-
-    const allData = await Promise.all(data);
-    setChartData(allData);
   };
 
-  useEffect (() => {
-    if (!isActive || selectedStocks.length === 0){
+  useEffect(() => {
+
+    if (!isActive || selectedStocks.length === 0 || !graphMade) {
       setChartData([]);
-      return
+      return;
     }
 
     const fetchAllData = async () => {
-      const data = selectedStocks.map(ticker =>
-        fetchMetrics({ 
-          ticker, 
+
+      const allData = await fetchMetrics({
+          tickers: selectedStocks,
           settings: {
             metricType: metricType as any,
             metricParams: {
@@ -200,15 +195,14 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               endDate: dateRange.end,
             },
             stockColour: barColor
-          }
-        })
-      );
+          },
+        });
 
-      const allData = await Promise.all(data)
-      setChartData(allData)
+      setChartData([allData]);
     };
+
     fetchAllData();
-  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType]);
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade]);
 
   // resize observer
   useEffect(() => {
@@ -226,18 +220,109 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       return null;
     }
     
-    return (
-      <OHLCChart
-        multiData={chartData.map((data, i) => ({
-          ticker: selectedStocks[i],
-          color: barColor,
-          data: (data.series as any).ohlc
-        }))}
+    switch (metricType.toLowerCase()) {
+      case 'ohlc':
+        return (
+          <OHLCChart
+            multiData={chartData.map((data, i) => ({
+              ticker: selectedStocks[i],
+              color: barColor,
+              data: data.series.ohlc || []
+            }))}
+            width={dimensions.width - 32}
+            height={dimensions.height - 90}
+          />
+        );
+
+    case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
+      return (
+        <BarGraph
+          data={chartData.flatMap(data => {
+            const tickers = data.tickers || [];
+            const singleValue = data.series.singleValue || {};
+            return tickers.map(t => ({
+              label: t,
+              value: singleValue[t]
+            }));
+          })}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      );
+    
+    case 'marketcorrelationanalysis':
+    case 'cumulativereturncomparison':
+    case 'maxdrawdownanalysis':
+      return (
+        <LineGraph
+          data={chartData.flatMap((data) =>
+            data.tickers.map(ticker => ({
+              ticker: ticker,
+              values: (data.series.timeSeries?.[ticker] || []).map(point => ({
+                date: new Date(point.date),
+                value: point.value
+              }))
+            }))
+          )}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          mainColor={barColor}
+        />
+      );
+    
+    case 'efficientfrontiervisualization':
+      return (
+      <ScatterPlotGraph
+        data={chartData.flatMap((data) => {
+          const portfolio = data.series.portfolio;
+          if (!portfolio) return [];
+
+          return portfolio.returns.map((point, i) => ({
+            risk: portfolio.risks[i],
+            return: portfolio.returns[i],
+            sharpe: portfolio.sharpe_ratios[i],
+          }));
+        })}
         width={dimensions.width - 32}
         height={dimensions.height - 90}
+        mainColor={barColor}
       />
     );
-  };
+    /*
+    case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
+      Should be displayed as a bar chart.
+      Potentially regression line but related functions will need to be changed to calculate metric per day instead of overall
+    
+    case 'marketcorrelationanalysis':
+      This returns a series of values per day
+      Should be a line chart
+      Potentially a bar or heatmap if changed to overall stock
+
+    case 'maxdrawdownanalysis':
+    case 'cumulativereturncomparison':
+      This returns a series of values per day
+      Should be a line chart
+    
+    case 'efficientfrontieranalysis':
+      This should be displayed as a scatter plot.
+    */
+
+    default:
+      console.log('[renderChart] Unsupported metricType:', metricType);
+      return null;
+    };
+  }
 
   // render
   return (

@@ -2,20 +2,23 @@ import * as d3 from 'd3';
 import React, { useState, useRef, useEffect } from 'react';
 
 interface LineGraphProps {
-    data: { date: Date; value: number }[];
+    data: {ticker: string; values: { date: Date; value: number }[]}[];
     width?: number;
     height?: number;
-    lineColor?: string;
+    mainColor?: string;
+    lineColors?: string[];
 }
 
     const LineGraph: React.FC<LineGraphProps> = ({
     data,
     width = 500,
     height = 300,
-    lineColor = '#800080',
+    mainColor = '#fc03d7',
+    lineColors = ['#FF0000', '#008000', '#0000FF'],
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
+
     useEffect(() => {
     if (!data.length) return;
 
@@ -28,15 +31,18 @@ interface LineGraphProps {
     const graphWidth = width - l - r;
     const graphHeight = height - t - b;
 
+    const allValues = data.flatMap(d => d.values);
+
     // Create scales for x (time) and y (values)
     const xScale = d3
         .scaleTime()
-        .domain(d3.extent(data, (d) => d.date) as [Date, Date])
+        .domain(d3.extent(allValues, (d) => d.date) as [Date, Date])
         .range([0, graphWidth]);
 
+    const yExtent = d3.extent(allValues, (d) => d.value) as [number, number];
     const yScale = d3
         .scaleLinear()
-        .domain([0, d3.max(data, (d) => d.value)!])
+        .domain(yExtent)
         .range([graphHeight, 0]);
 
     // Create line generator function
@@ -59,13 +65,16 @@ interface LineGraphProps {
     // Add graph group with margins
     const g = svg.append('g').attr('transform', `translate(${l},${t})`);
 
-    // Append line path
-    g.append('path')
-        .datum(data)
-        .attr('fill', 'none')
-        .attr('stroke', lineColor)
-        .attr('stroke-width', 2)
+    // Append line paths for each series
+    data.forEach((series, i) => {
+        const lineColor = i === 0 ? mainColor : lineColors[(i-1) % lineColors.length];
+        g.append('path')
+            .datum(series.values)
+            .attr('fill', 'none')
+            .attr('stroke', lineColor)
+            .attr('stroke-width', 2)
         .attr('d', line);
+    });
 
     // Add X Axis (bottom)
     g.append('g')
@@ -106,7 +115,8 @@ interface LineGraphProps {
         const dateAtMouse = xScale.invert(mouseX - l); // Get the date based on mouse position
 
         // Find the closest data point to the mouse position
-        const closestPoint = data.reduce((a, b) =>
+        const allPoints = data.flatMap(series => series.values)
+        const closestPoint = allPoints.reduce((a, b) =>
             Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
         );
 
@@ -122,7 +132,7 @@ interface LineGraphProps {
         tooltip.style('display', 'none');
         });
 
-    }, [data, width, height, lineColor]);
+    }, [data, width, height, lineColors]);
 
     return (
     <>

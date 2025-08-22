@@ -1,5 +1,3 @@
-// pages/dashboardView.tsx
-
 import React, {useEffect, useState} from 'react';
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
@@ -22,11 +20,12 @@ import supabase from "@/components/supabase";
 import OHLCChart from '@/components/ohlc';
 import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
+import { MetricType } from '@/components/graphSettingsModal';
 
 export interface CardSettings {
     barColor: string;
     dateRange: { start: string; end: string };
-    metricType: string;
+    metricType: MetricType;
     graphMade: boolean;
 }
 
@@ -38,7 +37,7 @@ const DashboardView: React.FC = () => {
 
     // global time range to initialize and pass to each card
     const [globalStart, setGlobalStart] = useState<string>(() => {
-        // initialize to “now” in local ISO format YYYY‑MM‑DDThh:mm
+        // initialize to "now" in local ISO format YYYY‑MM‑DDThh:mm
         const tzOffset = new Date().getTimezoneOffset() * 60000;
         return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
     });
@@ -49,7 +48,7 @@ const DashboardView: React.FC = () => {
             () => ({
                 barColor: '#fc03d7', 
                 dateRange: {start: globalStart, end: globalEnd},
-                metricType: 'BetaAnalysis',
+                metricType: 'BetaAnalysis' as MetricType,
                 graphMade: false
             })
         )
@@ -118,7 +117,7 @@ const DashboardView: React.FC = () => {
         });
     };
 
-    const handleCardSettingsUpdate = (index: number, settings: CardSettings) => {
+    const handleCardSettingsUpdate = (index: number, settings: Partial<CardSettings>) => {
         setCardSettings(prev => {
             const updated = [...prev];
             updated[index] = {...updated[index], ...settings};
