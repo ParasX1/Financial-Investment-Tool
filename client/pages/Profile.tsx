@@ -3,6 +3,7 @@ import Sidebar from '@/components/sidebar'
 import supabase from '@/components/supabase'
 import { useAuth } from '@/components/authContext'
 
+
 function Profile() {
   const { user, loading } = useAuth()
 
@@ -111,6 +112,7 @@ function Profile() {
               {fname || '(First)'} {lname || '(Last)'}
             </h2>
             <p className="text-gray-500">{email}</p>
+
 
             <p className="text-gray-500">Software Engineer</p>
             <p className="text-gray-500">Reliability: 12345</p>

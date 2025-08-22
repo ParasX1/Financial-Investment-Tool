@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import OHLCChart from './ohlc';
-import GraphSettingsModal, { GraphSettings } from './graphSettingsModal';
+import BarGraph from './bargraph';
+import LineGraph from './linegraph';
+import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
+import { CardSettings } from '@/pages/dashboardView';
+import ScatterPlotGraph from './scatterplot';
 
 type OHLCData = {
     date: string;
@@ -111,13 +115,15 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
     MSFT: microsoftOHLCData,
   };
 
-
 interface StockChartCardProps {
   index: number;
-  selectedStock: string | null;
-  onSelectStock: (index: number, stock: string) => void;
+  selectedStocks: string[];
+  isActive: boolean;
+  cardSettings: CardSettings;
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
+  onActivate: (index: number) => void;
+  onUpdateSettings: (index: number, settings: CardSettings) => void;
   height?: number;
   defaultStart: string;
   defaultEnd: string;
@@ -127,10 +133,13 @@ interface StockChartCardProps {
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
   index,
-  selectedStock,
-  onSelectStock,
+  selectedStocks,
+  isActive,
+  cardSettings,
   onClear,
   onSwap,
+  onActivate,
+  onUpdateSettings,
   height = 400,
   defaultStart,
   defaultEnd,
@@ -141,44 +150,59 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const [dimensions, setDimensions] = useState({ width: 500, height });
   const [showSettings, setShowSettings] = useState(false);
 
-  const [settings, setSettings] = useState<GraphSettings>({
-      stockColour: color,
-      metricType: 'OHLC',
-      metricParams: { startDate: defaultStart, endDate: defaultEnd },
-    });
-    const [chartData, setChartData] = useState<MetricsResponse | null>(null);
-
-    useEffect(() => {
-      setSettings({
-        stockColour: color,
-        metricType: 'OHLC',
-        metricParams: {
-          startDate: defaultStart,
-          endDate:   defaultEnd,
-        },
-      });
-    }, [color, defaultStart, defaultEnd]);
-    
+  const [chartData, setChartData] = useState<MetricsResponse[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const buttonBackgroundColor = '#777'; // Grey background color
+  const buttonHoverColor = '#555'; // Darker grey on hover
+
+  const { barColor, dateRange, metricType, graphMade } = cardSettings;
+  const showGraph = isActive && selectedStocks.length > 0 && graphMade;
+
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
-  const handleApplySettings = (newSettings: GraphSettings) => {
-      setSettings(newSettings);
-      onSettingsChange(index, newSettings);
-      setShowSettings(false);
-    };
+  const handleApplySettings = async (settings: GraphSettings) => {
+    
+    onUpdateSettings(index, {
+      barColor: settings.stockColour,
+      dateRange: {
+        start: settings.metricParams.startDate,
+        end: settings.metricParams.endDate,
+      },
+      metricType: settings.metricType,
+      graphMade: true,
+    });
 
-
+    onActivate(index);
+  };
 
   useEffect(() => {
-      if (!selectedStock) {
-        setChartData(null);
-        return;
-      }
-      fetchMetrics({ ticker: selectedStock, settings }).then(setChartData);
-    }, [selectedStock, settings]);
+
+    if (!isActive || selectedStocks.length === 0 || !graphMade) {
+      setChartData([]);
+      return;
+    }
+
+    const fetchAllData = async () => {
+
+      const allData = await fetchMetrics({
+          tickers: selectedStocks,
+          settings: {
+            metricType: metricType as any,
+            metricParams: {
+              startDate: dateRange.start,
+              endDate: dateRange.end,
+            },
+            stockColour: barColor
+          },
+        });
+
+      setChartData([allData]);
+    };
+
+    fetchAllData();
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade]);
 
   // resize observer
   useEffect(() => {
@@ -190,8 +214,115 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     return () => ob.disconnect();
   }, []);
 
+  // choose chart component 
+  const renderChart = () => {
+    if (chartData.length === 0 || selectedStocks.length === 0){
+      return null;
+    }
+    
+    switch (metricType.toLowerCase()) {
+      case 'ohlc':
+        return (
+          <OHLCChart
+            multiData={chartData.map((data, i) => ({
+              ticker: selectedStocks[i],
+              color: barColor,
+              data: data.series.ohlc || []
+            }))}
+            width={dimensions.width - 32}
+            height={dimensions.height - 90}
+          />
+        );
 
+    case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
+      return (
+        <BarGraph
+          data={chartData.flatMap(data => {
+            const tickers = data.tickers || [];
+            const singleValue = data.series.singleValue || {};
+            return tickers.map(t => ({
+              label: t,
+              value: singleValue[t]
+            }));
+          })}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      );
+    
+    case 'marketcorrelationanalysis':
+    case 'cumulativereturncomparison':
+    case 'maxdrawdownanalysis':
+      return (
+        <LineGraph
+          data={chartData.flatMap((data) =>
+            data.tickers.map(ticker => ({
+              ticker: ticker,
+              values: (data.series.timeSeries?.[ticker] || []).map(point => ({
+                date: new Date(point.date),
+                value: point.value
+              }))
+            }))
+          )}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          mainColor={barColor}
+        />
+      );
+    
+    case 'efficientfrontiervisualization':
+      return (
+      <ScatterPlotGraph
+        data={chartData.flatMap((data) => {
+          const portfolio = data.series.portfolio;
+          if (!portfolio) return [];
 
+          return portfolio.returns.map((point, i) => ({
+            risk: portfolio.risks[i],
+            return: portfolio.returns[i],
+            sharpe: portfolio.sharpe_ratios[i],
+          }));
+        })}
+        width={dimensions.width - 32}
+        height={dimensions.height - 90}
+        mainColor={barColor}
+      />
+    );
+    /*
+    case 'betaanalysis':
+    case 'alphacomparison':
+    case 'sortinoratiovisualization':
+    case 'sharperatiomatrix':
+    case 'volatilityanalysis':
+    case 'valueatriskanalysis':
+      Should be displayed as a bar chart.
+      Potentially regression line but related functions will need to be changed to calculate metric per day instead of overall
+    
+    case 'marketcorrelationanalysis':
+      This returns a series of values per day
+      Should be a line chart
+      Potentially a bar or heatmap if changed to overall stock
+
+    case 'maxdrawdownanalysis':
+    case 'cumulativereturncomparison':
+      This returns a series of values per day
+      Should be a line chart
+    
+    case 'efficientfrontieranalysis':
+      This should be displayed as a scatter plot.
+    */
+
+    default:
+      console.log('[renderChart] Unsupported metricType:', metricType);
+      return null;
+    };
+  }
 
   // render
   return (
@@ -210,27 +341,44 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
-      {chartData && (
-        <OHLCChart
-          data={(chartData.series as any).ohlc as OHLCData[]}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
-          barColor={settings.stockColour}
-        />
-      )}
-
-      {/* controls */}
-      <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-        <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-        <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
-        <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
-          {isFullscreen ? '⤡' : '⤢'}
-        </Button>
-        <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
-          ⚙︎
-        </Button>
-      </Box>
-
+          {/* controls */}
+          <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+            <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+            <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
+            <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
+              {isFullscreen ? '⤡' : '⤢'}
+            </Button>
+          <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
+            ⚙︎
+          </Button>
+        </Box>
+      {showGraph ? (
+        <>
+          {renderChart()}
+      </>
+      ) : (
+        <Button
+        variant="contained"
+        onClick={() => setShowSettings(true)}
+        sx={{
+          position: 'absolute',
+          top: 'calc(50% - 20px)',
+          left: 'calc(50% - 20px)',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          minWidth: 'unset',
+          backgroundColor: buttonBackgroundColor,
+          color: 'white',
+          fontSize: '24px',
+          '&:hover': {
+            backgroundColor: buttonHoverColor,
+          },
+        }}
+      >
+        +
+      </Button>
+    )}
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}

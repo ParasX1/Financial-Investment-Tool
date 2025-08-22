@@ -6,16 +6,16 @@ import {
 	Navbar as Nb,
 	Spacer
 } from "@nextui-org/react"
-import React, { useState } from "react";
+
+import React, { useEffect, useState, Fragment } from "react";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import {useAuth} from "@/components/authContext";
 
 export interface NavbarElem {
+    id: number
     label: string
     href: string 
-    // only supports jumping to other pages, can replace with
-    // action to have it do other things
 }
 
 interface NavbarProps {
@@ -41,6 +41,7 @@ export function Navbar({ items } : NavbarProps) {
             const disabled = !user
             return (
                 <React.Fragment key={child.href + idx}>
+
                 <NavbarItem>
                     {disabled ? (
                     <span
@@ -62,11 +63,13 @@ export function Navbar({ items } : NavbarProps) {
             })}
         </NavbarContent>
 
+
         <NavbarContent justify="end">
             {user ? (
             <NavbarItem>
                 <Button className="bg-black text-white" variant="flat" onClick={() => signOut()}>
                 Log Out
+
                 </Button>
             </NavbarItem>
             ) : (
