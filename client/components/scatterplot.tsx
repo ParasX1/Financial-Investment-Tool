@@ -6,7 +6,6 @@ interface ScatterPlotProps {
     width?: number;
     height?: number;
     mainColor?: string;
-    lineColors?: string[];
 }
 
 const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
@@ -14,7 +13,6 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
     width = 500,
     height = 300,
     mainColor = '#fc03d7',
-    lineColors = ['#FF0000', '#008000', '#0000FF'],
 }) => {
 
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -113,7 +111,7 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .on('mouseout', () => {
             tooltip.style('display', 'none');
         });
-        }, [data, width, height, mainColor, lineColors]);
+        }, [data, width, height, mainColor]);
 
         return (
             <>
