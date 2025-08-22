@@ -16,6 +16,7 @@ export default function WatchlistPage() {
   const [charts, setCharts] = useState<(string | null)[]>(Array(MAX_ROWS).fill(null));
   const [collapsedRows, setCollapsedRows] = useState<boolean[]>([true, true, true]);
   const [toast, setToast] = useState<{open: boolean; msg: string; type: 'success'|'error'}>({open:false,msg:'',type:'success'});
+  const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
   const showToast = (msg: string, type: 'success'|'error'='success') =>
     setToast({open:true, msg, type});
@@ -75,6 +76,32 @@ export default function WatchlistPage() {
     }, 400); 
     return () => clearTimeout(timer);
   }, [charts, user]);
+
+  useEffect(() => {
+    const syms = (charts.filter(Boolean) as string[]);
+    if (!syms.length) return;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from('tickers')             
+        .select('symbol,name')       
+        .in('symbol', syms);
+
+      if (!error && data) {
+        const m: Record<string, string> = {};
+        data.forEach(r => { m[r.symbol] = r.name; });
+        setNameMap(prev => ({ ...prev, ...m })); 
+      } else if (error) {
+        console.error('load ticker names failed:', error);
+      }
+    })();
+  }, [charts.join('|')]);
+  const displayName = (t?: string | null) => (t ? (nameMap[t] ?? t) : undefined);
+  const newsQuery   = (t?: string | null) => {
+    if (!t) return undefined;
+    const n = nameMap[t];
+    return n ? `${t} OR "${n}"` : t;
+  };
 
   const onTagsChange = (_: any, t: string[]) => {
     const dedup = Array.from(new Set(t)).slice(0, MAX_ROWS);
@@ -147,9 +174,9 @@ export default function WatchlistPage() {
                   <Grid item xs={12} md={6}>
                     <NewsCardComponent
                       index={1}
-                      title={charts[row] ? `News: ${charts[row]}` : 'Watchlist News'}
+                      title={charts[row] ? `News: ${displayName(charts[row])}` : 'Watchlist News'}
                       height={newsHeight}
-                      filterTicker={charts[row] ?? undefined}
+                      filterTicker={newsQuery(charts[row])} 
                     />
                   </Grid>
                 </React.Fragment>
