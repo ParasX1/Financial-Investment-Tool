@@ -14,3 +14,8 @@ node_modules/
 /client/.next/
 
 client/.idea
+
+.env.local
+client/.env.local
+server/.env
+
