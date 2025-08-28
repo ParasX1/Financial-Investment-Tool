@@ -31,18 +31,9 @@ to compile and host the frontend locally.
 **Backend**
 
 We use flask to run our backend.
-Disregard Below - Do not use virtual environment
-
-Enable the virtual environment with
-
+In the `server` folder, use
 ```
-source venv/bin/activate
-```
-
-Then use python to run the backend
-
-```
-python3 server.py
+python -m src.server
 ```
 
 ## Testing
