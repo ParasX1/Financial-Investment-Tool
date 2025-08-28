@@ -15,7 +15,5 @@ node_modules/
 
 client/.idea
 
-.env.local
-client/.env.local
 server/.env
 
