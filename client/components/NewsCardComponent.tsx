@@ -47,26 +47,31 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
 
   // Pull data
   useEffect(() => {
+    let canceled = false;
     setLoading(true);
     setError(null);
+
+    if (index === 1 && !filterTicker) {
+      setArticles([]);
+      setLoading(false);
+      return;
+    }
     let p: Promise<Article[]>;
     switch (index) {
       case 0: p = fetchGeneralNews(10); break;
-      case 1:
-        p = filterTicker
-          ? fetchTickerNews(filterTicker, 10)
-          : fetchGeneralNews(10);
-        break;
+      case 1: p = fetchTickerNews(filterTicker!, 10); break;
       case 2: p = fetchRegionalNews(param || 'au',  10); break;
       case 3: p = fetchIndustryNews(param || 'technology', 10); break;
       case 4: p = fetchCommodityNews(param || 'gold', 10); break;
       default:
-        p = Promise.resolve([]); // ToDo: watchlist or portfolio in following issues
+        p = Promise.resolve([]);
     }
-    p.then(setArticles)
-     .catch(e => setError((e as Error).message))
-     .finally(() => setLoading(false));
-  }, [index, param]);
+    p.then(a => { if (!canceled) setArticles(a); })
+     .catch(e => { if (!canceled) setError((e as Error).message); })
+     .finally(() => { if (!canceled) setLoading(false); });
+
+    return () => { canceled = true; };
+  }, [index, param, filterTicker]);
 
   const onSaveSettings = () => {
     const key = ['general','watchlist','regional','industry','commodity'][index];

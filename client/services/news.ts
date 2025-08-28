@@ -37,9 +37,10 @@ export async function fetchCommodityNews(commodity = 'gold', limit = 10): Promis
 }
 
 export async function fetchTickerNews(ticker: string, limit = 10): Promise<Article[]> {
-  const q   = encodeURIComponent(ticker);
-  const res = await fetch(`/api/news/general?pageSize=${limit}&q=${q}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch ticker news');
-  const { articles } = await res.json();
-  return articles as Article[];
+  const res = await fetch(`/api/news/ticker?ticker=${encodeURIComponent(ticker)}&pageSize=${limit}`, {
+    cache: 'no-store'
+  })
+  if (!res.ok) throw new Error('Failed to fetch ticker news')
+  const { articles } = await res.json()
+  return articles as Article[]
 }

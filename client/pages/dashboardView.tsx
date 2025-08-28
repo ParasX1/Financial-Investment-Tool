@@ -1,4 +1,5 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
+
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
 import {
@@ -21,6 +22,8 @@ import OHLCChart from '@/components/ohlc';
 import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import { MetricType } from '@/components/graphSettingsModal';
+import { useAuth } from '@/components/authContext'
+import { loadPortfolioConfig, savePortfolioConfig } from '@/services/portfolioPrefs'
 
 export interface CardSettings {
     barColor: string;
@@ -30,9 +33,10 @@ export interface CardSettings {
 }
 
 const DashboardView: React.FC = () => {
-    const [showSignUp, setSignUp] = useState(false);
-    const [showLogIn, setLogIn] = useState(false);
-    const [session, setSession] = useState(null);
+    const { user, loading } = useAuth()
+    const [searchTags, setSearchTags] = useState<string[]>([])
+    const [selectedStocks, setSelectedStocks] = useState<string[]>([])
+    const [prefsLoaded, setPrefsLoaded] = useState(false)
     const [activeCards, setActiveCards] = useState<boolean[]>([false, false, false, false, false, false]);
 
     // global time range to initialize and pass to each card
@@ -54,20 +58,20 @@ const DashboardView: React.FC = () => {
         )
     );
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session as any);
-        });
+     useEffect(() => {
+        setPrefsLoaded(false)               
+        setSearchTags([])                     
+        setSelectedStocks([])
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session as any);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // Instead of image content, now we use stock selection
-    const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
+        if (loading || !user) return
+        ;(async () => {
+        const cfg = await loadPortfolioConfig(user.id)
+        const tags = cfg?.tags ?? []
+        setSearchTags(tags)
+        setSelectedStocks(tags)
+        setPrefsLoaded(true)               
+        })()
+    }, [loading, user])
 
     const handleSelectStock = (stock: string) => {
         setSelectedStocks(prev => {
@@ -125,8 +129,14 @@ const DashboardView: React.FC = () => {
         });
     };
 
-    const [searchTags, setSearchTags] = useState<string[]>([]);
     const stockOptions = Object.keys(stockDataMap);
+    useEffect(() => {
+        if (!user || !prefsLoaded) return
+        const h = setTimeout(() => {
+        savePortfolioConfig(user.id, { tags: searchTags }).catch(console.error)
+        }, 600)
+        return () => clearTimeout(h)
+    }, [user, prefsLoaded, searchTags]) 
 
     return (
         <div>
@@ -277,8 +287,7 @@ const DashboardView: React.FC = () => {
                                     height={816}
                                     // TODO: As each card initial start/endDate
                                     defaultStart={globalStart}
-                                    defaultEnd={globalEnd}
-                                />
+                                    defaultEnd={globalEnd} color={''}                                />
                             </Grid>
 
                             {/* Vertical Stack of Cards */}
@@ -296,8 +305,7 @@ const DashboardView: React.FC = () => {
                                                 onActivate={handleActivate}
                                                 onUpdateSettings={handleCardSettingsUpdate}
                                                 defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
+                                                defaultEnd={globalEnd} color={''}                                            />
                                         </Grid>
                                     ))}
                                 </Grid>
@@ -318,8 +326,7 @@ const DashboardView: React.FC = () => {
                                                 onActivate={handleActivate}
                                                 onUpdateSettings={handleCardSettingsUpdate}
                                                 defaultStart={globalStart}
-                                                defaultEnd={globalEnd}
-                                            />
+                                                defaultEnd={globalEnd} color={''}                                            />
                                         </Grid>
                                     ))}
                                 </Grid>
