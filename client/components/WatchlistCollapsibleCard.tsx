@@ -99,8 +99,7 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
       {!isCollapsed && (
         <StockChartCard
           index={index}
-          selectedStock={selectedStock}
-          onSelectStock={() => {}}
+          selectedStocks={selectedStock ? [selectedStock] : []}
           onClear={onClear}
           onSwap={onSwap}
           height={height}

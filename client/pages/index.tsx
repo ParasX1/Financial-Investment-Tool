@@ -204,11 +204,11 @@ function Index() {
                       We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms
                       (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
                       for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or
-                      coding smart financial solutions, we've got it covered.
+                      coding smart financial solutions, we&#39;ve got it covered.
                       <br></br>
                       <br></br>
-                      With FIT, we're on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
-                      or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you're making informed
+                      With FIT, we&#39;re on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
+                      or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you&#39;re making informed
                       decisions. From tracking volatility to backtesting trading strategies, our app is designed to give you the edge in
                       your financial game.
                     </p>
