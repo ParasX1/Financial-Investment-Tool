@@ -7,13 +7,15 @@ interface BarGraphProps {
         width?: number;
         height?: number;
         barColor?: string;
+        lineColors?: string[];
     }
   
     const BarGraph: React.FC<BarGraphProps> = ({
         data,
         width = 500,
         height = 300,
-        barColor = '#800080',
+        barColor = '#fc03d7',
+        lineColors = ['#FF0000', '#008000', '#0000FF']
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -28,9 +30,18 @@ interface BarGraphProps {
         // scales 
         const xScale = d3.scaleBand().domain(data.map((d) => d.label))
             .range([0, graphWidth]).padding(0.2);
+        
+        const values = data.map((d) => d.value);
+        const minValue = d3.min(values)!;
+        const maxValue = d3.max(values)!;
+
+        const yMin = Math.min(0, minValue - (maxValue - minValue) * 0.1);
+        const yMax = Math.max(0, maxValue + (maxValue - minValue) * 0.1);
+
         const yScale = d3.scaleLinear()
-            .domain([0, d3.max(data, (d) => d.value)!]).nice()
-            .range([graphHeight, 0]);
+            .domain([yMin, yMax])
+            .range([graphHeight, 0])
+            .nice();
   
         const svg = d3.select(svgRef.current)
         .attr('width', width)
@@ -58,14 +69,15 @@ interface BarGraphProps {
     const bars = g.selectAll('.bar')
         .data(data);
 
+    const zeroY = yScale(0);
     bars.enter()
         .append("rect")
         .attr("class", "bar")
         .attr("x", (d) => xScale(d.label)!)
-        .attr("y", graphHeight) // Start from the bottom
+        .attr("y", zeroY) // Start from the bottom
         .attr("width", xScale.bandwidth())
         .attr("height", 0) // Start with height 0
-        .attr("fill", barColor)
+        .attr("fill", (d, i) => i === 0 ? barColor : lineColors[(i-1) % lineColors.length])
         .on("mouseover", function (event, d) {
             tooltip
             .style("display", "block")
@@ -81,12 +93,12 @@ interface BarGraphProps {
         })
         .transition() // Animate the bars
         .duration(800)
-        .attr("y", (d) => yScale(d.value))
-        .attr("height", (d) => graphHeight - yScale(d.value));
+        .attr("y", (d) => d.value >= 0 ? yScale(d.value) : zeroY)
+        .attr("height", (d) => Math.abs(yScale(d.value) - zeroY));
 
     // Append axes
     g.append('g')
-        .attr('transform', `translate(0,${graphHeight})`)
+        .attr('transform', `translate(0,${yScale(0)})`)
         .call(d3.axisBottom(xScale));
     g.append('g')
         .call(d3.axisLeft(yScale));
