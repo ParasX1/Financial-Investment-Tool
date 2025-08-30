@@ -23,21 +23,17 @@ npm run dev
 
 to compile and host the frontend locally.
 
+1. Copy client/env.example and paste to client/.env.local
+2. Enter the your newsapi key
+3. Using npm run dev to testing
+
+
 **Backend**
 
 We use flask to run our backend.
-Disregard Below - Do not use virtual environment
-
-Enable the virtual environment with
-
+In the `server` folder, use
 ```
-source venv/bin/activate
-```
-
-Then use python to run the backend
-
-```
-python3 server.py
+python -m src.server
 ```
 
 ## Testing

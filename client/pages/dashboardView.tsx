@@ -1,107 +1,143 @@
-// pages/dashboardView.tsx
-
-
 import React, {useContext, useEffect, useState} from 'react';
+
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
 import {
-  Navbar,
-  NavbarContent,
-  NavbarItem,
-  Link as NextUILink,
-  Spacer,
+    Navbar,
+    NavbarContent,
+    NavbarItem,
+    Link as NextUILink,
+    Button as NextUIButton,
+    Spacer,
 } from '@nextui-org/react';
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
+import CardComponent from '@/components/CardComponent';
 import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
+import img1 from '@/assets/gridBackground1.png';
+import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
 import supabase from "@/components/supabase";
+import OHLCChart from '@/components/ohlc';
+import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
-import { GraphSettingsContext } from '@/components/GraphSettingsContext';
+import { MetricType } from '@/components/graphSettingsModal';
+import { useAuth } from '@/components/authContext'
+import { loadPortfolioConfig, savePortfolioConfig } from '@/services/portfolioPrefs'
 
-const NUM_CARDS = 6;
+export interface CardSettings {
+    barColor: string;
+    dateRange: { start: string; end: string };
+    metricType: MetricType;
+    graphMade: boolean;
+}
 
 const DashboardView: React.FC = () => {
-    const [showSignUp, setSignUp] = useState(false);
-    const [showLogIn, setLogIn] = useState(false);
-    const [session, setSession] = useState(null);
+    const { user, loading } = useAuth()
+    const [searchTags, setSearchTags] = useState<string[]>([])
+    const [selectedStocks, setSelectedStocks] = useState<string[]>([])
+    const [prefsLoaded, setPrefsLoaded] = useState(false)
+    const [activeCards, setActiveCards] = useState<boolean[]>([false, false, false, false, false, false]);
 
-    const { settings, setSettings } = useContext(GraphSettingsContext);
-    const {globalStart, globalEnd } = settings;
+    // global time range to initialize and pass to each card
+    const [globalStart, setGlobalStart] = useState<string>(() => {
+        // initialize to "now" in local ISO format YYYY‑MM‑DDThh:mm
+        const tzOffset = new Date().getTimezoneOffset() * 60000;
+        return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
+    });
+    const [globalEnd, setGlobalEnd] = useState<string>(globalStart);
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session as any);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session as any);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // Instead of image content, now we use stock selection
-    const [selectedStocks, setSelectedStocks] = useState<(string | null)[]>(
-      Array(NUM_CARDS).fill(null)
+    const [cardSettings, setCardSettings] = useState<CardSettings[]>(
+        () => Array.from({length: 6},
+            () => ({
+                barColor: '#fc03d7', 
+                dateRange: {start: globalStart, end: globalEnd},
+                metricType: 'BetaAnalysis' as MetricType,
+                graphMade: false
+            })
+        )
     );
 
+     useEffect(() => {
+        setPrefsLoaded(false)               
+        setSearchTags([])                     
+        setSelectedStocks([])
 
-    const handleSelectStock = (index: number, stock: string) => {
-        const newStocks = [...selectedStocks];
-        newStocks[index] = stock;
-        setSettings({ ...settings, selectedStocks: newStocks });
+        if (loading || !user) return
+        ;(async () => {
+        const cfg = await loadPortfolioConfig(user.id)
+        const tags = cfg?.tags ?? []
+        setSearchTags(tags)
+        setSelectedStocks(tags)
+        setPrefsLoaded(true)               
+        })()
+    }, [loading, user])
+
+    const handleSelectStock = (stock: string) => {
+        setSelectedStocks(prev => {
+            if (prev.includes(stock)) {
+                return prev.filter(s => s !== stock);
+            } else {
+                return [...prev, stock]
+            }
+        });
     };
 
     const handleClear = (index: number) => {
-        const newStocks = [...selectedStocks];
-        newStocks[index] = null;
-        setSettings({ ...settings, selectedStocks: newStocks });
+        setActiveCards(prev => {
+            const updated = [...prev];
+            updated[index] = false;
+            return updated;
+        })
+
+        setCardSettings(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], graphMade: false};
+            return updated;
+        });
     };
+
+    const handleActivate = (index: number) => {
+        setActiveCards(prev => {
+            const updated = [...prev];
+            updated[index] = true;
+            return updated
+        })
+    }
 
     const handleSwap = (index: number) => {
         if (index === 0) return;
-        const newStocks = [...selectedStocks];
-        const temp = newStocks[0];
-        newStocks[0] = newStocks[index];
-        newStocks[index] = temp;
-        setSettings({ ...settings, selectedStocks: newStocks });
-    };
-    
 
-    const handleSettingsChange = (i: number, s: any) => {
-      setCardSettings(cs => {
-        const x = [...cs];
-        x[i] = {
-          color: s.stockColour,
-          start: s.metricParams.startDate,
-          end: s.metricParams.endDate,
-        };
-        return x;
-      });
+        setActiveCards(prev => {
+            const updated = [...prev];
+            [updated[0], updated[index]] = [updated[index], updated[0]];
+            return updated;
+        });
+
+        setCardSettings(prev => {
+            const updated = [...prev];
+            [updated[0], updated[index]] = [updated[index], updated[0]];
+            return updated;
+        });
     };
 
-    // Tags UI (optional local state for tags, not chart data)
-    const [searchTags, setSearchTags] = React.useState<string[]>([]);
+    const handleCardSettingsUpdate = (index: number, settings: Partial<CardSettings>) => {
+        setCardSettings(prev => {
+            const updated = [...prev];
+            updated[index] = {...updated[index], ...settings};
+            return updated;
+        });
+    };
+
     const stockOptions = Object.keys(stockDataMap);
+    useEffect(() => {
+        if (!user || !prefsLoaded) return
+        const h = setTimeout(() => {
+        savePortfolioConfig(user.id, { tags: searchTags }).catch(console.error)
+        }, 600)
+        return () => clearTimeout(h)
+    }, [user, prefsLoaded, searchTags]) 
 
-    const handleTimeChange = (field: 'globalStart' | 'globalEnd', value: string) => {
-        setSettings({ ...settings, [field]: value });
-    };
-
-
-    const [cardSettings, setCardSettings] = useState<
-      { color: string; start: string; end: string }[]
-    >(() =>
-      Array(NUM_CARDS)
-        .fill(0)
-        .map(() => ({
-          color: '#fc03d7',
-          start: globalStart,
-          end: globalEnd,
-        }))
-    );
-      
     return (
         <div>
             <div style={{ display: 'flex' }}>
@@ -126,14 +162,21 @@ const DashboardView: React.FC = () => {
                             options={stockOptions}
                             value={searchTags}
                             onChange={(_, newTags, reason, details) => {
-                                 // Updaate tag array
+                                 // Update tag array
                                 setSearchTags(newTags as string[]);
-
+                                
+                                // Stock start selected
+                                if (reason === 'selectOption') {
+                                    const selected = details?.option as string;
+                                    setSelectedStocks(prev => prev.includes(selected)
+                                        ? prev
+                                        : [...prev, selected] 
+                                    );
+                                }
                                 // If delete tag, clean the state
-                                if (reason === 'removeOption' && details?.option) {
+                                else if (reason === 'removeOption' && details?.option) {
                                     const removed = details.option as string;
-                                    const updated = selectedStocks.map(s => s === removed ? null : s);
-                                    setSettings({ ...settings, selectedStocks: updated });
+                                    setSelectedStocks((prev) => prev.filter(s => s !== removed));
                                 }
                             }}
                             sx={{
@@ -144,29 +187,26 @@ const DashboardView: React.FC = () => {
                                 },
                               }}
                   
-                            renderTags={(value, getTagProps) => value.map((option, idx) => {
-                                const isActive = selectedStocks[0] === option;
-                                return(
-                                    <Chip
-                                    {...getTagProps({ index: idx })}
-                                    key={option}
-                                    label={option}
-                                    size="small"
-                                    onClick={() => {
-                                        if (isActive) handleClear(0);
-                                        else handleSelectStock(0, option);
-                                            }
-                                        }        
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, idx) => {
+                                    const tagProps = getTagProps({ index: idx });
+                                    const isSelected = selectedStocks.includes(option);
+                                    return(
+                                        <Chip
+                                            {...tagProps}   
+                                            key={option}
+                                            label={option}
+                                            size="small"
+                                            onClick={() => handleSelectStock(option)}
                                             sx={{
                                                 mr: 0.5,
                                                 cursor: 'pointer',
-                                                bgcolor: isActive ? '#800080' : '#ddd',
-                                                color: isActive ? '#fff' : '#000',
+                                                bgcolor: isSelected ? '#800080' : '#ddd',
+                                                color: isSelected ? '#fff' : '#000',
                                                 '&:hover': {
-                                                    bgcolor: isActive ? '#9a0f9a' : '#ccc',
+                                                    bgcolor: isSelected ? '#9a0f9a' : '#ccc',
                                                 },
-                                        }}
-                                            
+                                            }}
                                         />
                                     );
                                 })
@@ -192,13 +232,14 @@ const DashboardView: React.FC = () => {
                         />
 
                         {/* Global Time Selection */}
+                        {/* ToDo: Pass globalStart/globalEnd to each StockChartCard to initialize its own time range */}
                         <Tooltip title="Start" arrow>
                             <TextField
                                 type="datetime-local"
                                 variant="outlined"
                                 size="small"
                                 value={globalStart}
-                                onChange={e => handleTimeChange('globalStart', e.target.value)}
+                                onChange={e => setGlobalStart(e.target.value)}
                                 InputLabelProps={{ shrink: true }}
                                 sx={{
                                     ml: 2,
@@ -216,7 +257,7 @@ const DashboardView: React.FC = () => {
                                 variant="outlined"
                                 size="small"
                                 value={globalEnd}
-                                onChange={e => handleTimeChange('globalEnd', e.target.value)}
+                                onChange={e => setGlobalEnd(e.target.value)}
                                 InputLabelProps={{ shrink: true }}
                                 sx={{
                                     ml: 2,
@@ -236,15 +277,17 @@ const DashboardView: React.FC = () => {
                             <Grid item xs={12} md={8}>
                                 <StockChartCard
                                     index={0}
-                                    selectedStock={selectedStocks[0]}
-                                    onSelectStock={handleSelectStock}
+                                    selectedStocks={selectedStocks}
+                                    isActive={activeCards[0]}
+                                    cardSettings={cardSettings[0]}
                                     onClear={handleClear}
                                     onSwap={handleSwap}
+                                    onActivate={handleActivate}
+                                    onUpdateSettings={handleCardSettingsUpdate}
                                     height={816}
-                                    defaultStart={cardSettings[0].start}
-                                    defaultEnd={cardSettings[0].end}
-
-                                />
+                                    // TODO: As each card initial start/endDate
+                                    defaultStart={globalStart}
+                                    defaultEnd={globalEnd} color={''}                                />
                             </Grid>
 
                             {/* Vertical Stack of Cards */}
@@ -254,13 +297,15 @@ const DashboardView: React.FC = () => {
                                         <Grid item key={index}>
                                             <StockChartCard
                                                 index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
+                                                selectedStocks={selectedStocks}
+                                                isActive={activeCards[index]}
+                                                cardSettings={cardSettings[index]}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
-                                                defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}                                               
-                                            />
+                                                onActivate={handleActivate}
+                                                onUpdateSettings={handleCardSettingsUpdate}
+                                                defaultStart={globalStart}
+                                                defaultEnd={globalEnd} color={''}                                            />
                                         </Grid>
                                     ))}
                                 </Grid>
@@ -273,13 +318,15 @@ const DashboardView: React.FC = () => {
                                         <Grid item xs={12} sm={4} key={index}>
                                             <StockChartCard
                                                 index={index}
-                                                selectedStock={selectedStocks[index]}
-                                                onSelectStock={handleSelectStock}
+                                                selectedStocks={selectedStocks}
+                                                isActive={activeCards[index]}
+                                                cardSettings={cardSettings[index]}
                                                 onClear={handleClear}
                                                 onSwap={handleSwap}
-                                                defaultStart={cardSettings[index].start}
-                                                defaultEnd={cardSettings[index].end}                                                
-                                            />
+                                                onActivate={handleActivate}
+                                                onUpdateSettings={handleCardSettingsUpdate}
+                                                defaultStart={globalStart}
+                                                defaultEnd={globalEnd} color={''}                                            />
                                         </Grid>
                                     ))}
                                 </Grid>

@@ -1,8 +1,6 @@
 import * as d3 from "d3";
 import React, { useRef, useEffect } from 'react';
 
-
-
 export interface OHLCData {
     date: string;
     open: number;
@@ -12,39 +10,58 @@ export interface OHLCData {
 }
 
 interface OHLCChartProps {
-  data: OHLCData[];
+  multiData: {
+    ticker: string;
+    color: string;
+    data: OHLCData[];
+  }[];
   width?: number;
   height?: number;
-  barColor?: string;
   backgroundColor?: string;
   showGridLines?: boolean;
 }
 
 const OHLCChart: React.FC<OHLCChartProps> = ({
-  data,
+  multiData,
   width = 500,
   height = 300,
-  barColor = '#800080',
   backgroundColor = 'black',
   showGridLines = false,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
-    const margin = { top: 30, right: 30, bottom: 50, left: 50 };
+    const margin = { top: 30, right: 80, bottom: 50, left: 50 }; // Increased right margin for legend
     const graphWidth = width - margin.left - margin.right;
     const graphHeight = height - margin.top - margin.bottom;
 
     const parseDate = d3.timeParse("%Y-%m-%d");
-    const formattedData = data.map(d => ({
-      ...d,
-      parsedDate: parseDate(d.date) as Date,
-    }));
+    
+    // Format data for each ticker and flatten
+    const formattedData = multiData.flatMap(d => d.data.map(e => ({
+      ...e,
+      parsedDate: parseDate(e.date) as Date,
+      ticker: d.ticker,
+      color: d.color
+    })));
+
+    // Get unique dates and sort them
+    const uniqueDates = Array.from(new Set(formattedData.map(d => d.date))).sort();
 
     const xScale = d3.scaleBand()
-      .domain(formattedData.map(d => d.date))
+      .domain(uniqueDates)
       .range([0, graphWidth])
       .padding(0.3);
+
+    // const yScale = multiData.map(({ data }) =>
+    //   d3.scaleLinear()
+    //   .domain([
+    //     d3.min(data, d => d.low)!,
+    //     d3.max(data, d => d.high)!
+    //   ])
+    //   .nice()
+    //   .range([graphHeight, 0])
+    // );
 
     const yScale = d3.scaleLinear()
       .domain([
@@ -73,7 +90,8 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .style("border-radius", "4px")
       .style("font-size", "12px")
       .style("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("z-index", "1000");
 
     // Grid lines
     if (showGridLines) {
@@ -87,67 +105,101 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr("class", "grid")
         .attr('transform', `translate(0,${graphHeight})`)
         .call(d3.axisBottom(xScale)
-          .tickValues(formattedData.filter((_, i) => i % Math.ceil(formattedData.length / 10) === 0).map(d => d.date))
+          .tickValues(uniqueDates.filter((_, i) => i % Math.ceil(uniqueDates.length / 10) === 0))
           .tickSize(-graphHeight)
           .tickFormat(() => ''))
         .selectAll("line")
         .attr("stroke", "#444");
     }
 
-    // OHLC Lines
-    g.selectAll(".ohlc")
-      .data(formattedData)
-      .enter()
-      .append("line")
-      .attr("stroke", barColor)
-      .attr("stroke-width", 2)
-      .attr("x1", d => xScale(d.date)! + xScale.bandwidth() / 2)
-      .attr("x2", d => xScale(d.date)! + xScale.bandwidth() / 2)
-      .attr("y1", d => yScale(d.low))
-      .attr("y2", d => yScale(d.high));
+    // Calculate bandwidth for each ticker when multiple tickers share the same date
+    const tickerBandwidth = xScale.bandwidth() / Math.max(multiData.length, 1);
 
-    // Open ticks
-    g.selectAll(".open")
-      .data(formattedData)
-      .enter()
-      .append("line")
-      .attr("stroke", barColor)
-      .attr("x1", d => xScale(d.date)!)
-      .attr("x2", d => xScale(d.date)! + xScale.bandwidth() / 2)
-      .attr("y1", d => yScale(d.open))
-      .attr("y2", d => yScale(d.open));
+    // Draw OHLC for each ticker
+    multiData.forEach(({ ticker, color, data }, tickerIndex) => {
+      const tickerFormattedData = data.map(d => ({
+        ...d,
+        parsedDate: parseDate(d.date) as Date,
+      }));
 
-    // Close ticks
-    g.selectAll(".close")
-      .data(formattedData)
-      .enter()
-      .append("line")
-      .attr("stroke", barColor)
-      .attr("x1", d => xScale(d.date)! + xScale.bandwidth() / 2)
-      .attr("x2", d => xScale(d.date)! + xScale.bandwidth())
-      .attr("y1", d => yScale(d.close))
-      .attr("y2", d => yScale(d.close));
+      const tickerGroup = g.append('g').attr('class', `ticker-${tickerIndex}`);
+      
+      // Calculate x offset for this ticker
+      const xOffset = tickerIndex * tickerBandwidth;
 
-    // Invisible bars for tooltip
+      // OHLC Lines (High-Low)
+      tickerGroup.selectAll(`.ohlc-${tickerIndex}`)
+        .data(tickerFormattedData)
+        .enter()
+        .append("line")
+        .attr("class", `ohlc-${tickerIndex}`)
+        .attr("stroke", color)
+        .attr("stroke-width", 2)
+        .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
+        .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
+        .attr("y1", d => yScale(d.low))
+        .attr("y2", d => yScale(d.high));
+
+      // Open ticks
+      tickerGroup.selectAll(`.open-${tickerIndex}`)
+        .data(tickerFormattedData)
+        .enter()
+        .append("line")
+        .attr("class", `open-${tickerIndex}`)
+        .attr("stroke", color)
+        .attr("stroke-width", 2)
+        .attr("x1", d => (xScale(d.date) || 0) + xOffset)
+        .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
+        .attr("y1", d => yScale(d.open))
+        .attr("y2", d => yScale(d.open));
+
+      // Close ticks
+      tickerGroup.selectAll(`.close-${tickerIndex}`)
+        .data(tickerFormattedData)
+        .enter()
+        .append("line")
+        .attr("class", `close-${tickerIndex}`)
+        .attr("stroke", color)
+        .attr("stroke-width", 2)
+        .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
+        .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth)
+        .attr("y1", d => yScale(d.close))
+        .attr("y2", d => yScale(d.close));
+    });
+
+    // Invisible bars for tooltip (cover full width for all tickers on that date)
     g.selectAll(".hover-rect")
-      .data(formattedData)
+      .data(uniqueDates)
       .enter()
       .append("rect")
-      .attr("x", d => xScale(d.date)!)
+      .attr("class", "hover-rect")
+      .attr("x", d => xScale(d) || 0)
       .attr("width", xScale.bandwidth())
       .attr("y", 0)
       .attr("height", graphHeight)
       .attr("fill", "transparent")
-      .on("mouseover", function (event, d) {
+      .on("mouseover", function (event, date) {
+        // Find data for this date across all tickers
+        const dateData = multiData.map(({ ticker, color, data }) => {
+          const dayData = data.find(d => d.date === date);
+          return dayData ? { ...dayData, ticker, color } : null;
+        }).filter(Boolean);
+
+        if (dateData.length === 0) return;
+
         tooltip.transition().duration(200).style("opacity", 0.9);
+        
+        const tooltipContent = `<strong>${date}</strong><br/>` + 
+          dateData.map(d => 
+            `<div style="color: ${d!.color}; margin: 4px 0;">
+              <strong>${d!.ticker}</strong><br/>
+              O: ${d!.open} H: ${d!.high}<br/>
+              L: ${d!.low} C: ${d!.close}
+            </div>`
+          ).join('');
+
         tooltip
-          .html(
-            `<strong>${d.date}</strong><br/>
-              Open: ${d.open}<br/>
-              High: ${d.high}<br/>
-              Low: ${d.low}<br/>
-              Close: ${d.close}`
-          )
+          .html(tooltipContent)
           .style("left", (event.pageX + 10) + "px")
           .style("top", (event.pageY - 28) + "px");
       })
@@ -160,14 +212,44 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         tooltip.transition().duration(500).style("opacity", 0);
       });
 
+    // Legend (show if multiple tickers)
+    if (multiData.length > 1) {
+      const legend = svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
+
+      legend.selectAll('.legend-item')
+        .data(multiData)
+        .enter()
+        .append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', (d, i) => `translate(0, ${i * 20})`)
+        .each(function(d) {
+          const item = d3.select(this);
+          
+          // Color rectangle
+          item.append('rect')
+            .attr('width', 12)
+            .attr('height', 12)
+            .attr('fill', d.color);
+          
+          // Ticker name
+          item.append('text')
+            .attr('x', 16)
+            .attr('y', 9)
+            .style('fill', 'white')
+            .style('font-size', '12px')
+            .text(d.ticker);
+        });
+    }
+
     // X Axis (Bottom)
     g.append('g')
       .attr('transform', `translate(0,${graphHeight})`)
       .call(
         d3.axisBottom(xScale)
-          .tickValues(formattedData
-            .filter((_, i) => i % Math.ceil(formattedData.length / 10) === 0)
-            .map(d => d.date))
+          .tickValues(uniqueDates
+            .filter((_, i) => i % Math.ceil(uniqueDates.length / 10) === 0))
       )
       .selectAll("text")
       .style("text-anchor", "end")
@@ -189,7 +271,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
     return () => {
       tooltip.remove(); // cleanup on unmount
     };
-  }, [data, width, height, barColor, backgroundColor, showGridLines]);
+  }, [multiData, width, height, backgroundColor, showGridLines]); // Fixed dependency array
 
   return <svg ref={svgRef}></svg>;
 };

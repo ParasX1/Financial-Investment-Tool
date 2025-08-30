@@ -22,6 +22,7 @@ export type MetricType =
   | 'SortinoRatioVisualization'
   | 'MarketCorrelationAnalysis'
   | 'SharpeRatioMatrix'
+  | 'VolatilityAnalysis'
   | 'ValueAtRiskAnalysis'
   | 'EfficientFrontierVisualization';
 
@@ -58,7 +59,9 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
 
     // After user clicks, collect parameters and callback
     const handleApply = () => {
+      
       const params: GraphSettings['metricParams'] = { startDate, endDate };
+      
       if (metricType === 'BetaAnalysis' || metricType === 'MarketCorrelationAnalysis') {
         params.marketTicker = marketTicker;
       }
@@ -69,9 +72,21 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
         params.confidenceLevel = confidenceLevel;
       }
 
+      const settings: GraphSettings = {
+        metricType,
+        metricParams: params,
+        stockColour
+      };
+
+    
       // Pass all Settings to the parent component
-      onApply({ metricType, metricParams: params, stockColour});
+      onApply(settings);
       onClose();
+    };
+
+    const handleMetricTypeChange = (event: any) => {
+      const newMetricType = event.target.value as MetricType;
+      setMetricType(newMetricType);
     };
   
 
@@ -85,7 +100,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 labelId="metric-type-label"
                 value={metricType}
                 label="Metric Type"
-                onChange={(e) => setMetricType(e.target.value as MetricType)}
+                onChange={handleMetricTypeChange}
               >
                 <MenuItem value="BetaAnalysis">Beta Analysis</MenuItem>
                 <MenuItem value="AlphaComparison">Alpha Comparison</MenuItem>
@@ -94,6 +109,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 <MenuItem value="SortinoRatioVisualization">Sortino Ratio</MenuItem>
                 <MenuItem value="MarketCorrelationAnalysis">Market Correlation</MenuItem>
                 <MenuItem value="SharpeRatioMatrix">Sharpe Ratio</MenuItem>
+                <MenuItem value="VolatilityAnalysis">Volatility</MenuItem>
                 <MenuItem value="ValueAtRiskAnalysis">Value at Risk</MenuItem>
                 <MenuItem value="EfficientFrontierVisualization">Efficient Frontier</MenuItem>
               </Select>

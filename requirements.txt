@@ -13,3 +13,4 @@ supabase==2.16.0
 threadpoolctl==3.6.0
 wheel==0.45.1
 yfinance==0.2.65
+matplotlib>=3.8,<3.10
