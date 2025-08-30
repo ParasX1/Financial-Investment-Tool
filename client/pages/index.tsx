@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router'
 import { GraphSettingsContext } from '@/components/GraphSettingsContext';
 import StockChartCard from '@/components/StockCardComponent';
+import { useAuth } from "@/components/authContext";
 
 
 
@@ -38,6 +39,7 @@ function Index() {
   // Signup-Login Modal
   const router = useRouter();
   const [session, setSession] = useState(null);
+  const { isLoggedIn, login, logout } = useAuth();
   const { settings, setSettings } = useContext(GraphSettingsContext);
   const { selectedStocks, globalStart, globalEnd } = settings;
 
@@ -81,9 +83,9 @@ function Index() {
 
 
   return (
-        <div>
+    <div>
       <div style={{ display: "flex" }}>
-        <Sidebar />
+        {isLoggedIn && <Sidebar />}
         <div style={{ flex: 1, paddingLeft: "50px" }}>
         <Navbar items ={[
             {id: 0, label: "Dashboard", href: "#dashboard"},
