@@ -35,7 +35,6 @@ function Index() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [session, setSession] = useState(null);
-  const { isLoggedIn, login, logout } = useAuth();
   const { settings, setSettings } = useContext(GraphSettingsContext);
 
   useEffect(() => {
@@ -53,11 +52,10 @@ function Index() {
 
 
 
-
   return (
     <div>
       <div style={{ display: "flex" }}>
-        {isLoggedIn && <Sidebar />}
+        {user && <Sidebar />}
         <div style={{ flex: 1, paddingLeft: "50px" }}>
         <Navbar items ={[
             {id: 0, label: "Dashboard", href: "#dashboard"},
