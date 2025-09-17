@@ -4,7 +4,6 @@ export interface MetricsResponse {
     tickers: string[];  
     metricType: string;
     series: {
-      ohlc?: Array<{date: string, ticker: string, open: number, high: number, low: number, close: number}>;
       timeSeries?: {[ticker: string]: Array<{date: string, value: number}>};
       singleValue?: { [ticker: string]: number };
       portfolio?: {returns: number[], risks: number[], sharpe_ratios: number[]};
@@ -25,7 +24,7 @@ export async function fetchMetrics(
   }
 
   const { metricType, metricParams } = req.settings;
-  const { startDate, endDate } = metricParams;
+  const { startDate, endDate, marketTicker, riskFreeRate, confidenceLevel} = metricParams;
 
   try {
     const response = await fetch(`http://localhost:8080/api/metrics/${metricType.toLowerCase()}`, {
@@ -37,8 +36,9 @@ export async function fetchMetrics(
         stock_tickers: req.tickers,
         start_date: startDate,
         end_date: endDate,
-        market_ticker: 'SPY',
-        risk_free_rate: 0.01
+        market_ticker: marketTicker || 'SPY',
+        risk_free_rate: riskFreeRate || 0.01,
+        confidence_level: confidenceLevel || 0.05,
       }),
     });
 
@@ -61,9 +61,6 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
     series: {}
   };
   switch (metricType) {
-    case 'ohlc':
-      response.series.ohlc = data.ohlc || [];
-      break;
     
     case 'BetaAnalysis':
     case 'AlphaComparison':

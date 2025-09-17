@@ -48,6 +48,7 @@ interface LineGraphProps {
     // Create line generator function
     const line = d3
         .line<{ date: Date; value: number }>()
+        .defined(d => d.value !== null)
         .x((d) => xScale(d.date))
         .y((d) => yScale(d.value))
 
@@ -115,7 +116,9 @@ interface LineGraphProps {
         const dateAtMouse = xScale.invert(mouseX - l); // Get the date based on mouse position
 
         // Find the closest data point to the mouse position
-        const allPoints = data.flatMap(series => series.values)
+        console.log("data", data);
+        const allPoints = data.flatMap(series => series.values.filter(d => d.value !== null));
+        console.log("allPoints", allPoints);
         const closestPoint = allPoints.reduce((a, b) =>
             Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
         );

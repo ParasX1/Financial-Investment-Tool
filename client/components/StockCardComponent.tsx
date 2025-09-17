@@ -128,7 +128,6 @@ interface StockChartCardProps {
   defaultStart: string;
   defaultEnd: string;
   color: string;
-  onSettingsChange?: (index: number, settings: GraphSettings) => void;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -144,7 +143,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   defaultStart,
   defaultEnd,
   color,
-  onSettingsChange = () => {},
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
@@ -171,6 +169,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         end: settings.metricParams.endDate,
       },
       metricType: settings.metricType,
+      marketTicker: settings.metricParams.marketTicker,
+      riskRate: settings.metricParams.riskFreeRate,
+      confidenceLevel: settings.metricParams.confidenceLevel,
       graphMade: true,
     });
 
@@ -184,6 +185,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       return;
     }
 
+    console.log("rendering")
     const fetchAllData = async () => {
 
       const allData = await fetchMetrics({
@@ -193,6 +195,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             metricParams: {
               startDate: dateRange.start,
               endDate: dateRange.end,
+              marketTicker: cardSettings.marketTicker || 'SPY',
+              riskFreeRate: cardSettings.riskRate || 0.01,
+              confidenceLevel: cardSettings.confidenceLevel || 0.05,
             },
             stockColour: barColor
           },
@@ -202,7 +207,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
 
     fetchAllData();
-  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade]);
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade, cardSettings]);
 
   // resize observer
   useEffect(() => {
@@ -221,19 +226,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     }
     
     switch (metricType.toLowerCase()) {
-      case 'ohlc':
-        return (
-          <OHLCChart
-            multiData={chartData.map((data, i) => ({
-              ticker: selectedStocks[i],
-              color: barColor,
-              data: data.series.ohlc || []
-            }))}
-            width={dimensions.width - 32}
-            height={dimensions.height - 90}
-          />
-        );
-
     case 'betaanalysis':
     case 'alphacomparison':
     case 'sortinoratiovisualization':
@@ -294,29 +286,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         mainColor={barColor}
       />
     );
-    /*
-    case 'betaanalysis':
-    case 'alphacomparison':
-    case 'sortinoratiovisualization':
-    case 'sharperatiomatrix':
-    case 'volatilityanalysis':
-    case 'valueatriskanalysis':
-      Should be displayed as a bar chart.
-      Potentially regression line but related functions will need to be changed to calculate metric per day instead of overall
-    
-    case 'marketcorrelationanalysis':
-      This returns a series of values per day
-      Should be a line chart
-      Potentially a bar or heatmap if changed to overall stock
-
-    case 'maxdrawdownanalysis':
-    case 'cumulativereturncomparison':
-      This returns a series of values per day
-      Should be a line chart
-    
-    case 'efficientfrontieranalysis':
-      This should be displayed as a scatter plot.
-    */
 
     default:
       console.log('[renderChart] Unsupported metricType:', metricType);
