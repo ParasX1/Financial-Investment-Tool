@@ -23,7 +23,7 @@ interface BarGraphProps {
         const t = 30;
         const r = 30;
         const b = 30;
-        const l = 30;
+        const l = 50;
         const margin = {t,r,b,l};
         const graphWidth = width- l - r;
         const graphHeight = height -t -b;
