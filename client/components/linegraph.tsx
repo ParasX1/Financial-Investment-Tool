@@ -113,14 +113,15 @@ interface LineGraphProps {
         .attr('pointer-events', 'all')
         .on('mousemove', (event) => {
         const [mouseX] = d3.pointer(event);
-        const dateAtMouse = xScale.invert(mouseX - l); // Get the date based on mouse position
+        const dateAtMouse = xScale.invert(mouseX); // Get the date based on mouse position
 
         // Find the closest data point to the mouse position
         console.log("data", data);
         const allPoints = data.flatMap(series => series.values.filter(d => d.value !== null));
         console.log("allPoints", allPoints);
+        // Change to gradient based
         const closestPoint = allPoints.reduce((a, b) =>
-            Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
+            Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b 
         );
 
         tooltip
