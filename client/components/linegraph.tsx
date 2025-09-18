@@ -117,7 +117,11 @@ interface LineGraphProps {
 
         // Find the closest data point to the mouse position
         console.log("data", data);
-        const allPoints = data.flatMap(series => series.values.filter(d => d.value !== null));
+        const allPoints = data.flatMap(series => 
+            series.values
+                .filter(d => d.value !== null)
+                .map(d => ({ ...d, ticker: series.ticker }))
+        );
         console.log("allPoints", allPoints);
         // Change to gradient based
         const closestPoint = allPoints.reduce((a, b) =>
@@ -129,7 +133,7 @@ interface LineGraphProps {
             .style('left', `${event.pageX + 10}px`)
             .style('top', `${event.pageY - 28}px`)
             .html(
-            `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}`
+            `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}<br>Stock: ${closestPoint.ticker}`
             );
         })
         .on('mouseout', () => {
