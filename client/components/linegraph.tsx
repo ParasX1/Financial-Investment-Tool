@@ -123,6 +123,11 @@ interface LineGraphProps {
                 .map(d => ({ ...d, ticker: series.ticker }))
         );
         console.log("allPoints", allPoints);
+
+        if (!allPoints.length) {
+            console.log("No data points available");
+            return;
+        }
         // Change to gradient based
         const closestPoint = allPoints.reduce((a, b) =>
             Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b 
