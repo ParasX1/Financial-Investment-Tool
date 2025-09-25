@@ -7,6 +7,7 @@ import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
 import ScatterPlotGraph from './scatterplot';
+import HeatMap from './heatmap';
 
 type OHLCData = {
     date: string;
@@ -249,6 +250,33 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       );
     
     case 'marketcorrelationanalysis':
+      const correlationData: number[][] = [];
+      const tickers = chartData[0].tickers || [];
+      const marketTicker = cardSettings.marketTicker || 'SPY';
+      
+      const allTickers = [...tickers];
+      if (!allTickers.includes(marketTicker)) {
+        allTickers.push(marketTicker);
+      }
+
+      allTickers.forEach(rowTicker => {
+        const row: number[] = [];
+        allTickers.forEach(colTicker => {
+          const corr = chartData[0].series.correlationMatrix?.[rowTicker]?.[colTicker];
+          row.push(corr !== undefined ? corr : 0);
+        });
+        correlationData.push(row);
+      })
+      return (
+        <HeatMap
+          data={correlationData}
+          labels={allTickers}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      );
+
     case 'cumulativereturncomparison':
     case 'maxdrawdownanalysis':
       return (

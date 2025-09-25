@@ -85,7 +85,7 @@ interface BarGraphProps {
         })
         .on("mousemove", (event) => {
         tooltip
-            .style("left", `${event.pageX + 10}px`)
+            .style("left", `${event.pageX - 170}px`)
             .style("top", `${event.pageY - 28}px`);
         })
         .on("mouseout", () => {

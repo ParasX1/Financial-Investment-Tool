@@ -128,14 +128,23 @@ interface LineGraphProps {
             console.log("No data points available");
             return;
         }
-        // Change to gradient based
-        const closestPoint = allPoints.reduce((a, b) =>
-            Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b 
+        
+        const seriesClosest = data.map(series => {
+            const closest = series.values.reduce((a, b) =>
+                Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
+            );
+            return { ...closest, ticker: series.ticker };
+        });
+
+
+        const closestPoint = seriesClosest.reduce((a, b) =>
+            Math.abs(yScale(a.value) - d3.pointer(event, svg.node())[1]) <
+            Math.abs(yScale(b.value) - d3.pointer(event, svg.node())[1]) ? a : b
         );
 
         tooltip
             .style('display', 'block')
-            .style('left', `${event.pageX + 10}px`)
+            .style('left', `${event.pageX - 170}px`)
             .style('top', `${event.pageY - 28}px`)
             .html(
             `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}<br>Stock: ${closestPoint.ticker}`

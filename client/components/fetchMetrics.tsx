@@ -1,4 +1,5 @@
 import { GraphSettings } from './graphSettingsModal';
+import { toast } from 'react-toastify';
 
 export interface MetricsResponse {
     tickers: string[];  
@@ -7,6 +8,7 @@ export interface MetricsResponse {
       timeSeries?: {[ticker: string]: Array<{date: string, value: number}>};
       singleValue?: { [ticker: string]: number };
       portfolio?: {returns: number[], risks: number[], sharpe_ratios: number[]};
+      correlationMatrix?: { [ticker: string]: { [ticker: string]: number } };
     };
   }
 
@@ -76,7 +78,6 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
     
     case 'MaxDrawdownAnalysis':
     case 'CumulativeReturnComparison':
-    case 'MarketCorrelationAnalysis':
       response.series.timeSeries = {};
       tickers.forEach(ticker => {
         response.series.timeSeries![ticker] = Object.entries(data[ticker] || {}).map(([date, value]) => ({
@@ -84,6 +85,15 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
           value: value as number
         }));
       });
+      break;
+    
+    case 'MarketCorrelationAnalysis':
+      if (!data || Object.keys(data).length === 0) {
+        toast.error('Not enough days for correlation calculation (need at least 21 days).');
+        response.series.correlationMatrix = {};
+      } else {
+        response.series.correlationMatrix = data;
+      }
       break;
     
     case 'EfficientFrontierVisualization':

@@ -251,30 +251,26 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
     - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective correlation Series as values.
+    - average correlation between each stock, including market, over 21 rolling days.
     """
+
+    
     # Fetch adjusted close prices
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     
-    # print(f"Adj Close: {adj_close['MSFT']}")
     # Calculate daily returns
-    stock_returns = adj_close[stock_tickers].pct_change()
-    market_returns = adj_close[market_ticker].pct_change()
-    
+    returns = adj_close.pct_change().dropna()
+    if len(returns) < 21:
+        return {}
+    rolling_corr = returns.rolling(window=21).corr()
+    corr_matrix = rolling_corr.groupby(level=1).mean()
+
     correlations = {}
-    for ticker in stock_returns.columns:
-        # Calculate rolling correlation over a 21-day window (approximately one month)
-        # print(f"Market: {market_returns}")
-        # print(f"Stock: {stock_returns[ticker]}")
-        rolling_corr = stock_returns[ticker].rolling(window=21).corr(market_returns)
-        rolling_corr = rolling_corr.astype(object).where(pd.notnull(rolling_corr), None)
+    for ticker in stock_tickers:
+        correlations[ticker] = corr_matrix[ticker].to_dict()
+    correlations[market_ticker] = corr_matrix[market_ticker].to_dict()
 
-
-        correlations[ticker] = rolling_corr
-
-        # print(correlations)
-    
     return correlations
 
 # Function to calculate Sharpe Ratio
