@@ -71,9 +71,13 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
     case 'ValueAtRiskAnalysis':
     case 'VolatilityAnalysis':
       response.series.singleValue = {}
-      tickers.forEach(ticker => {
+      if (data === null || Object.keys(data).length === 0) {
+        toast.error('Not enough days for calculation (need at least 3 days).');
+      } else {
+        tickers.forEach(ticker => {
         response.series.singleValue![ticker] = data[ticker];
       });
+      }
       break;
     
     case 'MaxDrawdownAnalysis':

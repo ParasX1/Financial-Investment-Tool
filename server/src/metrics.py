@@ -62,6 +62,9 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     # Calculate daily returns for stocks and market
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
+
+    if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
+        return {}
     
     # Align the indices to ensure both DataFrames have the same dates
     common_index = stock_returns.index.intersection(market_returns.index)
@@ -109,6 +112,9 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     # Calculate daily returns
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
+
+    if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
+        return {}
     
     # Align indices
     common_index = stock_returns.index.intersection(market_returns.index)
