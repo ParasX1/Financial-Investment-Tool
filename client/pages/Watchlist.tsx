@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/sidebar';
-import { Box, Grid, Autocomplete, TextField, Chip, Snackbar, Alert } from '@mui/material';
+import { Box, Grid, Autocomplete, TextField, Chip, Snackbar, Alert, Button } from '@mui/material';
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import NewsCardComponent from '@/components/NewsCardComponent';
 import WatchlistCollapsibleCard from '@/components/WatchlistCollapsibleCard';
@@ -14,7 +14,7 @@ export default function WatchlistPage() {
   const stockOptions = useMemo(() => Object.keys(stockDataMap), []);
   const [tags, setTags] = useState<string[]>([]);
   const [charts, setCharts] = useState<(string | null)[]>(Array(MAX_ROWS).fill(null));
-  const [collapsedRows, setCollapsedRows] = useState<boolean[]>([true, true, true]);
+  const [collapsedRows, setCollapsedRows] = useState<boolean[]>(Array(MAX_ROWS).fill(false));
   const [toast, setToast] = useState<{open: boolean; msg: string; type: 'success'|'error'}>({open:false,msg:'',type:'success'});
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
@@ -125,6 +125,8 @@ export default function WatchlistPage() {
 
   const setRowCollapsed = (row: number, val: boolean) =>
     setCollapsedRows(prev => { const n=[...prev]; n[row]=val; return n; });
+  const openAll  = () => setCollapsedRows(Array(MAX_ROWS).fill(false));
+  const closeAll = () => setCollapsedRows(Array(MAX_ROWS).fill(true));
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -149,6 +151,13 @@ export default function WatchlistPage() {
             }
             disabled={!user}
           />
+
+          <Button size="small" variant="outlined" onClick={openAll}>
+            open all +
+          </Button>
+          <Button size="small" variant="outlined" onClick={closeAll}>
+            close all &minus;
+          </Button>
         </Box>
 
         <Box sx={{ p: 2 }}>
