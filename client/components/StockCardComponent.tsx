@@ -157,7 +157,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const buttonHoverColor = '#555'; // Darker grey on hover
 
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
-  const showGraph = isActive && selectedStocks.length > 0 && graphMade;
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
@@ -233,16 +232,22 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     case 'sharperatiomatrix':
     case 'volatilityanalysis':
     case 'valueatriskanalysis':
+      const singleValue = chartData[0].series.singleValue || {};
+      const validTickers = Object.entries(singleValue).filter(
+        ([, data]) => (typeof data === 'number' && !isNaN(data)) || (data && typeof (data as any).value === 'number')
+      );
+
+      if (validTickers.length === 0) {
+        return null
+      }
+
       return (
         <BarGraph
-          data={chartData.flatMap(data => {
-            const tickers = data.tickers || [];
-            const singleValue = data.series.singleValue || {};
-            return tickers.map(t => ({
-              label: t,
-              value: singleValue[t]
-            }));
-          })}
+          data={validTickers.map(([ticker, data]) => ({
+              label: ticker,
+              value: typeof data === 'number' ? data : (data as any).value
+            }))
+          }
           width={dimensions.width - 32}
           height={dimensions.height - 90}
           barColor={barColor}
@@ -257,6 +262,11 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       const allTickers = [...tickers];
       if (!allTickers.includes(marketTicker)) {
         allTickers.push(marketTicker);
+      }
+      
+      const corr = chartData[0].series.correlationMatrix || []
+      if (Object.keys(corr).length === 0) {
+        return null;
       }
 
       allTickers.forEach(rowTicker => {
@@ -279,6 +289,11 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
     case 'cumulativereturncomparison':
     case 'maxdrawdownanalysis':
+      const timeseries = chartData[0].series.timeSeries || {};
+      if (Object.keys(timeseries).length === 0) {
+        return null;
+      }
+
       return (
         <LineGraph
           data={chartData.flatMap((data) =>
@@ -297,6 +312,11 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       );
     
     case 'efficientfrontiervisualization':
+      const portfolio = chartData[0].series.portfolio || { returns: [], risks: [], sharpe_ratios: [] };
+      if (!portfolio || portfolio.returns.length === 0 || portfolio.risks.length === 0 || portfolio.sharpe_ratios.length === 0) {
+        return null;
+      }
+
       return (
       <ScatterPlotGraph
         data={chartData.flatMap((data) => {
@@ -320,6 +340,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       return null;
     };
   }
+
+  const chart = renderChart();
+  const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
 
   // render
   return (
@@ -351,7 +374,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         </Box>
       {showGraph ? (
         <>
-          {renderChart()}
+          {chart}
       </>
       ) : (
         <Button

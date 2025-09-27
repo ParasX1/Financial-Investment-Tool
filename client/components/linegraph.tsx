@@ -116,16 +116,13 @@ interface LineGraphProps {
         const dateAtMouse = xScale.invert(mouseX); // Get the date based on mouse position
 
         // Find the closest data point to the mouse position
-        console.log("data", data);
         const allPoints = data.flatMap(series => 
             series.values
                 .filter(d => d.value !== null)
                 .map(d => ({ ...d, ticker: series.ticker }))
         );
-        console.log("allPoints", allPoints);
 
         if (!allPoints.length) {
-            console.log("No data points available");
             return;
         }
         
