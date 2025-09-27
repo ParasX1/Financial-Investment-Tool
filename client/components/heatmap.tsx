@@ -50,19 +50,11 @@ interface HeatMapProps {
             // Add graph group
             const g = svg.append('g')
                 .attr('transform', `translate(${l},${t})`);
-
-            // Tool tip
-            const tooltip = d3.select(tooltipRef.current)
-                .style("position", "absolute")
-                .style("background", "#fff")
-                .style("padding", "5px")
-                .style("display", "none")
-                .style("pointer-events", "none");
             
             // Define color scale
             const colorScale = d3.scaleLinear<string>()
                 .domain([-1, 0, 1])
-                .range([invertColor(barColor || '#7a0404ff'), "#FFFFFF", barColor || '#004f00ff']);
+                .range([invertColor(barColor || '#c00000ff'), "#FFFFFF", barColor || '#004e00ff']);
 
             function invertColor(hex: string): string {
                 if (hex.startsWith('#')) {
@@ -89,19 +81,18 @@ interface HeatMapProps {
                 .attr("width", cellWidth)
                 .attr("height", cellHeight)
                 .attr("fill", (d) => colorScale(d.value))
-                .on("mouseover", (event, d) => {
-                    tooltip
-                        .style("display", "block")
-                        .html(`Row: ${labels[d.row] || d.row}<br>Col: ${labels[d.col] || d.col}<br>Value: ${d.value.toFixed(2)}`);
-                })
-                .on("mousemove", (event) => {
-                    tooltip
-                        .style("left", `${event.pageX - 100}px`)
-                        .style("top", `${event.pageY - 28}px`);
-                })
-                .on("mouseout", () => {
-                    tooltip.style("display", "none");
-                });
+            
+            g.selectAll("text.cell-label")
+                .data(data.flatMap((row, i) => row.map((value, j) => ({row: i, col: j, value }))))
+                .enter()
+                .append("text")
+                .attr("x", d => d.col * cellWidth + cellWidth / 2)
+                .attr("y", d => d.row * cellHeight + cellHeight / 2)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .style("font-size", Math.min(cellWidth, cellHeight) / 5)
+                .attr("fill", d => d.value > 0 ? "#fff" : "#000")
+                .text(d => d.value.toFixed(2));
                 
             const xAxis = d3.axisTop(d3.scaleBand()
                 .domain(labels.length ? labels : data[0].map((_, i) => i.toString()))
@@ -119,7 +110,6 @@ interface HeatMapProps {
     return (
         <>
           <svg ref={svgRef}></svg>
-          <div ref={tooltipRef}></div> {/* Tooltip container */}
         </>
       );
   };
