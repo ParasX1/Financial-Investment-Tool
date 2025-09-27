@@ -88,7 +88,32 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .style('padding', '5px')
         .style('display', 'none')
         .style('pointer-events', 'none');
-       
+    
+    const handleMouseOver = (event: MouseEvent, d: {risk: number; return: number; sharpe?: number}) => {
+        tooltip
+            .style('display', 'block')
+            .html(`Risk: ${d.risk}<br>Return: ${d.return}<br>Sharpe: ${d.sharpe || 'N/A'}`);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+        tooltip
+            .style('left', `${event.pageX - 170}px`)
+            .style('top', `${event.pageY - 28}px`);
+    };
+
+    const handleMouseOut = () => {
+        tooltip.style('display', 'none');
+    };
+
+    const sorted = [...data].sort((a, b) => a.risk - b.risk);
+    const frontier: {risk: number; return: number; sharpe?: number }[] = [];
+    let maxReturn = -Infinity;
+    sorted.forEach(point => {
+        if (point.return > maxReturn) {
+            frontier.push(point);
+            maxReturn = point.return;
+        }
+    });
 
     g.selectAll('circle')
         .data(data)
@@ -98,19 +123,38 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .attr('cy', d => yScale(d.return))
         .attr('r', 5)
         .attr('fill', mainColor)
-        .on('mouseover', (event, d) => {
-            tooltip
-                .style('display', 'block')
-                .html(`Risk: ${d.risk}<br>Return: ${d.return}<br>Sharpe: ${d.sharpe || 'N/A'}`);
-        })
-        .on('mousemove', (event) => {
-            tooltip
-                .style('left', `${event.pageX + 10}px`)
-                .style('top', `${event.pageY - 28}px`);
-        })
-        .on('mouseout', () => {
-            tooltip.style('display', 'none');
-        });
+        .on('mouseover', handleMouseOver)
+        .on('mousemove', handleMouseMove)
+        .on('mouseout', handleMouseOut)
+
+        function invertColor(hex: string): string {
+            if (hex.startsWith('#')) {
+                hex = hex.slice(1);
+            }
+
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
+            }
+
+            const r = (255 - parseInt(hex.slice(0, 2), 16));
+            const g = (255 - parseInt(hex.slice(2, 4), 16));
+            const b = (255 - parseInt(hex.slice(4, 6), 16));
+            return `rgb(${r},${g},${b})`;
+        }
+
+        g.selectAll('circle.frontier')
+            .data(frontier)
+            .enter()
+            .append('circle')
+            .attr('class', 'frontier')
+            .attr('cx', d => xScale(d.risk))
+            .attr('cy', d => yScale(d.return))
+            .attr('r', 6)
+            .attr('fill', invertColor(mainColor))
+            .on('mouseover', handleMouseOver)
+            .on('mousemove', handleMouseMove)
+            .on('mouseout', handleMouseOut)
+
         }, [data, width, height, mainColor]);
 
         return (
