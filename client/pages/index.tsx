@@ -52,11 +52,10 @@ function Index() {
 
 
 
-
   return (
-        <div>
+    <div>
       <div style={{ display: "flex" }}>
-        <Sidebar />
+        {user && <Sidebar />}
         <div style={{ flex: 1, paddingLeft: "50px" }}>
         <Navbar items ={[
             {id: 0, label: "Dashboard", href: "#dashboard"},

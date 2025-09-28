@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Box, Button } from '@mui/material';
 import StockChartCard from '@/components/StockCardComponent';
+import type { CardSettings } from '@/pages/dashboardView';
+import type { MetricType } from '@/components/graphSettingsModal';
 
 type Props = {
   index: number;
@@ -39,6 +41,22 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
     const iso = new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
     return { defaultStart: iso, defaultEnd: iso, color: '#6ba583' };
   }, []);
+
+  const [localActive, setLocalActive] = useState<boolean>(false);
+  const [localSettings, setLocalSettings] = useState<CardSettings>(() => ({
+    barColor: color,
+    dateRange: { start: defaultStart, end: defaultEnd },
+    metricType: 'BetaAnalysis' as MetricType,
+    graphMade: false,
+  }));
+
+  useEffect(() => {
+    setLocalSettings(s => ({
+      ...s,
+      barColor: color,
+      dateRange: { start: defaultStart, end: defaultEnd },
+    }));
+  }, [defaultStart, defaultEnd, color]);
 
   return (
     <Box

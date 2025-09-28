@@ -34,28 +34,17 @@ export function Navbar({ items } : NavbarProps) {
     const handleSignUpShow = () => setSignUp(true)
     const handleSignUpClose = () => setSignUp(false)
     
-         return (
+        return (
         <Nb maxWidth="full" shouldHideOnScroll>
         <NavbarContent className="hidden sm:flex gap-4" justify="center">
             {items.map((child, idx) => {
-            const disabled = !user
             return (
                 <React.Fragment key={child.href + idx}>
 
                 <NavbarItem>
-                    {disabled ? (
-                    <span
-                        aria-disabled="true"
-                        style={{ opacity: 0.4, cursor: 'not-allowed' }}
-                        onClick={handleLoginShow}
-                    >
-                        {child.label}
-                    </span>
-                    ) : (
                     <Link color="foreground" href={child.href}>
                         {child.label}
                     </Link>
-                    )}
                 </NavbarItem>
                 <Spacer x={6} />
                 </React.Fragment>
