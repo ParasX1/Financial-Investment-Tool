@@ -100,15 +100,24 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
         <StockChartCard
           index={index}
           selectedStocks={selectedStock ? [selectedStock] : []}
+          isActive={!isCollapsed}
+          cardSettings={{
+            barColor: color,
+            dateRange: { start: defaultStart, end: defaultEnd },
+            metricType: "BetaAnalysis",
+            marketTicker: "SPY",
+            riskRate: 0.01,
+            confidenceLevel: 0.05,
+            graphMade: false,
+          }}
           onClear={onClear}
           onSwap={onSwap}
+          onActivate={() => {}} // Current does nothing will need to be updated once merged
+          onUpdateSettings={() => {}} // Current does nothing will need to be updated once merged
           height={height}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           color={color}
-          onSettingsChange={() => {}}
-          // @ts-ignore
-          swapIcon="↕"
         />
       )}
     </Box>
