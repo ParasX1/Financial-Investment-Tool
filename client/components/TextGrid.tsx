@@ -1,9 +1,7 @@
 // components/TextGrid.tsx
 
 import React from 'react';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
+import { Box, Grid, Typography } from '@mui/material';
 import Image from 'next/image';
 
 // Import all images

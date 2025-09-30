@@ -7,8 +7,7 @@ import {
 } from "@nextui-org/react";
 import Image from "next/image";
 import { Box, Grid} from '@mui/material';
-import Typography from "@mui/material/Typography";
-import { Button as MUIButton } from '@mui/material';
+import { Typography, Button as MUIButton} from "@mui/material";
 import Footer from "@/components/Footer";
 import Sidebar from "@/components/sidebar"; // Adjust the path to match where Sidebar is located in your project
 import 'boxicons/css/boxicons.min.css';

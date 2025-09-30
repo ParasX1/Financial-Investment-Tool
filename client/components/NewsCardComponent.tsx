@@ -4,11 +4,8 @@ import {
   DialogActions, Select, MenuItem, Grid, Card, CardContent, CardMedia,
   IconButton, Button, Chip
 } from '@mui/material';
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import TuneIcon from '@mui/icons-material/Tune';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
+import { Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Tune as TuneIcon } from '@mui/icons-material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import {
   fetchGeneralNews, fetchRegionalNews, fetchIndustryNews,
   fetchCommodityNews, fetchTickerNews, Article

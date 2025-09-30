@@ -8,9 +8,7 @@ import supabase from '@/components/supabase';
 import { useAuth } from '@/components/authContext';
 import MarketTrendsPanel from '@/components/MarketTrendsPanel';
 import { Paper, ButtonGroup, Tooltip, InputAdornment, Typography, Divider } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
-import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import { Search as SearchIcon, UnfoldMore as UnfoldMoreIcon, UnfoldLess as UnfoldLessIcon } from '@mui/icons-material';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 
 const MAX_ROWS = 3;
@@ -43,7 +41,7 @@ export default function WatchlistPage() {
       if (error) { console.error(error); showToast(`Load watchlist failed: ${error.message}`, 'error'); return; }
 
       const arr: (string|null)[] = Array(MAX_ROWS).fill(null);
-      (data ?? []).forEach(r => {
+      (data ?? []).forEach((r: { symbol: string; position: number }) => {
         if (r.position >= 0 && r.position < MAX_ROWS) arr[r.position] = r.symbol;
       });
       setCharts(arr);
@@ -98,7 +96,8 @@ export default function WatchlistPage() {
 
       if (!error && data) {
         const m: Record<string, string> = {};
-        data.forEach(r => { m[r.symbol] = r.name; });
+        data.forEach((r: { symbol: string; name: string }) => {
+           m[r.symbol] = r.name; });
         setNameMap(prev => ({ ...prev, ...m })); 
       } else if (error) {
         console.error('load ticker names failed:', error);
