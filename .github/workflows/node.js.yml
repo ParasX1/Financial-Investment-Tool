@@ -5,7 +5,7 @@ name: Frontend CI
 
 on:
   push:
-    branches: ["main", "CICD_fix"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -36,6 +36,5 @@ jobs:
       - name: Build the app
         run: npm run build
 
-      # Optional: only include if you have real tests
-      # - name: Run tests
-      #   run: npm run test
+      - name: Run tests
+        run: npm run test

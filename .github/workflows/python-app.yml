@@ -5,7 +5,7 @@ name: Backend CI
 
 on:
   push:
-    branches: ["main", "CICD_fix"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -41,7 +41,7 @@ jobs:
           # Stop the build if there are Python syntax errors or undefined names
           flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
           # Run all checks but don't fail the build
-          flake8 src tests --count --exit-zero --max-complexity=10 --max-line-length=200 --statistics --ignore=E302,W293,E303,E306,E275
+          flake8 src tests --count --max-complexity=10 --max-line-length=200 --statistics --ignore=E302,W293,E303,E306,E275
 
       - name: Run tests with pytest
         run: |
