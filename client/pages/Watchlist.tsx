@@ -1,11 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/sidebar';
-import { Box, Grid, Autocomplete, TextField, Chip, Snackbar, Alert } from '@mui/material';
+import { Box, Grid, Autocomplete, TextField, Chip, Snackbar, Alert, Button } from '@mui/material';
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import NewsCardComponent from '@/components/NewsCardComponent';
 import WatchlistCollapsibleCard from '@/components/WatchlistCollapsibleCard';
 import supabase from '@/components/supabase';
 import { useAuth } from '@/components/authContext';
+import MarketTrendsPanel from '@/components/MarketTrendsPanel';
+import { Paper, ButtonGroup, Tooltip, InputAdornment, Typography, Divider } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 
 const MAX_ROWS = 3;
 
@@ -14,9 +20,12 @@ export default function WatchlistPage() {
   const stockOptions = useMemo(() => Object.keys(stockDataMap), []);
   const [tags, setTags] = useState<string[]>([]);
   const [charts, setCharts] = useState<(string | null)[]>(Array(MAX_ROWS).fill(null));
-  const [collapsedRows, setCollapsedRows] = useState<boolean[]>([true, true, true]);
+  const [collapsedRows, setCollapsedRows] = useState<boolean[]>(Array(MAX_ROWS).fill(false));
   const [toast, setToast] = useState<{open: boolean; msg: string; type: 'success'|'error'}>({open:false,msg:'',type:'success'});
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
+  const filter = createFilterOptions<string>();
+  const [input, setInput] = useState('');
+
 
   const showToast = (msg: string, type: 'success'|'error'='success') =>
     setToast({open:true, msg, type});
@@ -125,32 +134,155 @@ export default function WatchlistPage() {
 
   const setRowCollapsed = (row: number, val: boolean) =>
     setCollapsedRows(prev => { const n=[...prev]; n[row]=val; return n; });
+  const openAll  = () => setCollapsedRows(Array(MAX_ROWS).fill(false));
+  const closeAll = () => setCollapsedRows(Array(MAX_ROWS).fill(true));
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
       <Box sx={{ flex: 1, pl: '50px', bgcolor: 'black' }}>
-        <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Autocomplete
-            multiple freeSolo
-            options={stockOptions}
-            value={tags}
-            onChange={onTagsChange}
-            sx={{ flexGrow: 1, maxWidth: 500 }}
-            renderInput={(p) => (
-              <TextField {...p} placeholder="Add up to 3 tickers…" size="small" variant="outlined"
-                sx={{ bgcolor: 'white', input: { color: '#000' } }} />
-            )}
-            renderTags={(v, getTagProps) =>
-              v.map((opt, i) => (
-                <Chip {...getTagProps({ index: i })} key={opt} label={opt} size="small"
-                  sx={{ bgcolor: '#800080', color: '#fff' }} />
-              ))
-            }
-            disabled={!user}
-          />
-        </Box>
 
+        <Paper
+            elevation={0}
+            sx={{
+                px: 2,
+                py: 1.25,
+                position: 'sticky',
+                top: 0,
+                zIndex: 9,
+
+                bgcolor: 'rgba(10,10,10,.55)',                
+                backdropFilter: 'blur(10px) saturate(130%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(130%)',
+
+                border: '1px solid rgba(255,255,255,.06)',
+                borderRadius: 2,
+                boxShadow: '0 8px 20px rgba(0,0,0,.35)',
+
+                '&::after': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: -1,
+                height: 12,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,.28), rgba(0,0,0,0))',
+                pointerEvents: 'none',
+                },
+            }}
+            >
+            
+
+            <Box
+                sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'minmax(360px,1fr) minmax(420px,560px)' },
+                alignItems: 'start',
+                gap: 2,
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                <Autocomplete
+                    multiple
+                    freeSolo
+                    options={stockOptions}
+                    value={tags}
+                    onChange={onTagsChange}
+                    disabled={!user}
+                    renderTags={(value, getTagProps) =>
+                        value.map((opt, i) => (
+                        <Chip
+                            {...getTagProps({ index: i })}
+                            key={opt}
+                            label={opt}
+                            size="small"
+                            sx={{
+                            bgcolor: '#7a3cff',
+                            color: '#fff',
+                            fontWeight: 700,
+                            borderRadius: '16px',
+                            '& .MuiChip-label': { px: 0.75 },
+                            }}
+                        />
+                        ))
+                    }
+                    renderInput={(params) => {
+                        const { InputProps, ...rest } = params;
+                        return (
+                        <TextField
+                            {...rest}
+                            placeholder="Search Stocks…"
+                            size="small"
+                            variant="outlined"
+                            InputProps={{
+                            ...InputProps,
+                            startAdornment: (
+                                <>
+                                <SearchIcon fontSize="small" sx={{ mr: 1, color: '#666' }} />
+                                {InputProps.startAdornment}
+                                </>
+                            ),
+                            }}
+                            sx={{
+                            minWidth: 150,
+                            '& .MuiOutlinedInput-root': {
+                                bgcolor: '#fff',
+                                color: '#000',
+                                borderRadius: 2,
+                                '& fieldset': { borderColor: '#c8c8c8' },
+                                '&:hover fieldset': { borderColor: '#9c9c9c' },
+                                '&.Mui-focused fieldset': { borderColor: '#7a3cff' },
+                            },
+                            }}
+                        />
+                        );
+                    }}
+                    slotProps={{
+                    paper: {
+                    sx: {
+                        bgcolor: '#fff',
+                        color: '#000',
+                        borderRadius: 2,
+                        boxShadow: '0 8px 28px rgba(0,0,0,.35)',
+
+                        '& .MuiAutocomplete-option[aria-selected="true"]': {
+                        bgcolor: 'rgba(122,60,255,.12)',
+                        },
+                        '& .MuiAutocomplete-option.Mui-focused': {
+                        bgcolor: 'rgba(122,60,255,.18)',
+                        },
+                    },
+                    },
+                }}
+                    sx={{ flexGrow: 1, minWidth: 260, '& .MuiAutocomplete-inputRoot': { flexWrap: 'wrap' } }}
+                    />
+
+
+                <ButtonGroup variant="outlined" size="small" sx={{ whiteSpace: 'nowrap' }}>
+                    <Tooltip title="Expand all cards">
+                    <Button onClick={openAll} startIcon={<UnfoldMoreIcon fontSize="small" />}>
+                        OPEN ALL
+                    </Button>
+                    </Tooltip>
+                    <Tooltip title="Collapse all cards">
+                    <Button onClick={closeAll} startIcon={<UnfoldLessIcon fontSize="small" />}>
+                        CLOSE ALL
+                    </Button>
+                    </Tooltip>
+                </ButtonGroup>
+                </Box>
+
+                <Box sx={{ justifySelf: { xs: 'stretch', md: 'end' } }}>
+                <MarketTrendsPanel
+                    region="AU"
+                    variant="compact"
+                    watchlist={(charts.filter(Boolean) as string[])}
+                />
+                </Box>
+            </Box>
+            </Paper>
+        
+         
         <Box sx={{ p: 2 }}>
           <Grid container spacing={2}>
             {[0,1,2].map(row => {
