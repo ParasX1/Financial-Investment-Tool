@@ -6,8 +6,10 @@ import {
   Pagination, Stack, TextField
 } from '@mui/material'
 import { fetchTopPicks, TopPicksRow } from '@/services/topPicks'
+import { useAuth } from '@/components/authContext'
+import { loadTopPicksPrefs, saveTopPicksPrefs } from '@/services/topPicksPrefs'
 
-type ColKey = keyof Pick<TopPicksRow,'symbol'|'name'|'industry'|'ret1y'|'sharpe'|'sortino'|'volatility'|'maxDD'|'beta'|'alpha'|'infoRatio'>
+type ColKey = keyof Pick<TopPicksRow,'symbol'|'name'|'ret1y'|'sharpe'|'sortino'|'volatility'|'maxDD'|'beta'|'alpha'|'infoRatio'>
 type ColumnDef = { key: ColKey|'rank'; label: string; align?: 'left'|'right'|'center'; format?: (v:any)=>string; width?: number|string; defaultVisible?: boolean }
 
 const COLS: ColumnDef[] = [
@@ -25,20 +27,16 @@ const COLS: ColumnDef[] = [
 ]
 
 type SortState = { key: Exclude<ColumnDef['key'],'rank'> & ColKey; dir: 'asc'|'desc' }
-const INDUSTRIES = ['All','Technology','Healthcare','Finance','Consumer','Energy','Industrials'] as const
 const hasLS = () => typeof window !== 'undefined' && typeof localStorage !== 'undefined'
 const LS_COLS = 'topPicks.visibleCols'
-const LS_SORT = 'topPicks.sort'
-const LS_PGSZ = 'topPicks.pageSize'
-const LS_INDS = 'topPicks.industry'
 const LS_EMAIL = 'topPicks.email'
 
 export default function TopPicksPage() {
+  const { user } = useAuth()
   const [rows,setRows] = useState<TopPicksRow[]>([])
   const [loading,setLoading] = useState(true)
   const [error,setError] = useState<string|null>(null)
 
-  const [industry,setIndustry] = useState<(typeof INDUSTRIES)[number]>('All')
   const [visibleKeys,setVisibleKeys] = useState<(ColumnDef['key'])[]>(COLS.filter(c=>c.defaultVisible).map(c=>c.key))
   const [sort,setSort] = useState<SortState>({ key:'sharpe', dir:'desc' })
   const [page,setPage] = useState(1)
@@ -49,25 +47,45 @@ export default function TopPicksPage() {
   const [emailSaved,setEmailSaved] = useState(false)
 
   useEffect(()=>{ if(!hasLS()) return; try{
-    const v1 = localStorage.getItem(LS_INDS); if(v1 && (INDUSTRIES as readonly string[]).includes(v1)) setIndustry(v1 as any)
     const v2 = localStorage.getItem(LS_COLS); if(v2) setVisibleKeys(JSON.parse(v2))
-    const v3 = localStorage.getItem(LS_SORT); if(v3) setSort(JSON.parse(v3))
-    const v4 = Number(localStorage.getItem(LS_PGSZ)); if(Number.isFinite(v4) && v4>0) setPageSize(v4)
     const v5 = localStorage.getItem(LS_EMAIL); if(v5) setEmail(v5)
   }catch{} },[])
-  useEffect(()=>{ if(hasLS()) localStorage.setItem(LS_INDS,industry) },[industry])
   useEffect(()=>{ if(hasLS()) localStorage.setItem(LS_COLS,JSON.stringify(visibleKeys)) },[visibleKeys])
-  useEffect(()=>{ if(hasLS()) localStorage.setItem(LS_SORT,JSON.stringify(sort)) },[sort])
-  useEffect(()=>{ if(hasLS()) localStorage.setItem(LS_PGSZ,String(pageSize)) },[pageSize])
 
-  useEffect(()=>{
+  useEffect(() => {
+    if (!user) return
+    loadTopPicksPrefs(user.id)
+      .then(p => {
+        setSort({ key: p.sort_key as any, dir: p.sort_dir })
+        setPageSize(p.page_size)
+      })
+      .catch(console.error)
+  }, [user])
+
+    useEffect(() => {
+      if (!user) return
+      saveTopPicksPrefs(user.id, {
+        sort_key: sort.key as any,
+        sort_dir: sort.dir,
+        page_size: pageSize,
+      }).catch(console.error)
+    }, [user, sort, pageSize])  
+
+  useEffect(() => {
     setLoading(true); setError(null)
-    fetchTopPicks().then(setRows).catch(e=>setError(e.message||'Failed to load')).finally(()=>setLoading(false))
-  },[])
+    fetchTopPicks({
+      limit: pageSize,
+      sort_key: sort.key as any,
+      sort_dir: sort.dir,
+    })
+      .then(setRows)
+      .catch(e => setError(e.message || 'Failed to load'))
+      .finally(() => setLoading(false))
+  }, [pageSize, sort])
 
-  const filtered = useMemo(()=>rows.filter(r=>industry==='All'?true:r.industry===industry),[rows,industry])
+
   const sorted = useMemo(()=>{
-    const out=[...filtered]
+    const out=[...rows]
     out.sort((a,b)=>{
       const av=a[sort.key], bv=b[sort.key]
       if(av===bv) return 0
@@ -75,7 +93,7 @@ export default function TopPicksPage() {
       return sort.dir==='asc'?cmp:-cmp
     })
     return out
-  },[filtered,sort])
+  },[rows, sort])
 
   const total = sorted.length
   const totalPages = Math.max(1,Math.ceil(total/pageSize))
@@ -121,9 +139,6 @@ export default function TopPicksPage() {
         </Box>
 
         <Box sx={{ px:2, py:1, display:'flex', gap:1, alignItems:'center', justifyContent:'flex-end' }}>
-          <Select size="small" value={industry} onChange={e=>{setIndustry(e.target.value as any); setPage(1)}} sx={{ bgcolor:'white', minWidth:140 }}>
-            {(['All','Technology','Healthcare','Finance','Consumer','Energy','Industrials'] as const).map(opt=><MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-          </Select>
           <Button variant="outlined" onClick={exportCSV}>Export</Button>
           <Button variant="outlined" onClick={()=>setColsOpen(true)}>Edit Columns</Button>
           <Button variant="contained" onClick={()=>{setEmailSaved(false); setEmailOpen(true)}}>Get email updates</Button>
