@@ -29,6 +29,9 @@ export interface CardSettings {
     barColor: string;
     dateRange: { start: string; end: string };
     metricType: MetricType;
+    marketTicker?: string;
+    riskRate?: number;
+    confidenceLevel?: number;
     graphMade: boolean;
 }
 
@@ -63,12 +66,18 @@ const DashboardView: React.FC = () => {
         setSearchTags([])                     
         setSelectedStocks([])
 
-        if (loading || !user) return
-        ;(async () => {
+        if (loading || !user) return;
+        (async () => {
         const cfg = await loadPortfolioConfig(user.id)
         const tags = cfg?.tags ?? []
         setSearchTags(tags)
-        setSelectedStocks(tags)
+
+        setSelectedStocks(prev => {
+            if (prev.length === tags.length && prev.every((v, i) => v === tags[i])) {
+                return prev
+            }
+            return tags
+        })
         setPrefsLoaded(true)               
         })()
     }, [loading, user])
@@ -168,15 +177,17 @@ const DashboardView: React.FC = () => {
                                 // Stock start selected
                                 if (reason === 'selectOption') {
                                     const selected = details?.option as string;
-                                    setSelectedStocks(prev => prev.includes(selected)
-                                        ? prev
-                                        : [...prev, selected] 
-                                    );
+                                    if (!selectedStocks.includes(selected)) {
+                                        setSelectedStocks([...selectedStocks, selected]);
+                                    }
                                 }
                                 // If delete tag, clean the state
                                 else if (reason === 'removeOption' && details?.option) {
                                     const removed = details.option as string;
-                                    setSelectedStocks((prev) => prev.filter(s => s !== removed));
+                                    const newStocks = selectedStocks.filter(s => s !== removed);
+                                    if (newStocks.length !== selectedStocks.length) {
+                                        setSelectedStocks(newStocks);
+                                    }
                                 }
                             }}
                             sx={{

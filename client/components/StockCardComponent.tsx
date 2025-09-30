@@ -7,6 +7,7 @@ import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
 import ScatterPlotGraph from './scatterplot';
+import HeatMap from './heatmap';
 
 type OHLCData = {
     date: string;
@@ -128,7 +129,6 @@ interface StockChartCardProps {
   defaultStart: string;
   defaultEnd: string;
   color: string;
-  onSettingsChange?: (index: number, settings: GraphSettings) => void;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -144,7 +144,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   defaultStart,
   defaultEnd,
   color,
-  onSettingsChange = () => {},
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
@@ -158,7 +157,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const buttonHoverColor = '#555'; // Darker grey on hover
 
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
-  const showGraph = isActive && selectedStocks.length > 0 && graphMade;
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
@@ -171,6 +169,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         end: settings.metricParams.endDate,
       },
       metricType: settings.metricType,
+      marketTicker: settings.metricParams.marketTicker,
+      riskRate: settings.metricParams.riskFreeRate,
+      confidenceLevel: settings.metricParams.confidenceLevel,
       graphMade: true,
     });
 
@@ -184,6 +185,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       return;
     }
 
+    console.log("rendering")
     const fetchAllData = async () => {
 
       const allData = await fetchMetrics({
@@ -193,6 +195,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             metricParams: {
               startDate: dateRange.start,
               endDate: dateRange.end,
+              marketTicker: cardSettings.marketTicker || 'SPY',
+              riskFreeRate: cardSettings.riskRate || 0.01,
+              confidenceLevel: cardSettings.confidenceLevel || 0.05,
             },
             stockColour: barColor
           },
@@ -202,7 +207,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
 
     fetchAllData();
-  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade]);
+  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade, cardSettings]);
 
   // resize observer
   useEffect(() => {
@@ -221,35 +226,28 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     }
     
     switch (metricType.toLowerCase()) {
-      case 'ohlc':
-        return (
-          <OHLCChart
-            multiData={chartData.map((data, i) => ({
-              ticker: selectedStocks[i],
-              color: barColor,
-              data: data.series.ohlc || []
-            }))}
-            width={dimensions.width - 32}
-            height={dimensions.height - 90}
-          />
-        );
-
     case 'betaanalysis':
     case 'alphacomparison':
     case 'sortinoratiovisualization':
     case 'sharperatiomatrix':
     case 'volatilityanalysis':
     case 'valueatriskanalysis':
+      const singleValue = chartData[0].series.singleValue || {};
+      const validTickers = Object.entries(singleValue).filter(
+        ([, data]) => (typeof data === 'number' && !isNaN(data)) || (data && typeof (data as any).value === 'number')
+      );
+
+      if (validTickers.length === 0) {
+        return null
+      }
+
       return (
         <BarGraph
-          data={chartData.flatMap(data => {
-            const tickers = data.tickers || [];
-            const singleValue = data.series.singleValue || {};
-            return tickers.map(t => ({
-              label: t,
-              value: singleValue[t]
-            }));
-          })}
+          data={validTickers.map(([ticker, data]) => ({
+              label: ticker,
+              value: typeof data === 'number' ? data : (data as any).value
+            }))
+          }
           width={dimensions.width - 32}
           height={dimensions.height - 90}
           barColor={barColor}
@@ -257,8 +255,45 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       );
     
     case 'marketcorrelationanalysis':
+      const correlationData: number[][] = [];
+      const tickers = chartData[0].tickers || [];
+      const marketTicker = cardSettings.marketTicker || 'SPY';
+      
+      const allTickers = [...tickers];
+      if (!allTickers.includes(marketTicker)) {
+        allTickers.push(marketTicker);
+      }
+      
+      const corr = chartData[0].series.correlationMatrix || []
+      if (Object.keys(corr).length === 0) {
+        return null;
+      }
+
+      allTickers.forEach(rowTicker => {
+        const row: number[] = [];
+        allTickers.forEach(colTicker => {
+          const corr = chartData[0].series.correlationMatrix?.[rowTicker]?.[colTicker];
+          row.push(corr !== undefined ? corr : 0);
+        });
+        correlationData.push(row);
+      })
+      return (
+        <HeatMap
+          data={correlationData}
+          labels={allTickers}
+          width={dimensions.width - 32}
+          height={dimensions.height - 90}
+          barColor={barColor}
+        />
+      );
+
     case 'cumulativereturncomparison':
     case 'maxdrawdownanalysis':
+      const timeseries = chartData[0].series.timeSeries || {};
+      if (Object.keys(timeseries).length === 0) {
+        return null;
+      }
+
       return (
         <LineGraph
           data={chartData.flatMap((data) =>
@@ -277,6 +312,11 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       );
     
     case 'efficientfrontiervisualization':
+      const portfolio = chartData[0].series.portfolio || { returns: [], risks: [], sharpe_ratios: [] };
+      if (!portfolio || portfolio.returns.length === 0 || portfolio.risks.length === 0 || portfolio.sharpe_ratios.length === 0) {
+        return null;
+      }
+
       return (
       <ScatterPlotGraph
         data={chartData.flatMap((data) => {
@@ -294,35 +334,15 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         mainColor={barColor}
       />
     );
-    /*
-    case 'betaanalysis':
-    case 'alphacomparison':
-    case 'sortinoratiovisualization':
-    case 'sharperatiomatrix':
-    case 'volatilityanalysis':
-    case 'valueatriskanalysis':
-      Should be displayed as a bar chart.
-      Potentially regression line but related functions will need to be changed to calculate metric per day instead of overall
-    
-    case 'marketcorrelationanalysis':
-      This returns a series of values per day
-      Should be a line chart
-      Potentially a bar or heatmap if changed to overall stock
-
-    case 'maxdrawdownanalysis':
-    case 'cumulativereturncomparison':
-      This returns a series of values per day
-      Should be a line chart
-    
-    case 'efficientfrontieranalysis':
-      This should be displayed as a scatter plot.
-    */
 
     default:
       console.log('[renderChart] Unsupported metricType:', metricType);
       return null;
     };
   }
+
+  const chart = renderChart();
+  const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
 
   // render
   return (
@@ -354,7 +374,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         </Box>
       {showGraph ? (
         <>
-          {renderChart()}
+          {chart}
       </>
       ) : (
         <Button

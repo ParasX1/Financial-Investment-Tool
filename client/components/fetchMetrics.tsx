@@ -1,13 +1,14 @@
 import { GraphSettings } from './graphSettingsModal';
+import { toast } from 'react-toastify';
 
 export interface MetricsResponse {
     tickers: string[];  
     metricType: string;
     series: {
-      ohlc?: Array<{date: string, ticker: string, open: number, high: number, low: number, close: number}>;
       timeSeries?: {[ticker: string]: Array<{date: string, value: number}>};
       singleValue?: { [ticker: string]: number };
       portfolio?: {returns: number[], risks: number[], sharpe_ratios: number[]};
+      correlationMatrix?: { [ticker: string]: { [ticker: string]: number } };
     };
   }
 
@@ -25,7 +26,7 @@ export async function fetchMetrics(
   }
 
   const { metricType, metricParams } = req.settings;
-  const { startDate, endDate } = metricParams;
+  const { startDate, endDate, marketTicker, riskFreeRate, confidenceLevel} = metricParams;
 
   try {
     const response = await fetch(`http://localhost:8080/api/metrics/${metricType.toLowerCase()}`, {
@@ -37,8 +38,9 @@ export async function fetchMetrics(
         stock_tickers: req.tickers,
         start_date: startDate,
         end_date: endDate,
-        market_ticker: 'SPY',
-        risk_free_rate: 0.01
+        market_ticker: marketTicker || 'SPY',
+        risk_free_rate: riskFreeRate || 0.01,
+        confidence_level: confidenceLevel || 0.05,
       }),
     });
 
@@ -61,40 +63,74 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
     series: {}
   };
   switch (metricType) {
-    case 'ohlc':
-      response.series.ohlc = data.ohlc || [];
-      break;
     
     case 'BetaAnalysis':
     case 'AlphaComparison':
-    case 'SortinoRatioVisualization':
     case 'SharpeRatioMatrix':
     case 'ValueAtRiskAnalysis':
     case 'VolatilityAnalysis':
       response.series.singleValue = {}
-      tickers.forEach(ticker => {
+      if (data === null || Object.keys(data).length === 0) {
+        toast.error('Not enough days for calculation (need at least 3 days).');
+      } else {
+        tickers.forEach(ticker => {
         response.series.singleValue![ticker] = data[ticker];
       });
+      }
       break;
     
+    case 'SortinoRatioVisualization':
+      response.series.singleValue = {}
+      Object.keys(data).forEach(ticker => {
+        if (data[ticker].status === 'infinite') {
+          toast.warning(`Sortino ratio for ${ticker} is infinite. Day range may be too short.`);
+          response.series.singleValue![ticker] = {} as any;
+        } else if (data[ticker].status === 'limited_data') {
+          toast.error(`Not enough data to calculate Sortino Ratio for ${ticker} (need at least 2 days with negative returns).`);
+          response.series.singleValue![ticker] = {} as any;
+        } else {
+          response.series.singleValue![ticker] = data[ticker];
+        }
+      });
+      break;
+     
     case 'MaxDrawdownAnalysis':
     case 'CumulativeReturnComparison':
-    case 'MarketCorrelationAnalysis':
       response.series.timeSeries = {};
-      tickers.forEach(ticker => {
-        response.series.timeSeries![ticker] = Object.entries(data[ticker] || {}).map(([date, value]) => ({
-          date,
-          value: value as number
-        }));
-      });
+      if (data === null || Object.keys(data).length === 0) {
+        toast.error('Not enough days for calculation (need at least 2 days).');
+        break;
+      } else {
+        tickers.forEach(ticker => {
+          response.series.timeSeries![ticker] = Object.entries(data[ticker] || {}).map(([date, value]) => ({
+            date,
+            value: value as number
+          }));
+        });
+      }
+      break;
+    
+    case 'MarketCorrelationAnalysis':
+      if (!data || Object.keys(data).length === 0) {
+        toast.error('Not enough days for correlation calculation (need at least 21 days).');
+        response.series.correlationMatrix = {};
+      } else {
+        response.series.correlationMatrix = data;
+      }
       break;
     
     case 'EfficientFrontierVisualization':
-      response.series.portfolio = {
-        returns: data.returns || [],
-        risks: data.risks || [],
-        sharpe_ratios: data.sharpe_ratios || []
-      };
+      if (!data || !data.returns || data.returns.length === 0) {
+        toast.error('Not enough data to compute Efficient Frontier (need at least 3 days).');
+        response.series.portfolio = { returns: [], risks: [], sharpe_ratios: [] };
+        break;
+      } else {
+        response.series.portfolio = {
+          returns: data.returns || [],
+          risks: data.risks || [],
+          sharpe_ratios: data.sharpe_ratios || []
+        };
+      }
       break;
     
       default:
