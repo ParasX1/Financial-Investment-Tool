@@ -117,24 +117,10 @@ def create_app():
             risk_free_rate = data.get('risk_free_rate', 0.01)
             confidence_level = data.get('confidence_level', 0.05)
             
+            # Add catch for less than 21 days when data isnt missing days
+
             if not stock_tickers:
                 return jsonify({"error": "stock_tickers is required"}), 400
-            
-            if metric_type == 'ohlc':
-                result = fetch_stock_data(stock_tickers, start_date, end_date)
-                ohlc_data = []
-                for date in result.index:
-                    for ticker in stock_tickers:
-                        if ticker in result.columns.get_level_values(0):
-                            ohlc_data.append({
-                                'date': date,
-                                'ticker': ticker,
-                                'open': result[(ticker, 'Open')].loc[date],
-                                'high': result[(ticker, 'High')].loc[date],
-                                'low': result[(ticker, 'Low')].loc[date],
-                                'close': result[(ticker, 'Close')].loc[date],
-                            })
-                return jsonify({"ohlc": ohlc_data})
                 
             elif metric_type == 'betaanalysis':
                 result = calculate_beta(stock_tickers, market_ticker, start_date, end_date)
@@ -160,8 +146,7 @@ def create_app():
                 
             elif metric_type == 'marketcorrelationanalysis':
                 result = calculate_correlation_with_market(stock_tickers, market_ticker, start_date, end_date)
-                result_json = {ticker: result[ticker].to_dict() for ticker in result}
-                return jsonify(result_json)
+                return jsonify(result)
                 
             elif metric_type == 'sharperatiomatrix':
                 result = calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate)

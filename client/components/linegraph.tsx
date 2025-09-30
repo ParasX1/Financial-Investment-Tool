@@ -48,6 +48,7 @@ interface LineGraphProps {
     // Create line generator function
     const line = d3
         .line<{ date: Date; value: number }>()
+        .defined(d => d.value !== null)
         .x((d) => xScale(d.date))
         .y((d) => yScale(d.value))
 
@@ -112,20 +113,38 @@ interface LineGraphProps {
         .attr('pointer-events', 'all')
         .on('mousemove', (event) => {
         const [mouseX] = d3.pointer(event);
-        const dateAtMouse = xScale.invert(mouseX - l); // Get the date based on mouse position
+        const dateAtMouse = xScale.invert(mouseX); // Get the date based on mouse position
 
         // Find the closest data point to the mouse position
-        const allPoints = data.flatMap(series => series.values)
-        const closestPoint = allPoints.reduce((a, b) =>
-            Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
+        const allPoints = data.flatMap(series => 
+            series.values
+                .filter(d => d.value !== null)
+                .map(d => ({ ...d, ticker: series.ticker }))
+        );
+
+        if (!allPoints.length) {
+            return;
+        }
+        
+        const seriesClosest = data.map(series => {
+            const closest = series.values.reduce((a, b) =>
+                Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
+            );
+            return { ...closest, ticker: series.ticker };
+        });
+
+
+        const closestPoint = seriesClosest.reduce((a, b) =>
+            Math.abs(yScale(a.value) - d3.pointer(event, svg.node())[1]) <
+            Math.abs(yScale(b.value) - d3.pointer(event, svg.node())[1]) ? a : b
         );
 
         tooltip
             .style('display', 'block')
-            .style('left', `${event.pageX + 10}px`)
+            .style('left', `${event.pageX - 170}px`)
             .style('top', `${event.pageY - 28}px`)
             .html(
-            `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}`
+            `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}<br>Stock: ${closestPoint.ticker}`
             );
         })
         .on('mouseout', () => {

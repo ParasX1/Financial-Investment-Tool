@@ -5,6 +5,7 @@ import React from "react";
 import Index from "@/pages/index";
 import { AuthProvider } from "@/components/authContext";
 import { GraphSettingsProvider } from '@/components/GraphSettingsContext';
+import { ToastContainer } from 'react-toastify';
 
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -12,6 +13,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <AuthProvider>
         <GraphSettingsProvider>
             <Component {...pageProps} />
+            <ToastContainer position="top-right" autoClose={5000} hideProgressBar={true} newestOnTop={true} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light"/>
         </GraphSettingsProvider>
     </AuthProvider>
   )

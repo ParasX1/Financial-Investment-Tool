@@ -62,6 +62,9 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     # Calculate daily returns for stocks and market
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
+
+    if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
+        return {}
     
     # Align the indices to ensure both DataFrames have the same dates
     common_index = stock_returns.index.intersection(market_returns.index)
@@ -109,6 +112,9 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     # Calculate daily returns
     stock_returns = adj_close[stock_tickers].pct_change().dropna()
     market_returns = adj_close[market_ticker].pct_change().dropna()
+
+    if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
+        return {}
     
     # Align indices
     common_index = stock_returns.index.intersection(market_returns.index)
@@ -155,6 +161,9 @@ def calculate_drawdown(stock_tickers, start_date, end_date):
     # Fetch adjusted close prices
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
+
+    if adj_close.shape[0] < 2:
+        return {}
     
     drawdowns = {}
     for ticker in adj_close.columns:
@@ -184,6 +193,9 @@ def calculate_cumulative_return(stock_tickers, start_date, end_date):
     # Fetch adjusted close prices
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
+
+    if adj_close.shape[0] < 2:
+        return {}
     
     cumulative_returns = {}
     for ticker in adj_close.columns:
@@ -226,7 +238,11 @@ def calculate_sortino_ratio(stock_tickers, start_date, end_date, risk_free_rate=
         
         if downside_returns.empty:
             # If there are no negative returns, the downside deviation is zero
-            sortino_ratios[ticker] = np.inf  # Infinite Sortino Ratio
+            sortino_ratios[ticker] = {"value": None, "status": "infinite"}  # The value should be infinite but the jsonify in server.py cant handle infinity
+            continue
+        
+        if len(downside_returns) < 2:
+            sortino_ratios[ticker] = {"value": None, "status": "limited_data"}
             continue
         
         # Calculate the annualized downside deviation
@@ -235,7 +251,7 @@ def calculate_sortino_ratio(stock_tickers, start_date, end_date, risk_free_rate=
         # Calculate the Sortino Ratio: (Average Return - Risk-Free Rate) / Downside Deviation
         sortino_ratio = (avg_return - risk_free_rate) / downside_deviation
         
-        sortino_ratios[ticker] = sortino_ratio
+        sortino_ratios[ticker] = {"value": sortino_ratio, "status": "ok"}
     
     return sortino_ratios
 
@@ -251,24 +267,26 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
     - end_date (str): End date for data fetching.
 
     Returns:
-    - dict: Dictionary with stock tickers as keys and their respective correlation Series as values.
+    - average correlation between each stock, including market, over 21 rolling days.
     """
+
+    
     # Fetch adjusted close prices
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     
     # Calculate daily returns
-    stock_returns = adj_close[stock_tickers].pct_change()
-    market_returns = adj_close[market_ticker].pct_change()
-    
+    returns = adj_close.pct_change().dropna()
+    if len(returns) < 21:
+        return {}
+    rolling_corr = returns.rolling(window=21).corr()
+    corr_matrix = rolling_corr.groupby(level=1).mean()
+
     correlations = {}
-    for ticker in stock_returns.columns:
-        # Calculate rolling correlation over a 21-day window (approximately one month)
-        rolling_corr = stock_returns[ticker].rolling(window=21).corr(market_returns)
-        
-        correlations[ticker] = rolling_corr
-        print(correlations) #This returns NaN. Need to look into why
-    
+    for ticker in stock_tickers:
+        correlations[ticker] = corr_matrix[ticker].to_dict()
+    correlations[market_ticker] = corr_matrix[market_ticker].to_dict()
+
     return correlations
 
 # Function to calculate Sharpe Ratio
@@ -290,6 +308,9 @@ def calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate=0
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     stock_returns = adj_close.pct_change().dropna()
+
+    if stock_returns.shape[0] < 2:
+        return {}
     
     sharpe_ratios = {}
     for ticker in stock_returns.columns:
@@ -324,6 +345,9 @@ def calculate_volatility(stock_tickers, start_date, end_date):
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     stock_returns = adj_close.pct_change().dropna()
+
+    if stock_returns.shape[0] < 2:
+        return {}
     
     volatilities = {}
     for ticker in stock_returns.columns:
@@ -353,6 +377,9 @@ def calculate_value_at_risk(stock_tickers, start_date, end_date, confidence_leve
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     stock_returns = adj_close.pct_change().dropna()
+
+    if stock_returns.shape[0] < 2:
+        return {}
     
     vars = {}
     for ticker in stock_returns.columns:
@@ -384,6 +411,9 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = data.xs('Adj Close', level=1, axis=1)
     stock_returns = adj_close.pct_change().dropna()
+
+    if stock_returns.shape[0] < 2:
+        return {}
     
     # Calculate annualized mean returns and covariance matrix
     mean_returns = stock_returns.mean() * 252
@@ -410,13 +440,6 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
         results['returns'].append(portfolio_return)
         results['risks'].append(portfolio_risk)
         results['sharpe_ratios'].append(sharpe_ratio)
-
-    # plt.scatter(results['risks'], results['returns'], c=results['sharpe_ratios'], cmap='viridis')
-    # plt.xlabel('Risks')
-    # plt.ylabel('Return')
-    # plt.title('Efficient Frontier')
-    # plt.colorbar(label='Sharpe Ratio')
-    # plt.show()
 
     return results
 
