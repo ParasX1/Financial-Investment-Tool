@@ -109,8 +109,8 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Beta Analysis”.</li>
-                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. "SPY" for S&P 500 or “AMZN” for Amazon).</li>
+                <li><strong>Metric Type:</strong> Select &quot;Beta Analysis&quot;.</li>
+                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. "SPY" for S&P 500 or &quot;AMZN&quot; for Amazon).</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
 
@@ -129,7 +129,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Alpha Comparison”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Alpha Comparison&quot;.</li>
                 <li><strong>Risk-Free Rate:</strong> Enter the annual risk-free rate (e.g. 0.02 for 2%). </li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
@@ -148,7 +148,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Max Drawdown”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Max Drawdown&quot;.</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
 
@@ -166,7 +166,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Cumulative Return”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Cumulative Return&quot;.</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
           
@@ -185,7 +185,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Sortino Ratio”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Sortino Ratio&quot;.</li>
                 <li><strong>Risk-Free Rate:</strong> Provide the annual risk-free rate. </li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
@@ -204,7 +204,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Market Correlation”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Market Correlation&quot;.</li>
                 <li><strong>Market Ticker:</strong> Enter the benchmark symbol. </li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
@@ -223,7 +223,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Sharpe Ratio”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Sharpe Ratio&quot;.</li>
                 <li><strong>Risk-Free Rate:</strong> Enter the annual risk-free rate. </li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
@@ -242,7 +242,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Volatility”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Volatility&quot;.</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
 
@@ -260,7 +260,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Value at Risk”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Value at Risk&quot;.</li>
                 <li><strong>Confidence Level:</strong> Enter a decimal (e.g. 0.05 for 95% VaR). </li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
@@ -279,7 +279,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Select “Efficient Frontier”.</li>
+                <li><strong>Metric Type:</strong> Select &quot;Efficient Frontier&quot;.</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
 
