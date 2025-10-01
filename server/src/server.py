@@ -50,7 +50,7 @@ def create_app():
                 return response.data["stock_ids"]["stocks"], 200
             else:
                 raise KeyError()
-        except:
+        except (KeyError, TypeError):
             return jsonify({
                 "error": "No such user with ID " + userid
             }), 404
@@ -73,9 +73,7 @@ def create_app():
                 raise KeyError("Couldn't find table entry")
             return jsonify({"message": "OK"}), 200
         except KeyError as e:
-            return jsonify({
-               "error": f"Something went wrong: {e}"
-           }), 500
+            return jsonify({"error": f"Something went wrong: {e}"}), 500
         
     # Example stock tickers, market index, and date range for testing
     start_date = '2023-01-01'
