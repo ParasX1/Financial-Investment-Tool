@@ -110,7 +110,7 @@ const Guide: React.FC = () => {
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Select &quot;Beta Analysis&quot;.</li>
-                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. "SPY" for S&P 500 or &quot;AMZN&quot; for Amazon).</li>
+                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. &quot;SPY&quot; for S&P 500 or &quot;AMZN&quot; for Amazon).</li>
                 <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
 
@@ -135,7 +135,7 @@ const Guide: React.FC = () => {
             </ul>
 
             <p style={{ marginBottom: '1rem' }}>
-                Once applied, you will see a bar graph showing the difference between the stock's actual return and the expected return based on its risk relative to the market.
+                Once applied, you will see a bar graph showing the difference between the stock&apos;s actual return and the expected return based on its risk relative to the market.
             </p>
           </section>
 
