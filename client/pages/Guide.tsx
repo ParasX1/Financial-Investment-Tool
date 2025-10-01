@@ -45,6 +45,7 @@ const Guide: React.FC = () => {
     { id: 'SortinoRatioVisualization',    label: 'Sortino Ratio' },
     { id: 'MarketCorrelationAnalysis',    label: 'Market Correlation' },
     { id: 'SharpeRatioMatrix',      label: 'Sharpe Ratio' },
+    { id: 'Volatility',   label: 'Volatility'},
     { id: 'ValueAtRiskAnalysis',      label: 'Value at Risk' },
     { id: 'EfficientFrontierVisualization',      label: 'Efficient Frontier' }
   ];
@@ -88,7 +89,7 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Step1:</strong> Click the Settings button above any chart to open the metrics modal.</li>
+                <li><strong>Step1:</strong> Click the Plus button to create a graph or the Settings button above any graph to edit it.</li>
                 <li><strong>Step2:</strong> In the modal, choose your Metric Type, set a Start Date and End Date, pick a Series Color, and fill in any extra fields that appear (like benchmark ticker, risk-free rate, or confidence level).</li>
                 <li><strong>Step3:</strong> Hit Apply to generate or update your chart.</li>
             </ul>
@@ -109,12 +110,13 @@ const Guide: React.FC = () => {
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Select “Beta Analysis”.</li>
-                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. S&P 500 or “AMZN” for Amazon).</li>
-                <li><strong>Date Range:</strong> Choose the period over which you want to calculate beta.
-                Once applied, you will see a time series of rolling beta values. 
-                A beta greater than 1 indicates higher volatility than the market; 
-                a beta below 1 indicates lower volatility.</li>
+                <li><strong>Market Ticker:</strong> Enter the symbol of the benchmark index (e.g. "SPY" for S&P 500 or “AMZN” for Amazon).</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+                Once applied, you will see a bar graph comparing how selected stocks typically move relative to a 1% change in the market ticker.
+            </p>
             
           </section>
 
@@ -127,12 +129,14 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Choose “Alpha Comparison”.</li>
+                <li><strong>Metric Type:</strong> Select “Alpha Comparison”.</li>
                 <li><strong>Risk-Free Rate:</strong> Enter the annual risk-free rate (e.g. 0.02 for 2%). </li>
-                <li><strong>Date Range:</strong> Define the timeframe for analysis.
-                The resulting chart shows cumulative excess returns above the risk-free rate, 
-                helping you see how much additional value you captured.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+                Once applied, you will see a bar graph showing the difference between the stock's actual return and the expected return based on its risk relative to the market.
+            </p>
           </section>
 
           <section id="MaxDrawdownAnalysis" style={{ marginBottom: '2rem' }}>
@@ -145,10 +149,12 @@ const Guide: React.FC = () => {
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Select “Max Drawdown”.</li>
-                <li><strong>Date Range:</strong> Pick the window you want to examine.
-                You will get a chart highlighting each drawdown cycle, 
-                with the maximum decline prominently marked—ideal for understanding worst-case risk.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a line graph highlighting each drawdown cycle, with the maximum decline prominently marked.
+            </p>
           </section>
 
           <section id="CumulativeReturnComparison" style={{ marginBottom: '2rem' }}>
@@ -160,11 +166,14 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Pick “Cumulative Return”.</li>
-                <li><strong>Date Range:</strong> Choose your start and end dates.
-                The chart displays the compounded return curve—great for visualizing 
-                long-term performance without worrying about volatility measures.</li>
+                <li><strong>Metric Type:</strong> Select “Cumulative Return”.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+          
+          <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a line graph showing the cumulative return from the start date to each date within the range.
+          </p>
+          
           </section>
 
           <section id="SortinoRatioVisualization" style={{ marginBottom: '2rem' }}>
@@ -178,9 +187,12 @@ const Guide: React.FC = () => {
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Select “Sortino Ratio”.</li>
                 <li><strong>Risk-Free Rate:</strong> Provide the annual risk-free rate. </li>
-                <li><strong>Date Range:</strong> Set the analysis period.
-                You&apos;ll see a time series of Sortino values—higher values indicate better downside risk-adjusted performance.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+          
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a bar graph showing the performance of each stock, based on the downside risk. 
+            </p>
           </section>
 
           <section id="MarketCorrelationAnalysis" style={{ marginBottom: '2rem' }}>
@@ -188,16 +200,18 @@ const Guide: React.FC = () => {
                 Market Correlation
             </h2>
             <p style={{ marginBottom: '1rem' }}>
-                Correlation measures how closely your portfolio moves in sync with a benchmark.
+                Market Correlation measures how similarly each stock and the market perform compared to each other. 
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Choose “Market Correlation”.</li>
+                <li><strong>Metric Type:</strong> Select “Market Correlation”.</li>
                 <li><strong>Market Ticker:</strong> Enter the benchmark symbol. </li>
-                <li><strong>Date Range:</strong> Define the window for rolling correlation.
-                The chart shows correlation coefficients from -1 (perfect negative) through +1 (perfect positive), 
-                helping you gauge diversification benefits.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a heatmap showing the correlation between all pairs of selected stocks as well as the market ticker
+            </p>
           </section>
 
           <section id="SharpeRatioMatrix" style={{ marginBottom: '2rem' }}>
@@ -209,11 +223,32 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Pick “Sharpe Ratio”.</li>
+                <li><strong>Metric Type:</strong> Select “Sharpe Ratio”.</li>
                 <li><strong>Risk-Free Rate:</strong> Enter the annual risk-free rate. </li>
-                <li><strong>Date Range:</strong> Select the timeframe.
-                The resulting chart plots Sharpe values—higher ratios imply more reward per unit of total risk.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a bar graph showing the performance of each stock, based on the volatility
+            </p>
+          </section>
+
+            <section id="Volatility" style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                Volatility
+            </h2>
+            <p style={{ marginBottom: '1rem' }}>
+                Volatility measures how much a price moves up and down over time.
+            </p>
+
+            <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
+                <li><strong>Metric Type:</strong> Select “Volatility”.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
+            </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              The resulting chart plots Volatility values—higher values indicate greater price fluctuations.
+            </p>
           </section>
 
           <section id="ValueAtRiskAnalysis" style={{ marginBottom: '2rem' }}>
@@ -227,9 +262,12 @@ const Guide: React.FC = () => {
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong>Metric Type:</strong> Select “Value at Risk”.</li>
                 <li><strong>Confidence Level:</strong> Enter a decimal (e.g. 0.05 for 95% VaR). </li>
-                <li><strong>Date Range:</strong> Choose the period to analyze.
-                You&apos;ll see VaR over time, which tells you, for example, “on 5% of days I lost more than X%.”</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a bar graph showing the largest loss you are likely to experience, given your chosen confidence level.
+            </p>
           </section>
 
           <section id="EfficientFrontierVisualization" style={{ marginBottom: '2rem' }}>
@@ -241,10 +279,14 @@ const Guide: React.FC = () => {
             </p>
 
             <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
-                <li><strong>Metric Type:</strong> Choose “Efficient Frontier”.</li>
-                <li><strong>Date Range:</strong> Define your historical window.
-                After applying, you&apos;ll see a scatterplot of portfolio points with the frontier curve—use this to find the best trade-off between risk and return.</li>
+                <li><strong>Metric Type:</strong> Select “Efficient Frontier”.</li>
+                <li><strong>Date Range:</strong> Select the timeframe.</li>
             </ul>
+
+            <p style={{ marginBottom: '1rem' }}>
+              Once applied, you will see a scatter plot of each portfolio based on their returns to risk ratio.
+              There is also a clear indication of the best portfolios per risk level.
+            </p>
           </section>
         </div>
       </div>
