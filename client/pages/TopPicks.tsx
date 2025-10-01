@@ -135,7 +135,6 @@ export default function TopPicksPage() {
       <Box sx={{ flex:1, pl:'50px', bgcolor:'black' }}>
         <Box sx={{ px:2, pt:2 }}>
           <Typography variant="h4" sx={{ color:'white', mb:.5 }}>Top Picks</Typography>
-          <Typography variant="body2" sx={{ color:'#bdbdbd' }}>Sort columns, filter by industry, export, or edit visible columns. Backend hook-up ready.</Typography>
         </Box>
 
         <Box sx={{ px:2, py:1, display:'flex', gap:1, alignItems:'center', justifyContent:'flex-end' }}>
