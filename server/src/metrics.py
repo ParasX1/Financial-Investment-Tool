@@ -4,7 +4,6 @@
 import yfinance as yf   # Used to fetch stock data from Yahoo Finance
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
-import matplotlib.pyplot as plt
 
 # Function to fetch full stock data
 def fetch_stock_data(stock_tickers, start_date, end_date):
