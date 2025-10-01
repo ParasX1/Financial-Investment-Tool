@@ -160,7 +160,7 @@ const Help: React.FC = () => {
 
                 <ul style={{ marginBottom: '1rem', paddingLeft: '1.25rem' }}>
                 <li><strong> Stock bar:</strong> Displays selected stocks and allows searching for more stocks.</li>
-                <li><strong> Todays Trend:</strong> Displays today's movement for selected stocks.</li>
+                <li><strong> Today&apos;s Trend:</strong> Displays today's movement for selected stocks.</li>
                 <li><strong> Open and Close All:</strong> Expand or collapse all graphs and news posts.</li>
                 <li><strong> Swap Up:</strong> Move the stock graph and news posts to the top.</li>
                 </ul>
