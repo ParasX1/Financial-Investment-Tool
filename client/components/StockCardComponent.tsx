@@ -129,6 +129,7 @@ interface StockChartCardProps {
   defaultStart: string;
   defaultEnd: string;
   color: string;
+  showSwap?: boolean;
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -144,6 +145,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   defaultStart,
   defaultEnd,
   color,
+  showSwap = true,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
@@ -363,7 +365,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     >
           {/* controls */}
           <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-            <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+            {showSwap && (
+              <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+            )}
             <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
             <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
               {isFullscreen ? '⤡' : '⤢'}

@@ -41,48 +41,44 @@ export default function WatchlistPage() {
       if (error) { console.error(error); showToast(`Load watchlist failed: ${error.message}`, 'error'); return; }
 
       const arr: (string|null)[] = Array(MAX_ROWS).fill(null);
+      const allSymbols = new Set<string>();
       (data ?? []).forEach((r: { symbol: string; position: number }) => {
         if (r.position >= 0 && r.position < MAX_ROWS) arr[r.position] = r.symbol;
+        allSymbols.add(r.symbol);
       });
       setCharts(arr);
-      setTags(arr.filter(Boolean) as string[]);
+      setTags(Array.from(allSymbols));
     })();
   }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
-    const timer = setTimeout(async () => {
-      try {
-        const toUpsert = charts
-          .map((sym, i) => sym ? { user_id: user.id, position: i, symbol: sym } : null)
-          .filter(Boolean) as {user_id:string;position:number;symbol:string}[];
+useEffect(() => {
+  if (!user) return;
+  const timer = setTimeout(async () => {
+    try {
+      const { error: delErr } = await supabase
+        .from('user_watchlist')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (delErr) throw delErr;
 
-        if (toUpsert.length) {
-          const { error: upErr } = await supabase
-            .from('user_watchlist')
-            .upsert(toUpsert, { onConflict: 'user_id,position' });
-          if (upErr) throw upErr;
-        }
+      const toInsert = charts
+        .map((sym, i) => sym ? { user_id: user.id, position: i, symbol: sym } : null)
+        .filter(Boolean) as {user_id:string;position:number;symbol:string}[];
 
-        const emptyPositions = charts
-          .map((sym, i) => (sym ? null : i))
-          .filter((v): v is number => v !== null);
-
-        if (emptyPositions.length) {
-          const { error: delErr } = await supabase
-            .from('user_watchlist')
-            .delete()
-            .eq('user_id', user.id)
-            .in('position', emptyPositions);
-          if (delErr) throw delErr;
-        }
-      } catch (e: any) {
-        console.error(e);
-        showToast(`Save failed: ${e.message ?? e}`, 'error');
+      if (toInsert.length) {
+        const { error: insErr } = await supabase
+          .from('user_watchlist')
+          .insert(toInsert);
+        if (insErr) throw insErr;
       }
-    }, 400); 
-    return () => clearTimeout(timer);
-  }, [charts, user]);
+    } catch (e: any) {
+      console.error(e);
+      showToast(`Save failed: ${e.message ?? e}`, 'error');
+    }
+  }, 400); 
+  return () => clearTimeout(timer);
+}, [charts, user]);
 
   useEffect(() => {
     const syms = (charts.filter(Boolean) as string[]);
@@ -104,6 +100,7 @@ export default function WatchlistPage() {
       }
     })();
   }, [charts.join('|')]);
+
   const displayName = (t?: string | null) => (t ? (nameMap[t] ?? t) : undefined);
   const newsQuery   = (t?: string | null) => {
     if (!t) return undefined;
@@ -111,19 +108,27 @@ export default function WatchlistPage() {
     return n ? `${t} OR "${n}"` : t;
   };
 
-  const onTagsChange = (_: any, t: string[]) => {
-    const dedup = Array.from(new Set(t)).slice(0, MAX_ROWS);
+  const onTagsChange = (_: any, newTags: string[]) => {
+    const dedup = Array.from(new Set(newTags)).slice(0, MAX_ROWS);
     setTags(dedup);
-    setCharts([dedup[0] ?? null, dedup[1] ?? null, dedup[2] ?? null]);
+    setCharts(prev => prev.map(s => (s && dedup.includes(s)) ? s : null));
   };
 
-  const clearChart = (i: number) =>
+  const handleSelectStock = (stock: string) => {
     setCharts(prev => {
-      const next = [...prev];
-      next[i] = null;
-      setTags(tags.filter(t => t !== prev[i]));
-      return next;
+      if (prev.includes(stock)) {
+        return prev.map(s => s === stock ? null : s);
+      } else {
+        const firstEmpty = prev.findIndex(s => s === null);
+        if (firstEmpty !== -1) {
+          const next = [...prev];
+          next[firstEmpty] = stock;
+          return next;
+        }
+        return prev;
+      }
     });
+  };
 
   const swapVert = (i: number) => {
     if (i === 0) return;
@@ -189,21 +194,28 @@ export default function WatchlistPage() {
                     onChange={onTagsChange}
                     disabled={!user}
                     renderTags={(value, getTagProps) =>
-                        value.map((opt, i) => (
-                        <Chip
-                            {...getTagProps({ index: i })}
-                            key={opt}
-                            label={opt}
-                            size="small"
-                            sx={{
-                            bgcolor: '#7a3cff',
-                            color: '#fff',
-                            fontWeight: 700,
-                            borderRadius: '16px',
-                            '& .MuiChip-label': { px: 0.75 },
-                            }}
-                        />
-                        ))
+                        value.map((opt, i) => {
+                          const isSelected = charts.includes(opt);
+                          return (
+                            <Chip
+                                {...getTagProps({ index: i })}
+                                key={opt}
+                                label={opt}
+                                size="small"
+                                onClick={() => handleSelectStock(opt)}
+                                sx={{
+                                bgcolor: isSelected ? '#7a3cff' : '#ddd',
+                                color: isSelected ? '#fff' : '#000',
+                                fontWeight: 700,
+                                borderRadius: '16px',
+                                '& .MuiChip-label': { px: 0.75 },
+                                '&:hover': {
+                                  bgcolor: isSelected ? '#6530d9' : '#ccc',
+                                }
+                                }}
+                            />
+                          );
+                      })
                     }
                     renderInput={(params) => {
                         const { InputProps, ...rest } = params;
@@ -294,7 +306,6 @@ export default function WatchlistPage() {
                     <WatchlistCollapsibleCard
                       index={row}
                       selectedStock={charts[row]}
-                      onClear={clearChart}
                       onSwap={swapVert}
                       height={350}
                       collapsed={collapsed}

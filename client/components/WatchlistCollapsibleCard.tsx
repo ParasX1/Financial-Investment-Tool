@@ -7,19 +7,16 @@ import type { MetricType } from '@/components/graphSettingsModal';
 type Props = {
   index: number;
   selectedStock: string | null;
-  onClear: (index: number) => void;
   onSwap: (index: number) => void;
   height?: number;
-
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 };
 
-// Adds collapse/expand around StockChartCard without modifying it
+
 const WatchlistCollapsibleCard: React.FC<Props> = ({
   index,
   selectedStock,
-  onClear,
   onSwap,
   height = 350,
   collapsed,
@@ -35,6 +32,8 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
   };
   const toggle = () => setCollapsed(!isCollapsed);
 
+  const [isActive, setIsActive] = useState<boolean>(false);
+
   // defaults for StockChartCard required props
   const { defaultStart, defaultEnd, color } = useMemo(() => {
     const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -42,21 +41,36 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
     return { defaultStart: iso, defaultEnd: iso, color: '#6ba583' };
   }, []);
 
-  const [localActive, setLocalActive] = useState<boolean>(false);
-  const [localSettings, setLocalSettings] = useState<CardSettings>(() => ({
+  const [cardSettings, setCardSettings] = useState<CardSettings>(() => ({
     barColor: color,
     dateRange: { start: defaultStart, end: defaultEnd },
-    metricType: 'BetaAnalysis' as MetricType,
+    metricType: 'BetaAnalysis'as MetricType,
+    marketTicker: 'SPY',
+    riskRate: 0.01,
+    confidenceLevel: 0.05,
     graphMade: false,
   }));
 
   useEffect(() => {
-    setLocalSettings(s => ({
+    setCardSettings(s => ({
       ...s,
       barColor: color,
       dateRange: { start: defaultStart, end: defaultEnd },
     }));
   }, [defaultStart, defaultEnd, color]);
+
+  const handleActivate = (idx: number) => {
+    setIsActive(true);
+  };
+
+  const handleUpdateSettings = (idx: number, settings: CardSettings) => {
+    setCardSettings(settings);
+  }
+
+  const handleClear = (idx: number) => {
+    setIsActive(false);
+    setCardSettings(s => ({ ...s, graphMade: false }));
+  };
 
   return (
     <Box
@@ -105,7 +119,7 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
           <Button
             variant="contained"
             size="small"
-            onClick={() => onClear(index)}
+            onClick={() => handleClear(index)}
             title="Clear ticker"
           >
             ×
@@ -118,24 +132,17 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
         <StockChartCard
           index={index}
           selectedStocks={selectedStock ? [selectedStock] : []}
-          isActive={!isCollapsed}
-          cardSettings={{
-            barColor: color,
-            dateRange: { start: defaultStart, end: defaultEnd },
-            metricType: "BetaAnalysis",
-            marketTicker: "SPY",
-            riskRate: 0.01,
-            confidenceLevel: 0.05,
-            graphMade: false,
-          }}
-          onClear={onClear}
+          isActive={isActive}
+          cardSettings={cardSettings}
+          onClear={handleClear}
           onSwap={onSwap}
-          onActivate={() => {}} // Current does nothing will need to be updated once merged
-          onUpdateSettings={() => {}} // Current does nothing will need to be updated once merged
+          onActivate={handleActivate}
+          onUpdateSettings={handleUpdateSettings}
           height={height}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           color={color}
+          showSwap={false}
         />
       )}
     </Box>
