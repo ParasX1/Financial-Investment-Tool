@@ -27,9 +27,9 @@ function Index() {
   const [message, setMessage] = useState("Loading");
   const [list, setList] = useState([]);
   const logo = require("@/assets/logo.png");
-  const img1 = require("@/assets/gridBackground1.png");
+  const img1 = require("@/assets/graphs.png");
   const imgStar = require("@/assets/star.png");
-  const team = require("@/assets/team.png");
+  const team = require("@/assets/teamimage.png");
   // Signup-Login Modal
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -95,8 +95,7 @@ function Index() {
                                 Level up your trading with <span style={{ color: "#007bff" }}>FIT</span>.
                             </Typography>
                             <Typography variant="body1" sx={{ marginTop: 1, maxWidth: "600px", color: "white" }}>
-                            Take your trading skills to the next level with FIT. Our platform provides cutting-edge tools for investors, combining real-time data analysis, 
-                            interactive charts, and AI-driven insights to help you navigate the complexities of the market with confidence.
+                            FIT brings together backend metrics into clear, sortable views. Compare risk and return, export data, and rely on saved preferences so your layout is ready each time you log in.
                             </Typography>
                         </Grid>
                         <Grid item xs={6}>
@@ -119,7 +118,7 @@ function Index() {
                                         Performance Metrics
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "white" }}>
-                                          ROI, volatility, Sharpe ratio, alpha, and beta—get a clear view of risk-adjusted returns and investment performance.
+                                          Sharpe, Sortino, Volatility, Max Drawdown, Alpha, Beta, Information Ratio, 1Y Return.
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -130,7 +129,7 @@ function Index() {
                                           Portfolio Optimization
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "white" }}>
-                                          Optimize your portfolio with algorithms that balance risk and return using real-world data and simulation models.
+                                          Tag holdings, track a watchlist, and keep your preferred columns, sorting, and pagination.
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -162,8 +161,7 @@ function Index() {
                 {/* HEADER ABOVE THE GRID */}
                 <Box sx={{ padding: 0, paddingLeft: "30px", textAlign: "center", marginBottom: 0 }}>
                     <Typography variant="h3" sx={{ fontWeight: "bold", textAlign: "left", color: "white" }}>
-                    Our platform combines real-time stock data, powerful visualizations, and machine learning-driven predictions to deliver unmatched insight into investment performance. 
-                    Customizable dashboards let you stay focused on what matters most—your financial growth.
+                    FIT combines stock data, clear visualizations, and saved user preferences to deliver a practical workflow for screening candidates, comparing risk-adjusted performance, and managing portfolios.
                     </Typography>
                 </Box>
 
@@ -199,16 +197,13 @@ function Index() {
                   <div className="about-us-text">
                     <br></br>
                     <p>
-                      We&#39;re a brilliant team of computer science students who somehow traded in our keyboards for investment algorithms
-                      (though we still find time to throw in Valorant). We might have left the pro Valorant scene behind, but our passion
-                      for winning now drives us to create the ultimate financial investment tool—FIT. Whether it&apos;s clutching rounds or
-                      coding smart financial solutions, we&#39;ve got it covered.
+                      FIT (Financial Investment Tool) is built by a team of software and data-driven engineers passionate about making investing easier and smarter.
                       <br></br>
                       <br></br>
-                      With FIT, we&#39;re on a mission to help investors navigate the market by analyzing whether stocks are going up, down,
-                      or sideways. We pull in historical data, visualize trends, and assess risk, all to ensure that you&#39;re making informed
-                      decisions. From tracking volatility to backtesting trading strategies, our app is designed to give you the edge in
-                      your financial game.
+                      Our platform helps investors move beyond guesswork by giving clear, actionable analytics, from risk-adjusted performance metrics such as Sharpe, Sortino, Volatility, Max Drawdown, Alpha, Beta, Information Ratio, and 1-Year Return, to practical tools for screening stocks, tracking watchlists, building portfolios and following market news.
+                      <br></br>
+                      <br></br>
+                      We combine reliable data, intuitive dashboards, and modern web technology to help both new and experienced investors make informed decisions with confidence.
                     </p>
                   </div>
                 </div>
