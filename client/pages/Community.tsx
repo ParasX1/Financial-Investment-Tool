@@ -48,37 +48,13 @@ type CommentUI = {
 type NewComment = { text: string; file?: File | null; previewUrl?: string | null };
 
 /* ────────────────────────────────────────────────────────────────────────────
-   Seeded demo posts (these are **display only**; not stored in DB)
+   Seeded demo posts (display only)
 ──────────────────────────────────────────────────────────────────────────── */
 const DEMO_POSTS: SeedPost[] = [
-  {
-    id: "a",
-    user: "user A",
-    title: "Far too many people are pursuing a career in finance",
-    votes: 936,
-    time: "1d ago",
-  },
-  {
-    id: "b",
-    user: "user B",
-    title: "Finance Bro Starterpack",
-    votes: 354,
-    time: "6y ago",
-  },
-  {
-    id: "c",
-    user: "user C",
-    title: "Should have studied finance",
-    votes: 8500,
-    time: "4mo ago",
-  },
-  {
-    id: "d",
-    user: "user D",
-    title: "9 years into my finance career. How to make more money?",
-    votes: 166,
-    time: "1y ago",
-  },
+  { id: "a", user: "user A", title: "Far too many people are pursuing a career in finance", votes: 936, time: "1d ago" },
+  { id: "b", user: "user B", title: "Finance Bro Starterpack", votes: 354, time: "6y ago" },
+  { id: "c", user: "user C", title: "Should have studied finance", votes: 8500, time: "4mo ago" },
+  { id: "d", user: "user D", title: "9 years into my finance career. How to make more money?", votes: 166, time: "1y ago" },
 ];
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -150,10 +126,7 @@ function CommentForm({
           "rounded-md border border-dashed p-3 text-sm",
           dragOver ? "border-fuchsia-500/70 bg-fuchsia-500/5" : "border-zinc-800 bg-zinc-900/40"
         )}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => {
           e.preventDefault();
@@ -354,44 +327,36 @@ function PostCard({
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
-   Page
+   Cards for env-missing and main (hooks-inside)
 ──────────────────────────────────────────────────────────────────────────── */
-export default function CommunityPage() {
-  // env guard
-  if (!supabase) {
-    return (
-      <div className="flex min-h-screen bg-zinc-950 text-white">
-        <Sidebar />
-        <main className="mx-auto w-full max-w-5xl p-6">
-          <h1 className="mb-3 text-3xl font-bold tracking-tight">Community</h1>
-          <div className="rounded-md border border-red-900/40 bg-red-900/20 p-4 text-sm text-red-200">
-            Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> <em>or</em>{" "}
-            <code>NEXT_PUBLIC_ANON</code> in <code>client/.env.local</code>, then restart{" "}
-            <code>npm run dev</code>.
-          </div>
-        </main>
+function EnvMissingCard() {
+  return (
+    <>
+      <h1 className="mb-3 text-3xl font-bold tracking-tight">Community</h1>
+      <div className="rounded-md border border-red-900/40 bg-red-900/20 p-4 text-sm text-red-200">
+        Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+        <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> <em>or</em>{" "}
+        <code>NEXT_PUBLIC_ANON</code> in <code>client/.env.local</code>, then restart{" "}
+        <code>npm run dev</code>.
       </div>
-    );
-  }
+    </>
+  );
+}
 
-  /* ── State ─────────────────────────────────────────────────────────────── */
+function CommunityMain({ supabase }: { supabase: SupabaseClient }) {
+  // ── State ───────────────────────────────────────────────────────────────
   const [q, setQ] = React.useState("");
   const [sort, setSort] = React.useState<"top" | "new">("top");
   const [draftTitle, setDraftTitle] = React.useState("");
   const [creating, setCreating] = React.useState(false);
 
-  // posts in UI = DEMO + DB
   const [posts, setPosts] = React.useState<PostUI[]>([]);
-  // comments per post id
   const [commentsByPost, setCommentsByPost] = React.useState<Record<string, CommentUI[]>>({});
-  // counts per post id
   const [counts, setCounts] = React.useState<Record<string, number>>({});
 
-  /* ── Load DB posts + comments ──────────────────────────────────────────── */
+  // ── Load DB posts + comments ────────────────────────────────────────────
   React.useEffect(() => {
     (async () => {
-      // 1) DB posts
       const { data: rows, error } = await supabase
         .from("posts")
         .select("id, title, votes, created_at, author_id")
@@ -409,14 +374,12 @@ export default function CommunityPage() {
             }))
           : [];
 
-      // 2) Combine with demo posts (demo first or db first — we’ll show db first for recency)
       const combined: PostUI[] = [
         ...dbPosts,
         ...DEMO_POSTS.map((p) => ({ ...p, fromDB: false } as PostUI)),
       ];
       setPosts(combined);
 
-      // 3) Load comments for *all* post ids we show
       const allIds = combined.map((p) => p.id);
       const { data: allComments, error: cErr } = await supabase
         .from("comments")
@@ -449,9 +412,9 @@ export default function CommunityPage() {
       setCommentsByPost(byPost);
       setCounts(cts);
     })();
-  }, []);
+  }, [supabase]);
 
-  /* ── Realtime comments inserts ─────────────────────────────────────────── */
+  // ── Realtime comments inserts ───────────────────────────────────────────
   React.useEffect(() => {
     const ch = supabase
       .channel("comments-inserts")
@@ -481,9 +444,9 @@ export default function CommunityPage() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, []);
+  }, [supabase]);
 
-  /* ── Helpers ───────────────────────────────────────────────────────────── */
+  // ── Helpers ─────────────────────────────────────────────────────────────
   const filteredPosts = React.useMemo(() => {
     const base = posts.filter(
       (p) =>
@@ -491,7 +454,6 @@ export default function CommunityPage() {
         p.user.toLowerCase().includes(q.toLowerCase())
     );
     if (sort === "top") return [...base].sort((a, b) => b.votes - a.votes);
-    // "new": DB posts already come first; keep that order
     return base;
   }, [posts, q, sort]);
 
@@ -507,13 +469,11 @@ export default function CommunityPage() {
     return supabase.storage.from(COMMENT_BUCKET).getPublicUrl(key).data.publicUrl;
   }
 
-  /* ── Create a new post (DB only) ───────────────────────────────────────── */
+  // ── Create / Delete post ────────────────────────────────────────────────
   async function handleCreatePost() {
     if (!draftTitle.trim()) return;
-
     setCreating(true);
     try {
-      // If user is not signed in inside *this* app, we still create a post with author_id = null (allowed in dev).
       const { data: uRes } = await supabase.auth.getUser();
       const uid = uRes?.user?.id ?? null;
 
@@ -522,14 +482,13 @@ export default function CommunityPage() {
         .insert({
           title: draftTitle.trim(),
           votes: 0,
-          author_id: uid, // may be null if you're not signed in in THIS app
+          author_id: uid,
         })
         .select("id, title, votes, created_at, author_id")
         .single();
 
       if (error) throw error;
 
-      // add to UI on top
       const newUI: PostUI = {
         id: row.id,
         title: row.title,
@@ -550,24 +509,24 @@ export default function CommunityPage() {
     }
   }
 
-  /* ── Delete a post (DB only) ───────────────────────────────────────────── */
   async function handleDeletePost(postId: string) {
     if (!confirm("Delete this post and its comments?")) return;
-
     try {
-      // If you don't have FK cascade, remove comments first:
       await supabase.from("comments").delete().eq("post_id", postId);
       const { error } = await supabase.from("posts").delete().eq("id", postId);
       if (error) throw error;
 
       setPosts((prev) => prev.filter((p) => p.id !== postId));
+
       setCounts((prev) => {
-        const { [postId]: _, ...rest } = prev;
-        return rest;
+        const copy = { ...prev };
+        delete copy[postId];
+        return copy;
       });
       setCommentsByPost((prev) => {
-        const { [postId]: _, ...rest } = prev;
-        return rest;
+        const copy = { ...prev };
+        delete copy[postId];
+        return copy;
       });
     } catch (err: any) {
       console.error(err);
@@ -575,7 +534,7 @@ export default function CommunityPage() {
     }
   }
 
-  /* ── Add a comment ─────────────────────────────────────────────────────── */
+  // ── Add / Delete comment ────────────────────────────────────────────────
   async function handleAddComment(postId: string, data: NewComment) {
     try {
       let imageUrl: string | undefined;
@@ -601,7 +560,6 @@ export default function CommunityPage() {
         createdAt: row.created_at,
         imageUrl: row.image_url ?? undefined,
       };
-      // optimistic
       setCommentsByPost((prev) => ({
         ...prev,
         [postId]: [it, ...(prev[postId] ?? [])],
@@ -613,7 +571,6 @@ export default function CommunityPage() {
     }
   }
 
-  /* ── Delete a comment ──────────────────────────────────────────────────── */
   async function handleDeleteComment(commentId: string, postId: string) {
     try {
       const { error } = await supabase.from("comments").delete().eq("id", commentId);
@@ -630,82 +587,93 @@ export default function CommunityPage() {
     }
   }
 
-  /* ── Render ────────────────────────────────────────────────────────────── */
+  // ── Render (main content) ───────────────────────────────────────────────
+  return (
+    <>
+      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Community</h1>
+
+        <div className="flex w-full max-w-xl items-center gap-2 sm:w-auto">
+          <label className="sr-only" htmlFor="sort">Sort</label>
+          <select
+            id="sort"
+            className="w-28 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "top" | "new")}
+          >
+            <option value="top">Top</option>
+            <option value="new">New</option>
+          </select>
+
+          <div className="relative flex-1 sm:w-64">
+            <label htmlFor="q" className="sr-only">Search posts</label>
+            <input
+              id="q"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search…"
+              className={cn(
+                "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm",
+                "placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
+              )}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* Create a new post (DB only) */}
+      <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
+        <h2 className="mb-3 text-sm font-semibold text-zinc-300">Create a new post</h2>
+        <div className="flex gap-2">
+          <input
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            placeholder="Post title…"
+            className="flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
+          />
+          <button
+            className="rounded-md bg-fuchsia-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 hover:bg-fuchsia-500"
+            onClick={handleCreatePost}
+            disabled={creating || !draftTitle.trim()}
+          >
+            {creating ? "Posting…" : "Post"}
+          </button>
+        </div>
+      </section>
+
+      {/* Posts list */}
+      <section className="space-y-4">
+        {filteredPosts.length === 0 ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-8 text-center text-zinc-400">
+            No posts yet.
+          </div>
+        ) : (
+          filteredPosts.map((p) => (
+            <PostCard
+              key={p.id}
+              p={p}
+              comments={commentsByPost[p.id] ?? []}
+              count={counts[p.id] ?? 0}
+              onAddComment={handleAddComment}
+              onDeleteComment={handleDeleteComment}
+              onDeletePost={p.fromDB ? handleDeletePost : undefined}
+            />
+          ))
+        )}
+      </section>
+    </>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Outer page: layout + conditional render (no hooks here)
+──────────────────────────────────────────────────────────────────────────── */
+export default function CommunityPage() {
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
       <Sidebar />
       <main className="mx-auto w-full max-w-5xl p-6">
-        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Community</h1>
-
-          <div className="flex w-full max-w-xl items-center gap-2 sm:w-auto">
-            <label className="sr-only" htmlFor="sort">Sort</label>
-            <select
-              id="sort"
-              className="w-28 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
-              value={sort}
-              onChange={(e) => setSort(e.target.value as "top" | "new")}
-            >
-              <option value="top">Top</option>
-              <option value="new">New</option>
-            </select>
-
-            <div className="relative flex-1 sm:w-64">
-              <label htmlFor="q" className="sr-only">Search posts</label>
-              <input
-                id="q"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search…"
-                className={cn(
-                  "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm",
-                  "placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
-                )}
-              />
-            </div>
-          </div>
-        </header>
-
-        {/* Create a new post (DB only) */}
-        <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-300">Create a new post</h2>
-          <div className="flex gap-2">
-            <input
-              value={draftTitle}
-              onChange={(e) => setDraftTitle(e.target.value)}
-              placeholder="Post title…"
-              className="flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
-            />
-            <button
-              className="rounded-md bg-fuchsia-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 hover:bg-fuchsia-500"
-              onClick={handleCreatePost}
-              disabled={creating || !draftTitle.trim()}
-            >
-              {creating ? "Posting…" : "Post"}
-            </button>
-          </div>
-        </section>
-
-        {/* Posts list */}
-        <section className="space-y-4">
-          {filteredPosts.length === 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-8 text-center text-zinc-400">
-              No posts yet.
-            </div>
-          ) : (
-            filteredPosts.map((p) => (
-              <PostCard
-                key={p.id}
-                p={p}
-                comments={commentsByPost[p.id] ?? []}
-                count={counts[p.id] ?? 0}
-                onAddComment={handleAddComment}
-                onDeleteComment={handleDeleteComment}
-                onDeletePost={p.fromDB ? handleDeletePost : undefined}
-              />
-            ))
-          )}
-        </section>
+        {!supabase ? <EnvMissingCard /> : <CommunityMain supabase={supabase} />}
       </main>
     </div>
   );
