@@ -13,7 +13,9 @@ import {
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
-import { Grid, Box, Autocomplete, TextField, Chip, Tooltip } from '@mui/material';
+import { Grid, Box, Autocomplete, TextField, Chip, Tooltip, Typography, InputAdornment} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import img1 from '@/assets/gridBackground1.png';
 import teamImage from '@/assets/team.png';
 import { StaticImageData } from 'next/image';
@@ -46,7 +48,7 @@ const DashboardView: React.FC = () => {
     const [globalStart, setGlobalStart] = useState<string>(() => {
         // initialize to "now" in local ISO format YYYY‑MM‑DDThh:mm
         const tzOffset = new Date().getTimezoneOffset() * 60000;
-        return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
+        return new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
     });
     const [globalEnd, setGlobalEnd] = useState<string>(globalStart);
 
@@ -153,24 +155,104 @@ const DashboardView: React.FC = () => {
                 <Sidebar />
                 <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
 
-                     {/* Search Bar*/}
+{/* Title and Search Bar-----------------------------------------------------------------------------------------------------------*/}
                     <Box
                         sx={{
                             px: 2,
-                            py: 1,
-                            backgroundColor: '#111',
-                            borderBottom: '1px solid #333',
+                            py: 1.5,
+                            backgroundColor: 'transparent',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            gap: 1,
+                        }}
+                    >    
+                        <Typography
+                            variant="h6"
+                            sx={{ 
+                                color: 'white', 
+                                fontWeight: 600, 
+                                fontSize: 35,
+                                lineHeight: 1.1,
+                            }}
+                            >
+                            Portfolio Analytics
+                        </Typography>
+
+                        <Typography
+                            variant="h5"
+                            sx={{ 
+                                color: 'rgba(255, 255, 255, 0.65)', 
+                                fontWeight: 300, 
+                                fontSize: 15,
+                                mt: 0,
+                            }}
+                        >
+                            Analyze stock performance with customizable metrics and charts
+                        </Typography>
+
+
+{/* Search Bar UI only ------------------------------------------------------------------------------------------*/}
+                        <Typography
+                            variant="h5"
+                            sx={{ 
+                                color: 'rgba(255, 255, 255, 0.65)', 
+                                fontWeight: 300, 
+                                fontSize: 15,
+                                mt: 3,
+                            }}
+                        >
+                            Select Stocks
+                        </Typography>
+
+                        <Box
+                        sx={{
                             display: 'flex',
                             alignItems: 'center',
+                            gap: 1,
+                            flexGrow: 1,
                         }}
-                    >
-                        {/* Stock label input: Multiple select, free input */}
+                        >
+                    
+                        <TextField
+                            placeholder={`Add stock (${searchTags.length}/5)`}
+                            size="small"
+                            variant="outlined"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                            flexGrow: 1,
+                            minWidth: 200,
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#1b1b20',
+                                color: '#000',
+                                borderRadius: 1,
+                                height: 45,
+                            },
+                            '& input::placeholder': {
+                                color: '#a09ca8',
+                                opacity: 1,
+                            },
+                            '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#2c2c33',
+                            },
+                            }}
+                        />
+                        </Box>
+
+{/* Stock label input: Multiple select, free input
                         <Autocomplete
                             multiple
                             freeSolo
                             options={stockOptions}
                             value={searchTags}
                             onChange={(_, newTags, reason, details) => {
+                                
                                  // Update tag array
                                 setSearchTags(newTags as string[]);
                                 
@@ -240,48 +322,117 @@ const DashboardView: React.FC = () => {
                                   }}
                                 />
                             )}
-                        />
+                        /> */}
 
-                        {/* Global Time Selection */}
-                        {/* ToDo: Pass globalStart/globalEnd to each StockChartCard to initialize its own time range */}
-                        <Tooltip title="Start" arrow>
-                            <TextField
-                                type="datetime-local"
-                                variant="outlined"
-                                size="small"
-                                value={globalStart}
-                                onChange={e => setGlobalStart(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    ml: 2,
-                                    backgroundColor: '#fff',
-                                    input: { color: '#000' },
-                                    '& .MuiOutlinedInput-root': { height: 40 },
-                                    minWidth: 200,
-                                }}
-                        />
-                      </Tooltip>
+{/* Global Date Selection ------------------------------------------------------------------------------------------------*/}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                gap: 3,
+                                mt: 1,
+                                width: '100%',
+                                flexDirection: { xs: 'column', md: 'row' },
+                            }}
+                        >
+                            <Box sx={{ flex: 1 }}>
+                                <Typography
+                                    sx={{
+                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        fontSize: 15,
+                                        fontWeight: 300,
+                                        mb: 1,
+                                    }}
+                                >
+                                    Start Date
+                                </Typography>
+                                <Tooltip title="Start" arrow>
+                                    <TextField
+                                        fullWidth
+                                        type="date"
+                                        variant="outlined"
+                                        size="small"
+                                        value={globalStart}
+                                        onChange={e => setGlobalStart(e.target.value)}
 
-                      <Tooltip title="End" arrow>
-                        <TextField
-                                type="datetime-local"
-                                variant="outlined"
-                                size="small"
-                                value={globalEnd}
-                                onChange={e => setGlobalEnd(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    ml: 2,
-                                    backgroundColor: '#fff',
-                                    input: { color: '#000' },
-                                    '& .MuiOutlinedInput-root': { height: 40 },
-                                    minWidth: 200,
-                                }}
-                        />
-                      </Tooltip>
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                height: 45,
+                                                backgroundColor: '#1b1b20',
+                                                color: '#fff',
+                                                borderRadius: 2,
+                                                fontSize: 18,
+                                                '& fieldset': {
+                                                    borderColor: '#2c2c33',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#3a3a42',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#6d5dfc',
+                                                },
+                                            },
+                                            '& input': {
+                                                color: '#fff',
+                                            },
+                                            '& input::-webkit-calendar-picker-indicator': {
+                                                filter: 'invert(1)',
+                                            },
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
 
+                            <Box sx={{ flex: 1 }}>
+                                <Typography
+                                    sx={{
+                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        fontSize: 15,
+                                        fontWeight: 300,
+                                        mb: 1,
+                                    }}
+                                >
+                                    End Date
+                                </Typography>
+                                <Tooltip title="End" arrow>
+                                    <TextField
+                                        fullWidth
+                                        type="date"
+                                        variant="outlined"
+                                        size="small"
+                                        value={globalEnd}
+                                        onChange={e => setGlobalEnd(e.target.value)}
+
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                height: 45,
+                                                backgroundColor: '#1b1b20',
+                                                color: '#fff',
+                                                borderRadius: 2,
+                                                fontSize: 18,
+                                                '& fieldset': {
+                                                    borderColor: '#2c2c33',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#3a3a42',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#6d5dfc',
+                                                },
+                                            },
+                                            '& input': {
+                                                color: '#fff',
+                                            },
+                                            '& input::-webkit-calendar-picker-indicator': {
+                                                filter: 'invert(1)',
+                                            },
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                        </Box>
                     </Box>
 
+                    {/*Visulization Box--------------------------------------------------------------------------------------------------------------*/}
                     <div style={{ padding: '20px' }}>
                         <Grid container spacing={2}>
                             {/* Main Large Card */}
