@@ -5,6 +5,9 @@ import {
   Checkbox, FormControlLabel, Table, TableHead, TableRow, TableCell, TableBody, TableSortLabel,
   Pagination, Stack, TextField
 } from '@mui/material'
+import DownloadIcon from '@mui/icons-material/Download'
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { fetchTopPicks, TopPicksRow } from '@/services/topPicks'
 import { useAuth } from '@/components/authContext'
 import { loadTopPicksPrefs, saveTopPicksPrefs } from '@/services/topPicksPrefs'
@@ -13,18 +16,39 @@ type ColKey = keyof Pick<TopPicksRow,'symbol'|'name'|'ret1y'|'sharpe'|'sortino'|
 type ColumnDef = { key: ColKey|'rank'; label: string; align?: 'left'|'right'|'center'; format?: (v:any)=>string; width?: number|string; defaultVisible?: boolean }
 
 const COLS: ColumnDef[] = [
-  { key: 'rank', label: 'S.No.', align: 'right', width: 72, defaultVisible: true },
-  { key: 'name', label: 'Name', align: 'left', width: 220, defaultVisible: true },
-  { key: 'symbol', label: 'Symbol', align: 'left', width: 100, defaultVisible: true },
-  { key: 'ret1y', label: '1Y Return %', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
+  { key: 'rank', label: 'Rank', align: 'left', width: 88, defaultVisible: true },
+  { key: 'symbol', label: 'Symbol', align: 'left', width: 110, defaultVisible: true },
+  { key: 'name', label: 'Company', align: 'left', width: 220, defaultVisible: true },
+  { key: 'ret1y', label: '1Y Return', align: 'right', defaultVisible: true, format: n => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%` },
   { key: 'sharpe', label: 'Sharpe', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
   { key: 'sortino', label: 'Sortino', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
-  { key: 'volatility', label: 'Volatility %', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
-  { key: 'maxDD', label: 'Max DD %', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
-  { key: 'beta', label: 'Beta (SPY)', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
-  { key: 'alpha', label: "Jensen's α", align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
+  { key: 'volatility', label: 'Volatility', align: 'right', defaultVisible: true, format: n => `${n.toFixed(1)}%` },
+  { key: 'maxDD', label: 'Max DD', align: 'right', defaultVisible: true, format: n => `${n.toFixed(1)}%` },
+  { key: 'beta', label: 'Beta', align: 'right', defaultVisible: true, format: n => n.toFixed(2) },
+  { key: 'alpha', label: 'Alpha', align: 'right', defaultVisible: true, format: n => `${n >= 0 ? '+' : ''}${n.toFixed(1)}` },
   { key: 'infoRatio', label: 'Info Ratio', align: 'right', defaultVisible: true, format: n => n.toFixed(2) }
 ]
+
+const rankBadgeSx = (rank: number) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 32,
+  height: 32,
+  borderRadius: 2,
+  bgcolor: rank === 1 ? 'rgba(202, 138, 4, 0.35)' : rank === 2 ? 'rgba(75, 85, 99, 0.55)' : rank === 3 ? 'rgba(154, 52, 18, 0.45)' : '#202229',
+  color: rank === 1 ? '#fbbf24' : rank === 2 ? '#cbd5e1' : rank === 3 ? '#fb923c' : '#94a3b8',
+  fontWeight: 800,
+  fontSize: 15,
+})
+
+const valueColor = (key: ColumnDef['key'], value: unknown) => {
+  if (typeof value !== 'number') return '#f8fafc'
+  if (key === 'ret1y' || key === 'alpha') return value >= 0 ? '#00ff88' : '#ff4d4d'
+  if (key === 'maxDD') return '#ff4d4d'
+  if (key === 'volatility') return '#9db4d4'
+  return '#f8fafc'
+}
 
 type SortState = { key: Exclude<ColumnDef['key'],'rank'> & ColKey; dir: 'asc'|'desc' }
 const hasLS = () => typeof window !== 'undefined' && typeof localStorage !== 'undefined'
@@ -137,10 +161,68 @@ export default function TopPicksPage() {
           <Typography variant="h4" sx={{ color:'white', mb:.5 }}>Top Picks</Typography>
         </Box>
 
-        <Box sx={{ px:2, py:1, display:'flex', gap:1, alignItems:'center', justifyContent:'flex-end' }}>
-          <Button variant="outlined" onClick={exportCSV}>Export</Button>
-          <Button variant="outlined" onClick={()=>setColsOpen(true)}>Edit Columns</Button>
-          <Button variant="contained" onClick={()=>{setEmailSaved(false); setEmailOpen(true)}}>Get email updates</Button>
+        <Box sx={{ px:2, py:1, display:'flex', gap:1.5, alignItems:'center', justifyContent:'flex-end', flexWrap:'wrap' }}>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon fontSize="small" />}
+            onClick={exportCSV}
+            sx={{
+              bgcolor:'#17181d',
+              color:'#fff',
+              border:'1px solid #2a2d35',
+              borderRadius:2,
+              px:2,
+              py:1,
+              textTransform:'none',
+              fontWeight:700,
+              boxShadow:'none',
+              '&:hover': { bgcolor:'#202229', boxShadow:'none' },
+            }}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<SettingsOutlinedIcon fontSize="small" />}
+            onClick={()=>setColsOpen(true)}
+            sx={{
+              bgcolor:'#17181d',
+              color:'#fff',
+              border:'1px solid #2a2d35',
+              borderRadius:2,
+              px:2,
+              py:1,
+              textTransform:'none',
+              fontWeight:700,
+              boxShadow:'none',
+              '&:hover': { bgcolor:'#202229', boxShadow:'none' },
+            }}
+          >
+            Edit Columns
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<EmailOutlinedIcon fontSize="small" />}
+            onClick={()=>{setEmailSaved(false); setEmailOpen(true)}}
+            sx={{
+              color:'#fff',
+              borderRadius:2,
+              px:2,
+              py:1,
+              textTransform:'none',
+              fontWeight:700,
+              bgcolor:'#3b82f6',
+              backgroundImage:'linear-gradient(90deg, #3b82f6 0%, #9333ea 100%)',
+              boxShadow:'none',
+              '&:hover': {
+                bgcolor:'#2563eb',
+                backgroundImage:'linear-gradient(90deg, #2563eb 0%, #7e22ce 100%)',
+                boxShadow:'none',
+              },
+            }}
+          >
+            Email Updates
+          </Button>
         </Box>
 
         <Box sx={{ px:2, color:'#bdbdbd' }}>
@@ -148,13 +230,42 @@ export default function TopPicksPage() {
         </Box>
 
         <Box sx={{ p:2, pt:1 }}>
-          <Box sx={{ bgcolor:'#0f0f0f', border:'1px solid #444', borderRadius:1, overflow:'auto' }}>
-            <Table stickyHeader size="small">
+          <Box sx={{ bgcolor:'#09090b', border:'1px solid #24262d', borderRadius:2, overflow:'auto' }}>
+            <Table stickyHeader size="small" sx={{ minWidth: 1120, borderCollapse: 'separate', borderSpacing: 0 }}>
               <TableHead>
                 <TableRow>
                   {visibleCols.map(col=>(
-                    <TableCell key={col.key as string} align={col.align||'left'} sx={{ top:0, bgcolor:'#121212', color:'#ddd', fontWeight:600, whiteSpace:'nowrap' }}>
-                      <TableSortLabel active={col.key!=='rank' && sort.key===col.key} direction={col.key!=='rank' && sort.key===col.key?sort.dir:'asc'} onClick={()=>onHeaderClick(col.key)} sx={{ color:'inherit','&.Mui-active':{color:'inherit'} }}>
+                    <TableCell
+                      key={col.key as string}
+                      align={col.align||'left'}
+                      sx={{
+                        top:0,
+                        bgcolor:'#111114',
+                        color:'#fff',
+                        fontWeight:700,
+                        whiteSpace:'nowrap',
+                        borderBottom:'1px solid #282a30',
+                        py:1.8,
+                        px:2,
+                        width: col.width,
+                      }}
+                    >
+                      <TableSortLabel
+                        active={col.key!=='rank' && sort.key===col.key}
+                        direction={col.key!=='rank' && sort.key===col.key?sort.dir:'asc'}
+                        onClick={()=>onHeaderClick(col.key)}
+                        sx={{
+                          color:'inherit',
+                          '&:hover': { color:'#fff' },
+                          '&.Mui-active':{color:'#fff'},
+                          '& .MuiTableSortLabel-icon': {
+                            color:'#64748b !important',
+                          },
+                          '&.Mui-active .MuiTableSortLabel-icon': {
+                            color:'#3b82f6 !important',
+                          },
+                        }}
+                      >
                         {col.label}
                       </TableSortLabel>
                     </TableCell>
@@ -163,11 +274,44 @@ export default function TopPicksPage() {
               </TableHead>
               <TableBody>
                 {paged.map((r,i)=>(
-                  <TableRow key={r.symbol} hover>
+                  <TableRow
+                    key={r.symbol}
+                    hover
+                    sx={{
+                      '&:hover td': {
+                        bgcolor:'rgba(255,255,255,0.03)',
+                      },
+                    }}
+                  >
                     {visibleCols.map(col=>{
-                      if(col.key==='rank') return <TableCell key="rank" align="right" sx={{ color:'#e0e0e0' }}>{startIdx+i+1}</TableCell>
+                      const rank = startIdx+i+1
+                      if(col.key==='rank') return (
+                        <TableCell
+                          key="rank"
+                          align="left"
+                          sx={{ borderBottom:'1px solid #24262d', py:2, px:2 }}
+                        >
+                          <Box component="span" sx={rankBadgeSx(rank)}>{rank}</Box>
+                        </TableCell>
+                      )
                       const val=(r as any)[col.key]; const txt=col.format?col.format(val):String(val)
-                      return <TableCell key={col.key as string} align={col.align||'left'} sx={{ color:'#e0e0e0', whiteSpace:'nowrap' }}>{txt}</TableCell>
+                      return (
+                        <TableCell
+                          key={col.key as string}
+                          align={col.align||'left'}
+                          sx={{
+                            color: col.key === 'symbol' ? '#2f9bff' : valueColor(col.key, val),
+                            whiteSpace:'nowrap',
+                            borderBottom:'1px solid #24262d',
+                            py:2,
+                            px:2,
+                            fontWeight: col.key === 'symbol' ? 500 : 600,
+                            fontSize: col.key === 'symbol' ? 16 : 14,
+                          }}
+                        >
+                          {txt}
+                        </TableCell>
+                      )
                     })}
                   </TableRow>
                 ))}

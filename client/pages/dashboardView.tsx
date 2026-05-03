@@ -63,26 +63,62 @@ const DashboardView: React.FC = () => {
         )
     );
 
+    useEffect(() => {
+        setCardSettings(prev =>
+            prev.map(settings => {
+                if (
+                    settings.dateRange.start === globalStart &&
+                    settings.dateRange.end === globalEnd
+                ) {
+                    return settings
+                }
+
+                return {
+                    ...settings,
+                    dateRange: { start: globalStart, end: globalEnd },
+                }
+            })
+        )
+    }, [globalStart, globalEnd])
+
+    const userId = user?.id;
+
      useEffect(() => {
-        setPrefsLoaded(false)               
-        setSearchTags([])                     
-        setSelectedStocks([])
+        if (loading) {
+            setPrefsLoaded(false);
+            return;
+        }
 
-        if (loading || !user) return;
+        if (!userId) {
+            setPrefsLoaded(false);
+            setSearchTags([]);
+            setSelectedStocks([]);
+            return;
+        }
+
+        let cancelled = false;
+        setPrefsLoaded(false);
+
         (async () => {
-        const cfg = await loadPortfolioConfig(user.id)
-        const tags = cfg?.tags ?? []
-        setSearchTags(tags)
+            const cfg = await loadPortfolioConfig(userId);
+            if (cancelled) return;
 
-        setSelectedStocks(prev => {
-            if (prev.length === tags.length && prev.every((v, i) => v === tags[i])) {
-                return prev
-            }
-            return tags
-        })
-        setPrefsLoaded(true)               
-        })()
-    }, [loading, user])
+            const tags = cfg?.tags ?? [];
+            setSearchTags(tags);
+
+            setSelectedStocks(prev => {
+                if (prev.length === tags.length && prev.every((v, i) => v === tags[i])) {
+                    return prev;
+                }
+                return tags;
+            });
+            setPrefsLoaded(true);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [loading, userId]);
 
     const handleSelectStock = (stock: string) => {
         setSelectedStocks(prev => {
@@ -142,12 +178,12 @@ const DashboardView: React.FC = () => {
 
     const stockOptions = Object.keys(stockDataMap);
     useEffect(() => {
-        if (!user || !prefsLoaded) return
+        if (!userId || !prefsLoaded) return
         const h = setTimeout(() => {
-        savePortfolioConfig(user.id, { tags: searchTags }).catch(console.error)
+        savePortfolioConfig(userId, { tags: searchTags }).catch(console.error)
         }, 600)
         return () => clearTimeout(h)
-    }, [user, prefsLoaded, searchTags]) 
+    }, [userId, prefsLoaded, searchTags]) 
 
     return (
         <div>
@@ -192,7 +228,7 @@ const DashboardView: React.FC = () => {
                         </Typography>
 
 
-{/* Search Bar UI only ------------------------------------------------------------------------------------------*/}
+{/* Search Bar UI only ---------------------------------------------------------------------------------------------------*/}
                         <Typography
                             variant="h5"
                             sx={{ 
@@ -205,88 +241,69 @@ const DashboardView: React.FC = () => {
                             Select Stocks
                         </Typography>
 
-                        <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            flexGrow: 1,
-                        }}
-                        >
-                    
-                        <TextField
-                            placeholder={`Add stock (${searchTags.length}/5)`}
-                            size="small"
-                            variant="outlined"
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            sx={{
-                            flexGrow: 1,
-                            minWidth: 200,
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: '#1b1b20',
-                                color: '#000',
-                                borderRadius: 1,
-                                height: 45,
-                            },
-                            '& input::placeholder': {
-                                color: '#a09ca8',
-                                opacity: 1,
-                            },
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#2c2c33',
-                            },
-                            }}
-                        />
-                        </Box>
 
-{/* Stock label input: Multiple select, free input
                         <Autocomplete
                             multiple
                             freeSolo
+                            filterSelectedOptions
                             options={stockOptions}
                             value={searchTags}
-                            onChange={(_, newTags, reason, details) => {
-                                
-                                 // Update tag array
-                                setSearchTags(newTags as string[]);
-                                
-                                // Stock start selected
-                                if (reason === 'selectOption') {
-                                    const selected = details?.option as string;
-                                    if (!selectedStocks.includes(selected)) {
-                                        setSelectedStocks([...selectedStocks, selected]);
-                                    }
-                                }
-                                // If delete tag, clean the state
-                                else if (reason === 'removeOption' && details?.option) {
-                                    const removed = details.option as string;
-                                    const newStocks = selectedStocks.filter(s => s !== removed);
-                                    if (newStocks.length !== selectedStocks.length) {
-                                        setSelectedStocks(newStocks);
-                                    }
-                                }
+                            onChange={(_, newTags) => {
+                                const normalizedTags = Array.from(
+                                    new Set(
+                                        newTags
+                                            .map(tag => String(tag).trim().toUpperCase())
+                                            .filter(Boolean)
+                                    )
+                                ).slice(0, 5);
+
+                                setSearchTags(normalizedTags);
+                                setSelectedStocks(prev => {
+                                    const stillSelected = prev.filter(stock => normalizedTags.includes(stock));
+                                    const newlyAdded = normalizedTags.filter(stock => !searchTags.includes(stock));
+                                    return Array.from(new Set([...stillSelected, ...newlyAdded]));
+                                });
                             }}
                             sx={{
                                 flexGrow: 1,
                                 minWidth: 200,
                                 '& .MuiAutocomplete-inputRoot': {
-                                  flexWrap: 'wrap',
+                                    flexWrap: 'wrap',
+                                    gap: 0.5,
+                                    minHeight: 45,
+                                    backgroundColor: '#1b1b20',
+                                    color: '#fff',
+                                    borderRadius: 1,
+                                    py: 0.5,
+                                    pl: 1,
                                 },
-                              }}
-                  
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': {
+                                        borderColor: '#2c2c33',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#3a3a42',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#6d5dfc',
+                                    },
+                                },
+                                '& input': {
+                                    color: '#fff',
+                                },
+                                '& input::placeholder': {
+                                    color: '#a09ca8',
+                                    opacity: 1,
+                                },
+                            }}
                             renderTags={(value, getTagProps) =>
                                 value.map((option, idx) => {
                                     const tagProps = getTagProps({ index: idx });
                                     const isSelected = selectedStocks.includes(option);
+
                                     return(
                                         <Chip
-                                            {...tagProps}   
+                                            {...tagProps}
                                             key={option}
                                             label={option}
                                             size="small"
@@ -294,10 +311,18 @@ const DashboardView: React.FC = () => {
                                             sx={{
                                                 mr: 0.5,
                                                 cursor: 'pointer',
-                                                bgcolor: isSelected ? '#800080' : '#ddd',
-                                                color: isSelected ? '#fff' : '#000',
+                                                bgcolor: isSelected ? '#6d5dfc' : '#2c2c33',
+                                                color: isSelected ? '#fff' : '#a09ca8',
+                                                border: '1px solid',
+                                                borderColor: isSelected ? '#8c80ff' : '#3a3a42',
                                                 '&:hover': {
-                                                    bgcolor: isSelected ? '#9a0f9a' : '#ccc',
+                                                    bgcolor: isSelected ? '#7b6cff' : '#35353d',
+                                                },
+                                                '& .MuiChip-deleteIcon': {
+                                                    color: isSelected ? '#d8d4ff' : '#8b8794',
+                                                    '&:hover': {
+                                                        color: '#fff',
+                                                    },
                                                 },
                                             }}
                                         />
@@ -306,23 +331,25 @@ const DashboardView: React.FC = () => {
                             }
                             renderInput={(params) => (
                                 <TextField
-                                {...params}
-                                placeholder="Search Stocks…"
-                                size="small"
-                                variant="outlined"
-                                InputProps={{
-                                    ...params.InputProps,
-                                    style: {
-                                      backgroundColor: 'white',
-                                      color: '#000',
-                                    },
-                                  }}
-                                  sx={{
-                                    minWidth: 150,
-                                  }}
+                                    {...params}
+                                    placeholder={searchTags.length >= 5 ? 'Maximum 5 stocks' : `Add stock (${searchTags.length}/5)`}
+                                    size="small"
+                                    variant="outlined"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: (
+                                            <>
+                                                <InputAdornment position="start">
+                                                    <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
+                                                </InputAdornment>
+                                                {params.InputProps.startAdornment}
+                                            </>
+                                        ),
+                                    }}
                                 />
                             )}
-                        /> */}
+                        />
+
 
 {/* Global Date Selection ------------------------------------------------------------------------------------------------*/}
                         <Box
@@ -432,7 +459,7 @@ const DashboardView: React.FC = () => {
                         </Box>
                     </Box>
 
-                    {/*Visulization Box--------------------------------------------------------------------------------------------------------------*/}
+{/*Visulization Box--------------------------------------------------------------------------------------------------------------*/}
                     <div style={{ padding: '20px' }}>
                         <Grid container spacing={2}>
                             {/* Main Large Card */}
@@ -447,9 +474,8 @@ const DashboardView: React.FC = () => {
                                     onActivate={handleActivate}
                                     onUpdateSettings={handleCardSettingsUpdate}
                                     height={816}
-                                    // TODO: As each card initial start/endDate
-                                    defaultStart={globalStart}
-                                    defaultEnd={globalEnd} color={''}                                />
+                                    variant="main"
+                                />
                             </Grid>
 
                             {/* Vertical Stack of Cards */}
@@ -466,8 +492,8 @@ const DashboardView: React.FC = () => {
                                                 onSwap={handleSwap}
                                                 onActivate={handleActivate}
                                                 onUpdateSettings={handleCardSettingsUpdate}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd} color={''}                                            />
+                                                variant="main"
+                                            />
                                         </Grid>
                                     ))}
                                 </Grid>
@@ -487,8 +513,8 @@ const DashboardView: React.FC = () => {
                                                 onSwap={handleSwap}
                                                 onActivate={handleActivate}
                                                 onUpdateSettings={handleCardSettingsUpdate}
-                                                defaultStart={globalStart}
-                                                defaultEnd={globalEnd} color={''}                                            />
+                                                variant="main"
+                                            />
                                         </Grid>
                                     ))}
                                 </Grid>

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Select, Tooltip } from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
 import LineGraph from './linegraph';
-import GraphSettingsModal, {GraphSettings} from './graphSettingsModal';
+import GraphSettingsModal, {GraphSettings, MetricType} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
 import { CardSettings } from '@/pages/dashboardView';
 import ScatterPlotGraph from './scatterplot';
@@ -116,6 +119,19 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
     MSFT: microsoftOHLCData,
   };
 
+const metricOptions: { value: MetricType; label: string }[] = [
+  { value: 'BetaAnalysis', label: 'Beta Analysis' },
+  { value: 'AlphaComparison', label: 'Alpha Comparison' },
+  { value: 'MaxDrawdownAnalysis', label: 'Max Drawdown' },
+  { value: 'CumulativeReturnComparison', label: 'Cumulative Return' },
+  { value: 'SortinoRatioVisualization', label: 'Sortino Ratio' },
+  { value: 'MarketCorrelationAnalysis', label: 'Market Correlation' },
+  { value: 'SharpeRatioMatrix', label: 'Sharpe Ratio' },
+  { value: 'VolatilityAnalysis', label: 'Volatility' },
+  { value: 'ValueAtRiskAnalysis', label: 'Value at Risk' },
+  { value: 'EfficientFrontierVisualization', label: 'Efficient Frontier' },
+];
+
 interface StockChartCardProps {
   index: number;
   selectedStocks: string[];
@@ -126,10 +142,8 @@ interface StockChartCardProps {
   onActivate: (index: number) => void;
   onUpdateSettings: (index: number, settings: CardSettings) => void;
   height?: number;
-  defaultStart: string;
-  defaultEnd: string;
-  color: string;
   showSwap?: boolean;
+  variant?: 'default' | 'main';
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -142,10 +156,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   onActivate,
   onUpdateSettings,
   height = 400,
-  defaultStart,
-  defaultEnd,
-  color,
   showSwap = true,
+  variant = 'default',
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height });
@@ -161,6 +173,16 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
+
+  const handleMetricSelect = (nextMetricType: MetricType) => {
+    onUpdateSettings(index, {
+      ...cardSettings,
+      metricType: nextMetricType,
+      graphMade: true,
+    });
+
+    onActivate(index);
+  };
 
   const handleApplySettings = async (settings: GraphSettings) => {
     
@@ -345,6 +367,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
+  const isMainVariant = variant === 'main';
 
   // render
   return (
@@ -358,12 +381,93 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         height:   isFullscreen ? '100vh' : height,
         bgcolor:  '#111',
         border:   '1px solid #555',
+        borderRadius: isMainVariant ? 2 : 0,
         p:        '1rem',
         overflow: 'hidden',
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
     >
+      {isMainVariant && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            right: 16,
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+            <Select
+              size="small"
+              value={metricType}
+              renderValue={(value) =>
+                graphMade
+                  ? metricOptions.find(option => option.value === value)?.label
+                  : 'Select Metric'
+              }
+              sx={{
+                height: 38,
+                minWidth: 174,
+                color: '#fff',
+                fontSize: 14,
+                borderRadius: 1,
+                '.MuiSelect-icon': { color: '#fff' },
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2f80ff',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#5b9cff',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2f80ff',
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    bgcolor: '#15151a',
+                    color: '#fff',
+                  },
+                },
+              }}
+            >
+              {metricOptions.map(option => (
+                <MenuItem
+                  key={option.value}
+                  value={option.value}
+                  onClick={() => handleMetricSelect(option.value)}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            <Box sx={{ color: '#8d93a1', fontSize: 13, whiteSpace: 'nowrap' }}>
+              {selectedStocks.length} stocks
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
+              <IconButton size="small" onClick={handleFullscreenToggle} sx={{ color: '#9aa0aa' }}>
+                {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Clear" arrow>
+              <IconButton size="small" onClick={() => onClear(index)} sx={{ color: '#9aa0aa' }}>
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+      )}
+
           {/* controls */}
+          {!isMainVariant && (
           <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
             {showSwap && (
               <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
@@ -376,11 +480,13 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             ⚙︎
           </Button>
         </Box>
+          )}
+      <Box sx={{ pt: isMainVariant ? 7 : 0, height: '100%' }}>
       {showGraph ? (
         <>
           {chart}
       </>
-      ) : (
+      ) : !isMainVariant ? (
         <Button
         variant="contained"
         onClick={() => setShowSettings(true)}
@@ -402,7 +508,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       >
         +
       </Button>
-    )}
+    ) : null}
+      </Box>
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
