@@ -89,13 +89,13 @@ const Sidebar: React.FC = () => {
             <li className="hoverable" onClick={() => navigateToPage('/')}>
               <Image src={logo} alt="Logo" width={25} height={25} />
             </li>
-            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
           </ul>
         </div>
 
         {/* Middle */}
         <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
             {Item('/TopPicks', 'bx-up-arrow-circle', 'Top Picks')}
             {Item('/MarketNews', 'bx-news', 'Market News')}
             {Item('/Watchlist', 'bx-list-ul', 'Watchlist')}

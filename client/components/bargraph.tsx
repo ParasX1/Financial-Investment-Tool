@@ -47,7 +47,7 @@ interface BarGraphProps {
     useEffect(() => {
         const t = 30;
         const r = 30;
-        const b = 30;
+        const b = 58;
         const l = 50;
         const margin = {t,r,b,l};
         const graphWidth = width- l - r;
@@ -167,7 +167,9 @@ interface BarGraphProps {
     yAxis.selectAll('.tick line')
         .attr('stroke', AXIS_COLOR)
         .attr('stroke-dasharray', '3 4');
-    xAxis.selectAll('text').attr('fill', TEXT_COLOR);
+    xAxis.selectAll('text')
+        .attr('fill', TEXT_COLOR)
+        .attr('font-size', 16);
     yAxis.selectAll('text').attr('fill', TEXT_COLOR);
 
         

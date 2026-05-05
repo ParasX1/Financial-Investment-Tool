@@ -33,10 +33,10 @@ const rankBadgeSx = (rank: number) => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: 32,
-  height: 32,
-  borderRadius: 2,
-  bgcolor: rank === 1 ? 'rgba(202, 138, 4, 0.35)' : rank === 2 ? 'rgba(75, 85, 99, 0.55)' : rank === 3 ? 'rgba(154, 52, 18, 0.45)' : '#202229',
+  width: rank <= 3 ? 32 : 'auto',
+  height: rank <= 3 ? 32 : 'auto',
+  borderRadius: rank <= 3 ? 2 : 0,
+  bgcolor: rank === 1 ? 'rgba(202, 138, 4, 0.35)' : rank === 2 ? 'rgba(75, 85, 99, 0.55)' : rank === 3 ? 'rgba(154, 52, 18, 0.45)' : 'transparent',
   color: rank === 1 ? '#fbbf24' : rank === 2 ? '#cbd5e1' : rank === 3 ? '#fb923c' : '#94a3b8',
   fontWeight: 800,
   fontSize: 15,
@@ -48,6 +48,11 @@ const valueColor = (key: ColumnDef['key'], value: unknown) => {
   if (key === 'maxDD') return '#ff4d4d'
   if (key === 'volatility') return '#9db4d4'
   return '#f8fafc'
+}
+
+const sortableValue = (value: unknown) => {
+  const n = Number(value)
+  return Number.isNaN(n) ? Number.NEGATIVE_INFINITY : n
 }
 
 type SortState = { key: Exclude<ColumnDef['key'],'rank'> & ColKey; dir: 'asc'|'desc' }
@@ -111,9 +116,9 @@ export default function TopPicksPage() {
   const sorted = useMemo(()=>{
     const out=[...rows]
     out.sort((a,b)=>{
-      const av=a[sort.key], bv=b[sort.key]
+      const av=sortableValue(a[sort.key]), bv=sortableValue(b[sort.key])
       if(av===bv) return 0
-      const cmp=(av as any)<(bv as any)?-1:1
+      const cmp=av<bv?-1:1
       return sort.dir==='asc'?cmp:-cmp
     })
     return out
@@ -158,7 +163,29 @@ export default function TopPicksPage() {
       <Sidebar />
       <Box sx={{ flex:1, pl:'50px', bgcolor:'black' }}>
         <Box sx={{ px:2, pt:2 }}>
-          <Typography variant="h4" sx={{ color:'white', mb:.5 }}>Top Picks</Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              color:'white',
+              fontWeight:600,
+              fontSize:35,
+              lineHeight:1.1,
+              mb:.5,
+            }}
+          >
+            Top Picks
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color:'rgba(255, 255, 255, 0.65)',
+              fontWeight:300,
+              fontSize:15,
+              mt:0,
+            }}
+          >
+            Ranked stocks based on risk-adjusted performance metrics
+          </Typography>
         </Box>
 
         <Box sx={{ px:2, py:1, display:'flex', gap:1.5, alignItems:'center', justifyContent:'flex-end', flexWrap:'wrap' }}>
@@ -275,7 +302,7 @@ export default function TopPicksPage() {
               <TableBody>
                 {paged.map((r,i)=>(
                   <TableRow
-                    key={r.symbol}
+                    key={`${r.symbol}-${startIdx+i}`}
                     hover
                     sx={{
                       '&:hover td': {
