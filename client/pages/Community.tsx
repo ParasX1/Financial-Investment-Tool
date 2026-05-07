@@ -2,31 +2,57 @@
 
 import * as React from "react";
 import Sidebar from "@/components/sidebar";
+import communityStyles from "@/styles/community.module.css";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Supabase init (accepts NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_ANON)
-──────────────────────────────────────────────────────────────────────────── */
 function getSupabaseClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     (process.env as any).NEXT_PUBLIC_ANON ||
     "";
+
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: true } });
 }
-const supabase = getSupabaseClient();
 
+const supabase = getSupabaseClient();
 const COMMENT_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Types
-──────────────────────────────────────────────────────────────────────────── */
-type SeedPost = { id: string; user: string; title: string; votes: number; time: string };
-type DBPost = { id: string; title: string; votes: number; created_at: string; author_id: string | null };
-type PostUI = { id: string; user: string; title: string; votes: number; time: string; fromDB?: boolean };
+type SeedPost = {
+  id: string;
+  user: string;
+  initials: string;
+  title: string;
+  body: string;
+  votes: number;
+  time: string;
+  sortTime: number;
+  tags: string[];
+  commentCount: number;
+  avatarGradient: string;
+};
+
+type DBPost = {
+  id: string;
+  title: string;
+  votes: number;
+  created_at: string;
+  author_id: string | null;
+};
+
+type PostUI = SeedPost & {
+  fromDB?: boolean;
+};
 
 type CommentRow = {
   id: string;
@@ -45,31 +71,176 @@ type CommentUI = {
   imageUrl?: string;
 };
 
-type NewComment = { text: string; file?: File | null; previewUrl?: string | null };
+type NewComment = {
+  text: string;
+  file?: File | null;
+  previewUrl?: string | null;
+};
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Seeded demo posts (display only)
-──────────────────────────────────────────────────────────────────────────── */
+const now = Date.now();
+
 const DEMO_POSTS: SeedPost[] = [
-  { id: "a", user: "user A", title: "Far too many people are pursuing a career in finance", votes: 936, time: "1d ago" },
-  { id: "b", user: "user B", title: "Finance Bro Starterpack", votes: 354, time: "6y ago" },
-  { id: "c", user: "user C", title: "Should have studied finance", votes: 8500, time: "4mo ago" },
-  { id: "d", user: "user D", title: "9 years into my finance career. How to make more money?", votes: 166, time: "1y ago" },
+  {
+    id: "demo-quant-queen",
+    user: "QuantQueen",
+    initials: "QQ",
+    title: "Backtesting Results: Momentum + Mean Reversion Hybrid",
+    body:
+      "Ran a 10-year backtest on a combined momentum and mean reversion strategy. Sharpe ratio of 2.1 with max drawdown under 15%. Details inside...",
+    votes: 426,
+    time: "2 days ago",
+    sortTime: now - 1000 * 60 * 60 * 24 * 2,
+    tags: ["Quantitative", "Backtesting", "Strategy"],
+    commentCount: 117,
+    avatarGradient: "linear-gradient(135deg, #3158ff 0%, #9333ea 100%)",
+  },
+  {
+    id: "demo-tech-bull",
+    user: "TechBull",
+    initials: "TB",
+    title: "Portfolio Review: My Tech-Heavy Strategy for 2026",
+    body:
+      "Sharing my current portfolio allocation and reasoning. 70% tech, 20% growth, 10% cash. Open to feedback and discussion.",
+    votes: 312,
+    time: "1 day ago",
+    sortTime: now - 1000 * 60 * 60 * 24,
+    tags: ["Portfolio", "Technology", "Strategy"],
+    commentCount: 94,
+    avatarGradient: "linear-gradient(135deg, #2563eb 0%, #a855f7 100%)",
+  },
+  {
+    id: "demo-investor-pro",
+    user: "InvestorPro",
+    initials: "IP",
+    title: "Deep Dive: Why NVDA's Valuation is Still Justified",
+    body:
+      "After analyzing the latest earnings report and forward guidance, I believe NVDA's current P/E ratio is sustainable given their AI dominance. Here's my analysis...",
+    votes: 247,
+    time: "3 hours ago",
+    sortTime: now - 1000 * 60 * 60 * 3,
+    tags: ["NVDA", "Analysis", "AI"],
+    commentCount: 68,
+    avatarGradient: "linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)",
+  },
+  {
+    id: "demo-value-hunter",
+    user: "ValueHunter",
+    initials: "VH",
+    title: "Small Cap Watchlist: Three Names With Strong Cash Flow",
+    body:
+      "Screened for low leverage, widening margins, and insider ownership. These are not recommendations, but the setup is worth a closer look.",
+    votes: 189,
+    time: "6 hours ago",
+    sortTime: now - 1000 * 60 * 60 * 6,
+    tags: ["Small Cap", "Valuation", "Watchlist"],
+    commentCount: 42,
+    avatarGradient: "linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%)",
+  },
 ];
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Small UI helpers
-──────────────────────────────────────────────────────────────────────────── */
 function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
+
 function initials(name: string) {
-  return (name?.trim()?.split(/\s+/).map(w => w[0]).slice(0, 2).join("") || "?").toUpperCase();
+  return (
+    name
+      ?.trim()
+      ?.split(/\s+/)
+      .map((word) => word[0])
+      .slice(0, 2)
+      .join("") || "?"
+  ).toUpperCase();
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Comment form
-──────────────────────────────────────────────────────────────────────────── */
+function toRelativeTime(value: string) {
+  const date = new Date(value).getTime();
+  if (Number.isNaN(date)) return value;
+
+  const diff = Math.max(0, Date.now() - date);
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+
+  return new Date(value).toLocaleDateString();
+}
+
+function splitPostCopy(raw: string) {
+  const clean = raw.trim().replace(/\s+/g, " ");
+  if (!clean) {
+    return {
+      title: "Untitled discussion",
+      body: "Open for feedback and discussion.",
+    };
+  }
+
+  if (clean.length <= 92) {
+    return {
+      title: clean,
+      body: "Open for feedback and discussion from the community.",
+    };
+  }
+
+  return {
+    title: `${clean.slice(0, 89).trim()}...`,
+    body: clean,
+  };
+}
+
+function inferTags(text: string) {
+  const lower = text.toLowerCase();
+  const tags: string[] = [];
+
+  if (lower.includes("portfolio")) tags.push("Portfolio");
+  if (lower.includes("strategy")) tags.push("Strategy");
+  if (lower.includes("nvda") || lower.includes("nvidia")) tags.push("NVDA");
+  if (lower.includes("ai")) tags.push("AI");
+  if (lower.includes("backtest")) tags.push("Backtesting");
+  if (lower.includes("valuation")) tags.push("Valuation");
+  if (lower.includes("cash")) tags.push("Cash Flow");
+
+  return tags.length ? tags.slice(0, 3) : ["Discussion", "Market View"];
+}
+
+function postFromRow(row: DBPost): PostUI {
+  const copy = splitPostCopy(row.title);
+  const user = row.author_id ? "You" : "Guest";
+
+  return {
+    id: row.id,
+    user,
+    initials: initials(user),
+    title: copy.title,
+    body: copy.body,
+    votes: row.votes ?? 0,
+    time: toRelativeTime(row.created_at),
+    sortTime: new Date(row.created_at).getTime(),
+    tags: inferTags(row.title),
+    commentCount: 0,
+    avatarGradient: "linear-gradient(135deg, #1d4ed8 0%, #9333ea 100%)",
+    fromDB: true,
+  };
+}
+
+function CommunityNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg bg-blue-500/10 px-4 py-3 text-sm text-blue-100",
+        communityStyles.noticeBorder
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function CommentForm({
   onSubmit,
   busy = false,
@@ -80,7 +251,7 @@ function CommentForm({
   const [text, setText] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [dragOver, setDragOver] = React.useState(false);
+  const fileInput = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(
     () => () => {
@@ -89,100 +260,112 @@ function CommentForm({
     [previewUrl]
   );
 
-  function handleFile(f?: File | null) {
-    if (!f) {
+  function handleFile(nextFile?: File | null) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+    if (!nextFile) {
       setFile(null);
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       return;
     }
-    setFile(f);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(f));
+
+    setFile(nextFile);
+    setPreviewUrl(URL.createObjectURL(nextFile));
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
     if (!text.trim()) return;
+
     await onSubmit({ text: text.trim(), file, previewUrl });
     setText("");
     handleFile(null);
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form
+      onSubmit={submit}
+      className={cn("rounded-lg bg-[#0d0e13] p-3", communityStyles.softBorder)}
+    >
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Write a comment…"
+        onChange={(event) => setText(event.target.value)}
+        placeholder="Add to the discussion..."
         rows={3}
         className={cn(
-          "w-full rounded-md border border-zinc-800 bg-zinc-900/80 p-3 text-sm",
-          "placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
+          "w-full resize-none rounded-md bg-[#16171d] px-3 py-3 text-sm text-slate-100",
+          communityStyles.softBorder,
+          "placeholder:text-slate-500 focus:border-blue-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         )}
       />
-      <div
-        className={cn(
-          "rounded-md border border-dashed p-3 text-sm",
-          dragOver ? "border-fuchsia-500/70 bg-fuchsia-500/5" : "border-zinc-800 bg-zinc-900/40"
-        )}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          const f = e.dataTransfer.files?.[0];
-          if (f) handleFile(f);
-        }}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFile(e.currentTarget.files?.[0] ?? null)}
-            />
-            <span className="rounded-md bg-zinc-800 px-3 py-1.5 text-xs hover:bg-zinc-700">Upload image</span>
-            <span className="text-zinc-400">(optional)</span>
-          </label>
-          {previewUrl ? (
+
+      {previewUrl ? (
+        <div
+          className={cn(
+            "mt-3 overflow-hidden rounded-md bg-black/30",
+            communityStyles.softBorder
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewUrl}
+            alt="Selected comment attachment"
+            className="max-h-60 w-full object-contain"
+          />
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => handleFile(event.currentTarget.files?.[0] ?? null)}
+        />
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            className="grid h-9 w-9 place-items-center rounded-md text-slate-400 transition hover:bg-white/5 hover:text-slate-100"
+            title="Attach image"
+            aria-label="Attach image"
+          >
+            <ImageOutlinedIcon fontSize="small" />
+          </button>
+
+          {file ? (
             <button
               type="button"
               onClick={() => handleFile(null)}
-              className="text-xs text-zinc-300 underline hover:text-white"
+              className={cn(
+                "inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-300 transition hover:border-rose-400/50 hover:text-rose-200",
+                communityStyles.softBorder
+              )}
+              title="Remove attachment"
             >
-              Remove image
+              <span className="truncate">{file.name}</span>
+              <CloseRoundedIcon sx={{ fontSize: 15 }} />
             </button>
           ) : null}
         </div>
-        {previewUrl ? (
-          <div className="mt-3 overflow-hidden rounded-md border border-zinc-800">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Selected" className="max-h-60 w-full object-contain" />
-          </div>
-        ) : null}
-      </div>
 
-      <div className="flex items-center justify-end gap-2">
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || !text.trim()}
           className={cn(
-            "rounded-md bg-fuchsia-600 px-4 py-2 text-sm font-medium text-white",
-            "disabled:cursor-not-allowed disabled:opacity-60 hover:bg-fuchsia-500"
+            "inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition",
+            "hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           )}
         >
-          {busy ? "Posting…" : "Post comment"}
+          <SendRoundedIcon sx={{ fontSize: 16 }} />
+          {busy ? "Posting" : "Reply"}
         </button>
       </div>
     </form>
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Comment list (with delete)
-──────────────────────────────────────────────────────────────────────────── */
 function CommentList({
   items,
   onDelete,
@@ -190,40 +373,68 @@ function CommentList({
   items: CommentUI[];
   onDelete?: (id: string) => Promise<void> | void;
 }) {
-  if (!items.length)
+  if (!items.length) {
     return (
-      <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-4 text-sm text-zinc-400">
-        No comments yet. Be the first!
+      <div
+        className={cn(
+          "rounded-lg bg-[#0d0e13] px-4 py-4 text-sm text-slate-400",
+          communityStyles.softBorder
+        )}
+      >
+        No comments yet.
       </div>
     );
+  }
+
   return (
     <ul className="space-y-3">
-      {items.map((c) => (
-        <li key={c.id} className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3">
-          <div className="mb-1 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <div className="grid h-6 w-6 place-items-center rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-200">
-                {initials(c.user)}
+      {items.map((comment) => (
+        <li
+          key={comment.id}
+          className={cn("rounded-lg bg-[#0d0e13] p-4", communityStyles.softBorder)}
+        >
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-slate-400">
+              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#20222b] text-[11px] font-bold text-slate-200">
+                {initials(comment.user)}
               </div>
-              <span className="text-zinc-300">{c.user}</span>
-              <span aria-hidden>·</span>
-              <time dateTime={c.createdAt}>{new Date(c.createdAt).toLocaleString()}</time>
+              <span className="truncate font-semibold text-slate-200">{comment.user}</span>
+              <span aria-hidden className="text-slate-600">
+                *
+              </span>
+              <time dateTime={comment.createdAt}>{toRelativeTime(comment.createdAt)}</time>
             </div>
+
             {onDelete ? (
               <button
-                className="text-xs text-zinc-400 hover:text-rose-300"
-                onClick={() => onDelete(c.id)}
+                type="button"
+                onClick={() => onDelete(comment.id)}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-200"
                 title="Delete comment"
+                aria-label="Delete comment"
               >
-                Delete
+                <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
               </button>
             ) : null}
           </div>
-          <p className="whitespace-pre-wrap text-sm text-zinc-100">{c.text}</p>
-          {c.imageUrl ? (
-            <div className="mt-2 overflow-hidden rounded-md border border-zinc-800 bg-black/20">
+
+          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+            {comment.text}
+          </p>
+
+          {comment.imageUrl ? (
+            <div
+              className={cn(
+                "mt-3 overflow-hidden rounded-md bg-black/30",
+                communityStyles.softBorder
+              )}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.imageUrl} alt="Comment attachment" className="max-h-80 w-full object-contain" />
+              <img
+                src={comment.imageUrl}
+                alt="Comment attachment"
+                className="max-h-80 w-full object-contain"
+              />
             </div>
           ) : null}
         </li>
@@ -232,18 +443,15 @@ function CommentList({
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   A single post card
-──────────────────────────────────────────────────────────────────────────── */
 function PostCard({
-  p,
+  post,
   comments,
   count,
   onAddComment,
   onDeleteComment,
   onDeletePost,
 }: {
-  p: PostUI;
+  post: PostUI;
   comments: CommentUI[];
   count: number;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
@@ -254,65 +462,100 @@ function PostCard({
   const [busy, setBusy] = React.useState(false);
 
   return (
-    <article className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 shadow transition hover:shadow-lg">
-      <div className="flex items-start gap-4">
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-sky-500 text-white font-bold">
-          {initials(p.user)}
+    <article
+      className={cn(
+        "rounded-xl bg-[#07080b] px-5 py-6 transition duration-200 hover:border-[#34384a] sm:px-7",
+        communityStyles.panelBorder
+      )}
+    >
+      <div className="grid gap-4 sm:grid-cols-[54px_minmax(0,1fr)] sm:gap-5">
+        <div className="flex items-center gap-3 sm:flex-col sm:items-start">
+          <div className="grid h-9 w-9 place-items-center rounded-md text-slate-400">
+            <ThumbUpOffAltRoundedIcon sx={{ fontSize: 24 }} />
+          </div>
+          <div className="min-w-[44px] text-center text-sm font-bold text-white sm:text-left">
+            {post.votes.toLocaleString()}
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-400">
-            <span>
-              Posted by <span className="text-zinc-300">{p.user}</span>
-            </span>
-            <span aria-hidden>·</span>
-            <time>{p.time}</time>
-            {p.fromDB && onDeletePost ? (
-              <>
-                <span aria-hidden>·</span>
-                <button
-                  onClick={() => onDeletePost(p.id)}
-                  className="text-rose-300 hover:text-rose-200"
-                  title="Delete post"
-                >
-                  Delete post
-                </button>
-              </>
+
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white"
+                style={{ background: post.avatarGradient }}
+              >
+                {post.initials}
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <span className="font-semibold text-white">{post.user}</span>
+                <span aria-hidden className="text-slate-600">
+                  *
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                  <AccessTimeRoundedIcon sx={{ fontSize: 15 }} />
+                  {post.time}
+                </span>
+              </div>
+            </div>
+
+            {post.fromDB && onDeletePost ? (
+              <button
+                type="button"
+                onClick={() => onDeletePost(post.id)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-200"
+                title="Delete post"
+                aria-label="Delete post"
+              >
+                <DeleteOutlineRoundedIcon sx={{ fontSize: 19 }} />
+              </button>
             ) : null}
           </div>
 
-          <h2 className="text-lg font-semibold leading-snug text-white">{p.title}</h2>
+          <h2 className="mt-3 text-lg font-bold leading-snug text-white">
+            {post.title}
+          </h2>
 
-          <div className="mt-3 flex items-center gap-4 text-sm text-zinc-300">
-            <span>
-              <span className="font-semibold text-white">{p.votes.toLocaleString()}</span> votes
-            </span>
-            <span>
-              <span className="font-semibold text-white">{count.toLocaleString()}</span> comments
-            </span>
+          <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-300">
+            {post.body}
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {post.tags.map((tag) => (
+              <span
+                key={tag}
+                className={cn(
+                  "rounded-md bg-blue-600/20 px-3 py-1 text-xs font-medium text-blue-300",
+                  communityStyles.tagBorder
+                )}
+              >
+                {tag}
+              </span>
+            ))}
           </div>
 
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className="text-sm text-fuchsia-400 underline-offset-2 hover:underline"
-            >
-              {open ? "Hide comments" : `View/Add comments (${comments.length})`}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="mt-5 inline-flex items-center gap-2 rounded-md text-sm font-medium text-slate-400 transition hover:text-slate-100"
+            aria-expanded={open}
+          >
+            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 19 }} />
+            {count.toLocaleString()} comments
+          </button>
 
           {open ? (
-            <div className="mt-4 space-y-4">
+            <div className={cn("mt-5 space-y-4 pt-5", communityStyles.dividerTop)}>
               <CommentList
                 items={comments}
-                onDelete={(cid) => onDeleteComment(cid, p.id)}
+                onDelete={(commentId) => onDeleteComment(commentId, post.id)}
               />
               <CommentForm
                 busy={busy}
                 onSubmit={async (data) => {
                   try {
                     setBusy(true);
-                    await onAddComment(p.id, data);
+                    await onAddComment(post.id, data);
                   } finally {
                     setBusy(false);
                   }
@@ -326,161 +569,225 @@ function PostCard({
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Cards for env-missing and main (hooks-inside)
-──────────────────────────────────────────────────────────────────────────── */
-function EnvMissingCard() {
+function EmptyState() {
   return (
-    <>
-      <h1 className="mb-3 text-3xl font-bold tracking-tight">Community</h1>
-      <div className="rounded-md border border-red-900/40 bg-red-900/20 p-4 text-sm text-red-200">
-        Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-        <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> <em>or</em>{" "}
-        <code>NEXT_PUBLIC_ANON</code> in <code>client/.env.local</code>, then restart{" "}
-        <code>npm run dev</code>.
-      </div>
-    </>
+    <div
+      className={cn(
+        "rounded-xl bg-[#07080b] px-6 py-12 text-center text-sm text-slate-400",
+        communityStyles.panelBorder
+      )}
+    >
+      No discussions match your search.
+    </div>
   );
 }
 
-function CommunityMain({ supabase }: { supabase: SupabaseClient }) {
-  // ── State ───────────────────────────────────────────────────────────────
-  const [q, setQ] = React.useState("");
+function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
+  const [query, setQuery] = React.useState("");
   const [sort, setSort] = React.useState<"top" | "new">("top");
-  const [draftTitle, setDraftTitle] = React.useState("");
+  const [draft, setDraft] = React.useState("");
   const [creating, setCreating] = React.useState(false);
+  const [posts, setPosts] = React.useState<PostUI[]>(DEMO_POSTS);
+  const [commentsByPost, setCommentsByPost] = React.useState<
+    Record<string, CommentUI[]>
+  >({});
+  const [counts, setCounts] = React.useState<Record<string, number>>(
+    Object.fromEntries(DEMO_POSTS.map((post) => [post.id, post.commentCount]))
+  );
 
-  const [posts, setPosts] = React.useState<PostUI[]>([]);
-  const [commentsByPost, setCommentsByPost] = React.useState<Record<string, CommentUI[]>>({});
-  const [counts, setCounts] = React.useState<Record<string, number>>({});
-
-  // ── Load DB posts + comments ────────────────────────────────────────────
   React.useEffect(() => {
-    (async () => {
-      const { data: rows, error } = await supabase
+    const client = supabase;
+    if (!client) return;
+    const activeClient: SupabaseClient = client;
+
+    let mounted = true;
+
+    async function loadCommunity(db: SupabaseClient) {
+      const { data: rows, error } = await db
         .from("posts")
         .select("id, title, votes, created_at, author_id")
         .order("created_at", { ascending: false });
 
       const dbPosts: PostUI[] =
-        !error && rows
-          ? rows.map((r: DBPost) => ({
-              id: r.id,
-              user: r.author_id ? "You" : "Guest",
-              title: r.title,
-              votes: r.votes ?? 0,
-              time: new Date(r.created_at).toLocaleString(),
-              fromDB: true,
-            }))
-          : [];
+        !error && rows ? rows.map((row: DBPost) => postFromRow(row)) : [];
 
-      const combined: PostUI[] = [
-        ...dbPosts,
-        ...DEMO_POSTS.map((p) => ({ ...p, fromDB: false } as PostUI)),
-      ];
+      const combined: PostUI[] = [...dbPosts, ...DEMO_POSTS];
+      if (!mounted) return;
+
       setPosts(combined);
+      setCounts(
+        Object.fromEntries(
+          combined.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
+        )
+      );
+      setCommentsByPost(
+        Object.fromEntries(combined.map((post) => [post.id, []]))
+      );
 
-      const allIds = combined.map((p) => p.id);
-      const { data: allComments, error: cErr } = await supabase
+      if (!dbPosts.length) return;
+
+      const { data: allComments, error: commentsError } = await db
         .from("comments")
         .select("id, post_id, user_name, body, image_url, created_at")
-        .in("post_id", allIds)
+        .in(
+          "post_id",
+          dbPosts.map((post) => post.id)
+        )
         .order("created_at", { ascending: false });
 
-      if (cErr) {
-        console.error("load comments failed:", cErr.message);
+      if (commentsError || !mounted) {
+        if (commentsError) console.error("load comments failed:", commentsError.message);
         return;
       }
 
-      const byPost: Record<string, CommentUI[]> = {};
-      const cts: Record<string, number> = {};
-      for (const id of allIds) {
-        byPost[id] = [];
-        cts[id] = 0;
-      }
-      (allComments ?? []).forEach((r: CommentRow) => {
-        const it: CommentUI = {
-          id: r.id,
-          user: r.user_name,
-          text: r.body,
-          createdAt: r.created_at,
-          imageUrl: r.image_url ?? undefined,
+      const byPost: Record<string, CommentUI[]> = Object.fromEntries(
+        combined.map((post) => [post.id, []])
+      );
+      const nextCounts: Record<string, number> = Object.fromEntries(
+        combined.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
+      );
+
+      (allComments ?? []).forEach((row: CommentRow) => {
+        const comment: CommentUI = {
+          id: row.id,
+          user: row.user_name,
+          text: row.body,
+          createdAt: row.created_at,
+          imageUrl: row.image_url ?? undefined,
         };
-        (byPost[r.post_id] ||= []).push(it);
-        cts[r.post_id] = (cts[r.post_id] ?? 0) + 1;
+        (byPost[row.post_id] ||= []).push(comment);
+        nextCounts[row.post_id] = (nextCounts[row.post_id] ?? 0) + 1;
       });
+
       setCommentsByPost(byPost);
-      setCounts(cts);
-    })();
+      setCounts(nextCounts);
+    }
+
+    loadCommunity(activeClient);
+
+    return () => {
+      mounted = false;
+    };
   }, [supabase]);
 
-  // ── Realtime comments inserts ───────────────────────────────────────────
   React.useEffect(() => {
-    const ch = supabase
+    const client = supabase;
+    if (!client) return;
+
+    const channel = client
       .channel("comments-inserts")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "comments" },
         (payload) => {
-          const r = payload.new as CommentRow;
-          const it: CommentUI = {
-            id: r.id,
-            user: r.user_name,
-            text: r.body,
-            createdAt: r.created_at,
-            imageUrl: r.image_url ?? undefined,
+          const row = payload.new as CommentRow;
+          const comment: CommentUI = {
+            id: row.id,
+            user: row.user_name,
+            text: row.body,
+            createdAt: row.created_at,
+            imageUrl: row.image_url ?? undefined,
           };
-          setCommentsByPost((prev) => ({
-            ...prev,
-            [r.post_id]: [it, ...(prev[r.post_id] ?? [])],
-          }));
-          setCounts((prev) => ({
-            ...prev,
-            [r.post_id]: (prev[r.post_id] ?? 0) + 1,
-          }));
+
+          setCommentsByPost((previous) => {
+            const current = previous[row.post_id] ?? [];
+            if (current.some((item) => item.id === comment.id)) return previous;
+
+            setCounts((previousCounts) => ({
+              ...previousCounts,
+              [row.post_id]: (previousCounts[row.post_id] ?? 0) + 1,
+            }));
+
+            return {
+              ...previous,
+              [row.post_id]: [comment, ...current],
+            };
+          });
         }
       )
       .subscribe();
+
     return () => {
-      supabase.removeChannel(ch);
+      client.removeChannel(channel);
     };
   }, [supabase]);
 
-  // ── Helpers ─────────────────────────────────────────────────────────────
   const filteredPosts = React.useMemo(() => {
-    const base = posts.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q.toLowerCase()) ||
-        p.user.toLowerCase().includes(q.toLowerCase())
-    );
-    if (sort === "top") return [...base].sort((a, b) => b.votes - a.votes);
-    return base;
-  }, [posts, q, sort]);
+    const normalizedQuery = query.trim().toLowerCase();
+    const base = normalizedQuery
+      ? posts.filter((post) =>
+          [
+            post.user,
+            post.title,
+            post.body,
+            ...post.tags,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedQuery)
+        )
+      : posts;
+
+    if (sort === "top") {
+      return [...base].sort((a, b) => b.votes - a.votes);
+    }
+
+    return [...base].sort((a, b) => b.sortTime - a.sortTime);
+  }, [posts, query, sort]);
 
   async function uploadImage(postId: string, file: File): Promise<string | undefined> {
-    const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "jpg";
-    const key = `${postId}/${crypto.randomUUID()}.${ext}`;
+    if (!supabase) return undefined;
+
+    const extension = file.name.includes(".")
+      ? file.name.split(".").pop()!.toLowerCase()
+      : "jpg";
+    const key = `${postId}/${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage.from(COMMENT_BUCKET).upload(key, file);
+
     if (error) {
       console.error("upload failed:", error.message);
       alert(`Upload failed: ${error.message}`);
       return undefined;
     }
+
     return supabase.storage.from(COMMENT_BUCKET).getPublicUrl(key).data.publicUrl;
   }
 
-  // ── Create / Delete post ────────────────────────────────────────────────
   async function handleCreatePost() {
-    if (!draftTitle.trim()) return;
+    const text = draft.trim();
+    if (!text) return;
+
+    if (!supabase) {
+      const localPost: PostUI = {
+        id: `local-${crypto.randomUUID()}`,
+        user: "You",
+        initials: "YU",
+        ...splitPostCopy(text),
+        votes: 0,
+        time: "just now",
+        sortTime: Date.now(),
+        tags: inferTags(text),
+        commentCount: 0,
+        avatarGradient: "linear-gradient(135deg, #1d4ed8 0%, #9333ea 100%)",
+      };
+
+      setPosts((previous) => [localPost, ...previous]);
+      setCounts((previous) => ({ ...previous, [localPost.id]: 0 }));
+      setCommentsByPost((previous) => ({ ...previous, [localPost.id]: [] }));
+      setDraft("");
+      return;
+    }
+
     setCreating(true);
+
     try {
-      const { data: uRes } = await supabase.auth.getUser();
-      const uid = uRes?.user?.id ?? null;
+      const { data: userResult } = await supabase.auth.getUser();
+      const uid = userResult?.user?.id ?? null;
 
       const { data: row, error } = await supabase
         .from("posts")
         .insert({
-          title: draftTitle.trim(),
+          title: text,
           votes: 0,
           author_id: uid,
         })
@@ -489,21 +796,14 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient }) {
 
       if (error) throw error;
 
-      const newUI: PostUI = {
-        id: row.id,
-        title: row.title,
-        votes: row.votes ?? 0,
-        time: new Date(row.created_at).toLocaleString(),
-        user: row.author_id ? "You" : "Guest",
-        fromDB: true,
-      };
-      setPosts((prev) => [newUI, ...prev]);
-      setCounts((prev) => ({ ...prev, [row.id]: 0 }));
-      setCommentsByPost((prev) => ({ ...prev, [row.id]: [] }));
-      setDraftTitle("");
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Could not create post.");
+      const newPost = postFromRow(row as DBPost);
+      setPosts((previous) => [newPost, ...previous]);
+      setCounts((previous) => ({ ...previous, [newPost.id]: 0 }));
+      setCommentsByPost((previous) => ({ ...previous, [newPost.id]: [] }));
+      setDraft("");
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || "Could not create post.");
     } finally {
       setCreating(false);
     }
@@ -511,34 +811,66 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient }) {
 
   async function handleDeletePost(postId: string) {
     if (!confirm("Delete this post and its comments?")) return;
+
+    const target = posts.find((post) => post.id === postId);
+    if (!target?.fromDB || !supabase) {
+      setPosts((previous) => previous.filter((post) => post.id !== postId));
+      setCounts((previous) => {
+        const next = { ...previous };
+        delete next[postId];
+        return next;
+      });
+      setCommentsByPost((previous) => {
+        const next = { ...previous };
+        delete next[postId];
+        return next;
+      });
+      return;
+    }
+
     try {
       await supabase.from("comments").delete().eq("post_id", postId);
       const { error } = await supabase.from("posts").delete().eq("id", postId);
       if (error) throw error;
 
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-
-      setCounts((prev) => {
-        const copy = { ...prev };
-        delete copy[postId];
-        return copy;
+      setPosts((previous) => previous.filter((post) => post.id !== postId));
+      setCounts((previous) => {
+        const next = { ...previous };
+        delete next[postId];
+        return next;
       });
-      setCommentsByPost((prev) => {
-        const copy = { ...prev };
-        delete copy[postId];
-        return copy;
+      setCommentsByPost((previous) => {
+        const next = { ...previous };
+        delete next[postId];
+        return next;
       });
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Could not delete post.");
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || "Could not delete post.");
     }
   }
 
-  // ── Add / Delete comment ────────────────────────────────────────────────
   async function handleAddComment(postId: string, data: NewComment) {
+    const target = posts.find((post) => post.id === postId);
+
+    if (!target?.fromDB || !supabase) {
+      const localComment: CommentUI = {
+        id: `local-comment-${crypto.randomUUID()}`,
+        user: "You",
+        text: data.text,
+        createdAt: new Date().toISOString(),
+      };
+
+      setCommentsByPost((previous) => ({
+        ...previous,
+        [postId]: [localComment, ...(previous[postId] ?? [])],
+      }));
+      setCounts((previous) => ({ ...previous, [postId]: (previous[postId] ?? 0) + 1 }));
+      return;
+    }
+
     try {
-      let imageUrl: string | undefined;
-      if (data.file) imageUrl = await uploadImage(postId, data.file);
+      const imageUrl = data.file ? await uploadImage(postId, data.file) : undefined;
 
       const { data: row, error } = await supabase
         .from("comments")
@@ -553,128 +885,225 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient }) {
 
       if (error) throw error;
 
-      const it: CommentUI = {
+      const comment: CommentUI = {
         id: row.id,
         user: row.user_name,
         text: row.body,
         createdAt: row.created_at,
         imageUrl: row.image_url ?? undefined,
       };
-      setCommentsByPost((prev) => ({
-        ...prev,
-        [postId]: [it, ...(prev[postId] ?? [])],
-      }));
-      setCounts((prev) => ({ ...prev, [postId]: (prev[postId] ?? 0) + 1 }));
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Could not post comment.");
+
+      setCommentsByPost((previous) => {
+        const current = previous[postId] ?? [];
+        if (current.some((item) => item.id === comment.id)) return previous;
+
+        return {
+          ...previous,
+          [postId]: [comment, ...current],
+        };
+      });
+      setCounts((previous) => ({ ...previous, [postId]: (previous[postId] ?? 0) + 1 }));
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || "Could not post comment.");
     }
   }
 
   async function handleDeleteComment(commentId: string, postId: string) {
+    if (commentId.startsWith("local-comment-") || !supabase) {
+      setCommentsByPost((previous) => ({
+        ...previous,
+        [postId]: (previous[postId] ?? []).filter((comment) => comment.id !== commentId),
+      }));
+      setCounts((previous) => ({
+        ...previous,
+        [postId]: Math.max(0, (previous[postId] ?? 1) - 1),
+      }));
+      return;
+    }
+
     try {
       const { error } = await supabase.from("comments").delete().eq("id", commentId);
       if (error) throw error;
 
-      setCommentsByPost((prev) => ({
-        ...prev,
-        [postId]: (prev[postId] ?? []).filter((c) => c.id !== commentId),
+      setCommentsByPost((previous) => ({
+        ...previous,
+        [postId]: (previous[postId] ?? []).filter((comment) => comment.id !== commentId),
       }));
-      setCounts((prev) => ({ ...prev, [postId]: Math.max(0, (prev[postId] ?? 1) - 1) }));
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Could not delete comment.");
+      setCounts((previous) => ({
+        ...previous,
+        [postId]: Math.max(0, (previous[postId] ?? 1) - 1),
+      }));
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || "Could not delete comment.");
     }
   }
 
-  // ── Render (main content) ───────────────────────────────────────────────
   return (
-    <>
-      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Community</h1>
+    <main
+      className="ml-[50px] min-h-screen bg-black px-4 py-9 text-white sm:px-8 lg:px-10"
+      style={{ width: "calc(100% - 50px)" }}
+    >
+      <div
+        className="mx-auto w-full max-w-[960px]"
+        style={{ maxWidth: "min(960px, calc(100vw - 82px))" }}
+      >
+        <header>
+          <h1 className="text-[30px] font-extrabold leading-tight tracking-normal text-white">
+            Community
+          </h1>
+          <p className="mt-2 text-[15px] text-slate-300">
+            Connect with fellow investors and share market insights
+          </p>
+        </header>
 
-        <div className="flex w-full max-w-xl items-center gap-2 sm:w-auto">
-          <label className="sr-only" htmlFor="sort">Sort</label>
-          <select
-            id="sort"
-            className="w-28 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as "top" | "new")}
-          >
-            <option value="top">Top</option>
-            <option value="new">New</option>
-          </select>
+        <section
+          className={cn(
+            "mt-7 rounded-xl bg-[#08090d] p-5 sm:p-6",
+            communityStyles.panelBorder
+          )}
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-sm font-extrabold text-white">
+              YU
+            </div>
 
-          <div className="relative flex-1 sm:w-64">
-            <label htmlFor="q" className="sr-only">Search posts</label>
-            <input
-              id="q"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search…"
+            <div className="min-w-0 flex-1">
+              <label htmlFor="community-draft" className="sr-only">
+                Share your investment insights
+              </label>
+              <textarea
+                id="community-draft"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="Share your investment insights..."
+                rows={4}
+                className={cn(
+                  "min-h-[98px] w-full resize-none rounded-lg bg-[#191a20] px-4 py-4 text-[15px] leading-6 text-slate-100",
+                  communityStyles.inputBorder,
+                  "placeholder:text-slate-500 focus:border-blue-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 pl-0 sm:pl-14">
+            <button
+              type="button"
+              className="grid h-10 w-10 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+              title="Image attachments are available in replies"
+              aria-label="Image attachments are available in replies"
+            >
+              <ImageOutlinedIcon />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCreatePost}
+              disabled={creating || !draft.trim()}
               className={cn(
-                "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm",
-                "placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
+                "inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 text-sm font-bold text-white transition",
+                "hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            >
+              <SendRoundedIcon sx={{ fontSize: 17 }} />
+              {creating ? "Posting" : "Post"}
+            </button>
+          </div>
+        </section>
+
+        {!supabase ? (
+          <div className="mt-4">
+            <CommunityNotice>
+              Supabase environment variables are missing, so new posts and
+              comments stay local until the page refreshes.
+            </CommunityNotice>
+          </div>
+        ) : null}
+
+        <section className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <label htmlFor="community-search" className="sr-only">
+              Search discussions
+            </label>
+            <SearchRoundedIcon
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              sx={{ fontSize: 20 }}
+            />
+            <input
+              id="community-search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search discussions..."
+              className={cn(
+                "h-[46px] w-full rounded-lg bg-[#191a20] pl-11 pr-4 text-[15px] text-slate-100",
+                communityStyles.panelBorder,
+                "placeholder:text-slate-500 focus:border-blue-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               )}
             />
           </div>
-        </div>
-      </header>
 
-      {/* Create a new post (DB only) */}
-      <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-300">Create a new post</h2>
-        <div className="flex gap-2">
-          <input
-            value={draftTitle}
-            onChange={(e) => setDraftTitle(e.target.value)}
-            placeholder="Post title…"
-            className="flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/60"
-          />
-          <button
-            className="rounded-md bg-fuchsia-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 hover:bg-fuchsia-500"
-            onClick={handleCreatePost}
-            disabled={creating || !draftTitle.trim()}
+          <div
+            className={cn(
+              "grid h-[46px] grid-cols-2 rounded-lg bg-[#08090d] p-1 sm:w-[134px]",
+              communityStyles.panelBorder
+            )}
           >
-            {creating ? "Posting…" : "Post"}
-          </button>
-        </div>
-      </section>
-
-      {/* Posts list */}
-      <section className="space-y-4">
-        {filteredPosts.length === 0 ? (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-8 text-center text-zinc-400">
-            No posts yet.
+            {(["top", "new"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setSort(option)}
+                className={cn(
+                  "rounded-md text-sm font-bold capitalize transition",
+                  sort === option
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
+                )}
+              >
+                {option}
+              </button>
+            ))}
           </div>
-        ) : (
-          filteredPosts.map((p) => (
-            <PostCard
-              key={p.id}
-              p={p}
-              comments={commentsByPost[p.id] ?? []}
-              count={counts[p.id] ?? 0}
-              onAddComment={handleAddComment}
-              onDeleteComment={handleDeleteComment}
-              onDeletePost={p.fromDB ? handleDeletePost : undefined}
-            />
-          ))
-        )}
-      </section>
-    </>
+        </section>
+
+        <section className="mt-6 space-y-4">
+          {filteredPosts.length ? (
+            filteredPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                comments={commentsByPost[post.id] ?? []}
+                count={counts[post.id] ?? post.commentCount}
+                onAddComment={handleAddComment}
+                onDeleteComment={handleDeleteComment}
+                onDeletePost={post.fromDB || post.id.startsWith("local-") ? handleDeletePost : undefined}
+              />
+            ))
+          ) : (
+            <EmptyState />
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Outer page: layout + conditional render (no hooks here)
-──────────────────────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-white">
-      <Sidebar />
-      <main className="mx-auto w-full max-w-5xl p-6">
-        {!supabase ? <EnvMissingCard /> : <CommunityMain supabase={supabase} />}
-      </main>
-    </div>
+    <>
+      <style jsx global>{`
+        html,
+        body,
+        #__next {
+          background: #000;
+        }
+      `}</style>
+      <div className="min-h-screen bg-black">
+        <Sidebar />
+        <CommunityMain supabase={supabase} />
+      </div>
+    </>
   );
 }

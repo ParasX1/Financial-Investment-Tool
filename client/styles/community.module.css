@@ -1,0 +1,23 @@
+.noticeBorder {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.softBorder {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panelBorder {
+  border: 1px solid #252733;
+}
+
+.inputBorder {
+  border: 1px solid #2b2d36;
+}
+
+.tagBorder {
+  border: 1px solid rgba(59, 130, 246, 0.6);
+}
+
+.dividerTop {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
