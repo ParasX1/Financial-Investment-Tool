@@ -12,6 +12,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
+import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
 
 function getSupabaseClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -86,7 +87,7 @@ const DEMO_POSTS: SeedPost[] = [
     initials: "QQ",
     title: "Backtesting Results: Momentum + Mean Reversion Hybrid",
     body:
-      "Ran a 10-year backtest on a combined momentum and mean reversion strategy. Sharpe ratio of 2.1 with max drawdown under 15%. Details inside...",
+      "Ran a 10-year backtest on a combined momentum and mean reversion strategy. Sharpe ratio of 2.1 with max drawdown under 15%. Details inside…",
     votes: 426,
     time: "2 days ago",
     sortTime: now - 1000 * 60 * 60 * 24 * 2,
@@ -114,7 +115,7 @@ const DEMO_POSTS: SeedPost[] = [
     initials: "IP",
     title: "Deep Dive: Why NVDA's Valuation is Still Justified",
     body:
-      "After analyzing the latest earnings report and forward guidance, I believe NVDA's current P/E ratio is sustainable given their AI dominance. Here's my analysis...",
+      "After analyzing the latest earnings report and forward guidance, I believe NVDA's current P/E ratio is sustainable given their AI dominance. Here's my analysis…",
     votes: 247,
     time: "3 hours ago",
     sortTime: now - 1000 * 60 * 60 * 3,
@@ -141,6 +142,9 @@ const DEMO_POSTS: SeedPost[] = [
 function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
+
+const FOCUS_VISIBLE =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
 function initials(name: string) {
   return (
@@ -188,7 +192,7 @@ function splitPostCopy(raw: string) {
   }
 
   return {
-    title: `${clean.slice(0, 89).trim()}...`,
+    title: `${clean.slice(0, 89).trim()}…`,
     body: clean,
   };
 }
@@ -252,6 +256,7 @@ function CommentForm({
   const [file, setFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement | null>(null);
+  const commentInputId = React.useId();
 
   React.useEffect(
     () => () => {
@@ -287,10 +292,16 @@ function CommentForm({
       onSubmit={submit}
       className={cn("rounded-lg bg-[#0d0e13] p-3", communityStyles.softBorder)}
     >
+      <label htmlFor={commentInputId} className="sr-only">
+        Add a comment
+      </label>
       <textarea
+        id={commentInputId}
+        name="community-comment"
+        autoComplete="off"
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Add to the discussion..."
+        placeholder="Add to the discussion…"
         rows={3}
         className={cn(
           "w-full resize-none rounded-md bg-[#16171d] px-3 py-3 text-sm text-slate-100",
@@ -310,6 +321,8 @@ function CommentForm({
           <img
             src={previewUrl}
             alt="Selected comment attachment"
+            width={640}
+            height={360}
             className="max-h-60 w-full object-contain"
           />
         </div>
@@ -327,11 +340,14 @@ function CommentForm({
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="grid h-9 w-9 place-items-center rounded-md text-slate-400 transition hover:bg-white/5 hover:text-slate-100"
+            className={cn(
+              "grid h-9 w-9 touch-manipulation place-items-center rounded-md text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100",
+              FOCUS_VISIBLE
+            )}
             title="Attach image"
             aria-label="Attach image"
           >
-            <ImageOutlinedIcon fontSize="small" />
+            <ImageOutlinedIcon fontSize="small" aria-hidden="true" />
           </button>
 
           {file ? (
@@ -339,13 +355,15 @@ function CommentForm({
               type="button"
               onClick={() => handleFile(null)}
               className={cn(
-                "inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-300 transition hover:border-rose-400/50 hover:text-rose-200",
-                communityStyles.softBorder
+                "inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-300 transition-colors hover:border-rose-400/50 hover:text-rose-200",
+                communityStyles.softBorder,
+                FOCUS_VISIBLE
               )}
               title="Remove attachment"
+              aria-label={`Remove attachment ${file.name}`}
             >
               <span className="truncate">{file.name}</span>
-              <CloseRoundedIcon sx={{ fontSize: 15 }} />
+              <CloseRoundedIcon sx={{ fontSize: 15 }} aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -354,12 +372,13 @@ function CommentForm({
           type="submit"
           disabled={busy || !text.trim()}
           className={cn(
-            "inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition",
-            "hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors",
+            "hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50",
+            FOCUS_VISIBLE
           )}
         >
-          <SendRoundedIcon sx={{ fontSize: 16 }} />
-          {busy ? "Posting" : "Reply"}
+          <SendRoundedIcon sx={{ fontSize: 16 }} aria-hidden="true" />
+          {busy ? "Posting…" : "Reply"}
         </button>
       </div>
     </form>
@@ -398,10 +417,10 @@ function CommentList({
               <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#20222b] text-[11px] font-bold text-slate-200">
                 {initials(comment.user)}
               </div>
-              <span className="truncate font-semibold text-slate-200">{comment.user}</span>
-              <span aria-hidden className="text-slate-600">
-                *
+              <span className="min-w-0 truncate font-semibold text-slate-200">
+                {comment.user}
               </span>
+              <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-slate-700" />
               <time dateTime={comment.createdAt}>{toRelativeTime(comment.createdAt)}</time>
             </div>
 
@@ -409,16 +428,24 @@ function CommentList({
               <button
                 type="button"
                 onClick={() => onDelete(comment.id)}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-200"
+                className={cn(
+                  "grid h-8 w-8 shrink-0 touch-manipulation place-items-center rounded-md text-slate-500 transition-colors hover:bg-rose-500/10 hover:text-rose-200",
+                  FOCUS_VISIBLE
+                )}
                 title="Delete comment"
                 aria-label="Delete comment"
               >
-                <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
+                <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
               </button>
             ) : null}
           </div>
 
-          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+          <p
+            className={cn(
+              "whitespace-pre-wrap text-sm leading-6 text-slate-200",
+              communityStyles.wrapAnywhere
+            )}
+          >
             {comment.text}
           </p>
 
@@ -433,6 +460,9 @@ function CommentList({
               <img
                 src={comment.imageUrl}
                 alt="Comment attachment"
+                width={720}
+                height={420}
+                loading="lazy"
                 className="max-h-80 w-full object-contain"
               />
             </div>
@@ -460,110 +490,152 @@ function PostCard({
 }) {
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [liked, setLiked] = React.useState(false);
+  const commentsId = React.useId();
+  const formattedVotes = (post.votes + (liked ? 1 : 0)).toLocaleString();
+  const commentLabel = `${count.toLocaleString()} ${
+    count === 1 ? "comment" : "comments"
+  }`;
 
   return (
     <article
       className={cn(
-        "rounded-xl bg-[#07080b] px-5 py-6 transition duration-200 hover:border-[#34384a] sm:px-7",
+        "overflow-hidden rounded-xl bg-[#07080b] px-4 py-5 transition-colors duration-200 hover:border-[#34384a] sm:px-7 sm:py-6",
         communityStyles.panelBorder
       )}
     >
-      <div className="grid gap-4 sm:grid-cols-[54px_minmax(0,1fr)] sm:gap-5">
-        <div className="flex items-center gap-3 sm:flex-col sm:items-start">
-          <div className="grid h-9 w-9 place-items-center rounded-md text-slate-400">
-            <ThumbUpOffAltRoundedIcon sx={{ fontSize: 24 }} />
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white"
+              style={{ background: post.avatarGradient }}
+            >
+              {post.initials}
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span className="min-w-0 truncate font-semibold text-white">
+                {post.user}
+              </span>
+              <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-slate-700" />
+              <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                <AccessTimeRoundedIcon sx={{ fontSize: 15 }} aria-hidden="true" />
+                {post.time}
+              </span>
+            </div>
           </div>
-          <div className="min-w-[44px] text-center text-sm font-bold text-white sm:text-left">
-            {post.votes.toLocaleString()}
-          </div>
+
+          {post.fromDB && onDeletePost ? (
+            <button
+              type="button"
+              onClick={() => onDeletePost(post.id)}
+              className={cn(
+                "grid h-9 w-9 shrink-0 touch-manipulation place-items-center rounded-md text-slate-500 transition-colors hover:bg-rose-500/10 hover:text-rose-200",
+                FOCUS_VISIBLE
+              )}
+              title="Delete post"
+              aria-label="Delete post"
+            >
+              <DeleteOutlineRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
 
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white"
-                style={{ background: post.avatarGradient }}
-              >
-                {post.initials}
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                <span className="font-semibold text-white">{post.user}</span>
-                <span aria-hidden className="text-slate-600">
-                  *
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                  <AccessTimeRoundedIcon sx={{ fontSize: 15 }} />
-                  {post.time}
-                </span>
-              </div>
-            </div>
+        <h2
+          className={cn(
+            "mt-3 text-lg font-bold leading-snug text-white",
+            communityStyles.wrapAnywhere
+          )}
+        >
+          {post.title}
+        </h2>
 
-            {post.fromDB && onDeletePost ? (
-              <button
-                type="button"
-                onClick={() => onDeletePost(post.id)}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-200"
-                title="Delete post"
-                aria-label="Delete post"
-              >
-                <DeleteOutlineRoundedIcon sx={{ fontSize: 19 }} />
-              </button>
-            ) : null}
-          </div>
+        <p
+          className={cn(
+            "mt-3 max-w-3xl text-[15px] leading-7 text-slate-300",
+            communityStyles.wrapAnywhere
+          )}
+        >
+          {post.body}
+        </p>
 
-          <h2 className="mt-3 text-lg font-bold leading-snug text-white">
-            {post.title}
-          </h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {post.tags.map((tag) => (
+            <span
+              key={tag}
+              className={cn(
+                "rounded-md bg-blue-600/20 px-3 py-1 text-xs font-medium text-blue-300",
+                communityStyles.tagBorder,
+                communityStyles.wrapAnywhere
+              )}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
-          <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-300">
-            {post.body}
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className={cn(
-                  "rounded-md bg-blue-600/20 px-3 py-1 text-xs font-medium text-blue-300",
-                  communityStyles.tagBorder
-                )}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
+        <div className="mt-5 flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            className="mt-5 inline-flex items-center gap-2 rounded-md text-sm font-medium text-slate-400 transition hover:text-slate-100"
+            className={cn(
+              "inline-flex min-h-9 touch-manipulation items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100",
+              FOCUS_VISIBLE
+            )}
             aria-expanded={open}
+            aria-controls={commentsId}
+            aria-label={`${open ? "Hide" : "Show"} ${commentLabel} for ${post.title}`}
           >
-            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 19 }} />
-            {count.toLocaleString()} comments
+            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            <span aria-live="polite">{commentLabel}</span>
           </button>
 
-          {open ? (
-            <div className={cn("mt-5 space-y-4 pt-5", communityStyles.dividerTop)}>
-              <CommentList
-                items={comments}
-                onDelete={(commentId) => onDeleteComment(commentId, post.id)}
-              />
-              <CommentForm
-                busy={busy}
-                onSubmit={async (data) => {
-                  try {
-                    setBusy(true);
-                    await onAddComment(post.id, data);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              />
-            </div>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setLiked((value) => !value)}
+            className={cn(
+              "inline-flex min-h-9 touch-manipulation items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-semibold transition-colors",
+              liked
+                ? "bg-blue-600/15 text-blue-200"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
+              FOCUS_VISIBLE
+            )}
+            aria-pressed={liked}
+            aria-label={`${liked ? "Unlike" : "Like"} post. ${formattedVotes} votes`}
+          >
+            {liked ? (
+              <ThumbUpRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            ) : (
+              <ThumbUpOffAltRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            )}
+            <span className="tabular-nums" aria-live="polite">
+              {formattedVotes}
+            </span>
+          </button>
         </div>
+
+        {open ? (
+          <div
+            id={commentsId}
+            className={cn("mt-5 space-y-4 pt-5", communityStyles.dividerTop)}
+          >
+            <CommentList
+              items={comments}
+              onDelete={(commentId) => onDeleteComment(commentId, post.id)}
+            />
+            <CommentForm
+              busy={busy}
+              onSubmit={async (data) => {
+                try {
+                  setBusy(true);
+                  await onAddComment(post.id, data);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -942,25 +1014,26 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
 
   return (
     <main
-      className="ml-[50px] min-h-screen bg-black px-4 py-9 text-white sm:px-8 lg:px-10"
-      style={{ width: "calc(100% - 50px)" }}
+      id="community-main"
+      tabIndex={-1}
+      className="ml-[50px] mr-3 box-border min-h-screen overflow-x-hidden bg-black px-3 py-7 text-white sm:mr-0 sm:px-8 sm:py-9 lg:px-10"
     >
       <div
-        className="mx-auto w-full max-w-[960px]"
-        style={{ maxWidth: "min(960px, calc(100vw - 82px))" }}
+        className="mx-auto min-w-0 max-w-[960px]"
+        style={{ width: "min(100%, calc(100vw - 90px))" }}
       >
         <header>
-          <h1 className="text-[30px] font-extrabold leading-tight tracking-normal text-white">
+          <h1 className="text-balance text-[28px] font-extrabold leading-tight tracking-normal text-white sm:text-[30px]">
             Community
           </h1>
-          <p className="mt-2 text-[15px] text-slate-300">
+          <p className="mt-2 max-w-[34rem] text-pretty text-[15px] text-slate-300">
             Connect with fellow investors and share market insights
           </p>
         </header>
 
         <section
           className={cn(
-            "mt-7 rounded-xl bg-[#08090d] p-5 sm:p-6",
+            "mt-7 rounded-xl bg-[#08090d] p-4 sm:p-6",
             communityStyles.panelBorder
           )}
         >
@@ -975,12 +1048,14 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
               </label>
               <textarea
                 id="community-draft"
+                name="community-draft"
+                autoComplete="off"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Share your investment insights..."
+                placeholder="Share your investment insights…"
                 rows={4}
                 className={cn(
-                  "min-h-[98px] w-full resize-none rounded-lg bg-[#191a20] px-4 py-4 text-[15px] leading-6 text-slate-100",
+                  "min-h-[112px] w-full resize-none rounded-lg bg-[#191a20] px-4 py-4 text-[15px] leading-6 text-slate-100 sm:min-h-[98px]",
                   communityStyles.inputBorder,
                   "placeholder:text-slate-500 focus:border-blue-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 )}
@@ -988,14 +1063,17 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3 pl-0 sm:pl-14">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pl-0 sm:pl-14">
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+              className={cn(
+                "grid h-10 w-10 touch-manipulation place-items-center rounded-md text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-200",
+                FOCUS_VISIBLE
+              )}
               title="Image attachments are available in replies"
               aria-label="Image attachments are available in replies"
             >
-              <ImageOutlinedIcon />
+              <ImageOutlinedIcon aria-hidden="true" />
             </button>
 
             <button
@@ -1003,12 +1081,13 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
               onClick={handleCreatePost}
               disabled={creating || !draft.trim()}
               className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 text-sm font-bold text-white transition",
-                "hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+                "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 text-sm font-bold text-white transition-colors",
+                "hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-50",
+                FOCUS_VISIBLE
               )}
             >
-              <SendRoundedIcon sx={{ fontSize: 17 }} />
-              {creating ? "Posting" : "Post"}
+              <SendRoundedIcon sx={{ fontSize: 17 }} aria-hidden="true" />
+              {creating ? "Posting…" : "Post"}
             </button>
           </div>
         </section>
@@ -1030,12 +1109,16 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
             <SearchRoundedIcon
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
               sx={{ fontSize: 20 }}
+              aria-hidden="true"
             />
             <input
               id="community-search"
+              name="community-search"
+              type="search"
+              autoComplete="off"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search discussions..."
+              placeholder="Search discussions…"
               className={cn(
                 "h-[46px] w-full rounded-lg bg-[#191a20] pl-11 pr-4 text-[15px] text-slate-100",
                 communityStyles.panelBorder,
@@ -1046,29 +1129,33 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
 
           <div
             className={cn(
-              "grid h-[46px] grid-cols-2 rounded-lg bg-[#08090d] p-1 sm:w-[134px]",
+              "grid h-[46px] w-full grid-cols-2 rounded-lg bg-[#08090d] p-1 sm:w-[134px]",
               communityStyles.panelBorder
             )}
+            role="group"
+            aria-label="Sort discussions"
           >
             {(["top", "new"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setSort(option)}
+                aria-pressed={sort === option}
                 className={cn(
-                  "rounded-md text-sm font-bold capitalize transition",
+                  "touch-manipulation rounded-md text-sm font-bold capitalize transition-colors",
                   sort === option
                     ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
+                  FOCUS_VISIBLE
                 )}
               >
-                {option}
+                {option === "top" ? "Top" : "New"}
               </button>
             ))}
           </div>
         </section>
 
-        <section className="mt-6 space-y-4">
+        <section className="mt-6 space-y-4" aria-label="Community discussions">
           {filteredPosts.length ? (
             filteredPosts.map((post) => (
               <PostCard
@@ -1098,9 +1185,24 @@ export default function CommunityPage() {
         body,
         #__next {
           background: #000;
+          color-scheme: dark;
+          min-height: 100%;
+        }
+
+        body {
+          overflow-x: hidden;
+        }
+
+        *,
+        *::before,
+        *::after {
+          box-sizing: border-box;
         }
       `}</style>
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen overflow-x-hidden bg-black">
+        <a href="#community-main" className={communityStyles.skipLink}>
+          Skip to community content
+        </a>
         <Sidebar />
         <CommunityMain supabase={supabase} />
       </div>

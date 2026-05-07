@@ -21,3 +21,34 @@
 .dividerTop {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.wrapAnywhere {
+  overflow-wrap: anywhere;
+}
+
+.skipLink {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 10000;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 12px;
+  transform: translateY(-160%);
+  transition: transform 150ms ease;
+}
+
+.skipLink:focus-visible {
+  outline: 2px solid rgba(147, 197, 253, 0.95);
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+}
