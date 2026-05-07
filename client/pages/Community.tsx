@@ -78,6 +78,24 @@ type NewComment = {
   previewUrl?: string | null;
 };
 
+type CommentEntry = {
+  postId: string;
+  comment: CommentUI;
+};
+
+type CommentsState = {
+  byPost: Record<string, CommentUI[]>;
+  counts: Record<string, number>;
+  seenIds: Record<string, true>;
+};
+
+type CommentsAction =
+  | { type: "reset"; posts: PostUI[]; comments?: CommentEntry[] }
+  | { type: "ensurePost"; postId: string; initialCount?: number }
+  | { type: "removePost"; postId: string }
+  | { type: "addComment"; postId: string; comment: CommentUI }
+  | { type: "removeComment"; postId: string; commentId: string };
+
 const now = Date.now();
 
 const DEMO_POSTS: SeedPost[] = [
@@ -230,6 +248,144 @@ function postFromRow(row: DBPost): PostUI {
     avatarGradient: "linear-gradient(135deg, #1d4ed8 0%, #9333ea 100%)",
     fromDB: true,
   };
+}
+
+function commentFromRow(row: CommentRow): CommentUI {
+  return {
+    id: row.id,
+    user: row.user_name,
+    text: row.body,
+    createdAt: row.created_at,
+    imageUrl: row.image_url ?? undefined,
+  };
+}
+
+function createCommentsState(
+  posts: PostUI[],
+  comments: CommentEntry[] = []
+): CommentsState {
+  const byPost: Record<string, CommentUI[]> = Object.fromEntries(
+    posts.map((post) => [post.id, []])
+  );
+  const counts: Record<string, number> = Object.fromEntries(
+    posts.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
+  );
+  const seenIds: Record<string, true> = {};
+
+  comments.forEach(({ postId, comment }) => {
+    if (seenIds[comment.id]) return;
+
+    seenIds[comment.id] = true;
+    (byPost[postId] ||= []).push(comment);
+    counts[postId] = (counts[postId] ?? 0) + 1;
+  });
+
+  return { byPost, counts, seenIds };
+}
+
+function commentsReducer(
+  state: CommentsState,
+  action: CommentsAction
+): CommentsState {
+  switch (action.type) {
+    case "reset":
+      return createCommentsState(action.posts, action.comments);
+
+    case "ensurePost":
+      if (state.byPost[action.postId] && action.postId in state.counts) {
+        return state;
+      }
+
+      return {
+        ...state,
+        byPost: { ...state.byPost, [action.postId]: [] },
+        counts: {
+          ...state.counts,
+          [action.postId]: action.initialCount ?? 0,
+        },
+      };
+
+    case "removePost": {
+      const removedComments = state.byPost[action.postId] ?? [];
+      const nextByPost = { ...state.byPost };
+      const nextCounts = { ...state.counts };
+      const nextSeenIds = { ...state.seenIds };
+
+      delete nextByPost[action.postId];
+      delete nextCounts[action.postId];
+      removedComments.forEach((comment) => {
+        delete nextSeenIds[comment.id];
+      });
+
+      return {
+        byPost: nextByPost,
+        counts: nextCounts,
+        seenIds: nextSeenIds,
+      };
+    }
+
+    case "addComment": {
+      const current = state.byPost[action.postId] ?? [];
+
+      if (
+        state.seenIds[action.comment.id] ||
+        current.some((comment) => comment.id === action.comment.id)
+      ) {
+        return state.seenIds[action.comment.id]
+          ? state
+          : {
+              ...state,
+              seenIds: { ...state.seenIds, [action.comment.id]: true },
+            };
+      }
+
+      return {
+        byPost: {
+          ...state.byPost,
+          [action.postId]: [action.comment, ...current],
+        },
+        counts: {
+          ...state.counts,
+          [action.postId]: (state.counts[action.postId] ?? 0) + 1,
+        },
+        seenIds: { ...state.seenIds, [action.comment.id]: true },
+      };
+    }
+
+    case "removeComment": {
+      const current = state.byPost[action.postId] ?? [];
+      const nextComments = current.filter(
+        (comment) => comment.id !== action.commentId
+      );
+      const commentWasPresent = nextComments.length !== current.length;
+
+      if (!commentWasPresent && !state.seenIds[action.commentId]) {
+        return state;
+      }
+
+      const nextSeenIds = { ...state.seenIds };
+      delete nextSeenIds[action.commentId];
+
+      return {
+        byPost: commentWasPresent
+          ? { ...state.byPost, [action.postId]: nextComments }
+          : state.byPost,
+        counts: commentWasPresent
+          ? {
+              ...state.counts,
+              [action.postId]: Math.max(
+                0,
+                (state.counts[action.postId] ?? 1) - 1
+              ),
+            }
+          : state.counts,
+        seenIds: nextSeenIds,
+      };
+    }
+
+    default:
+      return state;
+  }
 }
 
 function CommunityNotice({ children }: { children: React.ReactNode }) {
@@ -477,25 +633,29 @@ function PostCard({
   post,
   comments,
   count,
+  liked,
   onAddComment,
   onDeleteComment,
   onDeletePost,
+  onToggleLike,
 }: {
   post: PostUI;
   comments: CommentUI[];
   count: number;
+  liked: boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
+  onToggleLike: (postId: string) => Promise<void> | void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
-  const [liked, setLiked] = React.useState(false);
   const commentsId = React.useId();
-  const formattedVotes = (post.votes + (liked ? 1 : 0)).toLocaleString();
+  const formattedVotes = post.votes.toLocaleString();
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
+  const commentButtonLabel = `${open ? "Hide" : "Show"} ${commentLabel}`;
 
   return (
     <article
@@ -580,19 +740,20 @@ function PostCard({
             onClick={() => setOpen((value) => !value)}
             className={cn(
               "inline-flex min-h-9 touch-manipulation items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100",
+              open && "bg-white/5 text-slate-100",
               FOCUS_VISIBLE
             )}
             aria-expanded={open}
             aria-controls={commentsId}
-            aria-label={`${open ? "Hide" : "Show"} ${commentLabel} for ${post.title}`}
+            aria-label={`${commentButtonLabel} for ${post.title}`}
           >
             <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
-            <span aria-live="polite">{commentLabel}</span>
+            <span aria-live="polite">{commentButtonLabel}</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setLiked((value) => !value)}
+            onClick={() => onToggleLike(post.id)}
             className={cn(
               "inline-flex min-h-9 touch-manipulation items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-semibold transition-colors",
               liked
@@ -660,11 +821,13 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
   const [draft, setDraft] = React.useState("");
   const [creating, setCreating] = React.useState(false);
   const [posts, setPosts] = React.useState<PostUI[]>(DEMO_POSTS);
-  const [commentsByPost, setCommentsByPost] = React.useState<
-    Record<string, CommentUI[]>
-  >({});
-  const [counts, setCounts] = React.useState<Record<string, number>>(
-    Object.fromEntries(DEMO_POSTS.map((post) => [post.id, post.commentCount]))
+  const [likedPostIds, setLikedPostIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
+  const [commentsState, dispatchComments] = React.useReducer(
+    commentsReducer,
+    DEMO_POSTS,
+    createCommentsState
   );
 
   React.useEffect(() => {
@@ -687,14 +850,7 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
       if (!mounted) return;
 
       setPosts(combined);
-      setCounts(
-        Object.fromEntries(
-          combined.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
-        )
-      );
-      setCommentsByPost(
-        Object.fromEntries(combined.map((post) => [post.id, []]))
-      );
+      dispatchComments({ type: "reset", posts: combined });
 
       if (!dbPosts.length) return;
 
@@ -712,27 +868,14 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
         return;
       }
 
-      const byPost: Record<string, CommentUI[]> = Object.fromEntries(
-        combined.map((post) => [post.id, []])
-      );
-      const nextCounts: Record<string, number> = Object.fromEntries(
-        combined.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
-      );
-
-      (allComments ?? []).forEach((row: CommentRow) => {
-        const comment: CommentUI = {
-          id: row.id,
-          user: row.user_name,
-          text: row.body,
-          createdAt: row.created_at,
-          imageUrl: row.image_url ?? undefined,
-        };
-        (byPost[row.post_id] ||= []).push(comment);
-        nextCounts[row.post_id] = (nextCounts[row.post_id] ?? 0) + 1;
+      dispatchComments({
+        type: "reset",
+        posts: combined,
+        comments: (allComments ?? []).map((row: CommentRow) => ({
+          postId: row.post_id,
+          comment: commentFromRow(row),
+        })),
       });
-
-      setCommentsByPost(byPost);
-      setCounts(nextCounts);
     }
 
     loadCommunity(activeClient);
@@ -753,27 +896,10 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
         { event: "INSERT", schema: "public", table: "comments" },
         (payload) => {
           const row = payload.new as CommentRow;
-          const comment: CommentUI = {
-            id: row.id,
-            user: row.user_name,
-            text: row.body,
-            createdAt: row.created_at,
-            imageUrl: row.image_url ?? undefined,
-          };
-
-          setCommentsByPost((previous) => {
-            const current = previous[row.post_id] ?? [];
-            if (current.some((item) => item.id === comment.id)) return previous;
-
-            setCounts((previousCounts) => ({
-              ...previousCounts,
-              [row.post_id]: (previousCounts[row.post_id] ?? 0) + 1,
-            }));
-
-            return {
-              ...previous,
-              [row.post_id]: [comment, ...current],
-            };
+          dispatchComments({
+            type: "addComment",
+            postId: row.post_id,
+            comment: commentFromRow(row),
           });
         }
       )
@@ -844,8 +970,11 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
       };
 
       setPosts((previous) => [localPost, ...previous]);
-      setCounts((previous) => ({ ...previous, [localPost.id]: 0 }));
-      setCommentsByPost((previous) => ({ ...previous, [localPost.id]: [] }));
+      dispatchComments({
+        type: "ensurePost",
+        postId: localPost.id,
+        initialCount: 0,
+      });
       setDraft("");
       return;
     }
@@ -870,8 +999,11 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
 
       const newPost = postFromRow(row as DBPost);
       setPosts((previous) => [newPost, ...previous]);
-      setCounts((previous) => ({ ...previous, [newPost.id]: 0 }));
-      setCommentsByPost((previous) => ({ ...previous, [newPost.id]: [] }));
+      dispatchComments({
+        type: "ensurePost",
+        postId: newPost.id,
+        initialCount: 0,
+      });
       setDraft("");
     } catch (error: any) {
       console.error(error);
@@ -887,14 +1019,11 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
     const target = posts.find((post) => post.id === postId);
     if (!target?.fromDB || !supabase) {
       setPosts((previous) => previous.filter((post) => post.id !== postId));
-      setCounts((previous) => {
-        const next = { ...previous };
-        delete next[postId];
-        return next;
-      });
-      setCommentsByPost((previous) => {
-        const next = { ...previous };
-        delete next[postId];
+      dispatchComments({ type: "removePost", postId });
+      setLikedPostIds((previous) => {
+        if (!previous.has(postId)) return previous;
+        const next = new Set(previous);
+        next.delete(postId);
         return next;
       });
       return;
@@ -906,14 +1035,11 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
       if (error) throw error;
 
       setPosts((previous) => previous.filter((post) => post.id !== postId));
-      setCounts((previous) => {
-        const next = { ...previous };
-        delete next[postId];
-        return next;
-      });
-      setCommentsByPost((previous) => {
-        const next = { ...previous };
-        delete next[postId];
+      dispatchComments({ type: "removePost", postId });
+      setLikedPostIds((previous) => {
+        if (!previous.has(postId)) return previous;
+        const next = new Set(previous);
+        next.delete(postId);
         return next;
       });
     } catch (error: any) {
@@ -933,11 +1059,7 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
         createdAt: new Date().toISOString(),
       };
 
-      setCommentsByPost((previous) => ({
-        ...previous,
-        [postId]: [localComment, ...(previous[postId] ?? [])],
-      }));
-      setCounts((previous) => ({ ...previous, [postId]: (previous[postId] ?? 0) + 1 }));
+      dispatchComments({ type: "addComment", postId, comment: localComment });
       return;
     }
 
@@ -957,24 +1079,11 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
 
       if (error) throw error;
 
-      const comment: CommentUI = {
-        id: row.id,
-        user: row.user_name,
-        text: row.body,
-        createdAt: row.created_at,
-        imageUrl: row.image_url ?? undefined,
-      };
-
-      setCommentsByPost((previous) => {
-        const current = previous[postId] ?? [];
-        if (current.some((item) => item.id === comment.id)) return previous;
-
-        return {
-          ...previous,
-          [postId]: [comment, ...current],
-        };
+      dispatchComments({
+        type: "addComment",
+        postId,
+        comment: commentFromRow(row as CommentRow),
       });
-      setCounts((previous) => ({ ...previous, [postId]: (previous[postId] ?? 0) + 1 }));
     } catch (error: any) {
       console.error(error);
       alert(error?.message || "Could not post comment.");
@@ -983,14 +1092,7 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
 
   async function handleDeleteComment(commentId: string, postId: string) {
     if (commentId.startsWith("local-comment-") || !supabase) {
-      setCommentsByPost((previous) => ({
-        ...previous,
-        [postId]: (previous[postId] ?? []).filter((comment) => comment.id !== commentId),
-      }));
-      setCounts((previous) => ({
-        ...previous,
-        [postId]: Math.max(0, (previous[postId] ?? 1) - 1),
-      }));
+      dispatchComments({ type: "removeComment", postId, commentId });
       return;
     }
 
@@ -998,17 +1100,66 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
       const { error } = await supabase.from("comments").delete().eq("id", commentId);
       if (error) throw error;
 
-      setCommentsByPost((previous) => ({
-        ...previous,
-        [postId]: (previous[postId] ?? []).filter((comment) => comment.id !== commentId),
-      }));
-      setCounts((previous) => ({
-        ...previous,
-        [postId]: Math.max(0, (previous[postId] ?? 1) - 1),
-      }));
+      dispatchComments({ type: "removeComment", postId, commentId });
     } catch (error: any) {
       console.error(error);
       alert(error?.message || "Could not delete comment.");
+    }
+  }
+
+  async function handleToggleLike(postId: string) {
+    const target = posts.find((post) => post.id === postId);
+    if (!target) return;
+
+    const wasLiked = likedPostIds.has(postId);
+    const delta = wasLiked ? -1 : 1;
+    const nextVotes = Math.max(0, target.votes + delta);
+
+    setLikedPostIds((previous) => {
+      const next = new Set(previous);
+      if (wasLiked) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+    setPosts((previous) =>
+      previous.map((post) =>
+        post.id === postId
+          ? { ...post, votes: Math.max(0, post.votes + delta) }
+          : post
+      )
+    );
+
+    if (!target.fromDB || !supabase) return;
+
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .update({ votes: nextVotes })
+        .eq("id", postId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error(error);
+      setLikedPostIds((previous) => {
+        const next = new Set(previous);
+        if (wasLiked) {
+          next.add(postId);
+        } else {
+          next.delete(postId);
+        }
+        return next;
+      });
+      setPosts((previous) =>
+        previous.map((post) =>
+          post.id === postId
+            ? { ...post, votes: Math.max(0, post.votes - delta) }
+            : post
+        )
+      );
+      alert(error?.message || "Could not update like.");
     }
   }
 
@@ -1161,11 +1312,13 @@ function CommunityMain({ supabase }: { supabase: SupabaseClient | null }) {
               <PostCard
                 key={post.id}
                 post={post}
-                comments={commentsByPost[post.id] ?? []}
-                count={counts[post.id] ?? post.commentCount}
+                comments={commentsState.byPost[post.id] ?? []}
+                count={commentsState.counts[post.id] ?? post.commentCount}
+                liked={likedPostIds.has(post.id)}
                 onAddComment={handleAddComment}
                 onDeleteComment={handleDeleteComment}
                 onDeletePost={post.fromDB || post.id.startsWith("local-") ? handleDeletePost : undefined}
+                onToggleLike={handleToggleLike}
               />
             ))
           ) : (
