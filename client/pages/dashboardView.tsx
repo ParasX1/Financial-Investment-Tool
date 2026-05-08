@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
@@ -37,33 +37,113 @@ export interface CardSettings {
     graphMade: boolean;
 }
 
+type DashboardState = {
+    searchTags: string[];
+    selectedStocks: string[];
+    activeCards: boolean[];
+    cardSettings: CardSettings[];
+    globalStart: string;
+    globalEnd: string;
+}
+
+const DASHBOARD_STATE_VERSION = 1;
+
+const getTodayDate = () => {
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    return new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+};
+
+const createDefaultCardSettings = (start: string, end: string): CardSettings[] =>
+    Array.from({length: 6},
+        () => ({
+            barColor: '#fc03d7',
+            dateRange: {start, end},
+            metricType: 'BetaAnalysis' as MetricType,
+            graphMade: false
+        })
+    );
+
+const getDashboardStorageKey = (userId?: string) =>
+    `fit.dashboardState.v${DASHBOARD_STATE_VERSION}.${userId ?? 'guest'}`;
+
+const readDashboardState = (userId?: string): DashboardState | null => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const raw = window.localStorage.getItem(getDashboardStorageKey(userId));
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw) as Partial<DashboardState>;
+        if (
+            !Array.isArray(parsed.searchTags) ||
+            !Array.isArray(parsed.selectedStocks) ||
+            !Array.isArray(parsed.activeCards) ||
+            !Array.isArray(parsed.cardSettings) ||
+            typeof parsed.globalStart !== 'string' ||
+            typeof parsed.globalEnd !== 'string'
+        ) {
+            return null;
+        }
+
+        const defaultCards = createDefaultCardSettings(parsed.globalStart, parsed.globalEnd);
+
+        return {
+            searchTags: parsed.searchTags.map(tag => String(tag).trim().toUpperCase()).filter(Boolean).slice(0, 5),
+            selectedStocks: parsed.selectedStocks.map(stock => String(stock).trim().toUpperCase()).filter(Boolean),
+            activeCards: defaultCards.map((_, index) => Boolean(parsed.activeCards?.[index])),
+            cardSettings: defaultCards.map((defaultSettings, index) => ({
+                ...defaultSettings,
+                ...(parsed.cardSettings?.[index] ?? {}),
+                dateRange: {
+                    start: parsed.cardSettings?.[index]?.dateRange?.start ?? parsed.globalStart ?? defaultSettings.dateRange.start,
+                    end: parsed.cardSettings?.[index]?.dateRange?.end ?? parsed.globalEnd ?? defaultSettings.dateRange.end,
+                },
+                graphMade: Boolean(parsed.cardSettings?.[index]?.graphMade),
+            })),
+            globalStart: parsed.globalStart,
+            globalEnd: parsed.globalEnd,
+        };
+    } catch (error) {
+        console.error('readDashboardState error:', error);
+        return null;
+    }
+};
+
+const saveDashboardState = (userId: string | undefined, state: DashboardState) => {
+    if (typeof window === 'undefined') return;
+
+    try {
+        window.localStorage.setItem(getDashboardStorageKey(userId), JSON.stringify(state));
+    } catch (error) {
+        console.error('saveDashboardState error:', error);
+    }
+};
+
 const DashboardView: React.FC = () => {
     const { user, loading } = useAuth()
     const [searchTags, setSearchTags] = useState<string[]>([])
     const [selectedStocks, setSelectedStocks] = useState<string[]>([])
     const [prefsLoaded, setPrefsLoaded] = useState(false)
     const [activeCards, setActiveCards] = useState<boolean[]>([false, false, false, false, false, false]);
+    const skipNextGlobalDateSync = useRef(false);
 
     // global time range to initialize and pass to each card
     const [globalStart, setGlobalStart] = useState<string>(() => {
         // initialize to "now" in local ISO format YYYY‑MM‑DDThh:mm
-        const tzOffset = new Date().getTimezoneOffset() * 60000;
-        return new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+        return getTodayDate();
     });
     const [globalEnd, setGlobalEnd] = useState<string>(globalStart);
 
     const [cardSettings, setCardSettings] = useState<CardSettings[]>(
-        () => Array.from({length: 6},
-            () => ({
-                barColor: '#fc03d7', 
-                dateRange: {start: globalStart, end: globalEnd},
-                metricType: 'BetaAnalysis' as MetricType,
-                graphMade: false
-            })
-        )
+        () => createDefaultCardSettings(globalStart, globalEnd)
     );
 
     useEffect(() => {
+        if (skipNextGlobalDateSync.current) {
+            skipNextGlobalDateSync.current = false;
+            return;
+        }
+
         setCardSettings(prev =>
             prev.map(settings => {
                 if (
@@ -100,18 +180,31 @@ const DashboardView: React.FC = () => {
         setPrefsLoaded(false);
 
         (async () => {
+            const savedState = readDashboardState(userId);
+            if (savedState) {
+                skipNextGlobalDateSync.current = true;
+                setSearchTags(savedState.searchTags);
+                setSelectedStocks(savedState.selectedStocks);
+                setActiveCards(savedState.activeCards);
+                setCardSettings(savedState.cardSettings);
+                setGlobalStart(savedState.globalStart);
+                setGlobalEnd(savedState.globalEnd);
+            }
+
             const cfg = await loadPortfolioConfig(userId);
             if (cancelled) return;
 
-            const tags = cfg?.tags ?? [];
-            setSearchTags(tags);
+            if (!savedState) {
+                const tags = cfg?.tags ?? [];
+                setSearchTags(tags);
 
-            setSelectedStocks(prev => {
-                if (prev.length === tags.length && prev.every((v, i) => v === tags[i])) {
-                    return prev;
-                }
-                return tags;
-            });
+                setSelectedStocks(prev => {
+                    if (prev.length === tags.length && prev.every((v, i) => v === tags[i])) {
+                        return prev;
+                    }
+                    return tags;
+                });
+            }
             setPrefsLoaded(true);
         })();
 
@@ -184,6 +277,19 @@ const DashboardView: React.FC = () => {
         }, 600)
         return () => clearTimeout(h)
     }, [userId, prefsLoaded, searchTags]) 
+
+    useEffect(() => {
+        if (loading || !prefsLoaded) return;
+
+        saveDashboardState(userId, {
+            searchTags,
+            selectedStocks,
+            activeCards,
+            cardSettings,
+            globalStart,
+            globalEnd,
+        });
+    }, [loading, prefsLoaded, userId, searchTags, selectedStocks, activeCards, cardSettings, globalStart, globalEnd]);
 
     return (
         <div>
