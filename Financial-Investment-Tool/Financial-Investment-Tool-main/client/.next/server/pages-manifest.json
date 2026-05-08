@@ -1,0 +1,12 @@
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/_document": "pages/_document.js",
+  "/": "pages/index.js",
+  "/MarketNews": "pages/MarketNews.js",
+  "/Profile": "pages/Profile.js",
+  "/Watchlist": "pages/Watchlist.js",
+  "/api/market/quote": "pages/api/market/quote.js",
+  "/api/market/sparkline": "pages/api/market/sparkline.js",
+  "/api/market/trending": "pages/api/market/trending.js"
+}
