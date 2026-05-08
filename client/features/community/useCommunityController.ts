@@ -29,10 +29,16 @@ import {
   getErrorMessage,
   normalizeDiscussionDraft,
 } from "./utils";
+import {
+  MAX_DISCUSSION_TAGS,
+  getDefaultSelectedTags,
+  normalizeSelectedTags,
+} from "./smartTags";
 
 const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
   title: "",
   body: "",
+  tags: [],
 };
 
 export function useCommunityController(supabase: SupabaseClient | null) {
@@ -60,6 +66,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     DEMO_POSTS,
     createCommentsState
   );
+  const tagsEditedRef = React.useRef(false);
 
   const pushFeedback = React.useCallback(
     (message: Omit<FeedbackMessage, "id">) => {
@@ -75,10 +82,47 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   const setDraftField = React.useCallback(
     (field: DiscussionDraftField, value: string) => {
-      setDraft((previous) => ({ ...previous, [field]: value }));
+      setDraft((previous) => {
+        const next = { ...previous, [field]: value };
+
+        if (!next.title.trim() && !next.body.trim()) {
+          tagsEditedRef.current = false;
+          return { ...next, tags: [] };
+        }
+
+        if (tagsEditedRef.current) return next;
+        return { ...next, tags: getDefaultSelectedTags(next) };
+      });
     },
     []
   );
+
+  const toggleDraftTag = React.useCallback((tag: string) => {
+    tagsEditedRef.current = true;
+
+    setDraft((previous) => {
+      const selected = normalizeSelectedTags(previous.tags);
+
+      if (selected.includes(tag)) {
+        return {
+          ...previous,
+          tags: selected.filter((item) => item !== tag),
+        };
+      }
+
+      if (selected.length >= MAX_DISCUSSION_TAGS) return previous;
+
+      return {
+        ...previous,
+        tags: normalizeSelectedTags([...selected, tag]),
+      };
+    });
+  }, []);
+
+  const clearDraftTags = React.useCallback(() => {
+    tagsEditedRef.current = true;
+    setDraft((previous) => ({ ...previous, tags: [] }));
+  }, []);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -248,6 +292,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         postId: newPost.id,
         initialCount: 0,
       });
+      tagsEditedRef.current = false;
       setDraft(EMPTY_DISCUSSION_DRAFT);
     } catch (error) {
       console.error(error);
@@ -502,6 +547,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     setQuery,
     setSort,
     setDraftField,
+    toggleDraftTag,
+    clearDraftTags,
     dismissFeedback,
     handleCreatePost,
     handleAddComment,

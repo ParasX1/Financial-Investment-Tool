@@ -10,13 +10,15 @@ import type {
 import {
   commentFromRow,
   getUploadErrorMessage,
+  normalizeDiscussionDraft,
   postFromRow,
   validateCommentImage,
 } from "./utils";
 
 const COMMENT_SELECT =
   "id, post_id, user_name, body, image_url, created_at, author_id";
-const POST_SELECT = "id, title, body, votes, created_at, author_id";
+const POST_SELECT = "id, title, body, tags, votes, created_at, author_id";
+const POST_SELECT_WITHOUT_TAGS = "id, title, body, votes, created_at, author_id";
 const LEGACY_POST_SELECT = "id, title, votes, created_at, author_id";
 
 function isMissingAuthorIdColumn(error: unknown) {
@@ -26,16 +28,6 @@ function isMissingAuthorIdColumn(error: unknown) {
   return (
     details.code === "42703" &&
     Boolean(details.message?.toLowerCase().includes("author_id"))
-  );
-}
-
-function isMissingColumn(error: unknown, columnName: string) {
-  if (!error || typeof error !== "object") return false;
-
-  const details = error as { code?: string; message?: string };
-  return (
-    details.code === "42703" &&
-    Boolean(details.message?.toLowerCase().includes(columnName.toLowerCase()))
   );
 }
 
@@ -113,20 +105,40 @@ export async function loadCommunityData(
   };
 }
 
-async function loadCommunityPostRows(db: SupabaseClient) {
-  const result = await db
-    .from("posts")
-    .select(POST_SELECT)
-    .order("created_at", { ascending: false });
+function isMissingColumn(error: unknown, columnName: string) {
+  if (!error || typeof error !== "object") return false;
 
-  if (isMissingColumn(result.error, "body")) {
-    return db
+  const details = error as { code?: string; message?: string };
+  const message = details.message?.toLowerCase() ?? "";
+  const column = columnName.toLowerCase();
+
+  return (
+    Boolean(message.includes(column)) &&
+    (details.code === "42703" ||
+      details.code === "PGRST204" ||
+      message.includes("column") ||
+      message.includes("schema cache"))
+  );
+}
+
+function isMissingExpectedPostColumn(error: unknown) {
+  return isMissingColumn(error, "tags") || isMissingColumn(error, "body");
+}
+
+async function loadCommunityPostRows(db: SupabaseClient) {
+  const selects = [POST_SELECT, POST_SELECT_WITHOUT_TAGS, LEGACY_POST_SELECT];
+  let latestResult: any;
+
+  for (const columns of selects) {
+    latestResult = await db
       .from("posts")
-      .select(LEGACY_POST_SELECT)
+      .select(columns)
       .order("created_at", { ascending: false });
+
+    if (!isMissingExpectedPostColumn(latestResult.error)) return latestResult;
   }
 
-  return result;
+  return latestResult!;
 }
 
 async function loadLikedPostIds(
@@ -160,39 +172,52 @@ export async function createCommunityPost(
   draft: DiscussionDraft
 ): Promise<PostUI> {
   const uid = await getSessionUserId(db);
+  const postDraft = normalizeDiscussionDraft(draft);
 
-  const createResult = await db
-    .from("posts")
-    .insert({
-      title: draft.title,
-      body: draft.body,
-      votes: 0,
-      author_id: uid,
-    })
-    .select("id, title, body, votes, created_at, author_id")
-    .single();
-
-  let row = createResult.data as DBPost | null;
-  let error = createResult.error;
-
-  if (isMissingColumn(error, "body")) {
-    const legacyResult = await db
-      .from("posts")
-      .insert({
-        title: `${draft.title}\n\n${draft.body}`,
+  const attempts = [
+    {
+      values: {
+        title: postDraft.title,
+        body: postDraft.body,
+        tags: postDraft.tags,
         votes: 0,
         author_id: uid,
-      })
-      .select(LEGACY_POST_SELECT)
+      },
+      select: POST_SELECT,
+    },
+    {
+      values: {
+        title: postDraft.title,
+        body: postDraft.body,
+        votes: 0,
+        author_id: uid,
+      },
+      select: POST_SELECT_WITHOUT_TAGS,
+    },
+    {
+      values: {
+        title: `${postDraft.title}\n\n${postDraft.body}`,
+        votes: 0,
+        author_id: uid,
+      },
+      select: LEGACY_POST_SELECT,
+    },
+  ];
+
+  for (const attempt of attempts) {
+    const { data: row, error } = await db
+      .from("posts")
+      .insert(attempt.values)
+      .select(attempt.select)
       .single();
 
-    row = legacyResult.data as DBPost | null;
-    error = legacyResult.error;
+    if (isMissingExpectedPostColumn(error)) continue;
+    if (error) throw error;
+
+    return postFromRow(row as unknown as DBPost, uid);
   }
 
-  if (error) throw error;
-
-  return postFromRow(row as DBPost, uid);
+  throw new Error("Could not create post with the current Community schema.");
 }
 
 export async function deleteCommunityPost(

@@ -1,21 +1,36 @@
+import * as React from "react";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import communityStyles from "@/styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../smartTags";
 import type { DiscussionDraft, DiscussionDraftField } from "../types";
+import { SmartTagSuggestions } from "./SmartTagSuggestions";
 
 export function CommunityComposer({
   draft,
   creating,
   onDraftChange,
+  onClearTags,
+  onToggleTag,
   onSubmit,
 }: {
   draft: DiscussionDraft;
   creating: boolean;
   onDraftChange: (field: DiscussionDraftField, value: string) => void;
+  onClearTags: () => void;
+  onToggleTag: (tag: string) => void;
   onSubmit: () => void;
 }) {
   const canSubmit = Boolean(draft.title.trim() && draft.body.trim());
+  const smartTags = React.useMemo(
+    () => getSmartTagSuggestions(draft),
+    [draft]
+  );
+  const visibleTags = React.useMemo(
+    () => mergeSelectedTagSuggestions(draft.tags, smartTags),
+    [draft.tags, smartTags]
+  );
 
   return (
     <form
@@ -70,6 +85,13 @@ export function CommunityComposer({
               communityStyles.inputBorder,
               "disabled:cursor-not-allowed disabled:opacity-60"
             )}
+          />
+
+          <SmartTagSuggestions
+            items={visibleTags}
+            selectedTags={draft.tags}
+            onClear={onClearTags}
+            onToggle={onToggleTag}
           />
         </div>
       </div>

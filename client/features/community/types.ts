@@ -3,9 +3,10 @@ export type SortMode = "top" | "new";
 export type DiscussionDraft = {
   title: string;
   body: string;
+  tags: string[];
 };
 
-export type DiscussionDraftField = keyof DiscussionDraft;
+export type DiscussionDraftField = "title" | "body";
 
 export type SeedPost = {
   id: string;
@@ -25,6 +26,7 @@ export type DBPost = {
   id: string;
   title: string;
   body?: string | null;
+  tags?: string[] | null;
   votes: number;
   created_at: string;
   author_id: string | null;

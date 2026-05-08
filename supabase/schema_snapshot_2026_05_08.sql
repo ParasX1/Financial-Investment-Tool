@@ -40,6 +40,7 @@ CREATE TABLE public.posts (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   title text NOT NULL,
   body text,
+  tags text[] NOT NULL DEFAULT '{}',
   votes integer DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
   author_id uuid DEFAULT auth.uid(),

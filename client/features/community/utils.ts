@@ -11,6 +11,7 @@ import type {
   DiscussionDraft,
   PostUI,
 } from "./types";
+import { inferTags, normalizeSelectedTags } from "./smartTags";
 
 export function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
@@ -115,9 +116,13 @@ export function splitPostCopy(raw: string) {
 }
 
 export function normalizeDiscussionDraft(draft: DiscussionDraft): DiscussionDraft {
+  const title = draft.title.trim().replace(/\s+/g, " ");
+  const body = draft.body.trim();
+
   return {
-    title: draft.title.trim().replace(/\s+/g, " "),
-    body: draft.body.trim(),
+    title,
+    body,
+    tags: normalizeSelectedTags(draft.tags),
   };
 }
 
@@ -144,27 +149,15 @@ export function getExpandableText(text: string, maxChars: number) {
   };
 }
 
-export function inferTags(text: string) {
-  const lower = text.toLowerCase();
-  const tags: string[] = [];
-
-  if (lower.includes("portfolio")) tags.push("Portfolio");
-  if (lower.includes("strategy")) tags.push("Strategy");
-  if (lower.includes("nvda") || lower.includes("nvidia")) tags.push("NVDA");
-  if (lower.includes("ai")) tags.push("AI");
-  if (lower.includes("backtest")) tags.push("Backtesting");
-  if (lower.includes("valuation")) tags.push("Valuation");
-  if (lower.includes("cash")) tags.push("Cash Flow");
-
-  return tags.length ? tags.slice(0, 3) : ["Discussion", "Market View"];
-}
-
 export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI {
   const fallbackCopy = splitPostCopy(row.title);
   const body = row.body?.trim() || fallbackCopy.body;
   const title = row.body === undefined || row.body === null
     ? fallbackCopy.title
     : row.title.trim() || fallbackCopy.title;
+  const savedTags = Array.isArray(row.tags)
+    ? normalizeSelectedTags(row.tags)
+    : null;
   const user = row.author_id
     ? row.author_id === currentUserId
       ? "You"
@@ -180,7 +173,7 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
     votes: row.votes ?? 0,
     time: toRelativeTime(row.created_at),
     sortTime: new Date(row.created_at).getTime(),
-    tags: inferTags(`${title} ${body}`),
+    tags: savedTags ?? inferTags(`${title} ${body}`),
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
     fromDB: true,
@@ -222,7 +215,7 @@ export function createLocalPost(draft: DiscussionDraft): PostUI {
     votes: 0,
     time: "just now",
     sortTime: Date.now(),
-    tags: inferTags(`${copy.title} ${copy.body}`),
+    tags: copy.tags,
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
   };

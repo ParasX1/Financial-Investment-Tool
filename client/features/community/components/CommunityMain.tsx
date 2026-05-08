@@ -35,6 +35,8 @@ export function CommunityMain({ supabase }: { supabase: SupabaseClient | null })
           draft={community.draft}
           creating={community.creating}
           onDraftChange={community.setDraftField}
+          onClearTags={community.clearDraftTags}
+          onToggleTag={community.toggleDraftTag}
           onSubmit={community.handleCreatePost}
         />
 
