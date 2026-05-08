@@ -34,7 +34,7 @@ export function CommunityMain({ supabase }: { supabase: SupabaseClient | null })
         <CommunityComposer
           draft={community.draft}
           creating={community.creating}
-          onDraftChange={community.setDraft}
+          onDraftChange={community.setDraftField}
           onSubmit={community.handleCreatePost}
         />
 

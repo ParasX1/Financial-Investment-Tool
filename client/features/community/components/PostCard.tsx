@@ -9,6 +9,7 @@ import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
+import { ExpandableText } from "./ExpandableText";
 
 export function PostCard({
   post,
@@ -42,6 +43,20 @@ export function PostCard({
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
+  const tagBadges = post.tags.length
+    ? post.tags.map((tag) => (
+        <span
+          key={tag}
+          className={cn(
+            "rounded-md bg-[#101747] px-[10px] py-[4px] text-xs font-medium text-[#9eb2ff]",
+            communityStyles.tagBorder,
+            communityStyles.wrapAnywhere
+          )}
+        >
+          {tag}
+        </span>
+      ))
+    : null;
 
   return (
     <article
@@ -92,37 +107,16 @@ export function PostCard({
           <h2
             className={cn(
               "mt-[6px] text-[17px] font-semibold leading-[1.35] text-[#fbfbff] sm:text-[18px]",
+              communityStyles.postCopyMeasure,
               communityStyles.wrapAnywhere
             )}
           >
             {post.title}
           </h2>
 
-          <p
-            className={cn(
-              "mt-[10px] max-w-[45rem] text-[15px] leading-[1.65] text-[#c4ccdc]",
-              communityStyles.wrapAnywhere
-            )}
-          >
-            {post.body}
-          </p>
+          <ExpandableText footer={tagBadges} text={post.body} />
 
-          <div className="mt-[12px] flex flex-wrap gap-[8px]">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className={cn(
-                  "rounded-md bg-[#101747] px-[10px] py-[4px] text-xs font-medium text-[#9eb2ff]",
-                  communityStyles.tagBorder,
-                  communityStyles.wrapAnywhere
-                )}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-[13px] flex flex-wrap items-center gap-[10px]">
+          <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
             <button
               type="button"
               onClick={() => setOpen((value) => !value)}

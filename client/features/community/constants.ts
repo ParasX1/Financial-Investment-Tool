@@ -2,6 +2,8 @@ import type { SeedPost, SortMode } from "./types";
 
 export const COMMUNITY_SORT_OPTIONS: SortMode[] = ["top", "new"];
 export const COMMUNITY_PAGE_WIDTH = "min(100%, calc(100vw - 90px))";
+export const POST_BODY_PREVIEW_MAX_CHARS = 360;
+export const POST_BODY_PREVIEW_MIN_WORD_BOUNDARY = 240;
 
 export const COMMENT_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";

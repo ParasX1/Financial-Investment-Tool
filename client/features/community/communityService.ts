@@ -1,6 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { COMMENT_BUCKET, DEMO_POSTS } from "./constants";
-import type { CommentEntry, CommentRow, DBPost, PostUI } from "./types";
+import type {
+  CommentEntry,
+  CommentRow,
+  DBPost,
+  DiscussionDraft,
+  PostUI,
+} from "./types";
 import {
   commentFromRow,
   getUploadErrorMessage,
@@ -10,6 +16,8 @@ import {
 
 const COMMENT_SELECT =
   "id, post_id, user_name, body, image_url, created_at, author_id";
+const POST_SELECT = "id, title, body, votes, created_at, author_id";
+const LEGACY_POST_SELECT = "id, title, votes, created_at, author_id";
 
 function isMissingAuthorIdColumn(error: unknown) {
   if (!error || typeof error !== "object") return false;
@@ -18,6 +26,16 @@ function isMissingAuthorIdColumn(error: unknown) {
   return (
     details.code === "42703" &&
     Boolean(details.message?.toLowerCase().includes("author_id"))
+  );
+}
+
+function isMissingColumn(error: unknown, columnName: string) {
+  if (!error || typeof error !== "object") return false;
+
+  const details = error as { code?: string; message?: string };
+  return (
+    details.code === "42703" &&
+    Boolean(details.message?.toLowerCase().includes(columnName.toLowerCase()))
   );
 }
 
@@ -50,10 +68,7 @@ export async function loadCommunityData(
   const activeUserId =
     currentUserId === undefined ? await getSessionUserId(db) : currentUserId;
 
-  const { data: rows, error } = await db
-    .from("posts")
-    .select("id, title, votes, created_at, author_id")
-    .order("created_at", { ascending: false });
+  const { data: rows, error } = await loadCommunityPostRows(db);
 
   if (error) throw error;
 
@@ -98,6 +113,22 @@ export async function loadCommunityData(
   };
 }
 
+async function loadCommunityPostRows(db: SupabaseClient) {
+  const result = await db
+    .from("posts")
+    .select(POST_SELECT)
+    .order("created_at", { ascending: false });
+
+  if (isMissingColumn(result.error, "body")) {
+    return db
+      .from("posts")
+      .select(LEGACY_POST_SELECT)
+      .order("created_at", { ascending: false });
+  }
+
+  return result;
+}
+
 async function loadLikedPostIds(
   db: SupabaseClient,
   postIds: string[],
@@ -126,19 +157,38 @@ async function loadLikedPostIds(
 
 export async function createCommunityPost(
   db: SupabaseClient,
-  text: string
+  draft: DiscussionDraft
 ): Promise<PostUI> {
   const uid = await getSessionUserId(db);
 
-  const { data: row, error } = await db
+  const createResult = await db
     .from("posts")
     .insert({
-      title: text,
+      title: draft.title,
+      body: draft.body,
       votes: 0,
       author_id: uid,
     })
-    .select("id, title, votes, created_at, author_id")
+    .select("id, title, body, votes, created_at, author_id")
     .single();
+
+  let row = createResult.data as DBPost | null;
+  let error = createResult.error;
+
+  if (isMissingColumn(error, "body")) {
+    const legacyResult = await db
+      .from("posts")
+      .insert({
+        title: `${draft.title}\n\n${draft.body}`,
+        votes: 0,
+        author_id: uid,
+      })
+      .select(LEGACY_POST_SELECT)
+      .single();
+
+    row = legacyResult.data as DBPost | null;
+    error = legacyResult.error;
+  }
 
   if (error) throw error;
 

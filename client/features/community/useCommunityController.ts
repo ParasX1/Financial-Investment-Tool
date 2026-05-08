@@ -14,6 +14,8 @@ import {
 import type {
   CommentRow,
   CommentUI,
+  DiscussionDraft,
+  DiscussionDraftField,
   FeedbackMessage,
   NewComment,
   PendingDelete,
@@ -25,12 +27,20 @@ import {
   createLocalComment,
   createLocalPost,
   getErrorMessage,
+  normalizeDiscussionDraft,
 } from "./utils";
+
+const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
+  title: "",
+  body: "",
+};
 
 export function useCommunityController(supabase: SupabaseClient | null) {
   const [query, setQuery] = React.useState("");
   const [sort, setSort] = React.useState<SortMode>("top");
-  const [draft, setDraft] = React.useState("");
+  const [draft, setDraft] = React.useState<DiscussionDraft>(
+    EMPTY_DISCUSSION_DRAFT
+  );
   const [creating, setCreating] = React.useState(false);
   const [loadingCommunity, setLoadingCommunity] = React.useState(Boolean(supabase));
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -62,6 +72,13 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   const dismissFeedback = React.useCallback((id: string) => {
     setFeedback((previous) => previous.filter((item) => item.id !== id));
   }, []);
+
+  const setDraftField = React.useCallback(
+    (field: DiscussionDraftField, value: string) => {
+      setDraft((previous) => ({ ...previous, [field]: value }));
+    },
+    []
+  );
 
   React.useEffect(() => {
     if (!supabase) {
@@ -215,15 +232,15 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   );
 
   async function handleCreatePost() {
-    const text = draft.trim();
-    if (!text || creating) return;
+    const nextDraft = normalizeDiscussionDraft(draft);
+    if (!nextDraft.title || !nextDraft.body || creating) return;
 
     setCreating(true);
 
     try {
       const newPost = supabase
-        ? await createCommunityPost(supabase, text)
-        : createLocalPost(text);
+        ? await createCommunityPost(supabase, nextDraft)
+        : createLocalPost(nextDraft);
 
       setPosts((previous) => [newPost, ...previous]);
       dispatchComments({
@@ -231,7 +248,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         postId: newPost.id,
         initialCount: 0,
       });
-      setDraft("");
+      setDraft(EMPTY_DISCUSSION_DRAFT);
     } catch (error) {
       console.error(error);
       pushFeedback({
@@ -484,7 +501,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     currentUserId,
     setQuery,
     setSort,
-    setDraft,
+    setDraftField,
     dismissFeedback,
     handleCreatePost,
     handleAddComment,

@@ -26,6 +26,10 @@
   overflow-wrap: anywhere;
 }
 
+.postCopyMeasure {
+  max-width: min(100%, 52rem);
+}
+
 .skeleton {
   background: linear-gradient(
     90deg,

@@ -2,8 +2,15 @@ import {
   COMMENT_IMAGE_EXTENSIONS,
   COMMENT_IMAGE_TYPES,
   MAX_COMMENT_IMAGE_BYTES,
+  POST_BODY_PREVIEW_MIN_WORD_BOUNDARY,
 } from "./constants";
-import type { CommentRow, CommentUI, DBPost, PostUI } from "./types";
+import type {
+  CommentRow,
+  CommentUI,
+  DBPost,
+  DiscussionDraft,
+  PostUI,
+} from "./types";
 
 export function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
@@ -73,6 +80,19 @@ export function toRelativeTime(value: string) {
 }
 
 export function splitPostCopy(raw: string) {
+  const paragraphs = raw
+    .trim()
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length > 1) {
+    return {
+      title: paragraphs[0].replace(/\s+/g, " "),
+      body: paragraphs.slice(1).join("\n\n"),
+    };
+  }
+
   const clean = raw.trim().replace(/\s+/g, " ");
   if (!clean) {
     return {
@@ -94,6 +114,36 @@ export function splitPostCopy(raw: string) {
   };
 }
 
+export function normalizeDiscussionDraft(draft: DiscussionDraft): DiscussionDraft {
+  return {
+    title: draft.title.trim().replace(/\s+/g, " "),
+    body: draft.body.trim(),
+  };
+}
+
+export function getExpandableText(text: string, maxChars: number) {
+  const clean = text.trim();
+
+  if (clean.length <= maxChars) {
+    return {
+      shouldCollapse: false,
+      preview: clean,
+    };
+  }
+
+  const slice = clean.slice(0, maxChars);
+  const lastSpace = slice.lastIndexOf(" ");
+  const lastLineBreak = slice.lastIndexOf("\n");
+  const boundary = Math.max(lastSpace, lastLineBreak);
+  const end =
+    boundary >= POST_BODY_PREVIEW_MIN_WORD_BOUNDARY ? boundary : maxChars;
+
+  return {
+    shouldCollapse: true,
+    preview: `${clean.slice(0, end).trimEnd()}...`,
+  };
+}
+
 export function inferTags(text: string) {
   const lower = text.toLowerCase();
   const tags: string[] = [];
@@ -110,7 +160,11 @@ export function inferTags(text: string) {
 }
 
 export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI {
-  const copy = splitPostCopy(row.title);
+  const fallbackCopy = splitPostCopy(row.title);
+  const body = row.body?.trim() || fallbackCopy.body;
+  const title = row.body === undefined || row.body === null
+    ? fallbackCopy.title
+    : row.title.trim() || fallbackCopy.title;
   const user = row.author_id
     ? row.author_id === currentUserId
       ? "You"
@@ -121,12 +175,12 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
     id: row.id,
     user,
     initials: initials(user),
-    title: copy.title,
-    body: copy.body,
+    title,
+    body,
     votes: row.votes ?? 0,
     time: toRelativeTime(row.created_at),
     sortTime: new Date(row.created_at).getTime(),
-    tags: inferTags(row.title),
+    tags: inferTags(`${title} ${body}`),
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
     fromDB: true,
@@ -156,16 +210,19 @@ export function commentFromRow(
   };
 }
 
-export function createLocalPost(text: string): PostUI {
+export function createLocalPost(draft: DiscussionDraft): PostUI {
+  const copy = normalizeDiscussionDraft(draft);
+
   return {
     id: `local-${crypto.randomUUID()}`,
     user: "You",
     initials: "YU",
-    ...splitPostCopy(text),
+    title: copy.title || "Untitled discussion",
+    body: copy.body || "Open for feedback and discussion.",
     votes: 0,
     time: "just now",
     sortTime: Date.now(),
-    tags: inferTags(text),
+    tags: inferTags(`${copy.title} ${copy.body}`),
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
   };
