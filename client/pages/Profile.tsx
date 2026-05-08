@@ -3,7 +3,11 @@ import Sidebar from '@/components/sidebar'
 import supabase from '@/components/supabase'
 import { useAuth } from '@/components/authContext'
 
-const AVATAR_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars'
+const AVATAR_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET ||
+  process.env.NEXT_PUBLIC_SUPABASE_BUCKET ||
+  'avatars'
+const PROFILE_TABLE = 'Users'
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 const recentActivities = [
@@ -51,10 +55,10 @@ function Profile() {
 
     const load = async () => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from(PROFILE_TABLE)
         .select('first_name,last_name,avatar_url')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (!error && data) {
         setFname(data.first_name || '')
@@ -85,14 +89,14 @@ function Profile() {
     setMsg(null)
 
     const { error } = await supabase
-      .from('profiles')
+      .from(PROFILE_TABLE)
       .upsert(
         {
           id: user.id,
           first_name: fname,
           last_name: lname,
+          email,
           avatar_url: avatarUrl,
-          updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' }
       )
@@ -152,8 +156,15 @@ function Profile() {
       return null
     })
 
-    await supabase.from('profiles').upsert({ id: user.id, avatar_url: publicUrl }, { onConflict: 'id' })
-    setMsg('Avatar updated successfully.')
+    const { error: profileError } = await supabase
+      .from(PROFILE_TABLE)
+      .upsert({ id: user.id, email, avatar_url: publicUrl }, { onConflict: 'id' })
+
+    if (profileError) {
+      setMsg(`Avatar uploaded, but profile save failed: ${profileError.message}`)
+    } else {
+      setMsg('Avatar updated successfully.')
+    }
     e.target.value = ''
   }
 
