@@ -259,98 +259,143 @@ const Help: React.FC = () => {
 
   const activeSection = helpSections.find((s) => s.id === activeId) ?? helpSections[0];
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#0f1117', color: '#ffffff' }}>
-      {/* Left: App Sidebar */}
-      <Sidebar />
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-      {/* Middle: Help Center nav */}
-      <div
-        style={{
-          width: '280px',
-          flexShrink: 0,
-          borderRight: '1px solid #27272A',
-          padding: '1.5rem 1rem',
-          overflowY: 'auto',
-          backgroundColor: '#09090B',
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-          <span style={{ flexShrink: 0, width: '1.3rem', height: '1.3rem', borderRadius: '50%', border: '1.5px solid #437BF7', display: 'flex',
-                          alignItems: 'center', justifyContent: 'center', color: '#437BF7', fontSize: '1rem'}}>?</span>
-          <span style={{ fontWeight: 700, fontSize: '1.15rem' }}>Help Center</span>
+  return (
+    <>
+      {/* Left: App Sidebar */}      
+      <Sidebar onHoverChange={setSidebarOpen} />
+      
+      <div style={{ 
+        marginLeft: sidebarOpen ? '200px' : '50px', 
+        transition: 'margin-left 0.3s ease', 
+        display: 'flex', 
+        height: '100vh', 
+        backgroundColor: '#0f1117', 
+        color: '#ffffff' }}>
+
+        {/* Middle: Help Center nav */}
+        <div
+          style={{
+            width: '280px',
+            flexShrink: 0,
+            borderRight: '1px solid #27272A',
+            padding: '1.5rem 1rem',
+            overflowY: 'auto',
+            backgroundColor: '#09090B',
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+            <span style={{ flexShrink: 0, width: '1.3rem', height: '1.3rem', borderRadius: '50%', border: '1.5px solid #437BF7', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', color: '#437BF7', fontSize: '1rem'}}>?</span>
+            <span style={{ fontWeight: 700, fontSize: '1.15rem' }}>Help Center</span>
+          </div>
+
+
+          {/* Section list */}
+          <nav>
+            {helpSections.map((section) => {
+              const isActive = section.id === activeId;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveId(section.id)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    marginBottom: '0.35rem',
+                    borderRadius: '8px',
+                    border: isActive ? '1px solid #203773' : '1px solid transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? 700 : 400,
+                    backgroundColor: isActive ? '#101939' : 'transparent',
+                    color: isActive ? '#ffffff' : '#9F9FA8',
+                    transition: 'background-color 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#18181B';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#9F9FA8';
+                    }
+                  }}
+                >
+                  <span>{section.label}</span>
+                  <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>›</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
+        {/* Right: FAQ content */}
+        <main
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '2.5rem 2.5rem',
+            backgroundColor: '#000000'
+          }}
+        >
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+            {activeSection.label}
+          </h1>
+          <p style={{ color: '#9F9FA8', marginBottom: '2rem', fontSize: '1rem' }}>
+            {activeSection.subtitle}
+          </p>
 
-        {/* Section list */}
-        <nav>
-          {helpSections.map((section) => {
-            const isActive = section.id === activeId;
-            return (
-              <button
-                key={section.id}
-                onClick={() => setActiveId(section.id)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem 1rem',
-                  marginBottom: '0.35rem',
-                  borderRadius: '8px',
-                  border: isActive ? '1px solid #203773' : '1px solid transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '0.95rem',
-                  fontWeight: isActive ? 700 : 400,
-                  backgroundColor: isActive ? '#101939' : 'transparent',
-                  color: isActive ? '#ffffff' : '#9F9FA8',
-                  transition: 'background-color 0.15s, color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#18181B';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#9F9FA8';
-                  }
-                }}
-              >
-                <span>{section.label}</span>
-                <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>›</span>
-              </button>
-            );
-          })}
-        </nav>
+          {activeSection.faqs.map((faq, idx) => (
+            <FAQCard key={idx} faq={faq} />
+          ))}
+
+          {/* Still need help */}
+          <div
+            style={{
+              marginTop: '3rem',
+              padding: '2rem',
+              borderRadius: '12px',
+              border: '1px solid #1C2A5C',
+              background: '#0A0818',
+              color: 'white',
+              textAlign: 'center'
+            }}
+          >
+            <h2 style={{ color: '#FFFFFF', fontSize: '1.5rem', marginBottom: '0.5rem'}}>Still need help?</h2>
+            <p style={{ color: '#9F9FA8', marginBottom: '1.5rem', opacity: 0.9 }}>
+              Can't find what you're looking for? Our support team is here to help.
+            </p>
+
+            <button
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'linear-gradient(90deg, #2D5BF2, #8A21F0)',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+              onClick={() => alert('Support modal coming soon')}
+            >
+              Contact Support
+            </button>
+          </div>
+
+
+        </main>
       </div>
-
-      {/* Right: FAQ content */}
-      <main
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '2.5rem 2.5rem',
-          backgroundColor: '#000000',
-        }}
-      >
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-          {activeSection.label}
-        </h1>
-        <p style={{ color: '#9F9FA8', marginBottom: '2rem', fontSize: '1rem' }}>
-          {activeSection.subtitle}
-        </p>
-
-        {activeSection.faqs.map((faq, idx) => (
-          <FAQCard key={idx} faq={faq} />
-        ))}
-
-      </main>
-    </div>
+  </>
   );
 };
 
