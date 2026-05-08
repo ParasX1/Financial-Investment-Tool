@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import traceback
-from src.stocks import sanitiseStockJson
-from src.metrics import (
+from .stocks import sanitiseStockJson
+from .metrics import (
     fetch_stock_data,
     calculate_beta,
     calculate_alpha,
@@ -27,8 +27,8 @@ def create_app():
 
     # supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
 
-    SUPABASE_URL = "https://fybvhtuhpdmfzrtitptv.supabase.co"
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YnZodHVocGRtZnpydGl0cHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjM5MTgsImV4cCI6MjA1NzgzOTkxOH0.bl3F6T-1m4ntsTeJRAPUb66QFL3fIZVBj0TGzMsnpK8"
+    SUPABASE_URL = "https://egjnhetinyoyrhbetbxi.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnam5oZXRpbnlveXJoYmV0YnhpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDkzOTk2MiwiZXhwIjoyMDkwNTE1OTYyfQ.daN3KqoE-WcRUmo57cDU_ojgyh0ra8vI0zeXtVg0TbY"
 
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
