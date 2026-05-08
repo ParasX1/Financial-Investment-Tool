@@ -15,6 +15,7 @@ export function PostCard({
   comments,
   count,
   liked,
+  likeBusy,
   onAddComment,
   canDeletePost,
   canDeleteComment,
@@ -26,6 +27,7 @@ export function PostCard({
   comments: CommentUI[];
   count: number;
   liked: boolean;
+  likeBusy: boolean;
   canDeletePost: boolean;
   canDeleteComment: (comment: CommentUI) => boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
@@ -142,11 +144,13 @@ export function PostCard({
             <button
               type="button"
               onClick={() => onToggleLike(post.id)}
+              disabled={likeBusy}
               className={cn(
                 "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] text-sm font-semibold transition-colors",
                 liked
                   ? "bg-[#171b4a] text-[#cfd8ff]"
                   : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                likeBusy ? "cursor-wait opacity-70" : "",
                 FOCUS_VISIBLE
               )}
               aria-pressed={liked}
@@ -168,11 +172,11 @@ export function PostCard({
               id={commentsId}
               className={cn("mt-[14px] space-y-3 pt-[14px]", communityStyles.dividerTop)}
             >
-            <CommentList
-              items={comments}
-              canDelete={canDeleteComment}
-              onDelete={(commentId) => onDeleteComment(commentId, post.id)}
-            />
+              <CommentList
+                items={comments}
+                canDelete={canDeleteComment}
+                onDelete={(commentId) => onDeleteComment(commentId, post.id)}
+              />
               <CommentForm
                 busy={busy}
                 onSubmit={async (data) => {

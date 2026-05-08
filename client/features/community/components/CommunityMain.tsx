@@ -82,6 +82,7 @@ export function CommunityMain({ supabase }: { supabase: SupabaseClient | null })
                 comments={community.commentsState.byPost[post.id] ?? []}
                 count={community.commentsState.counts[post.id] ?? post.commentCount}
                 liked={community.likedPostIds.has(post.id)}
+                likeBusy={community.likingPostIds.has(post.id)}
                 canDeletePost={community.canDeletePost(post)}
                 canDeleteComment={community.canDeleteComment}
                 onAddComment={community.handleAddComment}

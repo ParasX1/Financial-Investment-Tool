@@ -8,7 +8,7 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
   loadCommunityData,
-  updateCommunityPostVotes,
+  setCommunityPostLike,
   uploadCommentImage,
 } from "./communityService";
 import type {
@@ -40,6 +40,9 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [posts, setPosts] = React.useState<PostUI[]>(DEMO_POSTS);
   const [likedPostIds, setLikedPostIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
+  const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(
     () => new Set()
   );
   const [commentsState, dispatchComments] = React.useReducer(
@@ -95,10 +98,11 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       setLoadError(null);
 
       try {
-        const result = await loadCommunityData(db);
+        const result = await loadCommunityData(db, currentUserId);
         if (!mounted) return;
 
         setPosts(result.posts);
+        setLikedPostIds(new Set(result.likedPostIds));
         dispatchComments({
           type: "reset",
           posts: result.posts,
@@ -107,12 +111,15 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
         if (result.commentsError) {
           setLoadError(result.commentsError);
+        } else if (result.likesError) {
+          setLoadError(result.likesError);
         }
       } catch (error) {
         console.error("load community failed:", error);
         if (!mounted) return;
 
         setPosts(DEMO_POSTS);
+        setLikedPostIds(new Set());
         dispatchComments({ type: "reset", posts: DEMO_POSTS });
         setLoadError(
           getErrorMessage(
@@ -130,7 +137,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, currentUserId]);
 
   React.useEffect(() => {
     if (!supabase) return;
@@ -178,6 +185,12 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     setPosts((previous) => previous.filter((post) => post.id !== postId));
     dispatchComments({ type: "removePost", postId });
     setLikedPostIds((previous) => {
+      if (!previous.has(postId)) return previous;
+      const next = new Set(previous);
+      next.delete(postId);
+      return next;
+    });
+    setLikingPostIds((previous) => {
       if (!previous.has(postId)) return previous;
       const next = new Set(previous);
       next.delete(postId);
@@ -327,12 +340,21 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   async function handleToggleLike(postId: string) {
     const target = posts.find((post) => post.id === postId);
-    if (!target) return;
+    if (!target || likingPostIds.has(postId)) return;
+
+    if (target.fromDB && supabase && !currentUserId) {
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to like discussions",
+        message: "Likes are saved to your account so they persist after refresh.",
+      });
+      return;
+    }
 
     const wasLiked = likedPostIds.has(postId);
     const delta = wasLiked ? -1 : 1;
-    const nextVotes = Math.max(0, target.votes + delta);
 
+    setLikingPostIds((previous) => new Set(previous).add(postId));
     setLikedPostIds((previous) => {
       const next = new Set(previous);
       if (wasLiked) {
@@ -350,10 +372,22 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       )
     );
 
-    if (!target.fromDB || !supabase) return;
+    if (!target.fromDB || !supabase) {
+      setLikingPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
+      });
+      return;
+    }
 
     try {
-      await updateCommunityPostVotes(supabase, postId, nextVotes);
+      const savedVotes = await setCommunityPostLike(supabase, postId, !wasLiked);
+      setPosts((previous) =>
+        previous.map((post) =>
+          post.id === postId ? { ...post, votes: savedVotes } : post
+        )
+      );
     } catch (error) {
       console.error(error);
       setLikedPostIds((previous) => {
@@ -376,6 +410,12 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         tone: "error",
         title: "Like was not saved",
         message: getErrorMessage(error, "Could not update like."),
+      });
+    } finally {
+      setLikingPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
       });
     }
   }
@@ -440,6 +480,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     commentsState,
     filteredPosts,
     likedPostIds,
+    likingPostIds,
     currentUserId,
     setQuery,
     setSort,
