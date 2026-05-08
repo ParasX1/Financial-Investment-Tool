@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Tabs, Tab, FormControl, InputLabel, Select, MenuItem, Divider, Chip, Stack } from '@mui/material';
+import {
+  Box,
+  Tabs,
+  Tab,
+  FormControl,
+  Select,
+  MenuItem,
+  Chip,
+  Stack,
+  Typography
+} from '@mui/material';
+import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
 import Sidebar from '@/components/sidebar';
 import NewsCardComponent from '@/components/NewsCardComponent';
 import { useAuth } from '@/components/authContext';
@@ -7,22 +18,48 @@ import supabase from '@/components/supabase';
 
 type TabKey = 'general' | 'watchlist' | 'regional' | 'industry' | 'commodity';
 
-const TOPBAR_H = 64;
+const regionOptions = [
+  { value: 'all', label: 'All Regions' },
+  { value: 'us', label: 'North America' },
+  { value: 'gb', label: 'Europe' },
+  { value: 'cn', label: 'Asia' },
+  { value: 'ae', label: 'Middle East' }
+];
+
+const industryOptions = [
+  { value: 'all', label: 'All Industries' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'health', label: 'Healthcare' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'finance', label: 'Finance' }
+];
+
+const commodityOptions = [
+  { value: 'all', label: 'All Commodities' },
+  { value: 'oil', label: 'Energy' },
+  { value: 'gold', label: 'Metals' },
+  { value: 'wheat', label: 'Agriculture' }
+];
 
 const MarketNews: React.FC = () => {
   const { user } = useAuth();
 
   const [active, setActive] = useState<TabKey>('general');
-  const [region, setRegion] = useState('au');
-  const [industry, setIndustry] = useState('technology');
-  const [commodity, setCommodity] = useState('gold');
-  const [limit, setLimit] = useState<number>(12);
+  const [region, setRegion] = useState('all');
+  const [industry, setIndustry] = useState('all');
+  const [commodity, setCommodity] = useState('all');
+  const [limit, setLimit] = useState<number>(20);
 
   const [watchlistSyms, setWatchlistSyms] = useState<string[]>([]);
   const [watchSel, setWatchSel] = useState<'ALL' | string>('ALL');
 
   useEffect(() => {
-    if (!user) { setWatchlistSyms([]); setWatchSel('ALL'); return; }
+    if (!user) {
+      setWatchlistSyms([]);
+      setWatchSel('ALL');
+      return;
+    }
+
     (async () => {
       const { data, error } = await supabase
         .from('user_watchlist')
@@ -30,180 +67,261 @@ const MarketNews: React.FC = () => {
         .eq('user_id', user.id)
         .order('position', { ascending: true });
 
-      if (error) { console.error('load watchlist failed:', error); setWatchlistSyms([]); setWatchSel('ALL'); return; }
+      if (error) {
+        console.error('load watchlist failed:', error);
+        setWatchlistSyms([]);
+        setWatchSel('ALL');
+        return;
+      }
 
-      const symbols = (data ?? []).map(d => d.symbol).filter(Boolean) as string[];
+      const symbols = (data ?? []).map((item) => item.symbol).filter(Boolean) as string[];
       setWatchlistSyms(symbols);
-      setWatchSel(prev => (prev !== 'ALL' && symbols.includes(prev) ? prev : 'ALL'));
+      setWatchSel((prev) => (prev !== 'ALL' && symbols.includes(prev) ? prev : 'ALL'));
     })();
   }, [user]);
 
   const watchlistQuery = useMemo(() => {
     if (!watchlistSyms.length) return '';
-    return watchSel === 'ALL'
-      ? watchlistSyms.slice(0, 3).join(' OR ')
-      : watchSel;
-  }, [watchlistSyms, watchSel]);
+    return watchSel === 'ALL' ? watchlistSyms.slice(0, 3).join(' OR ') : watchSel;
+  }, [watchSel, watchlistSyms]);
 
-  const chipSx = (active: boolean) => ({
-    color: active ? '#fff' : 'rgba(255,255,255,0.88)',
-    borderColor: 'rgba(255,255,255,0.36)',
-    bgcolor: active ? 'secondary.main' : 'rgba(255,255,255,0.08)',
+  const watchChipSx = (selected: boolean) => ({
+    color: selected ? '#dbeafe' : 'rgba(255,255,255,0.8)',
+    borderColor: selected ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.12)',
+    bgcolor: selected ? 'rgba(30,64,175,0.42)' : 'rgba(255,255,255,0.04)',
     fontWeight: 600,
+    borderRadius: '10px',
     '&:hover': {
-        bgcolor: active ? 'secondary.dark' : 'rgba(255,255,255,0.16)',
-        borderColor: 'rgba(255,255,255,0.48)',
-    },
-    });
+      bgcolor: selected ? 'rgba(30,64,175,0.56)' : 'rgba(255,255,255,0.1)'
+    }
+  });
+
+  const commonNewsProps = useMemo(
+    () =>
+      ({
+        height: '100%',
+        limit,
+        dark: true,
+        fullscreenOffsetTop: 0,
+        layout: 'list'
+      }) as const,
+    [limit]
+  );
 
   const section = useMemo(() => {
-    const commonProps = { height: '100%', limit, dark: true, fullscreenOffsetTop: TOPBAR_H } as const;
-
     switch (active) {
       case 'general':
-        return <NewsCardComponent {...commonProps} index={0} title="General News" />;
+        return <NewsCardComponent {...commonNewsProps} index={0} title="General News" />;
       case 'watchlist':
         return (
           <NewsCardComponent
-            {...commonProps}
+            {...commonNewsProps}
             index={1}
-            title={watchSel === 'ALL' ? 'Watchlist News' : `Watchlist · ${watchSel}`}
+            title={watchSel === 'ALL' ? 'Watchlist News' : `Watchlist ${watchSel}`}
             filterTicker={watchlistQuery || undefined}
           />
         );
       case 'regional':
-        return <NewsCardComponent {...commonProps} index={2} title="Regional News" paramOverride={region} />;
+        return (
+          <NewsCardComponent
+            {...commonNewsProps}
+            index={2}
+            title="Regional News"
+            paramOverride={region === 'all' ? 'us' : region}
+          />
+        );
       case 'industry':
-        return <NewsCardComponent {...commonProps} index={3} title="Industry News" paramOverride={industry} />;
+        return (
+          <NewsCardComponent
+            {...commonNewsProps}
+            index={3}
+            title="Industry News"
+            paramOverride={industry === 'all' ? 'technology' : industry}
+          />
+        );
       case 'commodity':
-        return <NewsCardComponent {...commonProps} index={4} title="Commodity News" paramOverride={commodity} />;
+        return (
+          <NewsCardComponent
+            {...commonNewsProps}
+            index={4}
+            title="Commodity News"
+            paramOverride={commodity === 'all' ? 'gold' : commodity}
+          />
+        );
       default:
         return null;
     }
-  }, [active, region, industry, commodity, limit, watchlistQuery, watchSel]);
+  }, [active, commodity, commonNewsProps, industry, region, watchSel, watchlistQuery]);
+
+  const selectSx = {
+    minWidth: 128,
+    height: 36,
+    color: '#f8fafc',
+    bgcolor: '#1a1b20',
+    borderRadius: '12px',
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(255,255,255,0.1)'
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(255,255,255,0.16)'
+    },
+    '& .MuiSelect-select': {
+      py: 0.9,
+      px: 1.6,
+      fontSize: '0.95rem'
+    },
+    '& .MuiSvgIcon-root': {
+      color: 'rgba(255,255,255,0.62)'
+    }
+  };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#000', color: '#fff' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#050505', color: '#fff' }}>
       <Sidebar />
 
-      <Box component="main" sx={{ flex: 1, pl: { xs: 0, md: '50px' }, pr: 2, py: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <Box
-          sx={(theme) => ({
-            position: 'sticky',
-            top: 0,
-            zIndex: theme.zIndex.appBar,
-            bgcolor: '#000',
-            borderBottom: '1px solid rgba(255,255,255,0.12)'
-          })}
-        >
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          ml: { xs: 0, md: '50px' },
+          px: { xs: 2, md: 3.5 },
+          py: { xs: 3, md: 4 },
+          minHeight: '100vh'
+        }}
+      >
+        <Box sx={{ width: '100%', maxWidth: 980, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box>
+            <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.6rem' }, fontWeight: 760, letterSpacing: '-0.03em', lineHeight: 1.04 }}>
+              Market News
+            </Typography>
+            <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.62)', fontSize: '1.05rem' }}>
+              Stay informed with real-time financial news and market updates
+            </Typography>
+          </Box>
+
           <Tabs
             value={active}
-            onChange={(_, v) => setActive(v)}
-            textColor="inherit"
-            indicatorColor="secondary"
+            onChange={(_, value) => setActive(value)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-                minHeight: TOPBAR_H,
-                '& .MuiTab-root': {
-                opacity: 1,                           
-                color: 'rgba(255,255,255,0.80)',       
-                fontWeight: 600,
-                },
-                '& .MuiTab-root.Mui-selected': {
-                color: '#fff',                          
-                },
+              minHeight: 44,
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#2f81f7',
+                height: 2
+              },
+              '& .MuiTab-root': {
+                minHeight: 44,
+                minWidth: 'auto',
+                px: 1.7,
+                mr: 1,
+                textTransform: 'none',
+                fontSize: '1rem',
+                color: 'rgba(255,255,255,0.56)',
+                opacity: 1
+              },
+              '& .MuiTab-root.Mui-selected': {
+                color: '#f8fafc'
+              }
             }}
-            >
-
-            <Tab label="GENERAL" value="general" />
-            <Tab label="WATCHLIST" value="watchlist" />
-            <Tab label="REGIONAL" value="regional" />
-            <Tab label="INDUSTRY" value="industry" />
-            <Tab label="COMMODITY" value="commodity" />
+          >
+            <Tab label="General" value="general" />
+            <Tab label="Watchlist" value="watchlist" />
+            <Tab label="Regional" value="regional" />
+            <Tab label="Industry" value="industry" />
+            <Tab label="Commodity" value="commodity" />
           </Tabs>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'rgba(255,255,255,0.62)' }}>
+              <FilterAltOutlinedIcon sx={{ fontSize: 18 }} />
+              <Typography sx={{ fontSize: '0.98rem' }}>Show:</Typography>
+            </Box>
+
+            <FormControl size="small">
+              <Select value={limit} onChange={(e) => setLimit(Number(e.target.value))} sx={selectSx}>
+                {[5, 10, 20, 50].map((count) => (
+                  <MenuItem key={count} value={count}>
+                    {count} items
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             {active === 'regional' && (
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel id="region-label" sx={{ color: '#fff' }}>Region</InputLabel>
-                <Select
-                  labelId="region-label" label="Region" value={region} onChange={e => setRegion(e.target.value)}
-                  sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.24)' } }}
-                >
-                  {['au','cn','jp','us','gb'].map(r => <MenuItem key={r} value={r}>{r.toUpperCase()}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <>
+                <Typography sx={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.98rem' }}>Region:</Typography>
+                <FormControl size="small">
+                  <Select value={region} onChange={(e) => setRegion(e.target.value)} sx={selectSx}>
+                    {regionOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </>
             )}
 
             {active === 'industry' && (
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel id="industry-label" sx={{ color: '#fff' }}>Industry</InputLabel>
-                <Select
-                  labelId="industry-label" label="Industry" value={industry} onChange={e => setIndustry(e.target.value)}
-                  sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.24)' } }}
-                >
-                  {['technology','health','finance','internet','pharmaceutical'].map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <>
+                <Typography sx={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.98rem' }}>Industry:</Typography>
+                <FormControl size="small">
+                  <Select value={industry} onChange={(e) => setIndustry(e.target.value)} sx={selectSx}>
+                    {industryOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </>
             )}
 
             {active === 'commodity' && (
-              <FormControl size="small" sx={{ minWidth: 160 }}>
-                <InputLabel id="commodity-label" sx={{ color: '#fff' }}>Commodity</InputLabel>
-                <Select
-                  labelId="commodity-label" label="Commodity" value={commodity} onChange={e => setCommodity(e.target.value)}
-                  sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.24)' } }}
-                >
-                  {['gold','oil','wheat','copper','silver'].map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <>
+                <Typography sx={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.98rem' }}>Commodity:</Typography>
+                <FormControl size="small">
+                  <Select value={commodity} onChange={(e) => setCommodity(e.target.value)} sx={selectSx}>
+                    {commodityOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </>
             )}
 
             {active === 'watchlist' && (
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                <Chip label="ALL" size="small" clickable onClick={() => setWatchSel('ALL')} variant="filled" sx={watchChipSx(watchSel === 'ALL')} />
+                {watchlistSyms.length ? (
+                  watchlistSyms.map((symbol) => (
                     <Chip
-                    label="ALL"
-                    size="small"
-                    clickable
-                    onClick={() => setWatchSel('ALL')}
-                    variant="filled"
-                    sx={chipSx(watchSel === 'ALL')}
+                      key={symbol}
+                      label={symbol}
+                      size="small"
+                      clickable
+                      onClick={() => setWatchSel(symbol)}
+                      variant="filled"
+                      sx={watchChipSx(watchSel === symbol)}
                     />
-                    {watchlistSyms.length ? (
-                    watchlistSyms.map(sym => (
-                        <Chip
-                        key={sym}
-                        label={sym}
-                        size="small"
-                        clickable
-                        onClick={() => setWatchSel(sym)}
-                        variant="filled"
-                        sx={chipSx(watchSel === sym)}
-                        />
-                    ))
-                    ) : (
-                    <Chip label={user ? 'No symbols yet' : 'Sign in to load watchlist'} size="small" variant="outlined" sx={chipSx(false)} />
-                    )}
-                </Stack>
+                  ))
+                ) : (
+                  <Chip
+                    label={user ? 'No symbols yet' : 'Sign in to load watchlist'}
+                    size="small"
+                    variant="outlined"
+                    sx={watchChipSx(false)}
+                  />
                 )}
-
-            <FormControl size="small" sx={{ minWidth: 110, marginLeft: 'auto' }}>
-              <InputLabel id="limit-label" sx={{ color: '#fff' }}>Items</InputLabel>
-              <Select
-                labelId="limit-label" label="Items" value={limit} onChange={e => setLimit(Number(e.target.value))}
-                sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.24)' } }}
-              >
-                {[6, 9, 12, 15].map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
-              </Select>
-            </FormControl>
+              </Stack>
+            )}
           </Box>
-        </Box>
 
-        <Divider sx={{ opacity: 0.1 }} />
-
-        <Box sx={{ flex: 1, minHeight: 0, pt: 1 }}>
-          {section}
+          <Box sx={{ minHeight: 0, pb: 2 }}>{section}</Box>
         </Box>
       </Box>
     </Box>
