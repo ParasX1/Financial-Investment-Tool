@@ -20,10 +20,15 @@ function createMockSupabase(
   steps: QueryStep[],
   userId: string | null = "user-1",
 ) {
-  const remove = jest.fn(async () => ({ error: null }));
+  const events: string[] = [];
+  const remove = jest.fn(async () => {
+    events.push("storage.remove");
+    return { error: null };
+  });
 
   const db = {
     from: jest.fn((table: string) => {
+      events.push(`table.${table}`);
       const step = steps.shift();
       if (!step) throw new Error(`Unexpected query for ${table}`);
       expect(table).toBe(step.table);
@@ -51,7 +56,7 @@ function createMockSupabase(
     },
   };
 
-  return { db: db as any, remove };
+  return { db: db as any, events, remove };
 }
 
 describe("Community delete image cleanup", () => {
@@ -166,7 +171,7 @@ describe("Community delete image cleanup", () => {
   });
 
   it("removes post and comment images when deleting a discussion", async () => {
-    const { db, remove } = createMockSupabase([
+    const { db, events, remove } = createMockSupabase([
       {
         table: "posts",
         result: {
@@ -196,6 +201,12 @@ describe("Community delete image cleanup", () => {
 
     await deleteCommunityPost(db, "post-1", "user-1");
 
+    expect(events).toEqual([
+      "table.posts",
+      "table.comments",
+      "storage.remove",
+      "table.posts",
+    ]);
     expect(remove).toHaveBeenCalledWith([
       "posts/post.png",
       "comments/post-1/a.png",

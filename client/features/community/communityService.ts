@@ -390,6 +390,8 @@ export async function deleteCommunityPost(
     ...(await loadCommentImagePathsForPost(db, postId)),
   ]);
 
+  await removeCommunityImages(db, imagePaths);
+
   const { data, error } = await db
     .from("posts")
     .delete()
@@ -401,8 +403,6 @@ export async function deleteCommunityPost(
   if (!data?.length) {
     throw new Error("You can only delete discussions you created.");
   }
-
-  await removeCommunityImages(db, imagePaths);
 }
 
 export async function createCommunityComment({
