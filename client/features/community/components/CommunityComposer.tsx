@@ -9,8 +9,10 @@ import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../smartTag
 import type { DiscussionDraft, DiscussionDraftField } from "../types";
 import { validateCommunityImage } from "../utils";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
+import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommunityComposer({
+  className,
   draft,
   creating,
   canAttachImage,
@@ -20,6 +22,7 @@ export function CommunityComposer({
   onToggleTag,
   onSubmit,
 }: {
+  className?: string;
   draft: DiscussionDraft;
   creating: boolean;
   canAttachImage: boolean;
@@ -30,6 +33,7 @@ export function CommunityComposer({
   onSubmit: () => void;
 }) {
   const fileInput = React.useRef<HTMLInputElement | null>(null);
+  const bodyInput = useAutoResizeTextarea(draft.body);
   const [attachmentError, setAttachmentError] = React.useState<string | null>(null);
   const canSubmit = Boolean(draft.title.trim() && draft.body.trim());
   const attachImageLabel = canAttachImage
@@ -76,7 +80,13 @@ export function CommunityComposer({
 
   return (
     <form
-      className={cn(communityUi.panel, "mt-7 p-[16px] sm:p-[20px]", communityStyles.panelBorder)}
+      className={cn(
+        communityUi.panel,
+        className,
+        communityStyles.primaryPanelPadding,
+        communityStyles.panelBorder,
+      )}
+      data-community-content-start
       aria-busy={creating}
       onSubmit={(event) => {
         event.preventDefault();
@@ -113,6 +123,7 @@ export function CommunityComposer({
             Discussion body
           </label>
           <textarea
+            ref={bodyInput}
             id="community-draft-body"
             name="community-draft-body"
             autoComplete="off"
@@ -122,7 +133,7 @@ export function CommunityComposer({
             placeholder="Write the discussion…"
             rows={4}
             className={cn(
-              "min-h-[112px] w-full resize-none px-[16px] py-[14px] text-[15px] leading-6 sm:min-h-[98px]",
+              "min-h-[112px] w-full resize-none overflow-hidden px-[16px] py-[14px] text-[15px] leading-6 sm:min-h-[98px]",
               communityUi.field,
               communityStyles.inputBorder,
               "disabled:cursor-not-allowed disabled:opacity-60"

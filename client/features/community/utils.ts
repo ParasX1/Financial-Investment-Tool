@@ -7,6 +7,9 @@ import {
 import type {
   CommentRow,
   CommentUI,
+  CommentsState,
+  CommunityFeedCounts,
+  CommunityFeedView,
   DBPost,
   DiscussionDraft,
   DiscussionPostInput,
@@ -246,4 +249,109 @@ export function createLocalComment(text: string): CommentUI {
     text,
     createdAt: new Date().toISOString(),
   };
+}
+
+export function isDiscussionDraftDirty(draft: DiscussionDraft) {
+  return Boolean(
+    draft.title.trim() ||
+      draft.body.trim() ||
+      draft.tags.length ||
+      draft.imageFile,
+  );
+}
+
+function isCurrentUserPost(post: PostUI, currentUserId: string | null) {
+  if (currentUserId && post.authorId === currentUserId) return true;
+  return !post.fromDB && post.user === "You";
+}
+
+function isCurrentUserComment(comment: CommentUI, currentUserId: string | null) {
+  if (currentUserId && comment.authorId === currentUserId) return true;
+  return !comment.fromDB && comment.user === "You";
+}
+
+function hasCurrentUserComment(
+  postId: string,
+  commentsState: CommentsState,
+  currentUserId: string | null,
+) {
+  return (commentsState.byPost[postId] ?? []).some((comment) =>
+    isCurrentUserComment(comment, currentUserId),
+  );
+}
+
+function matchesCommunitySearch(post: PostUI, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+
+  return [post.user, post.title, post.body, ...post.tags]
+    .join(" ")
+    .toLowerCase()
+    .includes(normalizedQuery);
+}
+
+export function getCommunityFeedCounts({
+  posts,
+  likedPostIds,
+  commentsState,
+  currentUserId,
+}: {
+  posts: PostUI[];
+  likedPostIds: Set<string>;
+  commentsState: CommentsState;
+  currentUserId: string | null;
+}): CommunityFeedCounts {
+  return {
+    top: posts.length,
+    new: posts.length,
+    "my-posts": posts.filter((post) =>
+      isCurrentUserPost(post, currentUserId),
+    ).length,
+    liked: posts.filter((post) => likedPostIds.has(post.id)).length,
+    commented: posts.filter((post) =>
+      hasCurrentUserComment(post.id, commentsState, currentUserId),
+    ).length,
+  };
+}
+
+export function getVisibleCommunityPosts({
+  posts,
+  query,
+  view,
+  likedPostIds,
+  commentsState,
+  currentUserId,
+}: {
+  posts: PostUI[];
+  query: string;
+  view: CommunityFeedView;
+  likedPostIds: Set<string>;
+  commentsState: CommentsState;
+  currentUserId: string | null;
+}) {
+  const matchingPosts = posts.filter((post) =>
+    matchesCommunitySearch(post, query),
+  );
+
+  const scopedPosts = matchingPosts.filter((post) => {
+    if (view === "my-posts") {
+      return isCurrentUserPost(post, currentUserId);
+    }
+
+    if (view === "liked") {
+      return likedPostIds.has(post.id);
+    }
+
+    if (view === "commented") {
+      return hasCurrentUserComment(post.id, commentsState, currentUserId);
+    }
+
+    return true;
+  });
+
+  if (view === "top") {
+    return [...scopedPosts].sort((a, b) => b.votes - a.votes);
+  }
+
+  return [...scopedPosts].sort((a, b) => b.sortTime - a.sortTime);
 }

@@ -1,12 +1,13 @@
 import communityStyles from "@/styles/community.module.css";
 import { cn, communityUi } from "../design";
+import type { CommunityFeedView } from "../types";
 
 export function LoadingDiscussions() {
   return (
     <div
       className={cn(
         communityUi.card,
-        "px-[16px] py-[18px] sm:px-[16px] sm:py-[20px]",
+        communityStyles.primaryPanelPadding,
         communityStyles.panelBorder
       )}
       role="status"
@@ -29,8 +30,38 @@ export function LoadingDiscussions() {
   );
 }
 
-export function EmptyState({ query }: { query: string }) {
+const emptyCopy: Record<CommunityFeedView, { title: string; body: string }> = {
+  top: {
+    title: "No discussions yet.",
+    body: "Start a discussion to create the first community post.",
+  },
+  new: {
+    title: "No recent discussions yet.",
+    body: "New posts will appear here as the community gets active.",
+  },
+  "my-posts": {
+    title: "You have not posted any discussions yet.",
+    body: "Create a discussion and it will show up here.",
+  },
+  liked: {
+    title: "No liked discussions yet.",
+    body: "Like a discussion to keep it in this view.",
+  },
+  commented: {
+    title: "No commented discussions yet.",
+    body: "Join a conversation and it will appear here.",
+  },
+};
+
+export function EmptyState({
+  query,
+  view = "top",
+}: {
+  query: string;
+  view?: CommunityFeedView;
+}) {
   const hasSearch = Boolean(query.trim());
+  const copy = emptyCopy[view];
 
   return (
     <div
@@ -41,12 +72,12 @@ export function EmptyState({ query }: { query: string }) {
       )}
     >
       <p className="font-semibold text-[#e2e7f2]">
-        {hasSearch ? "No discussions match your search." : "No discussions yet."}
+        {hasSearch ? "No discussions match your search." : copy.title}
       </p>
       <p className="mt-2">
         {hasSearch
           ? "Try a different keyword or clear the search field."
-          : "Start a discussion to create the first community post."}
+          : copy.body}
       </p>
     </div>
   );

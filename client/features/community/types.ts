@@ -1,4 +1,11 @@
-export type SortMode = "top" | "new";
+export type CommunityFeedView =
+  | "top"
+  | "new"
+  | "my-posts"
+  | "liked"
+  | "commented";
+
+export type CommunityFeedCounts = Record<CommunityFeedView, number>;
 
 export type DiscussionDraft = {
   title: string;

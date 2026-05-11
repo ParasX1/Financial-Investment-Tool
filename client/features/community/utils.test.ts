@@ -1,10 +1,13 @@
 import {
   createLocalPost,
+  getCommunityFeedCounts,
+  getVisibleCommunityPosts,
+  isDiscussionDraftDirty,
   normalizeDiscussionDraft,
   postFromRow,
   validateCommunityImage,
 } from "./utils";
-import type { DBPost } from "./types";
+import type { CommentsState, DBPost, PostUI } from "./types";
 
 const baseRow: DBPost = {
   id: "post-1",
@@ -112,5 +115,145 @@ describe("Community image validation", () => {
     expect(validateCommunityImage(imageFile({ size: 6 * 1024 * 1024 }))).toBe(
       "Image must be 5 MB or smaller.",
     );
+  });
+});
+
+describe("Discussion draft dirty state", () => {
+  const emptyDraft = {
+    title: "",
+    body: "",
+    tags: [],
+    imageFile: null,
+    imagePreviewUrl: null,
+  };
+
+  it("detects meaningful unsaved draft content", () => {
+    expect(isDiscussionDraftDirty(emptyDraft)).toBe(false);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, title: "  " })).toBe(false);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, title: "Draft" })).toBe(true);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, body: "Body" })).toBe(true);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, tags: ["Risk"] })).toBe(true);
+  });
+});
+
+describe("Community feed filtering", () => {
+  const posts: PostUI[] = [
+    {
+      ...createLocalPost({
+        title: "Local draft",
+        body: "My local discussion",
+        tags: [],
+      }),
+      id: "local-1",
+      votes: 2,
+      sortTime: 300,
+    },
+    {
+      ...postFromRow(
+        {
+          ...baseRow,
+          id: "post-1",
+          title: "My NVDA thesis",
+          body: "AI demand is still strong.",
+          votes: 8,
+          created_at: new Date(200).toISOString(),
+          author_id: "user-1",
+        },
+        "user-1",
+      ),
+      sortTime: 200,
+    },
+    {
+      ...postFromRow(
+        {
+          ...baseRow,
+          id: "post-2",
+          title: "Macro risk",
+          body: "Looking at rates and credit.",
+          votes: 13,
+          created_at: new Date(100).toISOString(),
+          author_id: "user-2",
+        },
+        "user-1",
+      ),
+      sortTime: 100,
+    },
+  ];
+
+  const commentsState: CommentsState = {
+    byPost: {
+      "post-2": [
+        {
+          id: "comment-1",
+          user: "You",
+          text: "Interesting setup",
+          createdAt: new Date().toISOString(),
+          authorId: "user-1",
+          fromDB: true,
+        },
+      ],
+    },
+    counts: { "post-2": 1 },
+    seenIds: { "comment-1": true },
+  };
+
+  it("shows top discussions by vote count", () => {
+    const visible = getVisibleCommunityPosts({
+      posts,
+      query: "",
+      view: "top",
+      likedPostIds: new Set(["post-2"]),
+      commentsState,
+      currentUserId: "user-1",
+    });
+
+    expect(visible.map((post) => post.id)).toEqual([
+      "post-2",
+      "post-1",
+      "local-1",
+    ]);
+  });
+
+  it("filters personal feed views without mixing unrelated posts", () => {
+    const base = {
+      posts,
+      query: "",
+      likedPostIds: new Set(["post-2"]),
+      commentsState,
+      currentUserId: "user-1",
+    };
+
+    expect(
+      getVisibleCommunityPosts({ ...base, view: "my-posts" }).map(
+        (post) => post.id,
+      ),
+    ).toEqual(["local-1", "post-1"]);
+    expect(
+      getVisibleCommunityPosts({ ...base, view: "liked" }).map(
+        (post) => post.id,
+      ),
+    ).toEqual(["post-2"]);
+    expect(
+      getVisibleCommunityPosts({ ...base, view: "commented" }).map(
+        (post) => post.id,
+      ),
+    ).toEqual(["post-2"]);
+  });
+
+  it("counts each community feed view", () => {
+    expect(
+      getCommunityFeedCounts({
+        posts,
+        likedPostIds: new Set(["post-2"]),
+        commentsState,
+        currentUserId: "user-1",
+      }),
+    ).toEqual({
+      top: 3,
+      new: 3,
+      "my-posts": 2,
+      liked: 1,
+      commented: 1,
+    });
   });
 });

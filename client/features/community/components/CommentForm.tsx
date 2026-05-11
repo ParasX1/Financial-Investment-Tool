@@ -7,6 +7,7 @@ import { COMMENT_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { NewComment } from "../types";
 import { getErrorMessage, validateCommentImage } from "../utils";
+import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({
   onSubmit,
@@ -22,6 +23,7 @@ export function CommentForm({
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement | null>(null);
+  const commentInput = useAutoResizeTextarea(text);
   const commentInputId = React.useId();
   const attachImageLabel = canAttachImage
     ? "Attach image"
@@ -90,6 +92,7 @@ export function CommentForm({
         Add a comment
       </label>
       <textarea
+        ref={commentInput}
         id={commentInputId}
         name="community-comment"
         autoComplete="off"
@@ -99,7 +102,7 @@ export function CommentForm({
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
-          "w-full resize-none rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
+          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
           communityStyles.softBorder,
           "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20"
         )}

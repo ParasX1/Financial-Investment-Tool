@@ -64,7 +64,8 @@ export function PostCard({
     <article
       className={cn(
         communityUi.card,
-        "overflow-hidden px-[18px] py-[18px] transition-colors duration-200 hover:border-[#303444] sm:px-[24px] sm:py-[20px]",
+        communityStyles.primaryPanelPadding,
+        "overflow-hidden transition-colors duration-200 hover:border-[#303444]",
         communityStyles.panelBorder
       )}
     >

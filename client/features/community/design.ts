@@ -9,8 +9,8 @@ export const FOCUS_VISIBLE =
 
 export const communityUi = {
   page:
-    "ml-[50px] mr-3 box-border min-h-screen overflow-x-hidden bg-[#000000] px-3 py-7 text-white sm:mr-0 sm:px-8 sm:py-9 lg:px-10",
-  pageInner: "mx-auto min-w-0 max-w-[960px]",
+    "ml-[var(--community-app-rail-width)] mr-3 box-border min-h-screen overflow-x-hidden bg-[#000000] px-3 pb-7 pt-[86px] text-white sm:mr-0 sm:px-8 sm:pb-9 sm:pt-[94px] lg:px-10",
+  pageInner: "mx-auto min-w-0",
   panel: "rounded-xl bg-[#09090b]",
   card: "rounded-xl bg-[#09090b]",
   softPanel: "rounded-lg bg-[#111114]",
