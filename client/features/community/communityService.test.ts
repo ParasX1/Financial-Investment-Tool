@@ -1,4 +1,6 @@
 import {
+  createCommunityComment,
+  createCommunityPost,
   loadCommunityData,
   deleteCommunityComment,
   deleteCommunityPost,
@@ -14,7 +16,10 @@ type QueryStep = {
   result: QueryResult;
 };
 
-function createMockSupabase(steps: QueryStep[]) {
+function createMockSupabase(
+  steps: QueryStep[],
+  userId: string | null = "user-1",
+) {
   const remove = jest.fn(async () => ({ error: null }));
 
   const db = {
@@ -41,7 +46,7 @@ function createMockSupabase(steps: QueryStep[]) {
     },
     auth: {
       getSession: jest.fn(async () => ({
-        data: { session: { user: { id: "user-1" } } },
+        data: { session: userId ? { user: { id: userId } } : null },
       })),
     },
   };
@@ -50,6 +55,34 @@ function createMockSupabase(steps: QueryStep[]) {
 }
 
 describe("Community delete image cleanup", () => {
+  it("requires a signed-in user before creating a remote discussion", async () => {
+    const { db } = createMockSupabase([], null);
+
+    await expect(
+      createCommunityPost(db, {
+        title: "Unsigned discussion",
+        body: "This should not be inserted remotely.",
+        tags: [],
+      }),
+    ).rejects.toThrow("Sign in to create a discussion.");
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("requires a signed-in user before creating a remote comment", async () => {
+    const { db } = createMockSupabase([], null);
+
+    await expect(
+      createCommunityComment({
+        db,
+        postId: "post-1",
+        text: "Unsigned comment",
+      }),
+    ).rejects.toThrow("Sign in to comment.");
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   it("uses live posts without mixing demo discussions into the feed", async () => {
     const { db } = createMockSupabase([
       {
@@ -110,7 +143,7 @@ describe("Community delete image cleanup", () => {
     expect(remove).toHaveBeenCalledWith(["comments/post-1/comment.png"]);
   });
 
-  it("allows a discussion owner to delete another user's comment", async () => {
+  it("rejects deleting another user's comment even for the discussion owner", async () => {
     const { db, remove } = createMockSupabase([
       {
         table: "comments",
@@ -123,24 +156,13 @@ describe("Community delete image cleanup", () => {
           error: null,
         },
       },
-      {
-        table: "posts",
-        result: {
-          data: {
-            author_id: "user-1",
-          },
-          error: null,
-        },
-      },
-      {
-        table: "comments",
-        result: { data: [{ id: "comment-1" }], error: null },
-      },
     ]);
 
-    await deleteCommunityComment(db, "comment-1", "user-1");
+    await expect(deleteCommunityComment(db, "comment-1", "user-1")).rejects.toThrow(
+      "You can only delete comments you created.",
+    );
 
-    expect(remove).toHaveBeenCalledWith(["comments/post-1/comment.png"]);
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it("removes post and comment images when deleting a discussion", async () => {
@@ -165,10 +187,6 @@ describe("Community delete image cleanup", () => {
           ],
           error: null,
         },
-      },
-      {
-        table: "comments",
-        result: { error: null },
       },
       {
         table: "posts",

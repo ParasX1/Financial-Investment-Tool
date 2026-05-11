@@ -8,11 +8,13 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
   loadCommunityData,
-  removeCommunityImage,
   setCommunityPostLike,
+} from "./communityService";
+import {
+  removeCommunityImage,
   uploadCommentImage,
   uploadPostImage,
-} from "./communityService";
+} from "./communityStorage";
 import type {
   CommentRow,
   CommentUI,
@@ -315,14 +317,10 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   );
 
   const canDeleteComment = React.useCallback(
-    (comment: CommentUI, post?: PostUI) => {
+    (comment: CommentUI) => {
       if (!comment.fromDB && comment.id.startsWith("local-comment-"))
         return true;
-      return Boolean(
-        currentUserId &&
-          (comment.authorId === currentUserId ||
-            post?.authorId === currentUserId),
-      );
+      return Boolean(currentUserId && comment.authorId === currentUserId);
     },
     [currentUserId],
   );
@@ -331,11 +329,11 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     const nextDraft = normalizeDiscussionDraft(draft);
     if (!nextDraft.title || !nextDraft.body || creating) return;
 
-    if (supabase && draft.imageFile && !currentUserId) {
+    if (supabase && !currentUserId) {
       pushFeedback({
         tone: "info",
-        title: "Sign in to attach images",
-        message: "Discussion image uploads are saved to your account.",
+        title: "Sign in to post",
+        message: "Discussions are saved to your account.",
       });
       return;
     }
@@ -431,11 +429,11 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       return;
     }
 
-    if (data.file && !currentUserId) {
-      const message = "Sign in before attaching an image.";
+    if (!currentUserId) {
+      const message = "Sign in before commenting.";
       pushFeedback({
         tone: "info",
-        title: "Sign in to attach images",
+        title: "Sign in to comment",
         message,
       });
       throw new Error(message);
@@ -472,12 +470,11 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   }
 
   async function handleDeleteComment(commentId: string, postId: string) {
-    const post = posts.find((item) => item.id === postId);
     const target = commentsState.byPost[postId]?.find(
       (comment) => comment.id === commentId,
     );
 
-    if (!target || !canDeleteComment(target, post)) {
+    if (!target || !canDeleteComment(target)) {
       const message = "You can only delete comments you created.";
       pushFeedback({
         tone: "error",

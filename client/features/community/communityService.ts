@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { COMMUNITY_IMAGE_BUCKET, DEMO_POSTS } from "./constants";
+import { DEMO_POSTS } from "./constants";
+import { removeCommunityImages, uniqueImagePaths } from "./communityStorage";
 import type {
   CommentEntry,
   CommentRow,
@@ -9,10 +10,8 @@ import type {
 } from "./types";
 import {
   commentFromRow,
-  getUploadErrorMessage,
   normalizeDiscussionDraft,
   postFromRow,
-  validateCommentImage,
 } from "./utils";
 
 const COMMENT_SELECT =
@@ -42,6 +41,11 @@ function isMissingAuthorIdColumn(error: unknown) {
 async function getSessionUserId(db: SupabaseClient) {
   const { data } = await db.auth.getSession();
   return data.session?.user.id ?? null;
+}
+
+function requireSessionUserId(uid: string | null, action: string) {
+  if (!uid) throw new Error(`Sign in to ${action}.`);
+  return uid;
 }
 
 export function getSupabaseClient(): SupabaseClient | null {
@@ -136,12 +140,6 @@ function isMissingExpectedPostColumn(error: unknown) {
 
 function isMissingExpectedCommentColumn(error: unknown) {
   return isMissingColumn(error, "image_path");
-}
-
-function uniqueImagePaths(paths: Array<string | null | undefined>) {
-  return Array.from(
-    new Set(paths.filter((path): path is string => Boolean(path))),
-  );
 }
 
 async function loadCommunityPostRows(db: SupabaseClient) {
@@ -252,21 +250,10 @@ async function loadCommentImagePathsForPost(
 }
 
 async function canDeleteCommentFromContext(
-  db: SupabaseClient,
   ownerRow: Record<string, unknown>,
   currentUserId: string,
 ) {
-  if (ownerRow.author_id === currentUserId) return true;
-  if (!ownerRow.post_id) return false;
-
-  const { data, error } = await db
-    .from("posts")
-    .select("author_id")
-    .eq("id", ownerRow.post_id as string)
-    .single();
-
-  if (error) throw error;
-  return Boolean(data && (data as any).author_id === currentUserId);
+  return ownerRow.author_id === currentUserId;
 }
 
 async function loadLikedPostIds(
@@ -299,7 +286,10 @@ export async function createCommunityPost(
   db: SupabaseClient,
   draft: DiscussionPostInput,
 ): Promise<PostUI> {
-  const uid = await getSessionUserId(db);
+  const uid = requireSessionUserId(
+    await getSessionUserId(db),
+    "create a discussion",
+  );
   const postDraft = {
     ...normalizeDiscussionDraft(draft),
     imageUrl: draft.imageUrl ?? null,
@@ -400,13 +390,6 @@ export async function deleteCommunityPost(
     ...(await loadCommentImagePathsForPost(db, postId)),
   ]);
 
-  const { error: commentsDeleteError } = await db
-    .from("comments")
-    .delete()
-    .eq("post_id", postId);
-
-  if (commentsDeleteError) throw commentsDeleteError;
-
   const { data, error } = await db
     .from("posts")
     .delete()
@@ -435,7 +418,7 @@ export async function createCommunityComment({
   imageUrl?: string;
   imagePath?: string;
 }) {
-  const uid = await getSessionUserId(db);
+  const uid = requireSessionUserId(await getSessionUserId(db), "comment");
   const hasImage = Boolean(imageUrl || imagePath);
   const fullSchemaAttempt = {
     values: {
@@ -497,7 +480,6 @@ export async function deleteCommunityComment(
   if (
     !ownerRow ||
     !(await canDeleteCommentFromContext(
-      db,
       ownerRow as Record<string, unknown>,
       currentUserId,
     ))
@@ -509,6 +491,7 @@ export async function deleteCommunityComment(
     .from("comments")
     .delete()
     .eq("id", commentId)
+    .eq("author_id", currentUserId)
     .select("id");
 
   if (isMissingAuthorIdColumn(error)) {
@@ -535,68 +518,4 @@ export async function setCommunityPostLike(
 
   if (error) throw error;
   return typeof data === "number" ? data : Number(data ?? 0);
-}
-
-export async function uploadCommentImage(
-  db: SupabaseClient,
-  postId: string,
-  file: File,
-): Promise<{ path: string; publicUrl: string }> {
-  return uploadCommunityImage(db, `comments/${postId}`, file);
-}
-
-export async function uploadPostImage(
-  db: SupabaseClient,
-  file: File,
-): Promise<{ path: string; publicUrl: string }> {
-  return uploadCommunityImage(db, "posts", file);
-}
-
-export async function removeCommunityImage(db: SupabaseClient, path: string) {
-  await removeCommunityImages(db, [path]);
-}
-
-export async function removeCommunityImages(
-  db: SupabaseClient,
-  paths: Array<string | null | undefined>,
-) {
-  const uniquePaths = uniqueImagePaths(paths);
-  if (!uniquePaths.length) return;
-
-  const { error } = await db.storage
-    .from(COMMUNITY_IMAGE_BUCKET)
-    .remove(uniquePaths);
-  if (error) {
-    console.error("image cleanup failed:", error.message);
-  }
-}
-
-async function uploadCommunityImage(
-  db: SupabaseClient,
-  folder: string,
-  file: File,
-): Promise<{ path: string; publicUrl: string }> {
-  const validationError = validateCommentImage(file);
-  if (validationError) {
-    throw new Error(validationError);
-  }
-
-  const extension = file.name.includes(".")
-    ? file.name.split(".").pop()!.toLowerCase()
-    : "jpg";
-  const key = `${folder}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await db.storage
-    .from(COMMUNITY_IMAGE_BUCKET)
-    .upload(key, file);
-
-  if (error) {
-    console.error("upload failed:", error.message);
-    throw new Error(getUploadErrorMessage(error));
-  }
-
-  return {
-    path: key,
-    publicUrl: db.storage.from(COMMUNITY_IMAGE_BUCKET).getPublicUrl(key).data
-      .publicUrl,
-  };
 }

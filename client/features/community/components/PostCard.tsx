@@ -31,7 +31,7 @@ export function PostCard({
   liked: boolean;
   likeBusy: boolean;
   canDeletePost: boolean;
-  canDeleteComment: (comment: CommentUI, post: PostUI) => boolean;
+  canDeleteComment: (comment: CommentUI) => boolean;
   canAttachCommentImage: boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
@@ -189,7 +189,7 @@ export function PostCard({
             >
               <CommentList
                 items={comments}
-                canDelete={(comment) => canDeleteComment(comment, post)}
+                canDelete={canDeleteComment}
                 onDelete={(commentId) => onDeleteComment(commentId, post.id)}
               />
               <CommentForm
