@@ -8,8 +8,10 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
   loadCommunityData,
+  removeCommunityImage,
   setCommunityPostLike,
   uploadCommentImage,
+  uploadPostImage,
 } from "./communityService";
 import type {
   CommentRow,
@@ -39,41 +41,47 @@ const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
   title: "",
   body: "",
   tags: [],
+  imageFile: null,
+  imagePreviewUrl: null,
 };
 
 export function useCommunityController(supabase: SupabaseClient | null) {
   const [query, setQuery] = React.useState("");
   const [sort, setSort] = React.useState<SortMode>("top");
   const [draft, setDraft] = React.useState<DiscussionDraft>(
-    EMPTY_DISCUSSION_DRAFT
+    EMPTY_DISCUSSION_DRAFT,
   );
   const [creating, setCreating] = React.useState(false);
-  const [loadingCommunity, setLoadingCommunity] = React.useState(Boolean(supabase));
+  const [loadingCommunity, setLoadingCommunity] = React.useState(
+    Boolean(supabase),
+  );
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [feedback, setFeedback] = React.useState<FeedbackMessage[]>([]);
-  const [pendingDelete, setPendingDelete] = React.useState<PendingDelete | null>(null);
+  const [pendingDelete, setPendingDelete] =
+    React.useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [posts, setPosts] = React.useState<PostUI[]>(DEMO_POSTS);
   const [likedPostIds, setLikedPostIds] = React.useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
   const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
   const [commentsState, dispatchComments] = React.useReducer(
     commentsReducer,
     DEMO_POSTS,
-    createCommentsState
+    createCommentsState,
   );
   const tagsEditedRef = React.useRef(false);
+  const draftImagePreviewRef = React.useRef<string | null>(null);
 
   const pushFeedback = React.useCallback(
     (message: Omit<FeedbackMessage, "id">) => {
       const id = `feedback-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setFeedback((previous) => [...previous.slice(-2), { id, ...message }]);
     },
-    []
+    [],
   );
 
   const dismissFeedback = React.useCallback((id: string) => {
@@ -94,7 +102,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         return { ...next, tags: getDefaultSelectedTags(next) };
       });
     },
-    []
+    [],
   );
 
   const toggleDraftTag = React.useCallback((tag: string) => {
@@ -124,6 +132,43 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     setDraft((previous) => ({ ...previous, tags: [] }));
   }, []);
 
+  const setDraftImage = React.useCallback((file: File | null) => {
+    setDraft((previous) => {
+      if (draftImagePreviewRef.current) {
+        URL.revokeObjectURL(draftImagePreviewRef.current);
+        draftImagePreviewRef.current = null;
+      }
+
+      if (!file) {
+        return { ...previous, imageFile: null, imagePreviewUrl: null };
+      }
+
+      const imagePreviewUrl = URL.createObjectURL(file);
+      draftImagePreviewRef.current = imagePreviewUrl;
+
+      return { ...previous, imageFile: file, imagePreviewUrl };
+    });
+  }, []);
+
+  const resetDraft = React.useCallback(() => {
+    if (draftImagePreviewRef.current) {
+      URL.revokeObjectURL(draftImagePreviewRef.current);
+      draftImagePreviewRef.current = null;
+    }
+
+    tagsEditedRef.current = false;
+    setDraft(EMPTY_DISCUSSION_DRAFT);
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      if (draftImagePreviewRef.current) {
+        URL.revokeObjectURL(draftImagePreviewRef.current);
+      }
+    },
+    [],
+  );
+
   React.useEffect(() => {
     if (!supabase) {
       setCurrentUserId(null);
@@ -136,9 +181,11 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       if (mounted) setCurrentUserId(data.session?.user.id ?? null);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUserId(session?.user?.id ?? null);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setCurrentUserId(session?.user?.id ?? null);
+      },
+    );
 
     return () => {
       mounted = false;
@@ -185,8 +232,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         setLoadError(
           getErrorMessage(
             error,
-            "Could not load latest community posts. Showing demo discussions."
-          )
+            "Could not load latest community posts. Showing demo discussions.",
+          ),
         );
       } finally {
         if (mounted) setLoadingCommunity(false);
@@ -215,7 +262,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
             postId: row.post_id,
             comment: commentFromRow(row),
           });
-        }
+        },
       )
       .subscribe();
 
@@ -231,7 +278,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
           [post.user, post.title, post.body, ...post.tags]
             .join(" ")
             .toLowerCase()
-            .includes(normalizedQuery)
+            .includes(normalizedQuery),
         )
       : posts;
 
@@ -264,27 +311,61 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       if (!post.fromDB && post.id.startsWith("local-")) return true;
       return Boolean(currentUserId && post.authorId === currentUserId);
     },
-    [currentUserId]
+    [currentUserId],
   );
 
   const canDeleteComment = React.useCallback(
-    (comment: CommentUI) => {
-      if (!comment.fromDB && comment.id.startsWith("local-comment-")) return true;
-      return Boolean(currentUserId && comment.authorId === currentUserId);
+    (comment: CommentUI, post?: PostUI) => {
+      if (!comment.fromDB && comment.id.startsWith("local-comment-"))
+        return true;
+      return Boolean(
+        currentUserId &&
+          (comment.authorId === currentUserId ||
+            post?.authorId === currentUserId),
+      );
     },
-    [currentUserId]
+    [currentUserId],
   );
 
   async function handleCreatePost() {
     const nextDraft = normalizeDiscussionDraft(draft);
     if (!nextDraft.title || !nextDraft.body || creating) return;
 
+    if (supabase && draft.imageFile && !currentUserId) {
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to attach images",
+        message: "Discussion image uploads are saved to your account.",
+      });
+      return;
+    }
+
     setCreating(true);
+    let uploadedImagePath: string | null = null;
 
     try {
+      let imageUrl: string | null = null;
+
+      if (supabase && draft.imageFile) {
+        const upload = await uploadPostImage(supabase, draft.imageFile);
+        uploadedImagePath = upload.path;
+        imageUrl = upload.publicUrl;
+      }
+
       const newPost = supabase
-        ? await createCommunityPost(supabase, nextDraft)
-        : createLocalPost(nextDraft);
+        ? await createCommunityPost(supabase, {
+            ...nextDraft,
+            imageUrl,
+            imagePath: uploadedImagePath,
+          })
+        : createLocalPost({
+            ...nextDraft,
+            imageUrl: draft.imagePreviewUrl,
+          });
+
+      if (supabase && uploadedImagePath && !newPost.imageUrl) {
+        await removeCommunityImage(supabase, uploadedImagePath);
+      }
 
       setPosts((previous) => [newPost, ...previous]);
       dispatchComments({
@@ -292,9 +373,12 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         postId: newPost.id,
         initialCount: 0,
       });
-      tagsEditedRef.current = false;
-      setDraft(EMPTY_DISCUSSION_DRAFT);
+      resetDraft();
     } catch (error) {
+      if (supabase && uploadedImagePath) {
+        await removeCommunityImage(supabase, uploadedImagePath);
+      }
+
       console.error(error);
       pushFeedback({
         tone: "error",
@@ -347,30 +431,53 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       return;
     }
 
+    if (data.file && !currentUserId) {
+      const message = "Sign in before attaching an image.";
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to attach images",
+        message,
+      });
+      throw new Error(message);
+    }
+
+    let imagePath: string | undefined;
+
     try {
-      const imageUrl = data.file
-        ? await uploadCommentImage(supabase, postId, data.file)
-        : undefined;
+      let imageUrl: string | undefined;
+
+      if (data.file) {
+        const upload = await uploadCommentImage(supabase, postId, data.file);
+        imageUrl = upload.publicUrl;
+        imagePath = upload.path;
+      }
+
       const comment = await createCommunityComment({
         db: supabase,
         postId,
         text: data.text,
         imageUrl,
+        imagePath,
       });
 
       dispatchComments({ type: "addComment", postId, comment });
     } catch (error) {
+      if (imagePath) {
+        await removeCommunityImage(supabase, imagePath);
+      }
+
       console.error(error);
       throw new Error(getErrorMessage(error, "Could not post comment."));
     }
   }
 
   async function handleDeleteComment(commentId: string, postId: string) {
+    const post = posts.find((item) => item.id === postId);
     const target = commentsState.byPost[postId]?.find(
-      (comment) => comment.id === commentId
+      (comment) => comment.id === commentId,
     );
 
-    if (!target || !canDeleteComment(target)) {
+    if (!target || !canDeleteComment(target, post)) {
       const message = "You can only delete comments you created.";
       pushFeedback({
         tone: "error",
@@ -408,7 +515,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       pushFeedback({
         tone: "info",
         title: "Sign in to like discussions",
-        message: "Likes are saved to your account so they persist after refresh.",
+        message:
+          "Likes are saved to your account so they persist after refresh.",
       });
       return;
     }
@@ -430,8 +538,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       previous.map((post) =>
         post.id === postId
           ? { ...post, votes: Math.max(0, post.votes + delta) }
-          : post
-      )
+          : post,
+      ),
     );
 
     if (!target.fromDB || !supabase) {
@@ -444,11 +552,15 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     }
 
     try {
-      const savedVotes = await setCommunityPostLike(supabase, postId, !wasLiked);
+      const savedVotes = await setCommunityPostLike(
+        supabase,
+        postId,
+        !wasLiked,
+      );
       setPosts((previous) =>
         previous.map((post) =>
-          post.id === postId ? { ...post, votes: savedVotes } : post
-        )
+          post.id === postId ? { ...post, votes: savedVotes } : post,
+        ),
       );
     } catch (error) {
       console.error(error);
@@ -465,8 +577,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         previous.map((post) =>
           post.id === postId
             ? { ...post, votes: Math.max(0, post.votes - delta) }
-            : post
-        )
+            : post,
+        ),
       );
       pushFeedback({
         tone: "error",
@@ -549,6 +661,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     setDraftField,
     toggleDraftTag,
     clearDraftTags,
+    setDraftImage,
     dismissFeedback,
     handleCreatePost,
     handleAddComment,

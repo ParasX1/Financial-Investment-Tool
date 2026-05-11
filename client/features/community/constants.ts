@@ -5,16 +5,20 @@ export const COMMUNITY_PAGE_WIDTH = "min(100%, calc(100vw - 90px))";
 export const POST_BODY_PREVIEW_MAX_CHARS = 360;
 export const POST_BODY_PREVIEW_MIN_WORD_BOUNDARY = 240;
 
-export const COMMENT_BUCKET =
+export const COMMUNITY_IMAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";
-export const MAX_COMMENT_IMAGE_BYTES = 5 * 1024 * 1024;
-export const COMMENT_IMAGE_TYPES = [
+export const COMMENT_BUCKET = COMMUNITY_IMAGE_BUCKET;
+export const MAX_COMMUNITY_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_COMMENT_IMAGE_BYTES = MAX_COMMUNITY_IMAGE_BYTES;
+export const COMMUNITY_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
 ];
-export const COMMENT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+export const COMMENT_IMAGE_TYPES = COMMUNITY_IMAGE_TYPES;
+export const COMMUNITY_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+export const COMMENT_IMAGE_EXTENSIONS = COMMUNITY_IMAGE_EXTENSIONS;
 
 const now = Date.now();
 

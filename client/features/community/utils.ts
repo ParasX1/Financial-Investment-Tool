@@ -1,7 +1,7 @@
 import {
-  COMMENT_IMAGE_EXTENSIONS,
-  COMMENT_IMAGE_TYPES,
-  MAX_COMMENT_IMAGE_BYTES,
+  COMMUNITY_IMAGE_EXTENSIONS,
+  COMMUNITY_IMAGE_TYPES,
+  MAX_COMMUNITY_IMAGE_BYTES,
   POST_BODY_PREVIEW_MIN_WORD_BOUNDARY,
 } from "./constants";
 import type {
@@ -9,13 +9,16 @@ import type {
   CommentUI,
   DBPost,
   DiscussionDraft,
+  DiscussionPostInput,
   PostUI,
 } from "./types";
 import { inferTags, normalizeSelectedTags } from "./smartTags";
 
 export function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
-    const message = String((error as { message?: unknown }).message ?? "").trim();
+    const message = String(
+      (error as { message?: unknown }).message ?? "",
+    ).trim();
     if (message) return message;
   }
 
@@ -34,21 +37,25 @@ export function getUploadErrorMessage(error: unknown) {
   return message;
 }
 
-export function validateCommentImage(file: File) {
-  if (!COMMENT_IMAGE_TYPES.includes(file.type)) {
+export function validateCommunityImage(file: File) {
+  if (!COMMUNITY_IMAGE_TYPES.includes(file.type)) {
     return "Attach a JPG, PNG, WebP, or GIF image.";
   }
 
   const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0];
-  if (!extension || !COMMENT_IMAGE_EXTENSIONS.includes(extension)) {
+  if (!extension || !COMMUNITY_IMAGE_EXTENSIONS.includes(extension)) {
     return "Attach a JPG, PNG, WebP, or GIF image.";
   }
 
-  if (file.size > MAX_COMMENT_IMAGE_BYTES) {
+  if (file.size > MAX_COMMUNITY_IMAGE_BYTES) {
     return "Image must be 5 MB or smaller.";
   }
 
   return null;
+}
+
+export function validateCommentImage(file: File) {
+  return validateCommunityImage(file);
 }
 
 export function initials(name: string) {
@@ -115,7 +122,9 @@ export function splitPostCopy(raw: string) {
   };
 }
 
-export function normalizeDiscussionDraft(draft: DiscussionDraft): DiscussionDraft {
+export function normalizeDiscussionDraft(
+  draft: Pick<DiscussionDraft, "title" | "body" | "tags">,
+): DiscussionPostInput {
   const title = draft.title.trim().replace(/\s+/g, " ");
   const body = draft.body.trim();
 
@@ -149,12 +158,16 @@ export function getExpandableText(text: string, maxChars: number) {
   };
 }
 
-export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI {
+export function postFromRow(
+  row: DBPost,
+  currentUserId?: string | null,
+): PostUI {
   const fallbackCopy = splitPostCopy(row.title);
   const body = row.body?.trim() || fallbackCopy.body;
-  const title = row.body === undefined || row.body === null
-    ? fallbackCopy.title
-    : row.title.trim() || fallbackCopy.title;
+  const title =
+    row.body === undefined || row.body === null
+      ? fallbackCopy.title
+      : row.title.trim() || fallbackCopy.title;
   const savedTags = Array.isArray(row.tags)
     ? normalizeSelectedTags(row.tags)
     : null;
@@ -174,6 +187,8 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
     time: toRelativeTime(row.created_at),
     sortTime: new Date(row.created_at).getTime(),
     tags: savedTags ?? inferTags(`${title} ${body}`),
+    imageUrl: row.image_url ?? undefined,
+    imagePath: row.image_path ?? undefined,
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
     fromDB: true,
@@ -183,7 +198,7 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
 
 export function commentFromRow(
   row: CommentRow,
-  currentUserId?: string | null
+  currentUserId?: string | null,
 ): CommentUI {
   const user =
     row.author_id && row.author_id === currentUserId
@@ -198,12 +213,13 @@ export function commentFromRow(
     text: row.body,
     createdAt: row.created_at,
     imageUrl: row.image_url ?? undefined,
+    imagePath: row.image_path ?? undefined,
     authorId: row.author_id ?? null,
     fromDB: true,
   };
 }
 
-export function createLocalPost(draft: DiscussionDraft): PostUI {
+export function createLocalPost(draft: DiscussionPostInput): PostUI {
   const copy = normalizeDiscussionDraft(draft);
 
   return {
@@ -216,6 +232,8 @@ export function createLocalPost(draft: DiscussionDraft): PostUI {
     time: "just now",
     sortTime: Date.now(),
     tags: copy.tags,
+    imageUrl: draft.imageUrl ?? undefined,
+    imagePath: draft.imagePath ?? undefined,
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
   };

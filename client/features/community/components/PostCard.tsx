@@ -20,6 +20,7 @@ export function PostCard({
   onAddComment,
   canDeletePost,
   canDeleteComment,
+  canAttachCommentImage,
   onDeleteComment,
   onDeletePost,
   onToggleLike,
@@ -30,7 +31,8 @@ export function PostCard({
   liked: boolean;
   likeBusy: boolean;
   canDeletePost: boolean;
-  canDeleteComment: (comment: CommentUI) => boolean;
+  canDeleteComment: (comment: CommentUI, post: PostUI) => boolean;
+  canAttachCommentImage: boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
@@ -116,6 +118,25 @@ export function PostCard({
 
           <ExpandableText footer={tagBadges} text={post.body} />
 
+          {post.imageUrl ? (
+            <div
+              className={cn(
+                "mt-[12px] overflow-hidden rounded-lg bg-black/30",
+                communityStyles.softBorder
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.imageUrl}
+                alt="Discussion attachment"
+                width={960}
+                height={540}
+                loading="lazy"
+                className="max-h-[28rem] w-full object-contain"
+              />
+            </div>
+          ) : null}
+
           <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
             <button
               type="button"
@@ -168,11 +189,12 @@ export function PostCard({
             >
               <CommentList
                 items={comments}
-                canDelete={canDeleteComment}
+                canDelete={(comment) => canDeleteComment(comment, post)}
                 onDelete={(commentId) => onDeleteComment(commentId, post.id)}
               />
               <CommentForm
                 busy={busy}
+                canAttachImage={canAttachCommentImage}
                 onSubmit={async (data) => {
                   try {
                     setBusy(true);

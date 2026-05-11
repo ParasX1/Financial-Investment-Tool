@@ -10,9 +10,11 @@ import { getErrorMessage, validateCommentImage } from "../utils";
 
 export function CommentForm({
   onSubmit,
+  canAttachImage,
   busy = false,
 }: {
   onSubmit: (data: NewComment) => Promise<void> | void;
+  canAttachImage: boolean;
   busy?: boolean;
 }) {
   const [text, setText] = React.useState("");
@@ -21,6 +23,9 @@ export function CommentForm({
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement | null>(null);
   const commentInputId = React.useId();
+  const attachImageLabel = canAttachImage
+    ? "Attach image"
+    : "Sign in to attach images";
 
   React.useEffect(
     () => () => {
@@ -36,6 +41,14 @@ export function CommentForm({
       setFile(null);
       setPreviewUrl(null);
       if (fileInput.current) fileInput.current.value = "";
+      return;
+    }
+
+    if (!canAttachImage) {
+      setFile(null);
+      setPreviewUrl(null);
+      if (fileInput.current) fileInput.current.value = "";
+      setErrorMessage("Sign in before attaching an image.");
       return;
     }
 
@@ -116,22 +129,22 @@ export function CommentForm({
           type="file"
           accept={COMMENT_IMAGE_TYPES.join(",")}
           className="hidden"
-          disabled={busy}
+          disabled={busy || !canAttachImage}
           onChange={(event) => handleFile(event.currentTarget.files?.[0] ?? null)}
         />
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            disabled={busy}
+            disabled={busy || !canAttachImage}
             className={cn(
               communityUi.iconButton,
               "h-9 w-9 text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
               communityUi.disabled,
               FOCUS_VISIBLE
             )}
-            title="Attach image"
-            aria-label="Attach image"
+            title={attachImageLabel}
+            aria-label={attachImageLabel}
           >
             <ImageOutlinedIcon fontSize="small" aria-hidden="true" />
           </button>

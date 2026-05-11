@@ -1,4 +1,9 @@
-import { createLocalPost, normalizeDiscussionDraft, postFromRow } from "./utils";
+import {
+  createLocalPost,
+  normalizeDiscussionDraft,
+  postFromRow,
+  validateCommunityImage,
+} from "./utils";
 import type { DBPost } from "./types";
 
 const baseRow: DBPost = {
@@ -17,11 +22,15 @@ describe("Community post mapping", () => {
       {
         ...baseRow,
         tags: [" Strategy ", "$nvda"],
-      },
-      "user-1"
+        image_url: "https://example.com/post.png",
+        image_path: "posts/post.png",
+      } as DBPost,
+      "user-1",
     );
 
     expect(post.tags).toEqual(["Strategy", "$NVDA"]);
+    expect(post.imageUrl).toBe("https://example.com/post.png");
+    expect((post as any).imagePath).toBe("posts/post.png");
   });
 
   it("infers tags when saved tags are missing from legacy rows", () => {
@@ -30,10 +39,12 @@ describe("Community post mapping", () => {
         ...baseRow,
         tags: null,
       },
-      "user-1"
+      "user-1",
     );
 
-    expect(post.tags).toEqual(expect.arrayContaining(["Earnings", "Risk", "$NVDA"]));
+    expect(post.tags).toEqual(
+      expect.arrayContaining(["Earnings", "Risk", "$NVDA"]),
+    );
   });
 
   it("keeps persisted empty tags as an intentional no-tag choice", () => {
@@ -42,7 +53,7 @@ describe("Community post mapping", () => {
         ...baseRow,
         tags: [],
       },
-      "user-1"
+      "user-1",
     );
 
     expect(post.tags).toEqual([]);
@@ -53,9 +64,11 @@ describe("Community post mapping", () => {
       title: "NVDA earnings risk",
       body: "Looking at Nvidia guidance and downside risk.",
       tags: [],
+      imageUrl: "blob:http://localhost/local-post-image",
     });
 
     expect(post.tags).toEqual([]);
+    expect(post.imageUrl).toBe("blob:http://localhost/local-post-image");
   });
 
   it("normalizes draft tags before insert", () => {
@@ -64,11 +77,40 @@ describe("Community post mapping", () => {
         title: "  TSLA earnings   idea ",
         body: " Looking at implied volatility. ",
         tags: ["$tsla", "Risk", "Risk", "<bad>"],
-      })
+      }),
     ).toEqual({
       title: "TSLA earnings idea",
       body: "Looking at implied volatility.",
       tags: ["$TSLA", "Risk"],
     });
+  });
+});
+
+describe("Community image validation", () => {
+  function imageFile(overrides: Partial<File> = {}) {
+    return {
+      name: "chart.png",
+      size: 1024,
+      type: "image/png",
+      ...overrides,
+    } as File;
+  }
+
+  it("accepts supported community image files", () => {
+    expect(validateCommunityImage(imageFile())).toBeNull();
+  });
+
+  it("rejects unsupported community image files", () => {
+    expect(
+      validateCommunityImage(
+        imageFile({ name: "chart.svg", type: "image/svg+xml" }),
+      ),
+    ).toBe("Attach a JPG, PNG, WebP, or GIF image.");
+  });
+
+  it("rejects oversized community image files", () => {
+    expect(validateCommunityImage(imageFile({ size: 6 * 1024 * 1024 }))).toBe(
+      "Image must be 5 MB or smaller.",
+    );
   });
 });

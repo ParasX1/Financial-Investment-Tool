@@ -1,10 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { COMMENT_BUCKET, DEMO_POSTS } from "./constants";
+import { COMMUNITY_IMAGE_BUCKET, DEMO_POSTS } from "./constants";
 import type {
   CommentEntry,
   CommentRow,
   DBPost,
-  DiscussionDraft,
+  DiscussionPostInput,
   PostUI,
 } from "./types";
 import {
@@ -16,9 +16,17 @@ import {
 } from "./utils";
 
 const COMMENT_SELECT =
+  "id, post_id, user_name, body, image_url, image_path, created_at, author_id";
+const COMMENT_SELECT_WITHOUT_IMAGE_PATH =
   "id, post_id, user_name, body, image_url, created_at, author_id";
-const POST_SELECT = "id, title, body, tags, votes, created_at, author_id";
-const POST_SELECT_WITHOUT_TAGS = "id, title, body, votes, created_at, author_id";
+const POST_SELECT =
+  "id, title, body, tags, image_url, image_path, votes, created_at, author_id";
+const POST_SELECT_WITHOUT_IMAGE_PATH =
+  "id, title, body, tags, image_url, votes, created_at, author_id";
+const POST_SELECT_WITHOUT_IMAGE =
+  "id, title, body, tags, votes, created_at, author_id";
+const POST_SELECT_WITHOUT_TAGS =
+  "id, title, body, votes, created_at, author_id";
 const LEGACY_POST_SELECT = "id, title, votes, created_at, author_id";
 
 function isMissingAuthorIdColumn(error: unknown) {
@@ -49,7 +57,7 @@ export function getSupabaseClient(): SupabaseClient | null {
 
 export async function loadCommunityData(
   db: SupabaseClient,
-  currentUserId?: string | null
+  currentUserId?: string | null,
 ): Promise<{
   posts: PostUI[];
   comments: CommentEntry[];
@@ -67,18 +75,14 @@ export async function loadCommunityData(
   const dbPosts: PostUI[] = rows
     ? rows.map((row: DBPost) => postFromRow(row, activeUserId))
     : [];
-  const posts: PostUI[] = dbPosts.length ? [...dbPosts, ...DEMO_POSTS] : [];
+  const posts: PostUI[] = dbPosts.length ? dbPosts : DEMO_POSTS;
 
   if (!dbPosts.length) {
     return { posts, comments: [], likedPostIds: [] };
   }
 
   const postIds = dbPosts.map((post) => post.id);
-  const commentsQuery = await db
-    .from("comments")
-    .select(COMMENT_SELECT)
-    .in("post_id", postIds)
-    .order("created_at", { ascending: false });
+  const commentsQuery = await loadCommunityCommentRows(db, postIds);
 
   const { data: allComments, error: commentsError } = commentsQuery;
   const likedPostIds = await loadLikedPostIds(db, postIds, activeUserId);
@@ -122,11 +126,32 @@ function isMissingColumn(error: unknown, columnName: string) {
 }
 
 function isMissingExpectedPostColumn(error: unknown) {
-  return isMissingColumn(error, "tags") || isMissingColumn(error, "body");
+  return (
+    isMissingColumn(error, "image_path") ||
+    isMissingColumn(error, "image_url") ||
+    isMissingColumn(error, "tags") ||
+    isMissingColumn(error, "body")
+  );
+}
+
+function isMissingExpectedCommentColumn(error: unknown) {
+  return isMissingColumn(error, "image_path");
+}
+
+function uniqueImagePaths(paths: Array<string | null | undefined>) {
+  return Array.from(
+    new Set(paths.filter((path): path is string => Boolean(path))),
+  );
 }
 
 async function loadCommunityPostRows(db: SupabaseClient) {
-  const selects = [POST_SELECT, POST_SELECT_WITHOUT_TAGS, LEGACY_POST_SELECT];
+  const selects = [
+    POST_SELECT,
+    POST_SELECT_WITHOUT_IMAGE_PATH,
+    POST_SELECT_WITHOUT_IMAGE,
+    POST_SELECT_WITHOUT_TAGS,
+    LEGACY_POST_SELECT,
+  ];
   let latestResult: any;
 
   for (const columns of selects) {
@@ -141,10 +166,113 @@ async function loadCommunityPostRows(db: SupabaseClient) {
   return latestResult!;
 }
 
+async function loadCommunityCommentRows(db: SupabaseClient, postIds: string[]) {
+  const selects = [COMMENT_SELECT, COMMENT_SELECT_WITHOUT_IMAGE_PATH];
+  let latestResult: any;
+
+  for (const columns of selects) {
+    latestResult = await db
+      .from("comments")
+      .select(columns)
+      .in("post_id", postIds)
+      .order("created_at", { ascending: false });
+
+    if (!isMissingExpectedCommentColumn(latestResult.error)) {
+      return latestResult;
+    }
+  }
+
+  return latestResult!;
+}
+
+async function selectPostDeleteContext(db: SupabaseClient, postId: string) {
+  const result = await db
+    .from("posts")
+    .select("author_id, image_path")
+    .eq("id", postId)
+    .single();
+
+  if (!isMissingColumn(result.error, "image_path")) return result;
+
+  const fallback = await db
+    .from("posts")
+    .select("author_id")
+    .eq("id", postId)
+    .single();
+
+  return {
+    data: fallback.data
+      ? { ...(fallback.data as Record<string, unknown>), image_path: null }
+      : fallback.data,
+    error: fallback.error,
+  };
+}
+
+async function selectCommentDeleteContext(
+  db: SupabaseClient,
+  commentId: string,
+) {
+  const result = await db
+    .from("comments")
+    .select("author_id, post_id, image_path")
+    .eq("id", commentId)
+    .single();
+
+  if (!isMissingColumn(result.error, "image_path")) return result;
+
+  const fallback = await db
+    .from("comments")
+    .select("author_id, post_id")
+    .eq("id", commentId)
+    .single();
+
+  return {
+    data: fallback.data
+      ? { ...(fallback.data as Record<string, unknown>), image_path: null }
+      : fallback.data,
+    error: fallback.error,
+  };
+}
+
+async function loadCommentImagePathsForPost(
+  db: SupabaseClient,
+  postId: string,
+) {
+  const result = await db
+    .from("comments")
+    .select("image_path")
+    .eq("post_id", postId);
+
+  if (isMissingColumn(result.error, "image_path")) return [];
+  if (result.error) throw result.error;
+
+  return uniqueImagePaths(
+    (result.data ?? []).map((row: any) => row.image_path as string | null),
+  );
+}
+
+async function canDeleteCommentFromContext(
+  db: SupabaseClient,
+  ownerRow: Record<string, unknown>,
+  currentUserId: string,
+) {
+  if (ownerRow.author_id === currentUserId) return true;
+  if (!ownerRow.post_id) return false;
+
+  const { data, error } = await db
+    .from("posts")
+    .select("author_id")
+    .eq("id", ownerRow.post_id as string)
+    .single();
+
+  if (error) throw error;
+  return Boolean(data && (data as any).author_id === currentUserId);
+}
+
 async function loadLikedPostIds(
   db: SupabaseClient,
   postIds: string[],
-  currentUserId: string | null
+  currentUserId: string | null,
 ) {
   if (!currentUserId || !postIds.length) {
     return { ids: [] as string[] };
@@ -169,12 +297,40 @@ async function loadLikedPostIds(
 
 export async function createCommunityPost(
   db: SupabaseClient,
-  draft: DiscussionDraft
+  draft: DiscussionPostInput,
 ): Promise<PostUI> {
   const uid = await getSessionUserId(db);
-  const postDraft = normalizeDiscussionDraft(draft);
+  const postDraft = {
+    ...normalizeDiscussionDraft(draft),
+    imageUrl: draft.imageUrl ?? null,
+    imagePath: draft.imagePath ?? null,
+  };
 
-  const attempts = [
+  const hasImage = Boolean(postDraft.imageUrl || postDraft.imagePath);
+  const fullSchemaAttempt = {
+    values: {
+      title: postDraft.title,
+      body: postDraft.body,
+      tags: postDraft.tags,
+      image_url: postDraft.imageUrl,
+      image_path: postDraft.imagePath,
+      votes: 0,
+      author_id: uid,
+    },
+    select: POST_SELECT,
+  };
+  const legacyAttempts = [
+    {
+      values: {
+        title: postDraft.title,
+        body: postDraft.body,
+        tags: postDraft.tags,
+        image_url: postDraft.imageUrl,
+        votes: 0,
+        author_id: uid,
+      },
+      select: POST_SELECT_WITHOUT_IMAGE_PATH,
+    },
     {
       values: {
         title: postDraft.title,
@@ -183,7 +339,7 @@ export async function createCommunityPost(
         votes: 0,
         author_id: uid,
       },
-      select: POST_SELECT,
+      select: POST_SELECT_WITHOUT_IMAGE,
     },
     {
       values: {
@@ -203,6 +359,9 @@ export async function createCommunityPost(
       select: LEGACY_POST_SELECT,
     },
   ];
+  const attempts = hasImage
+    ? [fullSchemaAttempt]
+    : [fullSchemaAttempt, ...legacyAttempts];
 
   for (const attempt of attempts) {
     const { data: row, error } = await db
@@ -223,19 +382,23 @@ export async function createCommunityPost(
 export async function deleteCommunityPost(
   db: SupabaseClient,
   postId: string,
-  currentUserId: string
+  currentUserId: string,
 ) {
-  const { data: ownerRow, error: ownerError } = await db
-    .from("posts")
-    .select("author_id")
-    .eq("id", postId)
-    .single();
+  const { data: ownerRow, error: ownerError } = await selectPostDeleteContext(
+    db,
+    postId,
+  );
 
   if (ownerError) throw ownerError;
 
-  if (!ownerRow || ownerRow.author_id !== currentUserId) {
+  if (!ownerRow || (ownerRow as any).author_id !== currentUserId) {
     throw new Error("You can only delete discussions you created.");
   }
+
+  const imagePaths = uniqueImagePaths([
+    (ownerRow as any).image_path,
+    ...(await loadCommentImagePathsForPost(db, postId)),
+  ]);
 
   const { error: commentsDeleteError } = await db
     .from("comments")
@@ -255,6 +418,8 @@ export async function deleteCommunityPost(
   if (!data?.length) {
     throw new Error("You can only delete discussions you created.");
   }
+
+  await removeCommunityImages(db, imagePaths);
 }
 
 export async function createCommunityComment({
@@ -262,42 +427,88 @@ export async function createCommunityComment({
   postId,
   text,
   imageUrl,
+  imagePath,
 }: {
   db: SupabaseClient;
   postId: string;
   text: string;
   imageUrl?: string;
+  imagePath?: string;
 }) {
   const uid = await getSessionUserId(db);
-  const values = {
-    post_id: postId,
-    user_name: uid ? "You" : "Guest",
-    body: text,
-    image_url: imageUrl ?? null,
-    author_id: uid,
+  const hasImage = Boolean(imageUrl || imagePath);
+  const fullSchemaAttempt = {
+    values: {
+      post_id: postId,
+      user_name: uid ? "You" : "Guest",
+      body: text,
+      image_url: imageUrl ?? null,
+      image_path: imagePath ?? null,
+      author_id: uid,
+    },
+    select: COMMENT_SELECT,
+  };
+  const legacyAttempt = {
+    values: {
+      post_id: postId,
+      user_name: uid ? "You" : "Guest",
+      body: text,
+      image_url: imageUrl ?? null,
+      author_id: uid,
+    },
+    select: COMMENT_SELECT_WITHOUT_IMAGE_PATH,
   };
 
-  const { data: row, error } = await db
-    .from("comments")
-    .insert(values)
-    .select(COMMENT_SELECT)
-    .single();
+  const attempts = hasImage
+    ? [fullSchemaAttempt]
+    : [fullSchemaAttempt, legacyAttempt];
 
-  if (error) throw error;
+  for (const attempt of attempts) {
+    const { data: row, error } = await db
+      .from("comments")
+      .insert(attempt.values)
+      .select(attempt.select)
+      .single();
 
-  return commentFromRow(row as CommentRow, uid);
+    if (isMissingExpectedCommentColumn(error)) continue;
+    if (error) throw error;
+
+    return commentFromRow(row as unknown as CommentRow, uid);
+  }
+
+  throw new Error(
+    "Could not create comment with the current Community schema.",
+  );
 }
 
 export async function deleteCommunityComment(
   db: SupabaseClient,
   commentId: string,
-  currentUserId: string
+  currentUserId: string,
 ) {
+  const { data: ownerRow, error: ownerError } =
+    await selectCommentDeleteContext(db, commentId);
+
+  if (isMissingAuthorIdColumn(ownerError)) {
+    throw new Error("Comment ownership is not available for older comments.");
+  }
+
+  if (ownerError) throw ownerError;
+  if (
+    !ownerRow ||
+    !(await canDeleteCommentFromContext(
+      db,
+      ownerRow as Record<string, unknown>,
+      currentUserId,
+    ))
+  ) {
+    throw new Error("You can only delete comments you created.");
+  }
+
   const { data, error } = await db
     .from("comments")
     .delete()
     .eq("id", commentId)
-    .eq("author_id", currentUserId)
     .select("id");
 
   if (isMissingAuthorIdColumn(error)) {
@@ -308,16 +519,18 @@ export async function deleteCommunityComment(
   if (!data?.length) {
     throw new Error("You can only delete comments you created.");
   }
+
+  await removeCommunityImages(db, [(ownerRow as any).image_path]);
 }
 
 export async function setCommunityPostLike(
   db: SupabaseClient,
   postId: string,
-  liked: boolean
+  liked: boolean,
 ) {
   const { data, error } = await db.rpc(
     liked ? "like_community_post" : "unlike_community_post",
-    { target_post_id: postId }
+    { target_post_id: postId },
   );
 
   if (error) throw error;
@@ -327,8 +540,42 @@ export async function setCommunityPostLike(
 export async function uploadCommentImage(
   db: SupabaseClient,
   postId: string,
-  file: File
-): Promise<string> {
+  file: File,
+): Promise<{ path: string; publicUrl: string }> {
+  return uploadCommunityImage(db, `comments/${postId}`, file);
+}
+
+export async function uploadPostImage(
+  db: SupabaseClient,
+  file: File,
+): Promise<{ path: string; publicUrl: string }> {
+  return uploadCommunityImage(db, "posts", file);
+}
+
+export async function removeCommunityImage(db: SupabaseClient, path: string) {
+  await removeCommunityImages(db, [path]);
+}
+
+export async function removeCommunityImages(
+  db: SupabaseClient,
+  paths: Array<string | null | undefined>,
+) {
+  const uniquePaths = uniqueImagePaths(paths);
+  if (!uniquePaths.length) return;
+
+  const { error } = await db.storage
+    .from(COMMUNITY_IMAGE_BUCKET)
+    .remove(uniquePaths);
+  if (error) {
+    console.error("image cleanup failed:", error.message);
+  }
+}
+
+async function uploadCommunityImage(
+  db: SupabaseClient,
+  folder: string,
+  file: File,
+): Promise<{ path: string; publicUrl: string }> {
   const validationError = validateCommentImage(file);
   if (validationError) {
     throw new Error(validationError);
@@ -337,13 +584,19 @@ export async function uploadCommentImage(
   const extension = file.name.includes(".")
     ? file.name.split(".").pop()!.toLowerCase()
     : "jpg";
-  const key = `${postId}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await db.storage.from(COMMENT_BUCKET).upload(key, file);
+  const key = `${folder}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await db.storage
+    .from(COMMUNITY_IMAGE_BUCKET)
+    .upload(key, file);
 
   if (error) {
     console.error("upload failed:", error.message);
     throw new Error(getUploadErrorMessage(error));
   }
 
-  return db.storage.from(COMMENT_BUCKET).getPublicUrl(key).data.publicUrl;
+  return {
+    path: key,
+    publicUrl: db.storage.from(COMMUNITY_IMAGE_BUCKET).getPublicUrl(key).data
+      .publicUrl,
+  };
 }

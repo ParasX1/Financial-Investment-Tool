@@ -34,8 +34,10 @@ export function CommunityMain({ supabase }: { supabase: SupabaseClient | null })
         <CommunityComposer
           draft={community.draft}
           creating={community.creating}
+          canAttachImage={Boolean(supabase && community.currentUserId)}
           onDraftChange={community.setDraftField}
           onClearTags={community.clearDraftTags}
+          onDraftImageChange={community.setDraftImage}
           onToggleTag={community.toggleDraftTag}
           onSubmit={community.handleCreatePost}
         />
@@ -87,6 +89,9 @@ export function CommunityMain({ supabase }: { supabase: SupabaseClient | null })
                 likeBusy={community.likingPostIds.has(post.id)}
                 canDeletePost={community.canDeletePost(post)}
                 canDeleteComment={community.canDeleteComment}
+                canAttachCommentImage={Boolean(
+                  supabase && community.currentUserId,
+                )}
                 onAddComment={community.handleAddComment}
                 onDeleteComment={community.requestDeleteComment}
                 onDeletePost={

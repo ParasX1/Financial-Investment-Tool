@@ -1,0 +1,187 @@
+import {
+  loadCommunityData,
+  deleteCommunityComment,
+  deleteCommunityPost,
+} from "./communityService";
+
+type QueryResult = {
+  data?: unknown;
+  error?: unknown;
+};
+
+type QueryStep = {
+  table: string;
+  result: QueryResult;
+};
+
+function createMockSupabase(steps: QueryStep[]) {
+  const remove = jest.fn(async () => ({ error: null }));
+
+  const db = {
+    from: jest.fn((table: string) => {
+      const step = steps.shift();
+      if (!step) throw new Error(`Unexpected query for ${table}`);
+      expect(table).toBe(step.table);
+
+      const builder: any = {
+        delete: jest.fn(() => builder),
+        eq: jest.fn(() => builder),
+        in: jest.fn(() => builder),
+        order: jest.fn(() => builder),
+        select: jest.fn(() => builder),
+        single: jest.fn(async () => step.result),
+        then: (resolve: (value: QueryResult) => unknown) =>
+          Promise.resolve(step.result).then(resolve),
+      };
+
+      return builder;
+    }),
+    storage: {
+      from: jest.fn(() => ({ remove })),
+    },
+    auth: {
+      getSession: jest.fn(async () => ({
+        data: { session: { user: { id: "user-1" } } },
+      })),
+    },
+  };
+
+  return { db: db as any, remove };
+}
+
+describe("Community delete image cleanup", () => {
+  it("uses live posts without mixing demo discussions into the feed", async () => {
+    const { db } = createMockSupabase([
+      {
+        table: "posts",
+        result: {
+          data: [
+            {
+              id: "post-1",
+              title: "Live post",
+              body: "Live body",
+              tags: [],
+              image_url: null,
+              image_path: null,
+              votes: 0,
+              created_at: new Date().toISOString(),
+              author_id: "user-1",
+            },
+          ],
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: { data: [], error: null },
+      },
+      {
+        table: "post_likes",
+        result: { data: [], error: null },
+      },
+    ]);
+
+    const result = await loadCommunityData(db, "user-1");
+
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0].id).toBe("post-1");
+  });
+
+  it("removes a deleted comment image from storage", async () => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "comments",
+        result: {
+          data: {
+            author_id: "user-1",
+            image_path: "comments/post-1/comment.png",
+          },
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: { data: [{ id: "comment-1" }], error: null },
+      },
+    ]);
+
+    await deleteCommunityComment(db, "comment-1", "user-1");
+
+    expect(remove).toHaveBeenCalledWith(["comments/post-1/comment.png"]);
+  });
+
+  it("allows a discussion owner to delete another user's comment", async () => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "comments",
+        result: {
+          data: {
+            author_id: "commenter-1",
+            post_id: "post-1",
+            image_path: "comments/post-1/comment.png",
+          },
+          error: null,
+        },
+      },
+      {
+        table: "posts",
+        result: {
+          data: {
+            author_id: "user-1",
+          },
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: { data: [{ id: "comment-1" }], error: null },
+      },
+    ]);
+
+    await deleteCommunityComment(db, "comment-1", "user-1");
+
+    expect(remove).toHaveBeenCalledWith(["comments/post-1/comment.png"]);
+  });
+
+  it("removes post and comment images when deleting a discussion", async () => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "posts",
+        result: {
+          data: {
+            author_id: "user-1",
+            image_path: "posts/post.png",
+          },
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: {
+          data: [
+            { image_path: "comments/post-1/a.png" },
+            { image_path: null },
+            { image_path: "comments/post-1/b.png" },
+          ],
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: { error: null },
+      },
+      {
+        table: "posts",
+        result: { data: [{ id: "post-1" }], error: null },
+      },
+    ]);
+
+    await deleteCommunityPost(db, "post-1", "user-1");
+
+    expect(remove).toHaveBeenCalledWith([
+      "posts/post.png",
+      "comments/post-1/a.png",
+      "comments/post-1/b.png",
+    ]);
+  });
+});

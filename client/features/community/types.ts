@@ -4,9 +4,19 @@ export type DiscussionDraft = {
   title: string;
   body: string;
   tags: string[];
+  imageFile: File | null;
+  imagePreviewUrl: string | null;
 };
 
 export type DiscussionDraftField = "title" | "body";
+
+export type DiscussionPostInput = {
+  title: string;
+  body: string;
+  tags: string[];
+  imageUrl?: string | null;
+  imagePath?: string | null;
+};
 
 export type SeedPost = {
   id: string;
@@ -18,6 +28,8 @@ export type SeedPost = {
   time: string;
   sortTime: number;
   tags: string[];
+  imageUrl?: string | null;
+  imagePath?: string | null;
   commentCount: number;
   avatarGradient: string;
 };
@@ -27,6 +39,8 @@ export type DBPost = {
   title: string;
   body?: string | null;
   tags?: string[] | null;
+  image_url?: string | null;
+  image_path?: string | null;
   votes: number;
   created_at: string;
   author_id: string | null;
@@ -43,6 +57,7 @@ export type CommentRow = {
   user_name: string;
   body: string;
   image_url: string | null;
+  image_path?: string | null;
   created_at: string;
   author_id?: string | null;
 };
@@ -53,6 +68,7 @@ export type CommentUI = {
   text: string;
   createdAt: string;
   imageUrl?: string;
+  imagePath?: string;
   authorId?: string | null;
   fromDB?: boolean;
 };
