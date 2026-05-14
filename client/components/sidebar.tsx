@@ -8,7 +8,7 @@ import ModalSignUp from '@/components/Modal/ModalSignUp'
 
 const logo = require('@/assets/SidebarIcons/F.png')
 
-const Sidebar: React.FC = () => {
+  const Sidebar: React.FC<{ onHoverChange?: (open: boolean) => void }> = ({ onHoverChange }) => {
   const { user, signOut } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
   const [showText, setShowText] = useState(false)
@@ -65,8 +65,8 @@ const Sidebar: React.FC = () => {
   return (
     <>
       <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => {setIsHovered(true); onHoverChange?.(true)}}
+        onMouseLeave={() => {setIsHovered(false); onHoverChange?.(false)}}
         style={{
           backgroundColor: 'black',
           width: isHovered ? '200px' : '50px',

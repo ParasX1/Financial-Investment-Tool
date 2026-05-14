@@ -17,3 +17,5 @@ client/.idea
 
 server/.env
 
+# macOS
+.DS_Store
