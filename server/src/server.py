@@ -27,8 +27,8 @@ def create_app():
 
     # supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
 
-    SUPABASE_URL = "https://fybvhtuhpdmfzrtitptv.supabase.co"
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YnZodHVocGRtZnpydGl0cHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjM5MTgsImV4cCI6MjA1NzgzOTkxOH0.bl3F6T-1m4ntsTeJRAPUb66QFL3fIZVBj0TGzMsnpK8"
+    SUPABASE_URL = "https://egjnhetinyoyrhbetbxi.supabase.co"
+    SUPABASE_KEY = "sb_publishable_XKRo3ReKDr3s3cZM5zbjMQ_VyQLJFaC"
 
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 

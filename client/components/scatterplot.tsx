@@ -1,6 +1,31 @@
 import * as d3 from 'd3';
 import React, { useState, useRef, useEffect } from 'react';
 
+const CHART_BG = '#111';
+const AXIS_COLOR = 'rgba(255,255,255,0.5)';
+const GRID_COLOR = 'rgba(255,255,255,0.12)';
+const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+
+const positionTooltip = (
+    event: MouseEvent,
+    tooltip: d3.Selection<HTMLDivElement | null, unknown, null, undefined>,
+    itemCount = 2
+) => {
+    const tooltipWidth = 170;
+    const tooltipHeight = 36 + itemCount * 28;
+    const gap = 12;
+    const left = event.clientX + tooltipWidth + gap > window.innerWidth
+        ? event.clientX - tooltipWidth - gap
+        : event.clientX + gap;
+    const top = event.clientY + tooltipHeight + gap > window.innerHeight
+        ? event.clientY - tooltipHeight - gap
+        : event.clientY + gap;
+
+    tooltip
+        .style('left', `${left}px`)
+        .style('top', `${top}px`);
+};
+
 interface ScatterPlotProps {
     data: {risk: number; return: number; sharpe?: number }[];
     width?: number;
@@ -40,7 +65,7 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
     svg.append('rect')
         .attr('width', width)
         .attr('height', height)
-        .attr('fill', '#FFFFFF');
+        .attr('fill', CHART_BG);
 
 
     const g = svg.append('g').attr('transform', `translate(${l}, ${t})`);
@@ -62,16 +87,54 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .nice()
         .range([graphHeight, 0]);
 
+    const xGridLines = d3.axisBottom(xScale)
+        .tickSize(-graphHeight)
+        .tickFormat('' as any);
     g.append('g')
+        .attr('class', 'grid')
+        .attr('transform', `translate(0, ${graphHeight})`)
+        .call(xGridLines);
+
+    const yGridLines = d3.axisLeft(yScale)
+        .tickSize(-graphWidth)
+        .tickFormat('' as any);
+    g.append('g')
+        .attr('class', 'grid')
+        .call(yGridLines);
+
+    g.selectAll('.grid .domain')
+        .attr('stroke', 'none');
+    g.selectAll('.grid line')
+        .attr('stroke', GRID_COLOR)
+        .attr('stroke-dasharray', '3 4')
+        .attr('shape-rendering', 'crispEdges');
+
+    const xAxis = g.append('g')
         .attr('transform', `translate(0, ${yScale(0)})`)
         .call(d3.axisBottom(xScale));
-    g.append('g')
+    const yAxis = g.append('g')
         .call(d3.axisLeft(yScale));
+
+    xAxis.selectAll('.domain')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    yAxis.selectAll('.domain')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    xAxis.selectAll('.tick line')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    yAxis.selectAll('.tick line')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    xAxis.selectAll('text').attr('fill', TEXT_COLOR);
+    yAxis.selectAll('text').attr('fill', TEXT_COLOR);
 
     g.append('text')
         .attr('x', graphWidth / 2)
         .attr('y', graphHeight + b - 10)
         .attr('text-anchor', 'middle')
+        .attr('fill', TEXT_COLOR)
         .text('Risk');
 
     g.append('text')
@@ -79,26 +142,31 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .attr('y', -l + 15)
         .attr('text-anchor', 'middle')
         .attr('transform', 'rotate(-90)')
+        .attr('fill', TEXT_COLOR)
         .text('Return');
 
     // Tooltip setup
     const tooltip = d3.select(tooltipRef.current)
-        .style('position', 'absolute')
-        .style('background', '#fff')
-        .style('padding', '5px')
+        .style('position', 'fixed')
+        .style('background', '#1b1b20')
+        .style('color', '#fff')
+        .style('border', '1px solid rgba(255,255,255,0.14)')
+        .style('border-radius', '8px')
+        .style('padding', '10px')
         .style('display', 'none')
         .style('pointer-events', 'none');
     
     const handleMouseOver = (event: MouseEvent, d: {risk: number; return: number; sharpe?: number}) => {
         tooltip
             .style('display', 'block')
-            .html(`Risk: ${d.risk}<br>Return: ${d.return}<br>Sharpe: ${d.sharpe || 'N/A'}`);
+            .html(
+                `<div>Portfolio Point</div><div style="color:${mainColor}; margin-top: 8px;">Risk: ${d.risk.toFixed(2)}</div><div style="color:${mainColor}; margin-top: 8px;">Return: ${d.return.toFixed(2)}</div><div style="color:${mainColor}; margin-top: 8px;">Sharpe: ${typeof d.sharpe === 'number' ? d.sharpe.toFixed(2) : 'N/A'}</div>`
+            );
+        positionTooltip(event, tooltip, 3);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-        tooltip
-            .style('left', `${event.pageX - 170}px`)
-            .style('top', `${event.pageY - 28}px`);
+        positionTooltip(event, tooltip, 3);
     };
 
     const handleMouseOut = () => {

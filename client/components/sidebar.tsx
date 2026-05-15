@@ -156,13 +156,13 @@ const Sidebar: React.FC = () => {
                 <Image src={logo} alt="" width={25} height={25} />
               </button>
             </li>
-            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
           </ul>
         </div>
 
         {/* Middle */}
         <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
             {Item('/TopPicks', 'bx-up-arrow-circle', 'Top Picks')}
             {Item('/MarketNews', 'bx-news', 'Market News')}
             {Item('/Watchlist', 'bx-list-ul', 'Watchlist')}
