@@ -1,0 +1,18 @@
+ ⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at D:\Financial-Investment-Tool\client\node_modules\next\dist\server\lib\start-server.js:280:16
+    at new Promise (<anonymous>)
+    at startServer (D:\Financial-Investment-Tool\client\node_modules\next\dist\server\lib\start-server.js:191:11)
+    at D:\Financial-Investment-Tool\client\node_modules\next\dist\server\lib\start-server.js:310:52
+    at Span.traceAsyncFn (D:\Financial-Investment-Tool\client\node_modules\next\dist\trace\trace.js:154:26)
+    at process.<anonymous> (D:\Financial-Investment-Tool\client\node_modules\next\dist\server\lib\start-server.js:310:35)
+    at process.emit (node:events:508:28) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}

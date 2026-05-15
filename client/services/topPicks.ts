@@ -18,6 +18,7 @@ export type TopPicksRow = {
 export type SortKey = keyof Pick<TopPicksRow,'ret1y'|'sharpe'|'sortino'|'volatility'|'maxDD'|'beta'|'alpha'|'infoRatio'>
 
 type SingleValueMap = Record<string, number>
+type SortinoValueMap = Record<string, number | { value: number | null; status?: string }>
 type TimeSeriesMap = Record<string, Record<string, number>>
 
 async function postMetric<T=any>(kind: string, payload: any): Promise<T> {
@@ -38,6 +39,34 @@ function lastValue(series?: Record<string, number>): number {
   return Number(entries[entries.length - 1][1] ?? 0)
 }
 
+function minValue(series?: Record<string, number>): number {
+  if (!series) return 0
+  const values = Object.values(series).map(Number).filter(Number.isFinite)
+  return values.length ? Math.min(...values) : 0
+}
+
+function metricValue(value: unknown, fallback = 0): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function sortableMetricValue(value: unknown, fallback = Number.NEGATIVE_INFINITY): number {
+  const n = Number(value)
+  return Number.isNaN(n) ? fallback : n
+}
+
+function sortinoValue(value: SortinoValueMap[string] | undefined): number {
+  if (typeof value === 'object' && value !== null) {
+    if (value.status === 'infinite') return Number.POSITIVE_INFINITY
+    return metricValue(value.value)
+  }
+  return metricValue(value)
+}
+
+function uniqueSymbols(symbols: string[]): string[] {
+  return Array.from(new Set(symbols.map(sym => sym.trim().toUpperCase()).filter(Boolean)))
+}
+
 export async function fetchTopPicks(opts?: {
   limit?: number
   sort_key?: SortKey
@@ -48,7 +77,7 @@ export async function fetchTopPicks(opts?: {
   market_ticker?: string
   risk_free_rate?: number
 }): Promise<TopPicksRow[]> {
-  let symbols = opts?.tickers
+  let symbols = opts?.tickers ? uniqueSymbols(opts.tickers) : undefined
   let nameMap: Record<string,string> = {}
   let industryMap: Record<string, TopPicksRow['industry']> = {}
   if (!symbols) {
@@ -57,9 +86,9 @@ export async function fetchTopPicks(opts?: {
       .select('symbol, name, industry')
       .limit(200)
     if (error) throw error
-    symbols = (data ?? []).map(r => r.symbol)
-    nameMap = Object.fromEntries((data ?? []).map(r => [r.symbol, r.name]))
-    industryMap = Object.fromEntries((data ?? []).map(r => [r.symbol, (r.industry ?? 'Technology') as TopPicksRow['industry']]))
+    symbols = uniqueSymbols((data ?? []).map(r => r.symbol))
+    nameMap = Object.fromEntries((data ?? []).map(r => [r.symbol.trim().toUpperCase(), r.name]))
+    industryMap = Object.fromEntries((data ?? []).map(r => [r.symbol.trim().toUpperCase(), (r.industry ?? 'Technology') as TopPicksRow['industry']]))
   }
   if (!symbols || symbols.length === 0) return []
   const start_date = opts?.start_date ?? new Date(Date.now() - 365*24*3600*1000).toISOString().slice(0,10)
@@ -78,21 +107,21 @@ export async function fetchTopPicks(opts?: {
     retSeries, maxddMap
   ] = await Promise.all([
     postMetric<SingleValueMap>('SharpeRatioMatrix', basePayload),
-    postMetric<SingleValueMap>('SortinoRatioVisualization', basePayload).catch(() => ({} as SingleValueMap)),
+    postMetric<SortinoValueMap>('SortinoRatioVisualization', basePayload).catch(() => ({} as SortinoValueMap)),
     postMetric<SingleValueMap>('VolatilityAnalysis', basePayload),
     postMetric<SingleValueMap>('BetaAnalysis', basePayload).catch(() => ({} as SingleValueMap)),
     postMetric<SingleValueMap>('AlphaComparison', basePayload).catch(() => ({} as SingleValueMap)),
     postMetric<TimeSeriesMap>('CumulativeReturnComparison', basePayload),
-    postMetric<SingleValueMap>('MaxDrawdownAnalysis', basePayload).catch(() => ({} as SingleValueMap))
+    postMetric<TimeSeriesMap>('MaxDrawdownAnalysis', basePayload).catch(() => ({} as TimeSeriesMap))
   ])
   const rows: TopPicksRow[] = symbols.map(sym => {
     const ret1y = lastValue(retSeries[sym])
-    const sharpe = Number(sharpeMap[sym] ?? 0)
-    const sortino = Number(sortinoMap[sym] ?? 0)
-    const vol = Number(volMap[sym] ?? 0)
-    const beta = Number(betaMap[sym] ?? 0)
-    const alpha = Number(alphaMap[sym] ?? 0)
-    const maxDD = Number.isFinite(Number(maxddMap[sym])) ? Number(maxddMap[sym]) : 0
+    const sharpe = metricValue(sharpeMap[sym])
+    const sortino = sortinoValue(sortinoMap[sym])
+    const vol = metricValue(volMap[sym])
+    const beta = metricValue(betaMap[sym])
+    const alpha = metricValue(alphaMap[sym])
+    const maxDD = minValue(maxddMap[sym])
     const info = vol ? alpha / vol : 0
     return {
       symbol: sym,
@@ -111,8 +140,9 @@ export async function fetchTopPicks(opts?: {
   const sort_key = opts?.sort_key ?? 'sharpe'
   const sort_dir = opts?.sort_dir ?? 'desc'
   rows.sort((a,b) => {
-    const va = (a as any)[sort_key] ?? 0
-    const vb = (b as any)[sort_key] ?? 0
+    const va = sortableMetricValue((a as any)[sort_key])
+    const vb = sortableMetricValue((b as any)[sort_key])
+    if (va === vb) return 0
     return sort_dir === 'asc' ? (va - vb) : (vb - va)
   })
   const limit = Math.max(1, Math.min(opts?.limit ?? 50, rows.length))
