@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/sidebar';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -261,6 +261,11 @@ const Help: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+  contentRef.current?.scrollTo({ top: 0 });
+}, [activeId]);
+
   return (
     <>
       {/* Left: App Sidebar */}      
@@ -341,6 +346,7 @@ const Help: React.FC = () => {
 
         {/* Right: FAQ content */}
         <main
+          ref={contentRef}
           style={{
             flex: 1,
             overflowY: 'auto',
