@@ -1,0 +1,208 @@
+.noticeBorder {
+  border: 1px solid rgba(111, 124, 255, 0.28);
+}
+
+.softBorder {
+  border: 1px solid rgba(132, 146, 176, 0.12);
+}
+
+.panelBorder {
+  border: 1px solid #202230;
+}
+
+.inputBorder {
+  border: 1px solid #2a2b35;
+}
+
+.tagBorder {
+  border: 1px solid rgba(85, 111, 255, 0.56);
+}
+
+.dividerTop {
+  border-top: 1px solid rgba(132, 146, 176, 0.12);
+}
+
+.wrapAnywhere {
+  overflow-wrap: anywhere;
+}
+
+.postCopyMeasure {
+  max-width: min(100%, 52rem);
+}
+
+.primaryContentStart {
+  margin-top: 0.5rem;
+}
+
+.communityLayoutGrid {
+  display: grid;
+  gap: 0 1.25rem;
+  margin-top: 1.5rem;
+  min-width: 0;
+}
+
+.primaryPanelPadding {
+  padding: 18px;
+}
+
+.toolbar {
+  left: var(--community-app-rail-width);
+  padding-bottom: var(--community-toolbar-y);
+  padding-top: var(--community-toolbar-y);
+}
+
+.toolbarInner {
+  max-width: var(--community-content-max-width);
+  padding-left: calc(var(--community-toolbar-control-height) + 0.75rem);
+}
+
+.toolbarControl {
+  height: var(--community-toolbar-control-height);
+}
+
+.sidebarShell {
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.sidebarShell::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebarPinned {
+  min-width: 0;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.sidebarPinned::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.sidebarDrawer {
+  box-sizing: border-box;
+  left: var(--community-app-rail-width);
+  overscroll-behavior: contain;
+  width: min(280px, calc(100vw - var(--community-app-rail-width)));
+}
+
+.sidebarToggle {
+  height: var(--community-toolbar-control-height);
+}
+
+.sidebarCompactToggle {
+  left: calc(var(--community-app-rail-width) + 0.75rem);
+  top: var(--community-toolbar-y);
+  width: var(--community-toolbar-control-height);
+}
+
+.drawerIn {
+  animation: communityDrawerIn 180ms ease-out;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(111, 124, 255, 0.14),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-size: 200% 100%;
+  animation: communitySkeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes communitySkeleton {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes communityDrawerIn {
+  0% {
+    opacity: 0.72;
+    transform: translateX(-100%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .primaryContentStart {
+    margin-top: 1.5rem;
+  }
+
+  .communityLayoutGrid {
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .communityLayoutGridExpanded {
+    grid-template-columns: var(--community-sidebar-width) minmax(0, 1fr);
+  }
+
+  .communityLayoutGridCollapsed {
+    grid-template-columns: var(--community-sidebar-collapsed-width) minmax(0, 1fr);
+  }
+
+  .primaryPanelPadding {
+    padding: 20px 24px;
+  }
+
+  .toolbarInner {
+    padding-left: 0;
+  }
+
+  .sidebarPinned {
+    position: fixed;
+    top: var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem));
+    left: calc(var(--community-app-rail-width) + 2.5rem + max(0px, (100vw - var(--community-app-rail-width) - 5rem - var(--community-content-max-width)) / 2));
+    z-index: 820;
+    max-height: calc(100vh - var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem)) - 16px);
+    overflow-y: auto;
+  }
+}
+
+.skipLink {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 10000;
+  border-radius: 8px;
+  background: #5367ff;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 12px;
+  transform: translateY(-160%);
+  transition: transform 150ms ease;
+}
+
+.skipLink:focus-visible {
+  outline: 2px solid rgba(147, 197, 253, 0.95);
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+
+  .skeleton {
+    animation: none;
+  }
+
+  .drawerIn {
+    animation: none;
+  }
+}
