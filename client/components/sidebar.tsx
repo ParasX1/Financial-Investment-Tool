@@ -29,6 +29,17 @@ const Sidebar: React.FC = () => {
     return () => t && clearTimeout(t)
   }, [isHovered])
 
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--app-sidebar-width',
+      isHovered ? '200px' : '50px',
+    )
+
+    return () => {
+      document.documentElement.style.setProperty('--app-sidebar-width', '50px')
+    }
+  }, [isHovered])
+
   const requireAuth = () => setShowLogin(true)
 
   const navigateToPage = (path: string) => {
@@ -39,34 +50,77 @@ const Sidebar: React.FC = () => {
     router.push(path)
   }
 
-  const Item = (path: string, icon: string, label: string) => {
+  const handleSidebarBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsHovered(false)
+    }
+  }
+
+  const Item = (
+    path: string,
+    icon: string,
+    label: string,
+    onSelect?: () => void,
+  ) => {
     const locked = !user && gatedPages.includes(path)
     return (
       <li
         key={label}
         className="hoverable"
-        onClick={() => (!locked ? navigateToPage(path) : requireAuth())}
         style={{
           position: 'relative',
           opacity: locked ? 0.5 : 1,
-          cursor: locked ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '6px 0',
+          cursor: 'pointer',
+          listStyleType: 'none',
         }}
       >
-        <i className={`bx ${icon}`} style={{ fontSize: 28 }} />
-        {showText && <span>{label}</span>}
+        <button
+          type="button"
+          onClick={() => {
+            if (onSelect) {
+              onSelect()
+              return
+            }
+
+            if (locked) {
+              requireAuth()
+              return
+            }
+
+            navigateToPage(path)
+          }}
+          aria-label={label}
+          aria-disabled={locked || undefined}
+          title={label}
+          style={{
+            width: '100%',
+            border: 0,
+            background: 'transparent',
+            color: 'inherit',
+            font: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '6px 0',
+            cursor: locked ? 'not-allowed' : 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <i className={`bx ${icon}`} style={{ fontSize: 28 }} aria-hidden="true" />
+          {showText && <span>{label}</span>}
+        </button>
       </li>
     )
   }
 
   return (
     <>
-      <div
+      <nav
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onFocusCapture={() => setIsHovered(true)}
+        onBlurCapture={handleSidebarBlur}
+        aria-label="Main navigation"
         style={{
           backgroundColor: 'black',
           width: isHovered ? '200px' : '50px',
@@ -86,8 +140,21 @@ const Sidebar: React.FC = () => {
         {/* Top */}
         <div style={{ flexShrink: 0 }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
-            <li className="hoverable" onClick={() => navigateToPage('/')}>
-              <Image src={logo} alt="Logo" width={25} height={25} />
+            <li className="hoverable" style={{ listStyleType: 'none' }}>
+              <button
+                type="button"
+                onClick={() => navigateToPage('/')}
+                aria-label="Home"
+                title="Home"
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: '6px 0',
+                }}
+              >
+                <Image src={logo} alt="" width={25} height={25} />
+              </button>
             </li>
           </ul>
         </div>
@@ -107,18 +174,12 @@ const Sidebar: React.FC = () => {
         {/* Bottom */}
         <div style={{ flexShrink: 0 }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
-            {Item('Help', 'bx-help-circle', 'Help')}
+            {Item('/Help', 'bx-help-circle', 'Help')}
             {Item('/Profile', 'bx-user-circle', 'Profile')}
-            {user &&
-              Item('#logout', 'bx-log-out', 'Log out') && (
-                <li
-                  onClick={() => signOut()}
-                  style={{ listStyleType: 'none', opacity: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-                />
-              )}
+            {user ? Item('#logout', 'bx-log-out', 'Log out', signOut) : null}
           </ul>
         </div>
-      </div>
+      </nav>
 
       <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
       <ModalSignUp show={showSignup} onHide={() => setShowSignup(false)} setLogin={setShowLogin} />
