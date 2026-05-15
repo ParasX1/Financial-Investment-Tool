@@ -13,7 +13,7 @@ import {
 import ModalLogin from '@/components/Modal/ModalLogin';
 import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
-import { Grid, Box, Autocomplete, TextField, Chip, Tooltip, Typography, InputAdornment} from '@mui/material';
+import { Box, Autocomplete, TextField, Chip, Tooltip, Typography, InputAdornment} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import img1 from '@/assets/gridBackground1.png';
@@ -292,10 +292,21 @@ const DashboardView: React.FC = () => {
     }, [loading, prefsLoaded, userId, searchTags, selectedStocks, activeCards, cardSettings, globalStart, globalEnd]);
 
     return (
-        <div>
-            <div style={{ display: 'flex' }}>
+        <div style={{ height: '100vh', overflow: 'hidden', backgroundColor: 'black' }}>
+            <div style={{ display: 'flex', height: '100%' }}>
                 <Sidebar />
-                <Box sx={{ flex: 1, paddingLeft: '50px', backgroundColor: 'black' }}>
+                <Box
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: '100vh',
+                        overflow: 'hidden',
+                        paddingLeft: '50px',
+                        backgroundColor: 'black',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
 
 {/* Title and Search Bar-----------------------------------------------------------------------------------------------------------*/}
                     <Box
@@ -306,7 +317,8 @@ const DashboardView: React.FC = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'stretch',
-                            gap: 1,
+                            gap: 0.75,
+                            flexShrink: 0,
                         }}
                     >    
                         <Typography
@@ -314,166 +326,162 @@ const DashboardView: React.FC = () => {
                             sx={{ 
                                 color: 'white', 
                                 fontWeight: 600, 
-                                fontSize: 35,
+                                fontSize: { xs: 22, sm: 28, lg: 32 },
                                 lineHeight: 1.1,
                             }}
                             >
                             Portfolio Analytics
                         </Typography>
 
-                        <Typography
-                            variant="h5"
-                            sx={{ 
-                                color: 'rgba(255, 255, 255, 0.65)', 
-                                fontWeight: 300, 
-                                fontSize: 15,
-                                mt: 0,
-                            }}
-                        >
-                            Analyze stock performance with customizable metrics and charts
-                        </Typography>
-
 
 {/* Search Bar UI only ---------------------------------------------------------------------------------------------------*/}
-                        <Typography
-                            variant="h5"
-                            sx={{ 
-                                color: 'rgba(255, 255, 255, 0.65)', 
-                                fontWeight: 300, 
-                                fontSize: 15,
-                                mt: 3,
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'flex-end',
+                                gap: 2,
+                                flexWrap: { xs: 'wrap', lg: 'nowrap' },
+                                mt: 0.5,
                             }}
                         >
-                            Select Stocks
-                        </Typography>
+                            <Box sx={{ flex: '1 1 420px', minWidth: { xs: '100%', md: 320 } }}>
+                                <Typography
+                                    variant="h5"
+                                    sx={{ 
+                                        color: 'rgba(255, 255, 255, 0.65)', 
+                                        fontWeight: 300, 
+                                        fontSize: { xs: 12, sm: 14 },
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    Select Stocks
+                                </Typography>
 
+                                <Autocomplete
+                                    multiple
+                                    freeSolo
+                                    filterSelectedOptions
+                                    options={stockOptions}
+                                    value={searchTags}
+                                    onChange={(_, newTags) => {
+                                        const normalizedTags = Array.from(
+                                            new Set(
+                                                newTags
+                                                    .map(tag => String(tag).trim().toUpperCase())
+                                                    .filter(Boolean)
+                                            )
+                                        ).slice(0, 5);
 
-                        <Autocomplete
-                            multiple
-                            freeSolo
-                            filterSelectedOptions
-                            options={stockOptions}
-                            value={searchTags}
-                            onChange={(_, newTags) => {
-                                const normalizedTags = Array.from(
-                                    new Set(
-                                        newTags
-                                            .map(tag => String(tag).trim().toUpperCase())
-                                            .filter(Boolean)
-                                    )
-                                ).slice(0, 5);
+                                        setSearchTags(normalizedTags);
+                                        setSelectedStocks(prev => {
+                                            const stillSelected = prev.filter(stock => normalizedTags.includes(stock));
+                                            const newlyAdded = normalizedTags.filter(stock => !searchTags.includes(stock));
+                                            return Array.from(new Set([...stillSelected, ...newlyAdded]));
+                                        });
+                                    }}
+                                    sx={{
+                                        '& .MuiAutocomplete-inputRoot': {
+                                            flexWrap: 'wrap',
+                                            gap: 0.5,
+                                            minHeight: 38,
+                                            backgroundColor: '#1b1b20',
+                                            color: '#fff',
+                                            borderRadius: 1,
+                                            py: 0.5,
+                                            pl: 1,
+                                        },
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': {
+                                                borderColor: '#2c2c33',
+                                            },
+                                            '&:hover fieldset': {
+                                                borderColor: '#3a3a42',
+                                            },
+                                            '&.Mui-focused fieldset': {
+                                                borderColor: '#6d5dfc',
+                                            },
+                                        },
+                                        '& input': {
+                                            color: '#fff',
+                                        },
+                                        '& input::placeholder': {
+                                            color: '#a09ca8',
+                                            opacity: 1,
+                                        },
+                                    }}
+                                    renderTags={(value, getTagProps) =>
+                                        value.map((option, idx) => {
+                                            const tagProps = getTagProps({ index: idx });
+                                            const isSelected = selectedStocks.includes(option);
 
-                                setSearchTags(normalizedTags);
-                                setSelectedStocks(prev => {
-                                    const stillSelected = prev.filter(stock => normalizedTags.includes(stock));
-                                    const newlyAdded = normalizedTags.filter(stock => !searchTags.includes(stock));
-                                    return Array.from(new Set([...stillSelected, ...newlyAdded]));
-                                });
-                            }}
-                            sx={{
-                                flexGrow: 1,
-                                minWidth: 200,
-                                '& .MuiAutocomplete-inputRoot': {
-                                    flexWrap: 'wrap',
-                                    gap: 0.5,
-                                    minHeight: 45,
-                                    backgroundColor: '#1b1b20',
-                                    color: '#fff',
-                                    borderRadius: 1,
-                                    py: 0.5,
-                                    pl: 1,
-                                },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#2c2c33',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#3a3a42',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#6d5dfc',
-                                    },
-                                },
-                                '& input': {
-                                    color: '#fff',
-                                },
-                                '& input::placeholder': {
-                                    color: '#a09ca8',
-                                    opacity: 1,
-                                },
-                            }}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, idx) => {
-                                    const tagProps = getTagProps({ index: idx });
-                                    const isSelected = selectedStocks.includes(option);
-
-                                    return(
-                                        <Chip
-                                            {...tagProps}
-                                            key={option}
-                                            label={option}
+                                            return(
+                                                <Chip
+                                                    {...tagProps}
+                                                    key={option}
+                                                    label={option}
+                                                    size="small"
+                                                    onClick={() => handleSelectStock(option)}
+                                                    sx={{
+                                                        mr: 0.5,
+                                                        cursor: 'pointer',
+                                                        bgcolor: isSelected ? '#6d5dfc' : '#2c2c33',
+                                                        color: isSelected ? '#fff' : '#a09ca8',
+                                                        border: '1px solid',
+                                                        borderColor: isSelected ? '#8c80ff' : '#3a3a42',
+                                                        '&:hover': {
+                                                            bgcolor: isSelected ? '#7b6cff' : '#35353d',
+                                                        },
+                                                        '& .MuiChip-deleteIcon': {
+                                                            color: isSelected ? '#d8d4ff' : '#8b8794',
+                                                            '&:hover': {
+                                                                color: '#fff',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            );
+                                        })
+                                    }
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            placeholder={searchTags.length >= 5 ? 'Maximum 5 stocks' : `Add stock (${searchTags.length}/5)`}
                                             size="small"
-                                            onClick={() => handleSelectStock(option)}
-                                            sx={{
-                                                mr: 0.5,
-                                                cursor: 'pointer',
-                                                bgcolor: isSelected ? '#6d5dfc' : '#2c2c33',
-                                                color: isSelected ? '#fff' : '#a09ca8',
-                                                border: '1px solid',
-                                                borderColor: isSelected ? '#8c80ff' : '#3a3a42',
-                                                '&:hover': {
-                                                    bgcolor: isSelected ? '#7b6cff' : '#35353d',
-                                                },
-                                                '& .MuiChip-deleteIcon': {
-                                                    color: isSelected ? '#d8d4ff' : '#8b8794',
-                                                    '&:hover': {
-                                                        color: '#fff',
-                                                    },
-                                                },
+                                            variant="outlined"
+                                            InputProps={{
+                                                ...params.InputProps,
+                                                startAdornment: (
+                                                    <>
+                                                        <InputAdornment position="start">
+                                                            <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
+                                                        </InputAdornment>
+                                                        {params.InputProps.startAdornment}
+                                                    </>
+                                                ),
                                             }}
                                         />
-                                    );
-                                })
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder={searchTags.length >= 5 ? 'Maximum 5 stocks' : `Add stock (${searchTags.length}/5)`}
-                                    size="small"
-                                    variant="outlined"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        startAdornment: (
-                                            <>
-                                                <InputAdornment position="start">
-                                                    <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
-                                                </InputAdornment>
-                                                {params.InputProps.startAdornment}
-                                            </>
-                                        ),
-                                    }}
+                                    )}
                                 />
-                            )}
-                        />
+                            </Box>
 
 
 {/* Global Date Selection ------------------------------------------------------------------------------------------------*/}
                         <Box
                             sx={{
                                 display: 'flex',
-                                gap: 3,
-                                mt: 1,
-                                width: '100%',
-                                flexDirection: { xs: 'column', md: 'row' },
+                                gap: 2,
+                                width: { xs: '100%', sm: 520 },
+                                maxWidth: '100%',
+                                flexDirection: 'row',
                             }}
                         >
                             <Box sx={{ flex: 1 }}>
                                 <Typography
                                     sx={{
                                         color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: 15,
+                                        fontSize: { xs: 12, sm: 13 },
                                         fontWeight: 300,
-                                        mb: 1,
+                                        mb: 0.5,
                                     }}
                                 >
                                     Start Date
@@ -489,11 +497,11 @@ const DashboardView: React.FC = () => {
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
-                                                height: 45,
+                                                height: 38,
                                                 backgroundColor: '#1b1b20',
                                                 color: '#fff',
                                                 borderRadius: 2,
-                                                fontSize: 18,
+                                                fontSize: { xs: 12, sm: 14 },
                                                 '& fieldset': {
                                                     borderColor: '#2c2c33',
                                                 },
@@ -519,9 +527,9 @@ const DashboardView: React.FC = () => {
                                 <Typography
                                     sx={{
                                         color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: 15,
+                                        fontSize: { xs: 12, sm: 13 },
                                         fontWeight: 300,
-                                        mb: 1,
+                                        mb: 0.5,
                                     }}
                                 >
                                     End Date
@@ -537,11 +545,11 @@ const DashboardView: React.FC = () => {
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
-                                                height: 45,
+                                                height: 38,
                                                 backgroundColor: '#1b1b20',
                                                 color: '#fff',
                                                 borderRadius: 2,
-                                                fontSize: 18,
+                                                fontSize: { xs: 12, sm: 14 },
                                                 '& fieldset': {
                                                     borderColor: '#2c2c33',
                                                 },
@@ -563,13 +571,39 @@ const DashboardView: React.FC = () => {
                                 </Tooltip>
                             </Box>
                         </Box>
+                        </Box>
                     </Box>
 
 {/*Visulization Box--------------------------------------------------------------------------------------------------------------*/}
-                    <div style={{ padding: '20px' }}>
-                        <Grid container spacing={2}>
-                            {/* Main Large Card */}
-                            <Grid item xs={12} md={8}>
+                    <Box
+                        sx={{
+                            flex: 1,
+                            minHeight: 0,
+                            p: { xs: 1, md: 2 },
+                            pt: 0,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                height: '100%',
+                                minHeight: 0,
+                                display: 'grid',
+                                gap: { xs: 1, md: 2 },
+                                gridTemplateColumns: {
+                                    xs: 'repeat(3, minmax(0, 1fr))',
+                                    md: 'repeat(6, minmax(0, 1fr))',
+                                },
+                                gridTemplateRows: {
+                                    xs: 'repeat(3, minmax(0, 1fr))',
+                                    md: 'minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.8fr)',
+                                },
+                                '& > *': {
+                                    minWidth: 0,
+                                    minHeight: 0,
+                                },
+                            }}
+                        >
+                            <Box sx={{ gridColumn: { xs: '1 / 4', md: '1 / 5' }, gridRow: { xs: '1 / 2', md: '1 / 3' } }}>
                                 <StockChartCard
                                     index={0}
                                     selectedStocks={selectedStocks}
@@ -579,54 +613,61 @@ const DashboardView: React.FC = () => {
                                     onSwap={handleSwap}
                                     onActivate={handleActivate}
                                     onUpdateSettings={handleCardSettingsUpdate}
-                                    height={816}
+                                    height="100%"
                                     variant="main"
                                 />
-                            </Grid>
+                            </Box>
 
-                            {/* Vertical Stack of Cards */}
-                            <Grid item xs={12} md={4}>
-                                <Grid container direction="column" spacing={2}>
-                                    {[1, 2].map((index) => (
-                                        <Grid item key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStocks={selectedStocks}
-                                                isActive={activeCards[index]}
-                                                cardSettings={cardSettings[index]}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                onActivate={handleActivate}
-                                                onUpdateSettings={handleCardSettingsUpdate}
-                                                variant="main"
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
+                            {[1, 2].map((index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        gridColumn: { xs: index === 1 ? '1 / 2' : '2 / 4', md: '5 / 7' },
+                                        gridRow: { xs: '2 / 3', md: `${index} / ${index + 1}` },
+                                    }}
+                                >
+                                    <StockChartCard
+                                        index={index}
+                                        selectedStocks={selectedStocks}
+                                        isActive={activeCards[index]}
+                                        cardSettings={cardSettings[index]}
+                                        onClear={handleClear}
+                                        onSwap={handleSwap}
+                                        onActivate={handleActivate}
+                                        onUpdateSettings={handleCardSettingsUpdate}
+                                        height="100%"
+                                        variant="main"
+                                    />
+                                </Box>
+                            ))}
 
-                            {/* Bottom Row of Cards */}
-                            <Grid item xs={12}>
-                                <Grid container spacing={2}>
-                                    {[3, 4, 5].map((index) => (
-                                        <Grid item xs={12} sm={4} key={index}>
-                                            <StockChartCard
-                                                index={index}
-                                                selectedStocks={selectedStocks}
-                                                isActive={activeCards[index]}
-                                                cardSettings={cardSettings[index]}
-                                                onClear={handleClear}
-                                                onSwap={handleSwap}
-                                                onActivate={handleActivate}
-                                                onUpdateSettings={handleCardSettingsUpdate}
-                                                variant="main"
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </div>
+                            {[3, 4, 5].map((index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        gridColumn: {
+                                            xs: `${index - 2} / ${index - 1}`,
+                                            md: `${(index - 3) * 2 + 1} / ${(index - 3) * 2 + 3}`,
+                                        },
+                                        gridRow: { xs: '3 / 4', md: '3 / 4' },
+                                    }}
+                                >
+                                    <StockChartCard
+                                        index={index}
+                                        selectedStocks={selectedStocks}
+                                        isActive={activeCards[index]}
+                                        cardSettings={cardSettings[index]}
+                                        onClear={handleClear}
+                                        onSwap={handleSwap}
+                                        onActivate={handleActivate}
+                                        onUpdateSettings={handleCardSettingsUpdate}
+                                        height="100%"
+                                        variant="main"
+                                    />
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
                 </Box>
             </div>
         </div>

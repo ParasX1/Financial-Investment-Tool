@@ -141,7 +141,7 @@ interface StockChartCardProps {
   onSwap: (index: number) => void;
   onActivate: (index: number) => void;
   onUpdateSettings: (index: number, settings: CardSettings) => void;
-  height?: number;
+  height?: number | string;
   showSwap?: boolean;
   variant?: 'default' | 'main';
 }
@@ -160,7 +160,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   variant = 'default',
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dimensions, setDimensions] = useState({ width: 500, height });
+  const [dimensions, setDimensions] = useState({ width: 500, height: 400 });
   const [showSettings, setShowSettings] = useState(false);
 
   const [chartData, setChartData] = useState<MetricsResponse[]>([]);
@@ -272,8 +272,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               value: typeof data === 'number' ? data : (data as any).value
             }))
           }
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
+          width={chartWidth}
+          height={chartHeight}
           barColor={barColor}
         />
       );
@@ -305,8 +305,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         <HeatMap
           data={correlationData}
           labels={allTickers}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
+          width={chartWidth}
+          height={chartHeight}
           barColor={barColor}
         />
       );
@@ -329,8 +329,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               }))
             }))
           )}
-          width={dimensions.width - 32}
-          height={dimensions.height - 90}
+          width={chartWidth}
+          height={chartHeight}
           mainColor={barColor}
         />
       );
@@ -353,8 +353,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             sharpe: portfolio.sharpe_ratios[i],
           }));
         })}
-        width={dimensions.width - 32}
-        height={dimensions.height - 90}
+        width={chartWidth}
+        height={chartHeight}
         mainColor={barColor}
       />
     );
@@ -365,6 +365,8 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
   }
 
+  const chartWidth = Math.max(dimensions.width - 32, 120);
+  const chartHeight = Math.max(dimensions.height - 90, 80);
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
   const isMainVariant = variant === 'main';
