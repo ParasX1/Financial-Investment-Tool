@@ -1,18 +1,71 @@
-import type { SeedPost, SortMode } from "./types";
+import type { CommunityFeedView, SeedPost } from "./types";
 
-export const COMMUNITY_SORT_OPTIONS: SortMode[] = ["top", "new"];
-export const COMMUNITY_PAGE_WIDTH = "min(100%, calc(100vw - 90px))";
+export const COMMUNITY_PAGE_WIDTH = "100%";
+export const COMMUNITY_FEED_NAV_ITEMS: Array<{
+  id: CommunityFeedView;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "top",
+    label: "Top",
+    description: "Highest-voted discussions",
+  },
+  {
+    id: "new",
+    label: "New",
+    description: "Latest discussions first",
+  },
+  {
+    id: "my-posts",
+    label: "My Posts",
+    description: "Discussions you created",
+  },
+  {
+    id: "liked",
+    label: "Liked",
+    description: "Discussions you voted for",
+  },
+  {
+    id: "commented",
+    label: "Commented",
+    description: "Discussions you joined",
+  },
+];
+export const COMMUNITY_RESOURCE_LINKS = [
+  "Community Rules",
+  "Privacy Policy",
+  "User Agreement",
+  "Accessibility",
+];
+export const COMMUNITY_APP_RAIL_WIDTH_PX = 50;
+export const COMMUNITY_CONTENT_MAX_WIDTH_PX = 1180;
+export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;
+export const COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX = 12;
+export const COMMUNITY_SIDEBAR_FLOAT_GAP_PX = 16;
+export const COMMUNITY_SIDEBAR_WIDTH_PX = 224;
+export const COMMUNITY_SIDEBAR_COLLAPSED_WIDTH_PX = 64;
+export const COMMUNITY_DESKTOP_BREAKPOINT_PX = 1024;
+export const COMMUNITY_COMPACT_MEDIA_QUERY = `(max-width: ${
+  COMMUNITY_DESKTOP_BREAKPOINT_PX - 1
+}px)`;
+export const POST_BODY_PREVIEW_MAX_CHARS = 360;
+export const POST_BODY_PREVIEW_MIN_WORD_BOUNDARY = 240;
 
-export const COMMENT_BUCKET =
+export const COMMUNITY_IMAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";
-export const MAX_COMMENT_IMAGE_BYTES = 5 * 1024 * 1024;
-export const COMMENT_IMAGE_TYPES = [
+export const COMMENT_BUCKET = COMMUNITY_IMAGE_BUCKET;
+export const MAX_COMMUNITY_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_COMMENT_IMAGE_BYTES = MAX_COMMUNITY_IMAGE_BYTES;
+export const COMMUNITY_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
 ];
-export const COMMENT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+export const COMMENT_IMAGE_TYPES = COMMUNITY_IMAGE_TYPES;
+export const COMMUNITY_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+export const COMMENT_IMAGE_EXTENSIONS = COMMUNITY_IMAGE_EXTENSIONS;
 
 const now = Date.now();
 

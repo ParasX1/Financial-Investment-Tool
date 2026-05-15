@@ -8,79 +8,278 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
   loadCommunityData,
-  updateCommunityPostVotes,
-  uploadCommentImage,
+  setCommunityPostLike,
 } from "./communityService";
+import {
+  removeCommunityImage,
+  uploadCommentImage,
+  uploadPostImage,
+} from "./communityStorage";
 import type {
   CommentRow,
   CommentUI,
+  CommentsState,
+  CommunityFeedView,
+  DiscussionDraft,
+  DiscussionDraftField,
   FeedbackMessage,
   NewComment,
   PendingDelete,
   PostUI,
-  SortMode,
 } from "./types";
 import {
   commentFromRow,
   createLocalComment,
   createLocalPost,
+  getCommunityFeedCounts,
   getErrorMessage,
+  getVisibleCommunityPosts,
+  normalizeDiscussionDraft,
 } from "./utils";
+import {
+  MAX_DISCUSSION_TAGS,
+  getDefaultSelectedTags,
+  normalizeSelectedTags,
+} from "./smartTags";
+
+const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
+  title: "",
+  body: "",
+  tags: [],
+  imageFile: null,
+  imagePreviewUrl: null,
+};
+
+type CommunityMemoryCache = {
+  posts: PostUI[];
+  likedPostIds: string[];
+  commentsState: CommentsState;
+  currentUserId: string | null;
+};
+
+let communityMemoryCache: CommunityMemoryCache | null = null;
+let rememberedCommunityUserId: string | null = null;
+let rememberedCommunityFeedView: CommunityFeedView = "top";
+let rememberedCommunityQuery = "";
 
 export function useCommunityController(supabase: SupabaseClient | null) {
-  const [query, setQuery] = React.useState("");
-  const [sort, setSort] = React.useState<SortMode>("top");
-  const [draft, setDraft] = React.useState("");
+  const cachedCommunity =
+    supabase && communityMemoryCache?.currentUserId === rememberedCommunityUserId
+      ? communityMemoryCache
+      : null;
+  const [query, setQueryState] = React.useState(rememberedCommunityQuery);
+  const [feedView, setFeedViewState] = React.useState<CommunityFeedView>(
+    rememberedCommunityFeedView,
+  );
+  const [draft, setDraft] = React.useState<DiscussionDraft>(
+    EMPTY_DISCUSSION_DRAFT,
+  );
   const [creating, setCreating] = React.useState(false);
-  const [loadingCommunity, setLoadingCommunity] = React.useState(Boolean(supabase));
+  const [loadingCommunity, setLoadingCommunity] = React.useState(
+    Boolean(supabase && !cachedCommunity),
+  );
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [feedback, setFeedback] = React.useState<FeedbackMessage[]>([]);
-  const [pendingDelete, setPendingDelete] = React.useState<PendingDelete | null>(null);
+  const [pendingDelete, setPendingDelete] =
+    React.useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = React.useState(false);
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-  const [posts, setPosts] = React.useState<PostUI[]>(DEMO_POSTS);
+  const [authReady, setAuthReady] = React.useState(!supabase);
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(
+    cachedCommunity?.currentUserId ?? null,
+  );
+  const [posts, setPosts] = React.useState<PostUI[]>(
+    cachedCommunity?.posts ?? (supabase ? [] : DEMO_POSTS),
+  );
   const [likedPostIds, setLikedPostIds] = React.useState<Set<string>>(
-    () => new Set()
+    () => new Set(cachedCommunity?.likedPostIds ?? []),
+  );
+  const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const initialCommentsState = React.useMemo(
+    () =>
+      cachedCommunity?.commentsState ??
+      createCommentsState(supabase ? [] : DEMO_POSTS),
+    [cachedCommunity, supabase],
   );
   const [commentsState, dispatchComments] = React.useReducer(
     commentsReducer,
-    DEMO_POSTS,
-    createCommentsState
+    initialCommentsState,
   );
+  const tagsEditedRef = React.useRef(false);
+  const draftImagePreviewRef = React.useRef<string | null>(null);
+
+  const setQuery = React.useCallback((nextQuery: string) => {
+    rememberedCommunityQuery = nextQuery;
+    setQueryState(nextQuery);
+  }, []);
+
+  const setFeedView = React.useCallback((nextView: CommunityFeedView) => {
+    rememberedCommunityFeedView = nextView;
+    setFeedViewState(nextView);
+  }, []);
+
+  React.useEffect(() => {
+    if (!supabase) return;
+
+    communityMemoryCache = {
+      posts,
+      likedPostIds: Array.from(likedPostIds),
+      commentsState,
+      currentUserId,
+    };
+  }, [commentsState, currentUserId, likedPostIds, posts, supabase]);
+
+  React.useEffect(() => {
+    rememberedCommunityQuery = query;
+  }, [query]);
+
+  React.useEffect(() => {
+    rememberedCommunityFeedView = feedView;
+  }, [feedView]);
+
+  const applyAuthUserId = React.useCallback((nextUserId: string | null) => {
+    rememberedCommunityUserId = nextUserId;
+
+    if (
+      communityMemoryCache &&
+      communityMemoryCache.currentUserId !== nextUserId
+    ) {
+      communityMemoryCache = null;
+    }
+
+    setCurrentUserId(nextUserId);
+  }, []);
 
   const pushFeedback = React.useCallback(
     (message: Omit<FeedbackMessage, "id">) => {
       const id = `feedback-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setFeedback((previous) => [...previous.slice(-2), { id, ...message }]);
     },
-    []
+    [],
   );
 
   const dismissFeedback = React.useCallback((id: string) => {
     setFeedback((previous) => previous.filter((item) => item.id !== id));
   }, []);
 
+  const setDraftField = React.useCallback(
+    (field: DiscussionDraftField, value: string) => {
+      setDraft((previous) => {
+        const next = { ...previous, [field]: value };
+
+        if (!next.title.trim() && !next.body.trim()) {
+          tagsEditedRef.current = false;
+          return { ...next, tags: [] };
+        }
+
+        if (tagsEditedRef.current) return next;
+        return { ...next, tags: getDefaultSelectedTags(next) };
+      });
+    },
+    [],
+  );
+
+  const toggleDraftTag = React.useCallback((tag: string) => {
+    tagsEditedRef.current = true;
+
+    setDraft((previous) => {
+      const selected = normalizeSelectedTags(previous.tags);
+
+      if (selected.includes(tag)) {
+        return {
+          ...previous,
+          tags: selected.filter((item) => item !== tag),
+        };
+      }
+
+      if (selected.length >= MAX_DISCUSSION_TAGS) return previous;
+
+      return {
+        ...previous,
+        tags: normalizeSelectedTags([...selected, tag]),
+      };
+    });
+  }, []);
+
+  const clearDraftTags = React.useCallback(() => {
+    tagsEditedRef.current = true;
+    setDraft((previous) => ({ ...previous, tags: [] }));
+  }, []);
+
+  const setDraftImage = React.useCallback((file: File | null) => {
+    setDraft((previous) => {
+      if (draftImagePreviewRef.current) {
+        URL.revokeObjectURL(draftImagePreviewRef.current);
+        draftImagePreviewRef.current = null;
+      }
+
+      if (!file) {
+        return { ...previous, imageFile: null, imagePreviewUrl: null };
+      }
+
+      const imagePreviewUrl = URL.createObjectURL(file);
+      draftImagePreviewRef.current = imagePreviewUrl;
+
+      return { ...previous, imageFile: file, imagePreviewUrl };
+    });
+  }, []);
+
+  const resetDraft = React.useCallback(() => {
+    if (draftImagePreviewRef.current) {
+      URL.revokeObjectURL(draftImagePreviewRef.current);
+      draftImagePreviewRef.current = null;
+    }
+
+    tagsEditedRef.current = false;
+    setDraft(EMPTY_DISCUSSION_DRAFT);
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      if (draftImagePreviewRef.current) {
+        URL.revokeObjectURL(draftImagePreviewRef.current);
+      }
+    },
+    [],
+  );
+
   React.useEffect(() => {
     if (!supabase) {
       setCurrentUserId(null);
+      setAuthReady(true);
       return;
     }
 
     let mounted = true;
+    setAuthReady(false);
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setCurrentUserId(data.session?.user.id ?? null);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        applyAuthUserId(data.session?.user.id ?? null);
+        setAuthReady(true);
+      })
+      .catch((error) => {
+        console.error("load auth session failed:", error);
+        if (!mounted) return;
+        applyAuthUserId(null);
+        setAuthReady(true);
+      });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUserId(session?.user?.id ?? null);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        applyAuthUserId(session?.user?.id ?? null);
+        setAuthReady(true);
+      },
+    );
 
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [applyAuthUserId, supabase]);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -88,17 +287,20 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       return;
     }
 
+    if (!authReady) return;
+
     let mounted = true;
 
     async function loadCommunity(db: SupabaseClient) {
-      setLoadingCommunity(true);
+      if (!communityMemoryCache) setLoadingCommunity(true);
       setLoadError(null);
 
       try {
-        const result = await loadCommunityData(db);
+        const result = await loadCommunityData(db, currentUserId);
         if (!mounted) return;
 
         setPosts(result.posts);
+        setLikedPostIds(new Set(result.likedPostIds));
         dispatchComments({
           type: "reset",
           posts: result.posts,
@@ -107,18 +309,21 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
         if (result.commentsError) {
           setLoadError(result.commentsError);
+        } else if (result.likesError) {
+          setLoadError(result.likesError);
         }
       } catch (error) {
         console.error("load community failed:", error);
         if (!mounted) return;
 
         setPosts(DEMO_POSTS);
+        setLikedPostIds(new Set());
         dispatchComments({ type: "reset", posts: DEMO_POSTS });
         setLoadError(
           getErrorMessage(
             error,
-            "Could not load latest community posts. Showing demo discussions."
-          )
+            "Could not load latest community posts. Showing demo discussions.",
+          ),
         );
       } finally {
         if (mounted) setLoadingCommunity(false);
@@ -130,7 +335,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [authReady, supabase, currentUserId]);
 
   React.useEffect(() => {
     if (!supabase) return;
@@ -147,7 +352,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
             postId: row.post_id,
             comment: commentFromRow(row),
           });
-        }
+        },
       )
       .subscribe();
 
@@ -157,27 +362,37 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   }, [supabase]);
 
   const filteredPosts = React.useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    const base = normalizedQuery
-      ? posts.filter((post) =>
-          [post.user, post.title, post.body, ...post.tags]
-            .join(" ")
-            .toLowerCase()
-            .includes(normalizedQuery)
-        )
-      : posts;
+    return getVisibleCommunityPosts({
+      posts,
+      query,
+      view: feedView,
+      likedPostIds,
+      commentsState,
+      currentUserId,
+    });
+  }, [commentsState, currentUserId, feedView, likedPostIds, posts, query]);
 
-    if (sort === "top") {
-      return [...base].sort((a, b) => b.votes - a.votes);
-    }
-
-    return [...base].sort((a, b) => b.sortTime - a.sortTime);
-  }, [posts, query, sort]);
+  const feedCounts = React.useMemo(
+    () =>
+      getCommunityFeedCounts({
+        posts,
+        likedPostIds,
+        commentsState,
+        currentUserId,
+      }),
+    [commentsState, currentUserId, likedPostIds, posts],
+  );
 
   function removePostFromState(postId: string) {
     setPosts((previous) => previous.filter((post) => post.id !== postId));
     dispatchComments({ type: "removePost", postId });
     setLikedPostIds((previous) => {
+      if (!previous.has(postId)) return previous;
+      const next = new Set(previous);
+      next.delete(postId);
+      return next;
+    });
+    setLikingPostIds((previous) => {
       if (!previous.has(postId)) return previous;
       const next = new Set(previous);
       next.delete(postId);
@@ -190,27 +405,57 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       if (!post.fromDB && post.id.startsWith("local-")) return true;
       return Boolean(currentUserId && post.authorId === currentUserId);
     },
-    [currentUserId]
+    [currentUserId],
   );
 
   const canDeleteComment = React.useCallback(
     (comment: CommentUI) => {
-      if (!comment.fromDB && comment.id.startsWith("local-comment-")) return true;
+      if (!comment.fromDB && comment.id.startsWith("local-comment-"))
+        return true;
       return Boolean(currentUserId && comment.authorId === currentUserId);
     },
-    [currentUserId]
+    [currentUserId],
   );
 
   async function handleCreatePost() {
-    const text = draft.trim();
-    if (!text || creating) return;
+    const nextDraft = normalizeDiscussionDraft(draft);
+    if (!nextDraft.title || !nextDraft.body || creating) return false;
+
+    if (supabase && !currentUserId) {
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to post",
+        message: "Discussions are saved to your account.",
+      });
+      return false;
+    }
 
     setCreating(true);
+    let uploadedImagePath: string | null = null;
 
     try {
+      let imageUrl: string | null = null;
+
+      if (supabase && draft.imageFile) {
+        const upload = await uploadPostImage(supabase, draft.imageFile);
+        uploadedImagePath = upload.path;
+        imageUrl = upload.publicUrl;
+      }
+
       const newPost = supabase
-        ? await createCommunityPost(supabase, text)
-        : createLocalPost(text);
+        ? await createCommunityPost(supabase, {
+            ...nextDraft,
+            imageUrl,
+            imagePath: uploadedImagePath,
+          })
+        : createLocalPost({
+            ...nextDraft,
+            imageUrl: draft.imagePreviewUrl,
+          });
+
+      if (supabase && uploadedImagePath && !newPost.imageUrl) {
+        await removeCommunityImage(supabase, uploadedImagePath);
+      }
 
       setPosts((previous) => [newPost, ...previous]);
       dispatchComments({
@@ -218,14 +463,20 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         postId: newPost.id,
         initialCount: 0,
       });
-      setDraft("");
+      resetDraft();
+      return true;
     } catch (error) {
+      if (supabase && uploadedImagePath) {
+        await removeCommunityImage(supabase, uploadedImagePath);
+      }
+
       console.error(error);
       pushFeedback({
         tone: "error",
         title: "Post failed",
         message: getErrorMessage(error, "Could not create post."),
       });
+      return false;
     } finally {
       setCreating(false);
     }
@@ -272,19 +523,41 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       return;
     }
 
+    if (!currentUserId) {
+      const message = "Sign in before commenting.";
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to comment",
+        message,
+      });
+      throw new Error(message);
+    }
+
+    let imagePath: string | undefined;
+
     try {
-      const imageUrl = data.file
-        ? await uploadCommentImage(supabase, postId, data.file)
-        : undefined;
+      let imageUrl: string | undefined;
+
+      if (data.file) {
+        const upload = await uploadCommentImage(supabase, postId, data.file);
+        imageUrl = upload.publicUrl;
+        imagePath = upload.path;
+      }
+
       const comment = await createCommunityComment({
         db: supabase,
         postId,
         text: data.text,
         imageUrl,
+        imagePath,
       });
 
       dispatchComments({ type: "addComment", postId, comment });
     } catch (error) {
+      if (imagePath) {
+        await removeCommunityImage(supabase, imagePath);
+      }
+
       console.error(error);
       throw new Error(getErrorMessage(error, "Could not post comment."));
     }
@@ -292,7 +565,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   async function handleDeleteComment(commentId: string, postId: string) {
     const target = commentsState.byPost[postId]?.find(
-      (comment) => comment.id === commentId
+      (comment) => comment.id === commentId,
     );
 
     if (!target || !canDeleteComment(target)) {
@@ -327,12 +600,22 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   async function handleToggleLike(postId: string) {
     const target = posts.find((post) => post.id === postId);
-    if (!target) return;
+    if (!target || likingPostIds.has(postId)) return;
+
+    if (target.fromDB && supabase && !currentUserId) {
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to like discussions",
+        message:
+          "Likes are saved to your account so they persist after refresh.",
+      });
+      return;
+    }
 
     const wasLiked = likedPostIds.has(postId);
     const delta = wasLiked ? -1 : 1;
-    const nextVotes = Math.max(0, target.votes + delta);
 
+    setLikingPostIds((previous) => new Set(previous).add(postId));
     setLikedPostIds((previous) => {
       const next = new Set(previous);
       if (wasLiked) {
@@ -346,14 +629,30 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       previous.map((post) =>
         post.id === postId
           ? { ...post, votes: Math.max(0, post.votes + delta) }
-          : post
-      )
+          : post,
+      ),
     );
 
-    if (!target.fromDB || !supabase) return;
+    if (!target.fromDB || !supabase) {
+      setLikingPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
+      });
+      return;
+    }
 
     try {
-      await updateCommunityPostVotes(supabase, postId, nextVotes);
+      const savedVotes = await setCommunityPostLike(
+        supabase,
+        postId,
+        !wasLiked,
+      );
+      setPosts((previous) =>
+        previous.map((post) =>
+          post.id === postId ? { ...post, votes: savedVotes } : post,
+        ),
+      );
     } catch (error) {
       console.error(error);
       setLikedPostIds((previous) => {
@@ -369,13 +668,19 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         previous.map((post) =>
           post.id === postId
             ? { ...post, votes: Math.max(0, post.votes - delta) }
-            : post
-        )
+            : post,
+        ),
       );
       pushFeedback({
         tone: "error",
         title: "Like was not saved",
         message: getErrorMessage(error, "Could not update like."),
+      });
+    } finally {
+      setLikingPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
       });
     }
   }
@@ -429,7 +734,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   return {
     query,
-    sort,
+    feedView,
     draft,
     creating,
     loadingCommunity,
@@ -438,12 +743,18 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     pendingDelete,
     deleting,
     commentsState,
+    feedCounts,
     filteredPosts,
     likedPostIds,
+    likingPostIds,
     currentUserId,
     setQuery,
-    setSort,
-    setDraft,
+    setFeedView,
+    setDraftField,
+    toggleDraftTag,
+    clearDraftTags,
+    setDraftImage,
+    pushFeedback,
     dismissFeedback,
     handleCreatePost,
     handleAddComment,

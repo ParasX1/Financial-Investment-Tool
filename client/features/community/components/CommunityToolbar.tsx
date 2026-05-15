@@ -1,22 +1,47 @@
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import type { MouseEvent } from "react";
+import Link from "next/link";
 import communityStyles from "@/styles/community.module.css";
-import { COMMUNITY_SORT_OPTIONS } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
-import type { SortMode } from "../types";
 
 export function CommunityToolbar({
+  actionHref,
+  actionLabel,
+  actionType = "create",
   query,
-  sort,
+  onActionClick,
   onQueryChange,
-  onSortChange,
+  onSearchSubmit,
 }: {
+  actionHref: string;
+  actionLabel: string;
+  actionType?: "create" | "back";
   query: string;
-  sort: SortMode;
+  onActionClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
   onQueryChange: (value: string) => void;
-  onSortChange: (value: SortMode) => void;
+  onSearchSubmit?: () => void;
 }) {
   return (
-    <section className="mt-6 flex flex-col gap-[12px] sm:flex-row">
+    <section
+      className={cn(
+        "fixed right-0 top-0 z-[850] border-b border-[#202230] bg-black/95 px-3 backdrop-blur-md sm:px-8 lg:px-10",
+        communityStyles.toolbar,
+      )}
+      data-community-toolbar
+    >
+      <form
+        className={cn(
+          "mx-auto flex min-w-0 items-center gap-3",
+          communityStyles.toolbarInner,
+        )}
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSearchSubmit?.();
+        }}
+      >
       <div className="relative min-w-0 flex-1">
         <label htmlFor="community-search" className="sr-only">
           Search discussions
@@ -35,39 +60,37 @@ export function CommunityToolbar({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search discussions…"
           className={cn(
-            "h-[46px] w-full pl-[44px] pr-[16px] text-[15px]",
+            "w-full pl-[44px] pr-[16px] text-[15px]",
+            communityStyles.toolbarControl,
             communityUi.field,
             communityStyles.panelBorder
           )}
         />
       </div>
 
-      <div
-        className={cn(
-          "grid h-[46px] w-full grid-cols-2 rounded-lg bg-[#09090b] p-[4px] sm:w-[134px]",
-          communityStyles.panelBorder
-        )}
-        role="group"
-        aria-label="Sort discussions"
-      >
-        {COMMUNITY_SORT_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onSortChange(option)}
-            aria-pressed={sort === option}
-            className={cn(
-              "touch-manipulation rounded-md text-sm font-bold capitalize transition-colors",
-              sort === option
-                ? "bg-[#5d67ff] text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-              FOCUS_VISIBLE
-            )}
-          >
-            {option === "top" ? "Top" : "New"}
-          </button>
-        ))}
-      </div>
+        <Link
+          href={actionHref}
+          onClick={onActionClick}
+          className={cn(
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white no-underline transition-colors hover:no-underline sm:px-4",
+            communityStyles.toolbarControl,
+            actionType === "create"
+              ? "bg-[#5d67ff] hover:bg-[#7079ff]"
+              : "bg-[#15151a] text-[#dce4ff] hover:bg-[#20212a]",
+            FOCUS_VISIBLE,
+          )}
+        >
+          {actionType === "create" ? (
+            <AddRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+          ) : (
+            <ArrowBackRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+          )}
+          <span className="hidden sm:inline">{actionLabel}</span>
+          <span className="sm:hidden">
+            {actionType === "create" ? "Post" : "Back"}
+          </span>
+        </Link>
+      </form>
     </section>
   );
 }

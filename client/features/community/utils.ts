@@ -1,13 +1,27 @@
 import {
-  COMMENT_IMAGE_EXTENSIONS,
-  COMMENT_IMAGE_TYPES,
-  MAX_COMMENT_IMAGE_BYTES,
+  COMMUNITY_IMAGE_EXTENSIONS,
+  COMMUNITY_IMAGE_TYPES,
+  MAX_COMMUNITY_IMAGE_BYTES,
+  POST_BODY_PREVIEW_MIN_WORD_BOUNDARY,
 } from "./constants";
-import type { CommentRow, CommentUI, DBPost, PostUI } from "./types";
+import type {
+  CommentRow,
+  CommentUI,
+  CommentsState,
+  CommunityFeedCounts,
+  CommunityFeedView,
+  DBPost,
+  DiscussionDraft,
+  DiscussionPostInput,
+  PostUI,
+} from "./types";
+import { inferTags, normalizeSelectedTags } from "./smartTags";
 
 export function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
-    const message = String((error as { message?: unknown }).message ?? "").trim();
+    const message = String(
+      (error as { message?: unknown }).message ?? "",
+    ).trim();
     if (message) return message;
   }
 
@@ -26,21 +40,25 @@ export function getUploadErrorMessage(error: unknown) {
   return message;
 }
 
-export function validateCommentImage(file: File) {
-  if (!COMMENT_IMAGE_TYPES.includes(file.type)) {
+export function validateCommunityImage(file: File) {
+  if (!COMMUNITY_IMAGE_TYPES.includes(file.type)) {
     return "Attach a JPG, PNG, WebP, or GIF image.";
   }
 
   const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0];
-  if (!extension || !COMMENT_IMAGE_EXTENSIONS.includes(extension)) {
+  if (!extension || !COMMUNITY_IMAGE_EXTENSIONS.includes(extension)) {
     return "Attach a JPG, PNG, WebP, or GIF image.";
   }
 
-  if (file.size > MAX_COMMENT_IMAGE_BYTES) {
+  if (file.size > MAX_COMMUNITY_IMAGE_BYTES) {
     return "Image must be 5 MB or smaller.";
   }
 
   return null;
+}
+
+export function validateCommentImage(file: File) {
+  return validateCommunityImage(file);
 }
 
 export function initials(name: string) {
@@ -73,6 +91,19 @@ export function toRelativeTime(value: string) {
 }
 
 export function splitPostCopy(raw: string) {
+  const paragraphs = raw
+    .trim()
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length > 1) {
+    return {
+      title: paragraphs[0].replace(/\s+/g, " "),
+      body: paragraphs.slice(1).join("\n\n"),
+    };
+  }
+
   const clean = raw.trim().replace(/\s+/g, " ");
   if (!clean) {
     return {
@@ -94,23 +125,55 @@ export function splitPostCopy(raw: string) {
   };
 }
 
-export function inferTags(text: string) {
-  const lower = text.toLowerCase();
-  const tags: string[] = [];
+export function normalizeDiscussionDraft(
+  draft: Pick<DiscussionDraft, "title" | "body" | "tags">,
+): DiscussionPostInput {
+  const title = draft.title.trim().replace(/\s+/g, " ");
+  const body = draft.body.trim();
 
-  if (lower.includes("portfolio")) tags.push("Portfolio");
-  if (lower.includes("strategy")) tags.push("Strategy");
-  if (lower.includes("nvda") || lower.includes("nvidia")) tags.push("NVDA");
-  if (lower.includes("ai")) tags.push("AI");
-  if (lower.includes("backtest")) tags.push("Backtesting");
-  if (lower.includes("valuation")) tags.push("Valuation");
-  if (lower.includes("cash")) tags.push("Cash Flow");
-
-  return tags.length ? tags.slice(0, 3) : ["Discussion", "Market View"];
+  return {
+    title,
+    body,
+    tags: normalizeSelectedTags(draft.tags),
+  };
 }
 
-export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI {
-  const copy = splitPostCopy(row.title);
+export function getExpandableText(text: string, maxChars: number) {
+  const clean = text.trim();
+
+  if (clean.length <= maxChars) {
+    return {
+      shouldCollapse: false,
+      preview: clean,
+    };
+  }
+
+  const slice = clean.slice(0, maxChars);
+  const lastSpace = slice.lastIndexOf(" ");
+  const lastLineBreak = slice.lastIndexOf("\n");
+  const boundary = Math.max(lastSpace, lastLineBreak);
+  const end =
+    boundary >= POST_BODY_PREVIEW_MIN_WORD_BOUNDARY ? boundary : maxChars;
+
+  return {
+    shouldCollapse: true,
+    preview: `${clean.slice(0, end).trimEnd()}...`,
+  };
+}
+
+export function postFromRow(
+  row: DBPost,
+  currentUserId?: string | null,
+): PostUI {
+  const fallbackCopy = splitPostCopy(row.title);
+  const body = row.body?.trim() || fallbackCopy.body;
+  const title =
+    row.body === undefined || row.body === null
+      ? fallbackCopy.title
+      : row.title.trim() || fallbackCopy.title;
+  const savedTags = Array.isArray(row.tags)
+    ? normalizeSelectedTags(row.tags)
+    : null;
   const user = row.author_id
     ? row.author_id === currentUserId
       ? "You"
@@ -121,12 +184,14 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
     id: row.id,
     user,
     initials: initials(user),
-    title: copy.title,
-    body: copy.body,
+    title,
+    body,
     votes: row.votes ?? 0,
     time: toRelativeTime(row.created_at),
     sortTime: new Date(row.created_at).getTime(),
-    tags: inferTags(row.title),
+    tags: savedTags ?? inferTags(`${title} ${body}`),
+    imageUrl: row.image_url ?? undefined,
+    imagePath: row.image_path ?? undefined,
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
     fromDB: true,
@@ -136,7 +201,7 @@ export function postFromRow(row: DBPost, currentUserId?: string | null): PostUI 
 
 export function commentFromRow(
   row: CommentRow,
-  currentUserId?: string | null
+  currentUserId?: string | null,
 ): CommentUI {
   const user =
     row.author_id && row.author_id === currentUserId
@@ -151,21 +216,27 @@ export function commentFromRow(
     text: row.body,
     createdAt: row.created_at,
     imageUrl: row.image_url ?? undefined,
+    imagePath: row.image_path ?? undefined,
     authorId: row.author_id ?? null,
     fromDB: true,
   };
 }
 
-export function createLocalPost(text: string): PostUI {
+export function createLocalPost(draft: DiscussionPostInput): PostUI {
+  const copy = normalizeDiscussionDraft(draft);
+
   return {
     id: `local-${crypto.randomUUID()}`,
     user: "You",
     initials: "YU",
-    ...splitPostCopy(text),
+    title: copy.title || "Untitled discussion",
+    body: copy.body || "Open for feedback and discussion.",
     votes: 0,
     time: "just now",
     sortTime: Date.now(),
-    tags: inferTags(text),
+    tags: copy.tags,
+    imageUrl: draft.imageUrl ?? undefined,
+    imagePath: draft.imagePath ?? undefined,
     commentCount: 0,
     avatarGradient: "linear-gradient(135deg, #4f63ff 0%, #7c3aed 100%)",
   };
@@ -178,4 +249,109 @@ export function createLocalComment(text: string): CommentUI {
     text,
     createdAt: new Date().toISOString(),
   };
+}
+
+export function isDiscussionDraftDirty(draft: DiscussionDraft) {
+  return Boolean(
+    draft.title.trim() ||
+      draft.body.trim() ||
+      draft.tags.length ||
+      draft.imageFile,
+  );
+}
+
+function isCurrentUserPost(post: PostUI, currentUserId: string | null) {
+  if (currentUserId && post.authorId === currentUserId) return true;
+  return !post.fromDB && post.user === "You";
+}
+
+function isCurrentUserComment(comment: CommentUI, currentUserId: string | null) {
+  if (currentUserId && comment.authorId === currentUserId) return true;
+  return !comment.fromDB && comment.user === "You";
+}
+
+function hasCurrentUserComment(
+  postId: string,
+  commentsState: CommentsState,
+  currentUserId: string | null,
+) {
+  return (commentsState.byPost[postId] ?? []).some((comment) =>
+    isCurrentUserComment(comment, currentUserId),
+  );
+}
+
+function matchesCommunitySearch(post: PostUI, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+
+  return [post.user, post.title, post.body, ...post.tags]
+    .join(" ")
+    .toLowerCase()
+    .includes(normalizedQuery);
+}
+
+export function getCommunityFeedCounts({
+  posts,
+  likedPostIds,
+  commentsState,
+  currentUserId,
+}: {
+  posts: PostUI[];
+  likedPostIds: Set<string>;
+  commentsState: CommentsState;
+  currentUserId: string | null;
+}): CommunityFeedCounts {
+  return {
+    top: posts.length,
+    new: posts.length,
+    "my-posts": posts.filter((post) =>
+      isCurrentUserPost(post, currentUserId),
+    ).length,
+    liked: posts.filter((post) => likedPostIds.has(post.id)).length,
+    commented: posts.filter((post) =>
+      hasCurrentUserComment(post.id, commentsState, currentUserId),
+    ).length,
+  };
+}
+
+export function getVisibleCommunityPosts({
+  posts,
+  query,
+  view,
+  likedPostIds,
+  commentsState,
+  currentUserId,
+}: {
+  posts: PostUI[];
+  query: string;
+  view: CommunityFeedView;
+  likedPostIds: Set<string>;
+  commentsState: CommentsState;
+  currentUserId: string | null;
+}) {
+  const matchingPosts = posts.filter((post) =>
+    matchesCommunitySearch(post, query),
+  );
+
+  const scopedPosts = matchingPosts.filter((post) => {
+    if (view === "my-posts") {
+      return isCurrentUserPost(post, currentUserId);
+    }
+
+    if (view === "liked") {
+      return likedPostIds.has(post.id);
+    }
+
+    if (view === "commented") {
+      return hasCurrentUserComment(post.id, commentsState, currentUserId);
+    }
+
+    return true;
+  });
+
+  if (view === "top") {
+    return [...scopedPosts].sort((a, b) => b.votes - a.votes);
+  }
+
+  return [...scopedPosts].sort((a, b) => b.sortTime - a.sortTime);
 }

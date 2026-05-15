@@ -9,15 +9,18 @@ import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
+import { ExpandableText } from "./ExpandableText";
 
 export function PostCard({
   post,
   comments,
   count,
   liked,
+  likeBusy,
   onAddComment,
   canDeletePost,
   canDeleteComment,
+  canAttachCommentImage,
   onDeleteComment,
   onDeletePost,
   onToggleLike,
@@ -26,8 +29,10 @@ export function PostCard({
   comments: CommentUI[];
   count: number;
   liked: boolean;
+  likeBusy: boolean;
   canDeletePost: boolean;
   canDeleteComment: (comment: CommentUI) => boolean;
+  canAttachCommentImage: boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
@@ -40,12 +45,27 @@ export function PostCard({
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
+  const tagBadges = post.tags.length
+    ? post.tags.map((tag) => (
+        <span
+          key={tag}
+          className={cn(
+            "rounded-md bg-[#101747] px-[10px] py-[4px] text-xs font-medium text-[#9eb2ff]",
+            communityStyles.tagBorder,
+            communityStyles.wrapAnywhere
+          )}
+        >
+          {tag}
+        </span>
+      ))
+    : null;
 
   return (
     <article
       className={cn(
         communityUi.card,
-        "overflow-hidden px-[18px] py-[18px] transition-colors duration-200 hover:border-[#303444] sm:px-[24px] sm:py-[20px]",
+        communityStyles.primaryPanelPadding,
+        "overflow-hidden transition-colors duration-200 hover:border-[#303444]",
         communityStyles.panelBorder
       )}
     >
@@ -90,37 +110,35 @@ export function PostCard({
           <h2
             className={cn(
               "mt-[6px] text-[17px] font-semibold leading-[1.35] text-[#fbfbff] sm:text-[18px]",
+              communityStyles.postCopyMeasure,
               communityStyles.wrapAnywhere
             )}
           >
             {post.title}
           </h2>
 
-          <p
-            className={cn(
-              "mt-[10px] max-w-[45rem] text-[15px] leading-[1.65] text-[#c4ccdc]",
-              communityStyles.wrapAnywhere
-            )}
-          >
-            {post.body}
-          </p>
+          <ExpandableText footer={tagBadges} text={post.body} />
 
-          <div className="mt-[12px] flex flex-wrap gap-[8px]">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className={cn(
-                  "rounded-md bg-[#101747] px-[10px] py-[4px] text-xs font-medium text-[#9eb2ff]",
-                  communityStyles.tagBorder,
-                  communityStyles.wrapAnywhere
-                )}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          {post.imageUrl ? (
+            <div
+              className={cn(
+                "mt-[12px] overflow-hidden rounded-lg bg-black/30",
+                communityStyles.softBorder
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.imageUrl}
+                alt="Discussion attachment"
+                width={960}
+                height={540}
+                loading="lazy"
+                className="max-h-[28rem] w-full object-contain"
+              />
+            </div>
+          ) : null}
 
-          <div className="mt-[13px] flex flex-wrap items-center gap-[10px]">
+          <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
             <button
               type="button"
               onClick={() => setOpen((value) => !value)}
@@ -142,11 +160,13 @@ export function PostCard({
             <button
               type="button"
               onClick={() => onToggleLike(post.id)}
+              disabled={likeBusy}
               className={cn(
                 "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] text-sm font-semibold transition-colors",
                 liked
                   ? "bg-[#171b4a] text-[#cfd8ff]"
                   : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                likeBusy ? "cursor-wait opacity-70" : "",
                 FOCUS_VISIBLE
               )}
               aria-pressed={liked}
@@ -168,13 +188,14 @@ export function PostCard({
               id={commentsId}
               className={cn("mt-[14px] space-y-3 pt-[14px]", communityStyles.dividerTop)}
             >
-            <CommentList
-              items={comments}
-              canDelete={canDeleteComment}
-              onDelete={(commentId) => onDeleteComment(commentId, post.id)}
-            />
+              <CommentList
+                items={comments}
+                canDelete={canDeleteComment}
+                onDelete={(commentId) => onDeleteComment(commentId, post.id)}
+              />
               <CommentForm
                 busy={busy}
+                canAttachImage={canAttachCommentImage}
                 onSubmit={async (data) => {
                   try {
                     setBusy(true);

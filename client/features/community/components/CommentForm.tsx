@@ -7,12 +7,15 @@ import { COMMENT_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { NewComment } from "../types";
 import { getErrorMessage, validateCommentImage } from "../utils";
+import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({
   onSubmit,
+  canAttachImage,
   busy = false,
 }: {
   onSubmit: (data: NewComment) => Promise<void> | void;
+  canAttachImage: boolean;
   busy?: boolean;
 }) {
   const [text, setText] = React.useState("");
@@ -20,7 +23,11 @@ export function CommentForm({
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement | null>(null);
+  const commentInput = useAutoResizeTextarea(text);
   const commentInputId = React.useId();
+  const attachImageLabel = canAttachImage
+    ? "Attach image"
+    : "Sign in to attach images";
 
   React.useEffect(
     () => () => {
@@ -36,6 +43,14 @@ export function CommentForm({
       setFile(null);
       setPreviewUrl(null);
       if (fileInput.current) fileInput.current.value = "";
+      return;
+    }
+
+    if (!canAttachImage) {
+      setFile(null);
+      setPreviewUrl(null);
+      if (fileInput.current) fileInput.current.value = "";
+      setErrorMessage("Sign in before attaching an image.");
       return;
     }
 
@@ -77,6 +92,7 @@ export function CommentForm({
         Add a comment
       </label>
       <textarea
+        ref={commentInput}
         id={commentInputId}
         name="community-comment"
         autoComplete="off"
@@ -86,7 +102,7 @@ export function CommentForm({
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
-          "w-full resize-none rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
+          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
           communityStyles.softBorder,
           "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20"
         )}
@@ -116,22 +132,22 @@ export function CommentForm({
           type="file"
           accept={COMMENT_IMAGE_TYPES.join(",")}
           className="hidden"
-          disabled={busy}
+          disabled={busy || !canAttachImage}
           onChange={(event) => handleFile(event.currentTarget.files?.[0] ?? null)}
         />
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            disabled={busy}
+            disabled={busy || !canAttachImage}
             className={cn(
               communityUi.iconButton,
               "h-9 w-9 text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
               communityUi.disabled,
               FOCUS_VISIBLE
             )}
-            title="Attach image"
-            aria-label="Attach image"
+            title={attachImageLabel}
+            aria-label={attachImageLabel}
           >
             <ImageOutlinedIcon fontSize="small" aria-hidden="true" />
           </button>
