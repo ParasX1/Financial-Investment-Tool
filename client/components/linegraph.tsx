@@ -1,6 +1,15 @@
 import * as d3 from 'd3';
 import React, { useState, useRef, useEffect } from 'react';
 
+const CHART_BG = '#111';
+const AXIS_COLOR = 'rgba(255,255,255,0.5)';
+const GRID_COLOR = 'rgba(255,255,255,0.12)';
+const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+const HOVER_LINE_COLOR = 'rgba(255,255,255,0.32)';
+const LEGEND_MARKER_WIDTH = 18;
+const LEGEND_TEXT_GAP = 6;
+const LEGEND_ITEM_GAP = 24;
+
 interface LineGraphProps {
     data: {ticker: string; values: { date: Date; value: number }[]}[];
     width?: number;
@@ -25,7 +34,7 @@ interface LineGraphProps {
     // Set up margins and graph dimensions
     const t = 30;
     const r = 30;
-    const b = 30;
+    const b = 58;
     const l = 50;
     const margin = { t, r, b, l };
     const graphWidth = width - l - r;
@@ -51,6 +60,7 @@ interface LineGraphProps {
         .defined(d => d.value !== null)
         .x((d) => xScale(d.date))
         .y((d) => yScale(d.value))
+        .curve(d3.curveMonotoneX)
 
     const svg = d3.select(svgRef.current).attr('width', width).attr('height', height);
 
@@ -61,7 +71,7 @@ interface LineGraphProps {
     svg.append('rect')
         .attr('width', width)
         .attr('height', height)
-        .attr('fill', '#FFFFFF');
+        .attr('fill', CHART_BG);
 
     // Add graph group with margins
     const g = svg.append('g').attr('transform', `translate(${l},${t})`);
@@ -74,35 +84,132 @@ interface LineGraphProps {
             .attr('fill', 'none')
             .attr('stroke', lineColor)
             .attr('stroke-width', 2)
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-linejoin', 'round')
         .attr('d', line);
     });
 
-    // Add X Axis (bottom)
+    const legendData = data.map((series, i) => ({
+        ticker: series.ticker,
+        color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
+        width: LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP + series.ticker.length * 9,
+    }));
+    const totalLegendWidth = legendData.reduce((sum, item) => sum + item.width, 0) +
+        Math.max(0, legendData.length - 1) * LEGEND_ITEM_GAP;
+
+    const legend = g.append('g')
+        .attr('class', 'line-legend')
+        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + 38})`);
+
+    const legendItems = legend.selectAll('g')
+        .data(legendData)
+        .enter()
+        .append('g')
+        .attr('transform', (_, i) => {
+            const x = legendData
+                .slice(0, i)
+                .reduce((sum, item) => sum + item.width + LEGEND_ITEM_GAP, 0);
+            return `translate(${x},0)`;
+        });
+
+    legendItems.append('line')
+        .attr('x1', 0)
+        .attr('x2', 18)
+        .attr('y1', 0)
+        .attr('y2', 0)
+        .attr('stroke', d => d.color)
+        .attr('stroke-width', 2)
+        .attr('stroke-linecap', 'round');
+
+    legendItems.append('circle')
+        .attr('cx', 9)
+        .attr('cy', 0)
+        .attr('r', 3)
+        .attr('fill', CHART_BG)
+        .attr('stroke', d => d.color)
+        .attr('stroke-width', 1.5);
+
+    legendItems.append('text')
+        .attr('x', LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP)
+        .attr('y', 4)
+        .attr('fill', d => d.color)
+        .attr('font-size', 16)
+        .text(d => d.ticker);
+
+    const xGridLines = d3.axisBottom(xScale)
+        .ticks(5)
+        .tickSize(-graphHeight)
+        .tickFormat('' as any);
+
     g.append('g')
+        .attr('class', 'grid')
         .attr('transform', `translate(0,${graphHeight})`)
-        .call(d3.axisBottom(xScale).ticks(5));
+        .call(xGridLines);
 
-    // Add Y Axis (left)
-    g.append('g').call(d3.axisLeft(yScale));
-
-    // Optional: add grid lines for better visualization
     const gridLines = d3.axisLeft(yScale)
         .tickSize(-graphWidth)
         .tickFormat('' as any);
 
     g.append('g')
         .attr('class', 'grid')
-        .call(gridLines)
-        .selectAll('line')
+        .call(gridLines);
+
+    g.selectAll('.grid .domain')
+        .attr('stroke', 'none');
+    g.selectAll('.grid line')
+        .attr('stroke', GRID_COLOR)
+        .attr('stroke-dasharray', '3 4')
+        .attr('shape-rendering', 'crispEdges');
+
+    // Add X Axis (bottom)
+    const xAxis = g.append('g')
+        .attr('transform', `translate(0,${graphHeight})`)
+        .call(d3.axisBottom(xScale).ticks(5));
+
+    // Add Y Axis (left)
+    const yAxis = g.append('g').call(d3.axisLeft(yScale));
+
+    xAxis.selectAll('.domain')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    yAxis.selectAll('.domain')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    xAxis.selectAll('.tick line')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    yAxis.selectAll('.tick line')
+        .attr('stroke', AXIS_COLOR)
+        .attr('stroke-dasharray', '3 4');
+    xAxis.selectAll('text').attr('fill', TEXT_COLOR);
+    yAxis.selectAll('text').attr('fill', TEXT_COLOR);
         
         
     // Tooltip setup
     const tooltip = d3.select(tooltipRef.current)
-        .style('position', 'absolute')
-        .style('background', '#fff')
-        .style('padding', '5px')
+        .style('position', 'fixed')
+        .style('background', '#1b1b20')
+        .style('color', '#fff')
+        .style('border', '1px solid rgba(255,255,255,0.14)')
+        .style('border-radius', '8px')
+        .style('padding', '10px')
         .style('display', 'none')
         .style('pointer-events', 'none');
+
+    const hoverLayer = g.append('g')
+        .attr('class', 'hover-layer')
+        .style('display', 'none');
+
+    const hoverLine = hoverLayer.append('line')
+        .attr('y1', 0)
+        .attr('y2', graphHeight)
+        .attr('stroke', HOVER_LINE_COLOR)
+        .attr('stroke-width', 1);
+
+    const hoverDots = hoverLayer.append('g')
+        .attr('class', 'hover-dots');
+
+    const formatDate = d3.timeFormat('%Y-%m-%d');
 
     // Create an overlay for capturing mouse events
     svg.append('rect')
@@ -115,43 +222,93 @@ interface LineGraphProps {
         const [mouseX] = d3.pointer(event);
         const dateAtMouse = xScale.invert(mouseX); // Get the date based on mouse position
 
-        // Find the closest data point to the mouse position
-        const allPoints = data.flatMap(series => 
+        const allPoints = data.flatMap((series, i) =>
             series.values
                 .filter(d => d.value !== null)
-                .map(d => ({ ...d, ticker: series.ticker }))
+                .map(d => ({
+                    ...d,
+                    ticker: series.ticker,
+                    color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
+                }))
         );
 
         if (!allPoints.length) {
             return;
         }
-        
-        const seriesClosest = data.map(series => {
-            const closest = series.values.reduce((a, b) =>
-                Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
-            );
-            return { ...closest, ticker: series.ticker };
-        });
 
-
-        const closestPoint = seriesClosest.reduce((a, b) =>
-            Math.abs(yScale(a.value) - d3.pointer(event, svg.node())[1]) <
-            Math.abs(yScale(b.value) - d3.pointer(event, svg.node())[1]) ? a : b
+        const anchorPoint = allPoints.reduce((a, b) =>
+            Math.abs(+a.date - +dateAtMouse) < Math.abs(+b.date - +dateAtMouse) ? a : b
         );
+
+        const seriesClosest = data
+            .map((series, i) => {
+                const validValues = series.values.filter(d => d.value !== null);
+                if (!validValues.length) {
+                    return null;
+                }
+
+                const closest = validValues.reduce((a, b) =>
+                    Math.abs(+a.date - +anchorPoint.date) < Math.abs(+b.date - +anchorPoint.date) ? a : b
+                );
+                const color = i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length];
+                return { ...closest, ticker: series.ticker, color };
+            })
+            .filter(Boolean) as Array<{ date: Date; value: number; ticker: string; color: string }>;
+
+        const pointX = xScale(anchorPoint.date);
+
+        hoverLayer.style('display', null);
+        hoverLine
+            .attr('x1', pointX)
+            .attr('x2', pointX);
+
+        const dots = hoverDots
+            .selectAll<SVGCircleElement, { date: Date; value: number; ticker: string; color: string }>('circle')
+            .data(seriesClosest, d => d.ticker);
+
+        dots.enter()
+            .append('circle')
+            .attr('r', 4)
+            .attr('fill', CHART_BG)
+            .attr('stroke-width', 2)
+            .merge(dots)
+            .attr('cx', d => xScale(d.date))
+            .attr('cy', d => yScale(d.value))
+            .attr('stroke', d => d.color);
+
+        dots.exit().remove();
+
+        const tooltipHtml = [
+            `<div>${formatDate(anchorPoint.date)}</div>`,
+            ...seriesClosest.map(point =>
+                `<div style="color:${point.color}; margin-top: 8px;">${point.ticker}: ${point.value.toFixed(2)}</div>`
+            )
+        ].join('');
+
+        const tooltipWidth = 150;
+        const tooltipHeight = 36 + seriesClosest.length * 28;
+        const gap = 12;
+        const pointerX = event.clientX;
+        const pointerY = event.clientY;
+        const left = pointerX + tooltipWidth + gap > window.innerWidth
+            ? pointerX - tooltipWidth - gap
+            : pointerX + gap;
+        const top = pointerY + tooltipHeight + gap > window.innerHeight
+            ? pointerY - tooltipHeight - gap
+            : pointerY + gap;
 
         tooltip
             .style('display', 'block')
-            .style('left', `${event.pageX - 170}px`)
-            .style('top', `${event.pageY - 28}px`)
-            .html(
-            `Date: ${closestPoint.date.toDateString()}<br>Value: ${closestPoint.value}<br>Stock: ${closestPoint.ticker}`
-            );
+            .style('left', `${left}px`)
+            .style('top', `${top}px`)
+            .html(tooltipHtml);
         })
         .on('mouseout', () => {
+        hoverLayer.style('display', 'none');
         tooltip.style('display', 'none');
         });
 
-    }, [data, width, height, lineColors]);
+    }, [data, width, height, mainColor, lineColors]);
 
     return (
     <>

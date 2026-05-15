@@ -4,10 +4,10 @@ import { getSupabaseClient } from "@/features/community/communityService";
 
 const supabase = getSupabaseClient();
 
-export default function CommunityPage() {
+export default function CommunityCreatePage() {
   return (
-    <CommunityPageShell skipLabel="Skip to community content">
-      <CommunityMain mode="feed" supabase={supabase} />
+    <CommunityPageShell skipLabel="Skip to create post">
+      <CommunityMain mode="create" supabase={supabase} />
     </CommunityPageShell>
   );
 }

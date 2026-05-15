@@ -2,6 +2,15 @@
 venv/
 server/venv/
 
+# Python cache / test output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Node.js dependencies
 /client/node_modules/
 node_modules/
@@ -9,9 +18,16 @@ node_modules/
 # IDE and editor settings
 /client/.idea/
 /.idea/
+/.claude/
+.mcp.json
 
 # Next.js build output
 /client/.next/
+.next/
+out/
+.vercel/
+.turbo/
+coverage/
 
 client/.idea
 
@@ -21,3 +37,16 @@ server/.env
 .DS_Store
 client/assets/.DS_Store
 client/pages/.DS_Store
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local generated backups
+supabase/migrations/backup.sql
+
