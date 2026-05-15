@@ -19,3 +19,5 @@ server/.env
 
 # macOS
 .DS_Store
+client/assets/.DS_Store
+client/pages/.DS_Store
