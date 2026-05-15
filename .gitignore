@@ -33,6 +33,10 @@ client/.idea
 
 server/.env
 
+# Local environment files
+client/.env.local
+.env.local
+
 # OS files
 .DS_Store
 Thumbs.db

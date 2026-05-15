@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import traceback
-from src.stocks import sanitiseStockJson
-from src.metrics import (
+from .stocks import sanitiseStockJson
+from .metrics import (
     fetch_stock_data,
     calculate_beta,
     calculate_alpha,
