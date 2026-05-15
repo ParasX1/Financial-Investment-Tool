@@ -179,7 +179,7 @@ export function CommunitySidebar({
           className={cn(
             drawerOpen
               ? "flex flex-col gap-2 overflow-visible pb-0"
-              : "flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0",
+              : "flex gap-2 overflow-x-hidden pb-1 lg:flex-col lg:overflow-visible lg:pb-0",
             collapsed ? "hidden" : "",
           )}
           role="list"

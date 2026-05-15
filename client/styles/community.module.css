@@ -61,6 +61,7 @@
 }
 
 .sidebarShell {
+  overflow-x: hidden;
   scrollbar-width: none;
 }
 
@@ -70,9 +71,19 @@
 
 .sidebarPinned {
   min-width: 0;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.sidebarPinned::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .sidebarDrawer {
+  box-sizing: border-box;
   left: var(--community-app-rail-width);
   overscroll-behavior: contain;
   width: min(280px, calc(100vw - var(--community-app-rail-width)));
