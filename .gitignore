@@ -17,3 +17,11 @@ client/.idea
 
 server/.env
 
+# Local environment files
+client/.env.local
+.env.local
+
+# Python cache files
+__pycache__/
+*.pyc
+
