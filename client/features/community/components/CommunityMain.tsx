@@ -378,7 +378,7 @@ export function CommunityMain({
                   ? getCommunityFeedHref(community.feedView, community.query)
                   : getCommunityCreateHref(community.feedView, community.query)
               }
-              actionLabel={mode === "create" ? "Back to Feed" : "Create Post"}
+              actionLabel={mode === "create" ? "Back" : "Create post"}
               actionType={mode === "create" ? "back" : "create"}
               query={community.query}
               onActionClick={handleToolbarActionClick}

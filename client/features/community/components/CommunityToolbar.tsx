@@ -72,7 +72,7 @@ export function CommunityToolbar({
           href={actionHref}
           onClick={onActionClick}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white transition-colors sm:px-4",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white no-underline transition-colors hover:no-underline sm:px-4",
             communityStyles.toolbarControl,
             actionType === "create"
               ? "bg-[#5d67ff] hover:bg-[#7079ff]"
