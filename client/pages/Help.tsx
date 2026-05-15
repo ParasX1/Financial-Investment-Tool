@@ -386,7 +386,7 @@ const Help: React.FC = () => {
                 cursor: 'pointer',
                 fontWeight: 600,
               }}
-              onClick={() => alert('Support modal coming soon')}
+              onClick={() => alert('Support features coming soon.')}
             >
               Contact Support
             </button>
