@@ -1,25 +1,25 @@
 .noticeBorder {
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(111, 124, 255, 0.28);
 }
 
 .softBorder {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(132, 146, 176, 0.12);
 }
 
 .panelBorder {
-  border: 1px solid #252733;
+  border: 1px solid #202230;
 }
 
 .inputBorder {
-  border: 1px solid #2b2d36;
+  border: 1px solid #2a2b35;
 }
 
 .tagBorder {
-  border: 1px solid rgba(59, 130, 246, 0.6);
+  border: 1px solid rgba(85, 111, 255, 0.56);
 }
 
 .dividerTop {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(132, 146, 176, 0.12);
 }
 
 .wrapAnywhere {
@@ -29,9 +29,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.14),
-    rgba(255, 255, 255, 0.06)
+    rgba(255, 255, 255, 0.05),
+    rgba(111, 124, 255, 0.14),
+    rgba(255, 255, 255, 0.05)
   );
   background-size: 200% 100%;
   animation: communitySkeleton 1.2s ease-in-out infinite;
@@ -53,7 +53,7 @@
   top: 12px;
   z-index: 10000;
   border-radius: 8px;
-  background: #2563eb;
+  background: #5367ff;
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
