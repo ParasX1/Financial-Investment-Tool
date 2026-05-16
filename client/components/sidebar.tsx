@@ -176,7 +176,7 @@ const logo = require('@/assets/SidebarIcons/F.png')
             {user ? Item('#logout', 'bx-log-out', 'Log out', signOut) : null}
           </ul>
         </div>
-      </nav>
+      </div>
 
       <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
       <ModalSignUp show={showSignup} onHide={() => setShowSignup(false)} setLogin={setShowLogin} />

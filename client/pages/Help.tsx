@@ -379,7 +379,7 @@ const Help: React.FC = () => {
           >
             <h2 style={{ color: '#FFFFFF', fontSize: '1.5rem', marginBottom: '0.5rem'}}>Still need help?</h2>
             <p style={{ color: '#9F9FA8', marginBottom: '1.5rem', opacity: 0.9 }}>
-              Can't find what you're looking for? Our support team is here to help.
+              Can&apos;t find what you&apos;re looking for? Our support team is here to help.
             </p>
 
             <button

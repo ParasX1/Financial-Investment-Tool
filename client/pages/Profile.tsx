@@ -232,7 +232,7 @@ function Profile() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       className="h-24 w-24 rounded-full object-cover"
-                      src={avatarPreviewUrl || avatarUrl}
+                      src={(avatarPreviewUrl || avatarUrl) ?? undefined}
                       alt="avatar"
                     />
                   ) : (
