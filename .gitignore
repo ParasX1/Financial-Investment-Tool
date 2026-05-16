@@ -37,6 +37,10 @@ server/.env
 .DS_Store
 client/assets/.DS_Store
 client/pages/.DS_Store
+# Local environment files
+client/.env.local
+.env.local
+
 # OS files
 .DS_Store
 Thumbs.db
