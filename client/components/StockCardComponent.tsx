@@ -365,11 +365,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
   }
 
+  const isMainVariant = variant === 'main';
   const chartWidth = Math.max(dimensions.width - 32, 120);
-  const chartHeight = Math.max(dimensions.height - 90, 80);
+  const chartVerticalReserve = isMainVariant ? Math.min(90, Math.max(66, dimensions.height * 0.18)) : 90;
+  const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
-  const isMainVariant = variant === 'main';
 
   // render
   return (
@@ -384,7 +385,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         bgcolor:  '#111',
         border:   '1px solid #555',
         borderRadius: isMainVariant ? 2 : 0,
-        p:        '1rem',
+        p:        isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
         overflow: 'hidden',
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
@@ -393,9 +394,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         <Box
           sx={{
             position: 'absolute',
-            top: 16,
-            left: 16,
-            right: 16,
+            top: 'clamp(10px, 0.85vw, 16px)',
+            left: 'clamp(10px, 0.85vw, 16px)',
+            right: 'clamp(10px, 0.85vw, 16px)',
             zIndex: 1,
             display: 'flex',
             alignItems: 'center',
@@ -413,10 +414,10 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                   : 'Select Metric'
               }
               sx={{
-                height: 38,
-                minWidth: 174,
+                height: 'clamp(32px, 3.8vh, 38px)',
+                minWidth: 'clamp(144px, 9.2vw, 174px)',
                 color: '#fff',
-                fontSize: 14,
+                fontSize: 'clamp(12px, 0.75vw, 14px)',
                 borderRadius: 1,
                 '.MuiSelect-icon': { color: '#fff' },
                 '.MuiOutlinedInput-notchedOutline': {
@@ -448,7 +449,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 </MenuItem>
               ))}
             </Select>
-            <Box sx={{ color: '#8d93a1', fontSize: 13, whiteSpace: 'nowrap' }}>
+            <Box sx={{ color: '#8d93a1', fontSize: 'clamp(11px, 0.7vw, 13px)', whiteSpace: 'nowrap' }}>
               {selectedStocks.length} stocks
             </Box>
           </Box>
@@ -483,7 +484,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           </Button>
         </Box>
           )}
-      <Box sx={{ pt: isMainVariant ? 7 : 0, height: '100%' }}>
+      <Box sx={{ pt: isMainVariant ? 'clamp(48px, 6vh, 56px)' : 0, height: '100%' }}>
       {showGraph ? (
         <>
           {chart}
