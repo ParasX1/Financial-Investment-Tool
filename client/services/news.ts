@@ -44,3 +44,21 @@ export async function fetchTickerNews(ticker: string, limit = 10): Promise<Artic
   const { articles } = await res.json()
   return articles as Article[]
 }
+
+export async function fetchSearchNews(query: string, limit = 10, context?: string): Promise<Article[]> {
+  const params = new URLSearchParams({
+    q: query,
+    pageSize: String(limit),
+  })
+
+  if (context) {
+    params.set('context', context)
+  }
+
+  const res = await fetch(`/api/news/search?${params.toString()}`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('Failed to fetch search news')
+  const { articles } = await res.json()
+  return articles as Article[]
+}
