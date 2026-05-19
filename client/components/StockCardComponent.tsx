@@ -145,6 +145,7 @@ interface StockChartCardProps {
   height?: number | string;
   showSwap?: boolean;
   variant?: 'default' | 'main';
+  chartLayout?: 'default' | 'compact';
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -159,6 +160,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   height = 400,
   showSwap = true,
   variant = 'default',
+  chartLayout = 'default',
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height: 400 });
@@ -172,6 +174,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const buttonHoverColor = '#555'; // Darker grey on hover
 
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
+  const isCompactChart = chartLayout === 'compact';
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
@@ -276,6 +279,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           width={chartWidth}
           height={chartHeight}
           barColor={barColor}
+          compact={isCompactChart}
         />
       );
     
@@ -333,6 +337,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           width={chartWidth}
           height={chartHeight}
           mainColor={barColor}
+          compact={isCompactChart}
         />
       );
     
@@ -367,8 +372,11 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   }
 
   const isMainVariant = variant === 'main';
-  const chartWidth = Math.max(dimensions.width - 32, 120);
-  const chartVerticalReserve = isMainVariant ? Math.min(90, Math.max(66, dimensions.height * 0.18)) : 90;
+  const availableChartWidth = Math.max(dimensions.width - 32, 120);
+  const chartWidth = Math.floor(availableChartWidth * (isCompactChart && !isFullscreen ? 0.84 : 1));
+  const chartVerticalReserve = isMainVariant
+    ? Math.min(isCompactChart ? 62 : 90, Math.max(isCompactChart ? 48 : 66, dimensions.height * 0.16))
+    : 90;
   const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
@@ -502,7 +510,19 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           </Button>
         </Box>
           )}
-      <Box sx={{ pt: isMainVariant ? 'clamp(48px, 6vh, 56px)' : 0, height: '100%' }}>
+      <Box
+        sx={{
+          pt: isMainVariant
+            ? isCompactChart
+              ? 'clamp(42px, 5vh, 48px)'
+              : 'clamp(48px, 6vh, 56px)'
+            : 0,
+          height: '100%',
+          display: 'flex',
+          justifyContent: isCompactChart ? 'center' : 'flex-start',
+          alignItems: 'flex-start',
+        }}
+      >
       {showGraph ? (
         <>
           {chart}

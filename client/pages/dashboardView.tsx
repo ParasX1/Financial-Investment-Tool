@@ -709,6 +709,7 @@ const DashboardView: React.FC = () => {
                                         onUpdateSettings={handleCardSettingsUpdate}
                                         height="100%"
                                         variant="main"
+                                        chartLayout="compact"
                                     />
                                 </Box>
                             ))}

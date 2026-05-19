@@ -16,6 +16,7 @@ interface LineGraphProps {
     height?: number;
     mainColor?: string;
     lineColors?: string[];
+    compact?: boolean;
 }
 
     const LineGraph: React.FC<LineGraphProps> = ({
@@ -24,6 +25,7 @@ interface LineGraphProps {
     height = 300,
     mainColor = '#fc03d7',
     lineColors = ['#FF0000', '#008000', '#0000FF'],
+    compact = false,
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -32,13 +34,16 @@ interface LineGraphProps {
     if (!data.length) return;
 
     // Set up margins and graph dimensions
-    const t = 30;
-    const r = 30;
-    const b = 58;
-    const l = 50;
+    const t = compact ? 8 : 30;
+    const r = compact ? 18 : 30;
+    const b = compact ? 44 : 58;
+    const l = compact ? 42 : 50;
     const margin = { t, r, b, l };
     const graphWidth = width - l - r;
     const graphHeight = height - t - b;
+    const yTickCount = compact
+        ? Math.max(3, Math.min(6, Math.floor(graphHeight / 24)))
+        : Math.max(4, Math.min(8, Math.floor(graphHeight / 30)));
 
     const allValues = data.flatMap(d => d.values);
 
@@ -99,7 +104,7 @@ interface LineGraphProps {
 
     const legend = g.append('g')
         .attr('class', 'line-legend')
-        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + 38})`);
+        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + (compact ? 34 : 38)})`);
 
     const legendItems = legend.selectAll('g')
         .data(legendData)
@@ -131,9 +136,9 @@ interface LineGraphProps {
 
     legendItems.append('text')
         .attr('x', LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP)
-        .attr('y', 4)
+        .attr('y', compact ? 3 : 4)
         .attr('fill', d => d.color)
-        .attr('font-size', 16)
+        .attr('font-size', compact ? 13 : 16)
         .text(d => d.ticker);
 
     const xGridLines = d3.axisBottom(xScale)
@@ -147,6 +152,7 @@ interface LineGraphProps {
         .call(xGridLines);
 
     const gridLines = d3.axisLeft(yScale)
+        .ticks(yTickCount)
         .tickSize(-graphWidth)
         .tickFormat('' as any);
 
@@ -167,7 +173,7 @@ interface LineGraphProps {
         .call(d3.axisBottom(xScale).ticks(5));
 
     // Add Y Axis (left)
-    const yAxis = g.append('g').call(d3.axisLeft(yScale));
+    const yAxis = g.append('g').call(d3.axisLeft(yScale).ticks(yTickCount));
 
     xAxis.selectAll('.domain')
         .attr('stroke', AXIS_COLOR)
@@ -181,8 +187,12 @@ interface LineGraphProps {
     yAxis.selectAll('.tick line')
         .attr('stroke', AXIS_COLOR)
         .attr('stroke-dasharray', '3 4');
-    xAxis.selectAll('text').attr('fill', TEXT_COLOR);
-    yAxis.selectAll('text').attr('fill', TEXT_COLOR);
+    xAxis.selectAll('text')
+        .attr('fill', TEXT_COLOR)
+        .attr('font-size', compact ? 11 : 12);
+    yAxis.selectAll('text')
+        .attr('fill', TEXT_COLOR)
+        .attr('font-size', compact ? 11 : 12);
         
         
     // Tooltip setup
@@ -308,7 +318,7 @@ interface LineGraphProps {
         tooltip.style('display', 'none');
         });
 
-    }, [data, width, height, mainColor, lineColors]);
+    }, [data, width, height, mainColor, lineColors, compact]);
 
     return (
     <>
