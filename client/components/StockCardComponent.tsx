@@ -3,6 +3,7 @@ import { Box, Button, IconButton, MenuItem, Select, Tooltip } from '@mui/materia
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
 import LineGraph from './linegraph';
@@ -455,6 +456,23 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title={index === 0 ? 'Main view' : 'Switch to main view'} arrow>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => onSwap(index)}
+                  disabled={index === 0}
+                  sx={{
+                    color: '#9aa0aa',
+                    '&.Mui-disabled': {
+                      color: 'rgba(154,160,170,0.32)',
+                    },
+                  }}
+                >
+                  <SwapHorizIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
             <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
               <IconButton size="small" onClick={handleFullscreenToggle} sx={{ color: '#9aa0aa' }}>
                 {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
