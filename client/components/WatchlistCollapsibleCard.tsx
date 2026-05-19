@@ -139,9 +139,6 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
           onActivate={handleActivate}
           onUpdateSettings={handleUpdateSettings}
           height={height}
-          defaultStart={defaultStart}
-          defaultEnd={defaultEnd}
-          color={color}
           showSwap={false}
         />
       )}
