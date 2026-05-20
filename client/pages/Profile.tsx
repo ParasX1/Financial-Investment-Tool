@@ -7,6 +7,10 @@ import { useAuth } from '@/components/authContext'
 type ProfileErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'phone', string>>
 type ProfileMessage = { type: 'success' | 'error' | 'info'; text: string }
 
+const AVATAR_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET ||
+  process.env.NEXT_PUBLIC_SUPABASE_BUCKET ||
+  'avatars'
 const PROFILE_TABLE = 'Users'
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
@@ -49,6 +53,7 @@ function Profile() {
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -123,6 +128,12 @@ function Profile() {
 
     loadProfile()
   }, [loading, user])
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl)
+    }
+  }, [avatarPreviewUrl])
 
   const validateProfile = () => {
     const nextFirstName = sanitizeName(firstName)
@@ -225,14 +236,21 @@ function Profile() {
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setMessage({ type: 'error', text: 'Avatar must be a JPG, PNG, or WEBP image.' })
+      event.target.value = ''
       return
     }
 
     if (file.size > MAX_AVATAR_SIZE) {
       setMessage({ type: 'error', text: 'Avatar image must be 5MB or smaller.' })
+      event.target.value = ''
       return
     }
 
+    const previewUrl = URL.createObjectURL(file)
+    setAvatarPreviewUrl((previousUrl) => {
+      if (previousUrl) URL.revokeObjectURL(previousUrl)
+      return previewUrl
+    })
     setUploadingAvatar(true)
     setMessage(null)
 
@@ -240,24 +258,36 @@ function Profile() {
     const path = `${user.id}/${Date.now()}.${ext}`
 
     const { error: uploadError } = await supabase.storage
-      .from('avatars')
+      .from(AVATAR_BUCKET)
       .upload(path, file, { upsert: true, contentType: file.type })
 
     if (uploadError) {
       setUploadingAvatar(false)
-      setMessage({ type: 'error', text: `Upload failed: ${uploadError.message}` })
+      const bucketMissing = uploadError.message.toLowerCase().includes('bucket not found')
+      setMessage({
+        type: 'error',
+        text: bucketMissing
+          ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
+          : `Upload failed: ${uploadError.message}`,
+      })
+      event.target.value = ''
       return
     }
 
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
     const publicUrl = data.publicUrl
     setAvatarUrl(`${publicUrl}?v=${Date.now()}`)
+    setAvatarPreviewUrl((previousUrl) => {
+      if (previousUrl) URL.revokeObjectURL(previousUrl)
+      return null
+    })
 
     const { error } = await supabase
       .from(PROFILE_TABLE)
       .upsert({ id: user.id, avatar_url: publicUrl }, { onConflict: 'id' })
 
     setUploadingAvatar(false)
+    event.target.value = ''
     setMessage(error ? { type: 'error', text: `Avatar save failed: ${error.message}` } : { type: 'success', text: 'Avatar updated.' })
   }
 
@@ -379,8 +409,8 @@ function Profile() {
             <aside className="rounded-lg border border-zinc-700 bg-zinc-950 p-4">
               <div className="flex items-center gap-4">
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-900">
-                  {avatarUrl ? (
-                    <img className="h-full w-full object-cover" src={avatarUrl} alt="Profile avatar" />
+                  {avatarPreviewUrl || avatarUrl ? (
+                    <img className="h-full w-full object-cover" src={(avatarPreviewUrl || avatarUrl) ?? undefined} alt="Profile avatar" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-zinc-300">{initials}</div>
                   )}
