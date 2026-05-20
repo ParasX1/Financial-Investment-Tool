@@ -8,7 +8,7 @@ import ModalSignUp from '@/components/Modal/ModalSignUp'
 
 const logo = require('@/assets/SidebarIcons/F.png')
 
-const Sidebar: React.FC = () => {
+  const Sidebar: React.FC<{ onHoverChange?: (open: boolean) => void }> = ({ onHoverChange }) => {
   const { user, signOut } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
   const [showText, setShowText] = useState(false)
@@ -115,12 +115,9 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <nav
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onFocusCapture={() => setIsHovered(true)}
-        onBlurCapture={handleSidebarBlur}
-        aria-label="Main navigation"
+      <div
+        onMouseEnter={() => {setIsHovered(true); onHoverChange?.(true)}}
+        onMouseLeave={() => {setIsHovered(false); onHoverChange?.(false)}}
         style={{
           backgroundColor: 'black',
           width: isHovered ? '200px' : '50px',
@@ -156,13 +153,13 @@ const Sidebar: React.FC = () => {
                 <Image src={logo} alt="" width={25} height={25} />
               </button>
             </li>
-            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
           </ul>
         </div>
 
         {/* Middle */}
         <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {Item('/dashboardView', 'bx-pie-chart-alt-2', 'Portfolio')}
             {Item('/TopPicks', 'bx-up-arrow-circle', 'Top Picks')}
             {Item('/MarketNews', 'bx-news', 'Market News')}
             {Item('/Watchlist', 'bx-list-ul', 'Watchlist')}
@@ -179,7 +176,7 @@ const Sidebar: React.FC = () => {
             {user ? Item('#logout', 'bx-log-out', 'Log out', signOut) : null}
           </ul>
         </div>
-      </nav>
+      </div>
 
       <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
       <ModalSignUp show={showSignup} onHide={() => setShowSignup(false)} setLogin={setShowLogin} />
