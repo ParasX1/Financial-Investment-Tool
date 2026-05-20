@@ -3,6 +3,7 @@ import { Box, Button, IconButton, MenuItem, Select, Tooltip } from '@mui/materia
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import OHLCChart from './ohlc';
 import BarGraph from './bargraph';
 import LineGraph from './linegraph';
@@ -144,6 +145,7 @@ interface StockChartCardProps {
   height?: number | string;
   showSwap?: boolean;
   variant?: 'default' | 'main';
+  chartLayout?: 'default' | 'compact';
 }
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
@@ -158,6 +160,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   height = 400,
   showSwap = true,
   variant = 'default',
+  chartLayout = 'default',
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height: 400 });
@@ -171,6 +174,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const buttonHoverColor = '#555'; // Darker grey on hover
 
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
+  const isCompactChart = chartLayout === 'compact';
 
   const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
 
@@ -275,6 +279,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           width={chartWidth}
           height={chartHeight}
           barColor={barColor}
+          compact={isCompactChart}
         />
       );
     
@@ -332,6 +337,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           width={chartWidth}
           height={chartHeight}
           mainColor={barColor}
+          compact={isCompactChart}
         />
       );
     
@@ -365,11 +371,15 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
   }
 
-  const chartWidth = Math.max(dimensions.width - 32, 120);
-  const chartHeight = Math.max(dimensions.height - 90, 80);
+  const isMainVariant = variant === 'main';
+  const availableChartWidth = Math.max(dimensions.width - 32, 120);
+  const chartWidth = Math.floor(availableChartWidth * (isCompactChart && !isFullscreen ? 0.84 : 1));
+  const chartVerticalReserve = isMainVariant
+    ? Math.min(isCompactChart ? 62 : 90, Math.max(isCompactChart ? 48 : 66, dimensions.height * 0.16))
+    : 90;
+  const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
-  const isMainVariant = variant === 'main';
 
   // render
   return (
@@ -384,7 +394,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         bgcolor:  '#111',
         border:   '1px solid #555',
         borderRadius: isMainVariant ? 2 : 0,
-        p:        '1rem',
+        p:        isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
         overflow: 'hidden',
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
@@ -393,9 +403,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         <Box
           sx={{
             position: 'absolute',
-            top: 16,
-            left: 16,
-            right: 16,
+            top: 'clamp(10px, 0.85vw, 16px)',
+            left: 'clamp(10px, 0.85vw, 16px)',
+            right: 'clamp(10px, 0.85vw, 16px)',
             zIndex: 1,
             display: 'flex',
             alignItems: 'center',
@@ -413,10 +423,10 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                   : 'Select Metric'
               }
               sx={{
-                height: 38,
-                minWidth: 174,
+                height: 'clamp(32px, 3.8vh, 38px)',
+                minWidth: 'clamp(144px, 9.2vw, 174px)',
                 color: '#fff',
-                fontSize: 14,
+                fontSize: 'clamp(12px, 0.75vw, 14px)',
                 borderRadius: 1,
                 '.MuiSelect-icon': { color: '#fff' },
                 '.MuiOutlinedInput-notchedOutline': {
@@ -448,12 +458,29 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 </MenuItem>
               ))}
             </Select>
-            <Box sx={{ color: '#8d93a1', fontSize: 13, whiteSpace: 'nowrap' }}>
+            <Box sx={{ color: '#8d93a1', fontSize: 'clamp(11px, 0.7vw, 13px)', whiteSpace: 'nowrap' }}>
               {selectedStocks.length} stocks
             </Box>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title={index === 0 ? 'Main view' : 'Switch to main view'} arrow>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => onSwap(index)}
+                  disabled={index === 0}
+                  sx={{
+                    color: '#9aa0aa',
+                    '&.Mui-disabled': {
+                      color: 'rgba(154,160,170,0.32)',
+                    },
+                  }}
+                >
+                  <SwapHorizIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
             <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
               <IconButton size="small" onClick={handleFullscreenToggle} sx={{ color: '#9aa0aa' }}>
                 {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
@@ -483,7 +510,19 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           </Button>
         </Box>
           )}
-      <Box sx={{ pt: isMainVariant ? 7 : 0, height: '100%' }}>
+      <Box
+        sx={{
+          pt: isMainVariant
+            ? isCompactChart
+              ? 'clamp(42px, 5vh, 48px)'
+              : 'clamp(48px, 6vh, 56px)'
+            : 0,
+          height: '100%',
+          display: 'flex',
+          justifyContent: isCompactChart ? 'center' : 'flex-start',
+          alignItems: 'flex-start',
+        }}
+      >
       {showGraph ? (
         <>
           {chart}

@@ -292,7 +292,17 @@ const DashboardView: React.FC = () => {
     }, [loading, prefsLoaded, userId, searchTags, selectedStocks, activeCards, cardSettings, globalStart, globalEnd]);
 
     return (
-        <div style={{ height: '100vh', overflow: 'hidden', backgroundColor: 'black' }}>
+        <Box
+            sx={{
+                height: '100vh',
+                overflow: 'hidden',
+                backgroundColor: 'black',
+                '@media (max-height: 720px), (max-width: 900px)': {
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                },
+            }}
+        >
             <div style={{ display: 'flex', height: '100%' }}>
                 <Sidebar />
                 <Box
@@ -305,20 +315,32 @@ const DashboardView: React.FC = () => {
                         backgroundColor: 'black',
                         display: 'flex',
                         flexDirection: 'column',
+                        '@media (max-height: 720px), (max-width: 900px)': {
+                            height: 'auto',
+                            minHeight: '100vh',
+                            overflow: 'visible',
+                        },
                     }}
                 >
 
 {/* Title and Search Bar-----------------------------------------------------------------------------------------------------------*/}
                     <Box
                         sx={{
-                            px: 2,
-                            py: 1.5,
+                            height: 'clamp(96px, 12vh, 128px)',
+                            px: 'clamp(8px, 0.85vw, 16px)',
+                            py: 'clamp(6px, 1vh, 12px)',
                             backgroundColor: 'transparent',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'stretch',
-                            gap: 0.75,
+                            gap: 'clamp(4px, 0.7vh, 8px)',
                             flexShrink: 0,
+                            overflow: 'hidden',
+                            '@media (max-height: 720px), (max-width: 900px)': {
+                                height: 'auto',
+                                minHeight: 'unset',
+                                overflow: 'visible',
+                            },
                         }}
                     >    
                         <Typography
@@ -326,8 +348,9 @@ const DashboardView: React.FC = () => {
                             sx={{ 
                                 color: 'white', 
                                 fontWeight: 600, 
-                                fontSize: { xs: 22, sm: 28, lg: 32 },
+                                fontSize: 'clamp(22px, 1.65vw, 32px)',
                                 lineHeight: 1.1,
+                                flexShrink: 0,
                             }}
                             >
                             Portfolio Analytics
@@ -339,9 +362,10 @@ const DashboardView: React.FC = () => {
                             sx={{
                                 display: 'flex',
                                 alignItems: 'flex-end',
-                                gap: 2,
+                                gap: 'clamp(10px, 1vw, 16px)',
                                 flexWrap: { xs: 'wrap', lg: 'nowrap' },
-                                mt: 0.5,
+                                mt: 7,
+                                minHeight: 0,
                             }}
                         >
                             <Box sx={{ flex: '1 1 420px', minWidth: { xs: '100%', md: 320 } }}>
@@ -350,8 +374,9 @@ const DashboardView: React.FC = () => {
                                     sx={{ 
                                         color: 'rgba(255, 255, 255, 0.65)', 
                                         fontWeight: 300, 
-                                        fontSize: { xs: 12, sm: 14 },
-                                        mb: 0.5,
+                                        fontSize: 'clamp(11px, 0.72vw, 14px)',
+                                        mb: 'clamp(2px, 0.35vh, 4px)',
+                                        lineHeight: 1.1,
                                     }}
                                 >
                                     Select Stocks
@@ -382,13 +407,13 @@ const DashboardView: React.FC = () => {
                                     sx={{
                                         '& .MuiAutocomplete-inputRoot': {
                                             flexWrap: 'wrap',
-                                            gap: 0.5,
-                                            minHeight: 38,
+                                            gap: 'clamp(3px, 0.35vw, 6px)',
+                                            minHeight: 'clamp(34px, 4vh, 42px)',
                                             backgroundColor: '#1b1b20',
                                             color: '#fff',
                                             borderRadius: 1,
-                                            py: 0.5,
-                                            pl: 1,
+                                            py: 'clamp(3px, 0.5vh, 6px)',
+                                            pl: 'clamp(6px, 0.55vw, 10px)',
                                         },
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
@@ -403,6 +428,7 @@ const DashboardView: React.FC = () => {
                                         },
                                         '& input': {
                                             color: '#fff',
+                                            fontSize: 'clamp(12px, 0.75vw, 14px)',
                                         },
                                         '& input::placeholder': {
                                             color: '#a09ca8',
@@ -422,7 +448,9 @@ const DashboardView: React.FC = () => {
                                                     size="small"
                                                     onClick={() => handleSelectStock(option)}
                                                     sx={{
-                                                        mr: 0.5,
+                                                        mr: 'clamp(3px, 0.35vw, 6px)',
+                                                        height: 'clamp(22px, 2.7vh, 26px)',
+                                                        fontSize: 'clamp(11px, 0.7vw, 13px)',
                                                         cursor: 'pointer',
                                                         bgcolor: isSelected ? '#6d5dfc' : '#2c2c33',
                                                         color: isSelected ? '#fff' : '#a09ca8',
@@ -469,8 +497,8 @@ const DashboardView: React.FC = () => {
                         <Box
                             sx={{
                                 display: 'flex',
-                                gap: 2,
-                                width: { xs: '100%', sm: 520 },
+                                gap: 'clamp(10px, 1vw, 16px)',
+                                width: { xs: '100%', sm: 'clamp(420px, 27vw, 560px)' },
                                 maxWidth: '100%',
                                 flexDirection: 'row',
                             }}
@@ -479,9 +507,10 @@ const DashboardView: React.FC = () => {
                                 <Typography
                                     sx={{
                                         color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: { xs: 12, sm: 13 },
+                                        fontSize: 'clamp(11px, 0.68vw, 13px)',
                                         fontWeight: 300,
-                                        mb: 0.5,
+                                        mb: 'clamp(2px, 0.35vh, 4px)',
+                                        lineHeight: 1.1,
                                     }}
                                 >
                                     Start Date
@@ -497,11 +526,11 @@ const DashboardView: React.FC = () => {
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
-                                                height: 38,
+                                                height: 'clamp(34px, 4vh, 42px)',
                                                 backgroundColor: '#1b1b20',
                                                 color: '#fff',
                                                 borderRadius: 2,
-                                                fontSize: { xs: 12, sm: 14 },
+                                                fontSize: 'clamp(12px, 0.75vw, 14px)',
                                                 '& fieldset': {
                                                     borderColor: '#2c2c33',
                                                 },
@@ -527,9 +556,10 @@ const DashboardView: React.FC = () => {
                                 <Typography
                                     sx={{
                                         color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: { xs: 12, sm: 13 },
+                                        fontSize: 'clamp(11px, 0.68vw, 13px)',
                                         fontWeight: 300,
-                                        mb: 0.5,
+                                        mb: 'clamp(2px, 0.35vh, 4px)',
+                                        lineHeight: 1.1,
                                     }}
                                 >
                                     End Date
@@ -545,11 +575,11 @@ const DashboardView: React.FC = () => {
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
-                                                height: 38,
+                                                height: 'clamp(34px, 4vh, 42px)',
                                                 backgroundColor: '#1b1b20',
                                                 color: '#fff',
                                                 borderRadius: 2,
-                                                fontSize: { xs: 12, sm: 14 },
+                                                fontSize: 'clamp(12px, 0.75vw, 14px)',
                                                 '& fieldset': {
                                                     borderColor: '#2c2c33',
                                                 },
@@ -579,8 +609,12 @@ const DashboardView: React.FC = () => {
                         sx={{
                             flex: 1,
                             minHeight: 0,
-                            p: { xs: 1, md: 2 },
+                            p: 'clamp(8px, 0.85vw, 16px)',
                             pt: 0,
+                            '@media (max-height: 720px), (max-width: 900px)': {
+                                flex: 'none',
+                                minHeight: 'unset',
+                            },
                         }}
                     >
                         <Box
@@ -588,18 +622,30 @@ const DashboardView: React.FC = () => {
                                 height: '100%',
                                 minHeight: 0,
                                 display: 'grid',
-                                gap: { xs: 1, md: 2 },
+                                gap: 'clamp(8px, 0.85vw, 16px)',
                                 gridTemplateColumns: {
                                     xs: 'repeat(3, minmax(0, 1fr))',
                                     md: 'repeat(6, minmax(0, 1fr))',
                                 },
                                 gridTemplateRows: {
                                     xs: 'repeat(3, minmax(0, 1fr))',
-                                    md: 'minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.8fr)',
+                                    md: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.72fr)',
                                 },
                                 '& > *': {
                                     minWidth: 0,
                                     minHeight: 0,
+                                },
+                                '@media (max-height: 720px), (max-width: 900px)': {
+                                    height: 'auto',
+                                    minHeight: 'unset',
+                                    gridTemplateColumns: '1fr',
+                                    gridTemplateRows: 'none',
+                                    gridAutoRows: 'clamp(280px, 58vh, 420px)',
+                                    '& > *': {
+                                        gridColumn: 'auto !important',
+                                        gridRow: 'auto !important',
+                                        minHeight: 0,
+                                    },
                                 },
                             }}
                         >
@@ -663,6 +709,7 @@ const DashboardView: React.FC = () => {
                                         onUpdateSettings={handleCardSettingsUpdate}
                                         height="100%"
                                         variant="main"
+                                        chartLayout="compact"
                                     />
                                 </Box>
                             ))}
@@ -670,7 +717,7 @@ const DashboardView: React.FC = () => {
                     </Box>
                 </Box>
             </div>
-        </div>
+        </Box>
     );
 };
 
