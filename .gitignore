@@ -1,6 +1,8 @@
 # Python virtual environment
 venv/
 server/venv/
+__pycache__/
+*.py[cod]
 
 # Node.js dependencies
 /client/node_modules/
