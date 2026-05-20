@@ -1,6 +1,11 @@
 import * as React from "react";
 import AccessibilityNewRoundedIcon from "@mui/icons-material/AccessibilityNewRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import AllInclusiveRoundedIcon from "@mui/icons-material/AllInclusiveRounded";
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
@@ -9,14 +14,21 @@ import ModeCommentOutlinedIcon from "@mui/icons-material/ModeCommentOutlined";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import PrivacyTipOutlinedIcon from "@mui/icons-material/PrivacyTipOutlined";
+import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
+import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import communityStyles from "@/styles/community.module.css";
 import {
   COMMUNITY_FEED_NAV_ITEMS,
   COMMUNITY_RESOURCE_LINKS,
+  COMMUNITY_TOP_TIME_RANGE_ITEMS,
 } from "../constants";
 import { FOCUS_VISIBLE, cn } from "../design";
-import type { CommunityFeedCounts, CommunityFeedView } from "../types";
+import type {
+  CommunityFeedCounts,
+  CommunityFeedView,
+  CommunityTopTimeRange,
+} from "../types";
 
 const navIcons: Record<CommunityFeedView, typeof TrendingUpRoundedIcon> = {
   top: TrendingUpRoundedIcon,
@@ -33,25 +45,46 @@ const resourceIcons = [
   AccessibilityNewRoundedIcon,
 ];
 
+const timeRangeIcons: Record<
+  CommunityTopTimeRange,
+  typeof AccessTimeRoundedIcon
+> = {
+  "all-time": AllInclusiveRoundedIcon,
+  "past-year": EventRoundedIcon,
+  "past-month": CalendarMonthRoundedIcon,
+  "past-week": DateRangeRoundedIcon,
+  today: TodayRoundedIcon,
+  "past-hour": ScheduleRoundedIcon,
+};
+
 export function CommunitySidebar({
   activeView,
+  activeTimeRange,
   collapsed,
   compact,
   counts,
   onCollapsedChange,
+  onTimeRangeChange,
   onViewChange,
 }: {
   activeView: CommunityFeedView;
+  activeTimeRange: CommunityTopTimeRange;
   collapsed: boolean;
   compact: boolean;
   counts: CommunityFeedCounts;
   onCollapsedChange: (collapsed: boolean) => void;
+  onTimeRangeChange: (range: CommunityTopTimeRange) => void;
   onViewChange: (view: CommunityFeedView) => void;
 }) {
   const activeItem = COMMUNITY_FEED_NAV_ITEMS.find(
     (item) => item.id === activeView,
   );
   const ActiveIcon = navIcons[activeView];
+  const activeTimeItem = COMMUNITY_TOP_TIME_RANGE_ITEMS.find(
+    (item) => item.id === activeTimeRange,
+  );
+  const ActiveTimeIcon = timeRangeIcons[activeTimeRange];
+  const showTimeRange = activeView === "top";
   const drawerOpen = compact && !collapsed;
   const drawerRef = React.useRef<HTMLElement | null>(null);
   const toggleButtonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -101,7 +134,6 @@ export function CommunitySidebar({
 
   function handleViewChange(view: CommunityFeedView) {
     onViewChange(view);
-    if (compact) onCollapsedChange(true);
   }
 
   return (
@@ -156,12 +188,28 @@ export function CommunitySidebar({
       </button>
 
       {collapsed ? (
-        <div
-          className="hidden w-12 rounded-lg bg-[#171b4a] py-2 text-center text-white lg:block"
-          aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
-        >
-          <ActiveIcon sx={{ fontSize: 19 }} aria-hidden="true" />
-          <span className="sr-only">{activeItem?.label}</span>
+        <div className="hidden w-12 space-y-2 lg:block">
+          <div
+            className="rounded-lg bg-[#171b4a] py-2 text-center text-white"
+            aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
+          >
+            <ActiveIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            <span className="sr-only">{activeItem?.label}</span>
+          </div>
+          {showTimeRange ? (
+            <div
+              className="rounded-lg bg-[#11131d] py-2 text-center text-[#dce4ff]"
+              aria-label={
+                activeTimeItem
+                  ? `Current top time range: ${activeTimeItem.label}`
+                  : undefined
+              }
+              title={activeTimeItem?.label}
+            >
+              <ActiveTimeIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              <span className="sr-only">{activeTimeItem?.label}</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -228,6 +276,60 @@ export function CommunitySidebar({
           })}
         </div>
       </nav>
+
+      {showTimeRange ? (
+        <section
+          className={cn("mt-4 min-w-0", collapsed ? "hidden" : "")}
+          aria-label="Top feed time range"
+        >
+          <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#687184]">
+            Time
+          </p>
+          <div
+            className={cn(
+              drawerOpen
+                ? "grid grid-cols-2 gap-2"
+                : "flex gap-2 overflow-x-hidden pb-1 lg:flex-col lg:overflow-visible lg:pb-0",
+            )}
+            role="list"
+          >
+            {COMMUNITY_TOP_TIME_RANGE_ITEMS.map((item) => {
+              const active = activeTimeRange === item.id;
+              const Icon = timeRangeIcons[item.id];
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onTimeRangeChange(item.id)}
+                  aria-pressed={active}
+                  className={cn(
+                    "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors lg:min-w-0",
+                    drawerOpen ? "min-w-0" : "",
+                    active
+                      ? "bg-[#171b4a] text-white shadow-[inset_3px_0_0_#7b8cff]"
+                      : "text-[#a5adbf] hover:bg-white/[0.04] hover:text-[#f4f7ff]",
+                    FOCUS_VISIBLE,
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors",
+                      active
+                        ? "bg-[#5367ff] text-white"
+                        : "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
+                    )}
+                    aria-hidden="true"
+                  >
+                    <Icon sx={{ fontSize: 16 }} />
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <div
         className={cn("my-4", communityStyles.dividerTop, collapsed ? "hidden" : "")}

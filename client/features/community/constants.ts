@@ -1,4 +1,8 @@
-import type { CommunityFeedView, SeedPost } from "./types";
+import type {
+  CommunityFeedView,
+  CommunityTopTimeRange,
+  SeedPost,
+} from "./types";
 
 export const COMMUNITY_PAGE_WIDTH = "100%";
 export const COMMUNITY_FEED_NAV_ITEMS: Array<{
@@ -37,6 +41,17 @@ export const COMMUNITY_RESOURCE_LINKS = [
   "Privacy Policy",
   "User Agreement",
   "Accessibility",
+];
+export const COMMUNITY_TOP_TIME_RANGE_ITEMS: Array<{
+  id: CommunityTopTimeRange;
+  label: string;
+}> = [
+  { id: "all-time", label: "All time" },
+  { id: "past-year", label: "Past year" },
+  { id: "past-month", label: "Past month" },
+  { id: "past-week", label: "Past week" },
+  { id: "today", label: "Today" },
+  { id: "past-hour", label: "Past hour" },
 ];
 export const COMMUNITY_APP_RAIL_WIDTH_PX = 50;
 export const COMMUNITY_CONTENT_MAX_WIDTH_PX = 1180;

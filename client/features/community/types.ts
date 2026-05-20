@@ -7,6 +7,14 @@ export type CommunityFeedView =
 
 export type CommunityFeedCounts = Record<CommunityFeedView, number>;
 
+export type CommunityTopTimeRange =
+  | "all-time"
+  | "past-year"
+  | "past-month"
+  | "past-week"
+  | "today"
+  | "past-hour";
+
 export type DiscussionDraft = {
   title: string;
   body: string;
