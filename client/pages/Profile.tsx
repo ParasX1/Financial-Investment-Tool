@@ -37,8 +37,9 @@ function Profile() {
   const { user, loading } = useAuth()
 
   const [email, setEmail] = useState('')
-  const [fname, setFname] = useState('')
-  const [lname, setLname] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
 
@@ -51,20 +52,46 @@ function Profile() {
 
   useEffect(() => {
     if (loading || !user) return
+
     setEmail(user.email || '')
 
-    const load = async () => {
+    const loadProfile = async () => {
       const { data, error } = await supabase
         .from(PROFILE_TABLE)
         .select('first_name,last_name,avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (!error && data) {
-        setFname(data.first_name || '')
-        setLname(data.last_name || '')
-        setAvatarUrl(data.avatar_url || null)
+      if (isPhoneColumnError(error)) {
+        setPhoneColumnAvailable(false)
+        const fallback = await supabase
+          .from(PROFILE_TABLE)
+          .select('first_name,last_name,avatar_url')
+          .eq('id', user.id)
+          .single()
+
+        if (fallback.error) {
+          setMessage({ type: 'info', text: 'Profile details are ready to edit.' })
+          return
+        }
+
+        setFirstName(fallback.data?.first_name || '')
+        setLastName(fallback.data?.last_name || '')
+        setAvatarUrl(fallback.data?.avatar_url || null)
+        setPhone('')
+        return
       }
+
+      if (error) {
+        setMessage({ type: 'info', text: 'Profile details are ready to edit.' })
+        return
+      }
+
+      setPhoneColumnAvailable(true)
+      setFirstName(data?.first_name || '')
+      setLastName(data?.last_name || '')
+      setAvatarUrl(data?.avatar_url || null)
+      setPhone(data?.phone || '')
     }
 
     load()
@@ -85,6 +112,13 @@ function Profile() {
 
   const handleSaveProfile = async () => {
     if (!user) return
+
+    const { values, valid } = validateProfile()
+    if (!valid) {
+      setMessage({ type: 'error', text: 'Fix the highlighted fields before saving.' })
+      return
+    }
+
     setSaving(true)
     setMsg(null)
 
@@ -105,9 +139,9 @@ function Profile() {
     setMsg(error ? `Save failed: ${error.message}` : 'Profile saved successfully.')
   }
 
-  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) return
-    const file = e.target.files?.[0]
+    const file = event.target.files?.[0]
     if (!file) return
 
     setMsg(null)
@@ -313,6 +347,7 @@ function Profile() {
                   <input className={inputClass} value={email} readOnly placeholder="alex.johnson@example.com" />
                 </div>
               </div>
+            </aside>
 
               <button
                 className="mt-7 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-600 px-6 py-3 text-base font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
@@ -421,6 +456,7 @@ function Profile() {
           </div>
         </main>
       </div>
+      <span className="text-xs text-zinc-500 sm:text-right">{time}</span>
     </div>
   )
 }
