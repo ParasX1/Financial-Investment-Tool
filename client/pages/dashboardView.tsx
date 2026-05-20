@@ -364,7 +364,7 @@ const DashboardView: React.FC = () => {
                                 alignItems: 'flex-end',
                                 gap: 'clamp(10px, 1vw, 16px)',
                                 flexWrap: { xs: 'wrap', lg: 'nowrap' },
-                                mt: 7,
+                                mt: 0,
                                 minHeight: 0,
                             }}
                         >
