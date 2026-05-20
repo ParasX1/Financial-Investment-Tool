@@ -1,5 +1,6 @@
 "use client"
  
+import { useState } from 'react';
 import { CssBaseline, Box, Button, Divider, Grid, ThemeProvider, Typography, } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
@@ -8,12 +9,13 @@ import SecurityIcon from '@mui/icons-material/Security';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { SvgIconComponent } from '@mui/icons-material';
 import BoltIcon from '@mui/icons-material/Bolt';
-import pic1 from '@/src/assets/pic1.jpg';
-import pic2 from '@/src/assets/pic2.jpg';
+import pic1 from '@/assets/graphs.png';
+import pic2 from '@/assets/teamimage.png';
 import { theme } from '@/styles/theme';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/authContext';
 import { Navbar } from '@/components/navbar';
+import ModalLogin from '@/components/Modal/ModalLogin';
  
  
 function PowerfulFeaturesCard({ title, introduction, themeColor, Icon }: { title: string, introduction: string, themeColor: string, Icon: SvgIconComponent }) {
@@ -71,6 +73,7 @@ export default function Index() {
  
     const router = useRouter()
     const { user } = useAuth()
+    const [showLogin, setShowLogin] = useState(false)
  
     return (
         <>
@@ -144,7 +147,7 @@ export default function Index() {
                         <Typography color="text.secondary" sx={{ textAlign: "center" }}>Everything you need for sophisticated investment analysis</Typography>
                         <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
                             {powerfulFeaturesList.map((item, index) => (
-                                <Grid size={{ xs: 12, sm: 4 }} key={item.title}>
+                                <Grid item xs={12} sm={4} key={item.title}>
                                     <PowerfulFeaturesCard
                                         title={item.title}
                                         introduction={item.introduction}
@@ -179,7 +182,7 @@ export default function Index() {
                             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>Built for Modern Investors</Typography>
                             <Typography color="text.secondary">FIT was created by a team of quantitative analysts, software engineers, and portfolio managers who understand the challenges of modern investing.</Typography>
                             <Typography color="text.secondary">Our mission is to democratize sophisticated financial analytics, making institutional-grade tools accessible to individual investors and portfolio managers worldwide.</Typography>
-                            <Typography color="text.secondary">Whether you're managing a personal portfolio or overseeing institutional assets, FIT provides the insights you need to make informed, data-driven investment decisions.</Typography>
+                            <Typography color="text.secondary">Whether you&apos;re managing a personal portfolio or overseeing institutional assets, FIT provides the insights you need to make informed, data-driven investment decisions.</Typography>
                         </Box>
                         <Box sx={{ width: '50%', display: 'flex', justifyContent: 'center' }}>
                             <Box component="img" alt="frontpage pic 2" src={pic2.src} sx={{ width: '100%', borderRadius: 2 }} />
@@ -210,6 +213,7 @@ export default function Index() {
                 </Box>
  
                 <Divider id="info"/>
+                <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
  
                 {/* Footer */}
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, py: 6 }}>
