@@ -20,6 +20,7 @@ import type {
   CommentUI,
   CommentsState,
   CommunityFeedView,
+  CommunityTopTimeRange,
   DiscussionDraft,
   DiscussionDraftField,
   FeedbackMessage,
@@ -60,6 +61,7 @@ type CommunityMemoryCache = {
 let communityMemoryCache: CommunityMemoryCache | null = null;
 let rememberedCommunityUserId: string | null = null;
 let rememberedCommunityFeedView: CommunityFeedView = "top";
+let rememberedCommunityTopTimeRange: CommunityTopTimeRange = "all-time";
 let rememberedCommunityQuery = "";
 
 export function useCommunityController(supabase: SupabaseClient | null) {
@@ -71,6 +73,8 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   const [feedView, setFeedViewState] = React.useState<CommunityFeedView>(
     rememberedCommunityFeedView,
   );
+  const [topTimeRange, setTopTimeRangeState] =
+    React.useState<CommunityTopTimeRange>(rememberedCommunityTopTimeRange);
   const [draft, setDraft] = React.useState<DiscussionDraft>(
     EMPTY_DISCUSSION_DRAFT,
   );
@@ -119,6 +123,14 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     setFeedViewState(nextView);
   }, []);
 
+  const setTopTimeRange = React.useCallback(
+    (nextRange: CommunityTopTimeRange) => {
+      rememberedCommunityTopTimeRange = nextRange;
+      setTopTimeRangeState(nextRange);
+    },
+    [],
+  );
+
   React.useEffect(() => {
     if (!supabase) return;
 
@@ -137,6 +149,10 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   React.useEffect(() => {
     rememberedCommunityFeedView = feedView;
   }, [feedView]);
+
+  React.useEffect(() => {
+    rememberedCommunityTopTimeRange = topTimeRange;
+  }, [topTimeRange]);
 
   const applyAuthUserId = React.useCallback((nextUserId: string | null) => {
     rememberedCommunityUserId = nextUserId;
@@ -366,11 +382,20 @@ export function useCommunityController(supabase: SupabaseClient | null) {
       posts,
       query,
       view: feedView,
+      topTimeRange,
       likedPostIds,
       commentsState,
       currentUserId,
     });
-  }, [commentsState, currentUserId, feedView, likedPostIds, posts, query]);
+  }, [
+    commentsState,
+    currentUserId,
+    feedView,
+    likedPostIds,
+    posts,
+    query,
+    topTimeRange,
+  ]);
 
   const feedCounts = React.useMemo(
     () =>
@@ -735,6 +760,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
   return {
     query,
     feedView,
+    topTimeRange,
     draft,
     creating,
     loadingCommunity,
@@ -750,6 +776,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
     currentUserId,
     setQuery,
     setFeedView,
+    setTopTimeRange,
     setDraftField,
     toggleDraftTag,
     clearDraftTags,

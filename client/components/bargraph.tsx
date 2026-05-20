@@ -33,6 +33,7 @@ interface BarGraphProps {
         height?: number;
         barColor?: string;
         lineColors?: string[];
+        compact?: boolean;
     }
   
     const BarGraph: React.FC<BarGraphProps> = ({
@@ -40,18 +41,22 @@ interface BarGraphProps {
         width = 500,
         height = 300,
         barColor = '#fc03d7',
-        lineColors = ['#FF0000', '#008000', '#0000FF']
+        lineColors = ['#FF0000', '#008000', '#0000FF'],
+        compact = false
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
-        const t = 30;
-        const r = 30;
-        const b = 58;
-        const l = 50;
+        const t = compact ? 8 : 30;
+        const r = compact ? 18 : 30;
+        const b = compact ? 34 : 58;
+        const l = compact ? 42 : 50;
         const margin = {t,r,b,l};
         const graphWidth = width- l - r;
         const graphHeight = height -t -b;
+        const yTickCount = compact
+            ? Math.max(3, Math.min(6, Math.floor(graphHeight / 24)))
+            : Math.max(4, Math.min(8, Math.floor(graphHeight / 30)));
         // scales 
         const xScale = d3.scaleBand().domain(data.map((d) => d.label))
             .range([0, graphWidth]).padding(0.2);
@@ -135,6 +140,7 @@ interface BarGraphProps {
         .call(xGridLines);
 
     const yGridLines = d3.axisLeft(yScale)
+        .ticks(yTickCount)
         .tickSize(-graphWidth)
         .tickFormat('' as any);
     g.append('g')
@@ -153,7 +159,7 @@ interface BarGraphProps {
         .attr('transform', `translate(0,${yScale(0)})`)
         .call(d3.axisBottom(xScale));
     const yAxis = g.append('g')
-        .call(d3.axisLeft(yScale));
+        .call(d3.axisLeft(yScale).ticks(yTickCount));
 
     xAxis.selectAll('.domain')
         .attr('stroke', AXIS_COLOR)
@@ -169,11 +175,13 @@ interface BarGraphProps {
         .attr('stroke-dasharray', '3 4');
     xAxis.selectAll('text')
         .attr('fill', TEXT_COLOR)
-        .attr('font-size', 16);
-    yAxis.selectAll('text').attr('fill', TEXT_COLOR);
+        .attr('font-size', compact ? 13 : 16);
+    yAxis.selectAll('text')
+        .attr('fill', TEXT_COLOR)
+        .attr('font-size', compact ? 11 : 12);
 
         
-    }, [data, width, height, barColor, lineColors]);
+    }, [data, width, height, barColor, lineColors, compact]);
   
     return (
         <>

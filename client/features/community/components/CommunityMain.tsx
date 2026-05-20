@@ -5,7 +5,6 @@ import {
   COMMUNITY_APP_RAIL_WIDTH_PX,
   COMMUNITY_COMPACT_MEDIA_QUERY,
   COMMUNITY_CONTENT_MAX_WIDTH_PX,
-  COMMUNITY_FEED_NAV_ITEMS,
   COMMUNITY_PAGE_WIDTH,
   COMMUNITY_SIDEBAR_FLOAT_GAP_PX,
   COMMUNITY_SIDEBAR_COLLAPSED_WIDTH_PX,
@@ -13,9 +12,15 @@ import {
   COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX,
   COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX,
 } from "../constants";
+import {
+  getCommunityCreateHref,
+  getCommunityFeedHref,
+  getCommunityFeedViewFromQuery,
+  getCommunityTopTimeRangeFromQuery,
+} from "../communityRouting";
 import { cn, communityUi } from "../design";
 import communityStyles from "@/styles/community.module.css";
-import type { CommunityFeedView } from "../types";
+import type { CommunityFeedView, CommunityTopTimeRange } from "../types";
 import { useCommunityController } from "../useCommunityController";
 import { isDiscussionDraftDirty } from "../utils";
 import { CommunityComposer } from "./CommunityComposer";
@@ -26,9 +31,6 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { EmptyState, LoadingDiscussions } from "./CommunityStates";
 import { PostCard } from "./PostCard";
 
-const communityFeedViewIds = new Set(
-  COMMUNITY_FEED_NAV_ITEMS.map((item) => item.id),
-);
 const communityLayoutStyle = {
   "--community-app-rail-width": `var(--app-sidebar-width, ${COMMUNITY_APP_RAIL_WIDTH_PX}px)`,
   "--community-content-max-width": `${COMMUNITY_CONTENT_MAX_WIDTH_PX}px`,
@@ -47,29 +49,6 @@ const communityLayoutStyle = {
 
 let rememberedDesktopSidebarCollapsed = false;
 
-function isCommunityFeedView(value: string): value is CommunityFeedView {
-  return communityFeedViewIds.has(value as CommunityFeedView);
-}
-
-function getCommunityFeedHref(view: CommunityFeedView, query: string) {
-  const params = new URLSearchParams();
-  params.set("view", view);
-
-  const trimmedQuery = query.trim();
-  if (trimmedQuery) params.set("q", trimmedQuery);
-
-  const serialized = params.toString();
-  return serialized ? `/Community?${serialized}` : "/Community";
-}
-
-function getCommunityCreateHref(view: CommunityFeedView, query: string) {
-  const feedHref = getCommunityFeedHref(view, query);
-  const queryStart = feedHref.indexOf("?");
-  return queryStart === -1
-    ? "/CommunityCreate"
-    : `/CommunityCreate${feedHref.slice(queryStart)}`;
-}
-
 export function CommunityMain({
   mode = "feed",
   supabase,
@@ -79,7 +58,7 @@ export function CommunityMain({
 }) {
   const router = useRouter();
   const community = useCommunityController(supabase);
-  const { pushFeedback, setFeedView, setQuery } = community;
+  const { pushFeedback, setFeedView, setQuery, setTopTimeRange } = community;
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(
     rememberedDesktopSidebarCollapsed,
   );
@@ -234,15 +213,28 @@ export function CommunityMain({
 
     const queryView = router.query.view;
     const querySearch = router.query.q;
+    const queryTime = router.query.time;
 
-    if (typeof queryView === "string" && isCommunityFeedView(queryView)) {
-      setFeedView(queryView);
-    } else {
-      setFeedView("top");
-    }
+    const nextView = getCommunityFeedViewFromQuery(queryView);
+    const nextTopTimeRange = getCommunityTopTimeRangeFromQuery(
+      nextView,
+      queryTime,
+    );
+
+    setFeedView(nextView);
+
+    if (nextTopTimeRange) setTopTimeRange(nextTopTimeRange);
 
     setQuery(typeof querySearch === "string" ? querySearch : "");
-  }, [router.isReady, router.query.q, router.query.view, setFeedView, setQuery]);
+  }, [
+    router.isReady,
+    router.query.q,
+    router.query.time,
+    router.query.view,
+    setFeedView,
+    setQuery,
+    setTopTimeRange,
+  ]);
 
   const navigateWithDraftGuard = React.useCallback(
     (key: string, navigate: () => void) => {
@@ -273,22 +265,56 @@ export function CommunityMain({
       if (mode === "create") {
         navigateWithDraftGuard(`feed:${view}`, () => {
           setFeedView(view);
-          router.push(getCommunityFeedHref(view, community.query));
+          router.push(
+            getCommunityFeedHref(
+              view,
+              community.query,
+              community.topTimeRange,
+            ),
+          );
         });
         return;
       }
 
       setFeedView(view);
-      router.replace(getCommunityFeedHref(view, community.query), undefined, {
-        shallow: true,
-      });
+      router.replace(
+        getCommunityFeedHref(view, community.query, community.topTimeRange),
+        undefined,
+        {
+          shallow: true,
+        },
+      );
     },
-    [community.query, mode, navigateWithDraftGuard, router, setFeedView],
+    [
+      community.query,
+      community.topTimeRange,
+      mode,
+      navigateWithDraftGuard,
+      router,
+      setFeedView,
+    ],
+  );
+
+  const handleTopTimeRangeChange = React.useCallback(
+    (range: CommunityTopTimeRange) => {
+      setTopTimeRange(range);
+      const href =
+        mode === "create"
+          ? getCommunityCreateHref(community.feedView, community.query, range)
+          : getCommunityFeedHref(community.feedView, community.query, range);
+
+      router.replace(href, undefined, { shallow: true });
+    },
+    [community.feedView, community.query, mode, router, setTopTimeRange],
   );
 
   const handleSearchSubmit = React.useCallback(() => {
     const query = community.query.trim();
-    const href = getCommunityFeedHref(community.feedView, query);
+    const href = getCommunityFeedHref(
+      community.feedView,
+      query,
+      community.topTimeRange,
+    );
 
     if (mode === "create") {
       navigateWithDraftGuard("search", () => {
@@ -298,7 +324,14 @@ export function CommunityMain({
     }
 
     router.replace(href, undefined, { shallow: true });
-  }, [community.feedView, community.query, mode, navigateWithDraftGuard, router]);
+  }, [
+    community.feedView,
+    community.query,
+    community.topTimeRange,
+    mode,
+    navigateWithDraftGuard,
+    router,
+  ]);
 
   const handleToolbarActionClick = React.useCallback(
     (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -306,10 +339,23 @@ export function CommunityMain({
 
       event.preventDefault();
       navigateWithDraftGuard("back-to-feed", () => {
-        router.push(getCommunityFeedHref(community.feedView, community.query));
+        router.push(
+          getCommunityFeedHref(
+            community.feedView,
+            community.query,
+            community.topTimeRange,
+          ),
+        );
       });
     },
-    [community.feedView, community.query, mode, navigateWithDraftGuard, router],
+    [
+      community.feedView,
+      community.query,
+      community.topTimeRange,
+      mode,
+      navigateWithDraftGuard,
+      router,
+    ],
   );
 
   return (
@@ -362,10 +408,12 @@ export function CommunityMain({
             >
               <CommunitySidebar
                 activeView={community.feedView}
+                activeTimeRange={community.topTimeRange}
                 collapsed={sidebarCollapsed}
                 compact={compactSidebar}
                 counts={community.feedCounts}
                 onCollapsedChange={handleSidebarCollapsedChange}
+                onTimeRangeChange={handleTopTimeRangeChange}
                 onViewChange={handleFeedViewChange}
               />
             </div>
@@ -375,8 +423,16 @@ export function CommunityMain({
             <CommunityToolbar
               actionHref={
                 mode === "create"
-                  ? getCommunityFeedHref(community.feedView, community.query)
-                  : getCommunityCreateHref(community.feedView, community.query)
+                  ? getCommunityFeedHref(
+                      community.feedView,
+                      community.query,
+                      community.topTimeRange,
+                    )
+                  : getCommunityCreateHref(
+                      community.feedView,
+                      community.query,
+                      community.topTimeRange,
+                    )
               }
               actionLabel={mode === "create" ? "Back" : "Create post"}
               actionType={mode === "create" ? "back" : "create"}
@@ -409,7 +465,11 @@ export function CommunityMain({
                   const created = await community.handleCreatePost();
                   if (created) {
                     router.push(
-                      getCommunityFeedHref(community.feedView, community.query),
+                      getCommunityFeedHref(
+                        community.feedView,
+                        community.query,
+                        community.topTimeRange,
+                      ),
                     );
                   }
                 }}
