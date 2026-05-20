@@ -1,6 +1,7 @@
 import {
   createLocalPost,
   getCommunityFeedCounts,
+  getTopTimeRangeCutoff,
   getVisibleCommunityPosts,
   isDiscussionDraftDirty,
   normalizeDiscussionDraft,
@@ -212,6 +213,93 @@ describe("Community feed filtering", () => {
       "post-1",
       "local-1",
     ]);
+  });
+
+  it("limits top discussions to the selected time range before sorting by votes", () => {
+    const now = new Date("2026-05-20T12:00:00Z").getTime();
+    const visible = getVisibleCommunityPosts({
+      posts: [
+        {
+          ...posts[0],
+          id: "older-popular",
+          votes: 100,
+          sortTime: now - 9 * 24 * 60 * 60 * 1000,
+        },
+        {
+          ...posts[1],
+          id: "recent-mid",
+          votes: 40,
+          sortTime: now - 2 * 24 * 60 * 60 * 1000,
+        },
+        {
+          ...posts[2],
+          id: "recent-top",
+          votes: 80,
+          sortTime: now - 60 * 60 * 1000,
+        },
+      ],
+      query: "",
+      view: "top",
+      topTimeRange: "past-week",
+      now,
+      likedPostIds: new Set(),
+      commentsState,
+      currentUserId: "user-1",
+    });
+
+    expect(visible.map((post) => post.id)).toEqual(["recent-top", "recent-mid"]);
+  });
+
+  it("does not apply the top time range to non-top feeds", () => {
+    const now = new Date("2026-05-20T12:00:00Z").getTime();
+    const visible = getVisibleCommunityPosts({
+      posts: [
+        {
+          ...posts[0],
+          id: "older-liked",
+          sortTime: now - 30 * 24 * 60 * 60 * 1000,
+        },
+        {
+          ...posts[1],
+          id: "recent-liked",
+          sortTime: now - 60 * 60 * 1000,
+        },
+      ],
+      query: "",
+      view: "liked",
+      topTimeRange: "past-hour",
+      now,
+      likedPostIds: new Set(["older-liked", "recent-liked"]),
+      commentsState,
+      currentUserId: "user-1",
+    });
+
+    expect(visible.map((post) => post.id)).toEqual([
+      "recent-liked",
+      "older-liked",
+    ]);
+  });
+
+  it("clamps past-month and past-year cutoffs around calendar boundaries", () => {
+    const monthCutoff = new Date(
+      getTopTimeRangeCutoff(
+        "past-month",
+        new Date("2026-05-31T12:00:00Z").getTime(),
+      ) ?? 0,
+    );
+    const yearCutoff = new Date(
+      getTopTimeRangeCutoff(
+        "past-year",
+        new Date("2024-02-29T12:00:00Z").getTime(),
+      ) ?? 0,
+    );
+
+    expect(monthCutoff.getFullYear()).toBe(2026);
+    expect(monthCutoff.getMonth()).toBe(3);
+    expect(monthCutoff.getDate()).toBe(30);
+    expect(yearCutoff.getFullYear()).toBe(2023);
+    expect(yearCutoff.getMonth()).toBe(1);
+    expect(yearCutoff.getDate()).toBe(28);
   });
 
   it("filters personal feed views without mixing unrelated posts", () => {

@@ -41,10 +41,7 @@ server/.env
 client/assets/.DS_Store
 client/pages/.DS_Store
 # Local environment files
-client/.env.local
-.env.local
-client/.env.locol
-.env.locol
+
 
 # OS files
 .DS_Store
