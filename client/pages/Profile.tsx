@@ -37,8 +37,9 @@ function Profile() {
   const { user, loading } = useAuth()
 
   const [email, setEmail] = useState('')
-  const [fname, setFname] = useState('')
-  const [lname, setLname] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  // const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
 
@@ -51,23 +52,54 @@ function Profile() {
 
   useEffect(() => {
     if (loading || !user) return
+
     setEmail(user.email || '')
 
-    const load = async () => {
+    const loadProfile = async () => {
       const { data, error } = await supabase
         .from(PROFILE_TABLE)
         .select('first_name,last_name,avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (!error && data) {
-        setFname(data.first_name || '')
-        setLname(data.last_name || '')
-        setAvatarUrl(data.avatar_url || null)
+      // Keep this fallback around in case phone support is reintroduced.
+      // It needs these missing pieces before it can be enabled again:
+      // isPhoneColumnError, setPhoneColumnAvailable, and a phone field in the select/upsert/UI.
+      //
+      // if (isPhoneColumnError(error)) {
+      //   setPhoneColumnAvailable(false)
+      //   const fallback = await supabase
+      //     .from(PROFILE_TABLE)
+      //     .select('first_name,last_name,avatar_url')
+      //     .eq('id', user.id)
+      //     .single()
+      //
+      //   if (fallback.error) {
+      //     setMessage({ type: 'info', text: 'Profile details are ready to edit.' })
+      //     return
+      //   }
+      //
+      //   setFirstName(fallback.data?.first_name || '')
+      //   setLastName(fallback.data?.last_name || '')
+      //   setAvatarUrl(fallback.data?.avatar_url || null)
+      //   setPhone('')
+      //   return
+      // }
+
+      if (error) {
+        // Previously used setMessage({ type: 'info', text: ... }); this page currently uses msg/setMsg.
+        setMsg('Profile details are ready to edit.')
+        return
       }
+
+      // setPhoneColumnAvailable(true)
+      setFirstName(data?.first_name || '')
+      setLastName(data?.last_name || '')
+      setAvatarUrl(data?.avatar_url || null)
+      // setPhone(data?.phone || '')
     }
 
-    load()
+    loadProfile()
   }, [loading, user])
 
   useEffect(() => {
@@ -77,14 +109,23 @@ function Profile() {
   }, [avatarPreviewUrl])
 
   const initials = useMemo(() => {
-    const first = fname.trim().charAt(0)
-    const last = lname.trim().charAt(0)
+    const first = firstName.trim().charAt(0)
+    const last = lastName.trim().charAt(0)
     const fromEmail = email.trim().charAt(0)
     return `${first || fromEmail || 'A'}${last || ''}`.toUpperCase()
-  }, [email, fname, lname])
+  }, [email, firstName, lastName])
 
   const handleSaveProfile = async () => {
     if (!user) return
+
+    // Profile validation can be restored here when validateProfile is reintroduced.
+    //
+    // const { values, valid } = validateProfile()
+    // if (!valid) {
+    //   setMessage({ type: 'error', text: 'Fix the highlighted fields before saving.' })
+    //   return
+    // }
+
     setSaving(true)
     setMsg(null)
 
@@ -93,8 +134,8 @@ function Profile() {
       .upsert(
         {
           id: user.id,
-          first_name: fname,
-          last_name: lname,
+          first_name: firstName,
+          last_name: lastName,
           email,
           avatar_url: avatarUrl,
         },
@@ -105,22 +146,22 @@ function Profile() {
     setMsg(error ? `Save failed: ${error.message}` : 'Profile saved successfully.')
   }
 
-  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!user) return
-    const file = e.target.files?.[0]
+    const file = event.target.files?.[0]
     if (!file) return
 
     setMsg(null)
 
     if (!file.type.startsWith('image/')) {
       setMsg('Please choose an image file.')
-      e.target.value = ''
+      event.target.value = ''
       return
     }
 
     if (file.size > MAX_AVATAR_SIZE) {
       setMsg('Upload failed: image must be 5MB or smaller.')
-      e.target.value = ''
+      event.target.value = ''
       return
     }
 
@@ -144,7 +185,7 @@ function Profile() {
           ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist. Create that bucket or set NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET to an existing bucket.`
           : `Upload failed: ${uploadError.message}`
       )
-      e.target.value = ''
+      event.target.value = ''
       return
     }
 
@@ -165,7 +206,7 @@ function Profile() {
     } else {
       setMsg('Avatar updated successfully.')
     }
-    e.target.value = ''
+    event.target.value = ''
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -275,8 +316,8 @@ function Profile() {
                     </span>
                     <input
                       className={inputClass}
-                      value={fname}
-                      onChange={(e) => setFname(e.target.value)}
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       placeholder="Alex"
                     />
                   </div>
@@ -293,8 +334,8 @@ function Profile() {
                     </span>
                     <input
                       className={inputClass}
-                      value={lname}
-                      onChange={(e) => setLname(e.target.value)}
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       placeholder="Johnson"
                     />
                   </div>
@@ -313,6 +354,8 @@ function Profile() {
                   <input className={inputClass} value={email} readOnly placeholder="alex.johnson@example.com" />
                 </div>
               </div>
+              {/* This used to close an <aside>, but the surrounding element is a <section>. */}
+              {/* </aside> */}
 
               <button
                 className="mt-7 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-600 px-6 py-3 text-base font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
@@ -421,6 +464,8 @@ function Profile() {
           </div>
         </main>
       </div>
+      {/* Restore this if a time value is added back to the component. */}
+      {/* <span className="text-xs text-zinc-500 sm:text-right">{time}</span> */}
     </div>
   )
 }

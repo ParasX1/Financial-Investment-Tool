@@ -163,9 +163,8 @@
   }
 
   .sidebarPinned {
-    position: fixed;
+    position: sticky;
     top: var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem));
-    left: calc(var(--community-app-rail-width) + 2.5rem + max(0px, (100vw - var(--community-app-rail-width) - 5rem - var(--community-content-max-width)) / 2));
     z-index: 820;
     max-height: calc(100vh - var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem)) - 16px);
     overflow-y: auto;

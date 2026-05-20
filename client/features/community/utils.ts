@@ -10,6 +10,7 @@ import type {
   CommentsState,
   CommunityFeedCounts,
   CommunityFeedView,
+  CommunityTopTimeRange,
   DBPost,
   DiscussionDraft,
   DiscussionPostInput,
@@ -290,6 +291,56 @@ function matchesCommunitySearch(post: PostUI, query: string) {
     .includes(normalizedQuery);
 }
 
+export function getTopTimeRangeCutoff(
+  range: CommunityTopTimeRange,
+  now = Date.now(),
+) {
+  if (range === "all-time") return null;
+
+  const current = new Date(now);
+
+  if (range === "past-hour") {
+    return now - 60 * 60 * 1000;
+  }
+
+  if (range === "today") {
+    return new Date(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate(),
+    ).getTime();
+  }
+
+  const getCalendarMonthCutoff = (monthsBack: number) => {
+    const cutoff = new Date(now);
+    const currentDay = cutoff.getDate();
+
+    cutoff.setDate(1);
+    cutoff.setMonth(cutoff.getMonth() - monthsBack);
+
+    const lastDayOfTargetMonth = new Date(
+      cutoff.getFullYear(),
+      cutoff.getMonth() + 1,
+      0,
+    ).getDate();
+    cutoff.setDate(Math.min(currentDay, lastDayOfTargetMonth));
+
+    return cutoff.getTime();
+  };
+
+  if (range === "past-week") {
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 7);
+    return cutoff.getTime();
+  }
+
+  if (range === "past-month") {
+    return getCalendarMonthCutoff(1);
+  }
+
+  return getCalendarMonthCutoff(12);
+}
+
 export function getCommunityFeedCounts({
   posts,
   likedPostIds,
@@ -318,6 +369,8 @@ export function getVisibleCommunityPosts({
   posts,
   query,
   view,
+  topTimeRange = "all-time",
+  now = Date.now(),
   likedPostIds,
   commentsState,
   currentUserId,
@@ -325,6 +378,8 @@ export function getVisibleCommunityPosts({
   posts: PostUI[];
   query: string;
   view: CommunityFeedView;
+  topTimeRange?: CommunityTopTimeRange;
+  now?: number;
   likedPostIds: Set<string>;
   commentsState: CommentsState;
   currentUserId: string | null;
@@ -350,7 +405,13 @@ export function getVisibleCommunityPosts({
   });
 
   if (view === "top") {
-    return [...scopedPosts].sort((a, b) => b.votes - a.votes);
+    const cutoff = getTopTimeRangeCutoff(topTimeRange, now);
+    const timeScopedPosts =
+      cutoff === null
+        ? scopedPosts
+        : scopedPosts.filter((post) => post.sortTime >= cutoff);
+
+    return [...timeScopedPosts].sort((a, b) => b.votes - a.votes);
   }
 
   return [...scopedPosts].sort((a, b) => b.sortTime - a.sortTime);
