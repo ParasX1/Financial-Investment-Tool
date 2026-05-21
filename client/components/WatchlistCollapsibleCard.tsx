@@ -81,6 +81,15 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
           onActivate={handleActivate}
           onUpdateSettings={handleUpdateSettings}
           height={height}
+          /*
+           * These values are already folded into cardSettings above.
+           * Keep the old prop names here as context from the DevBranch merge,
+           * but do not pass them until StockChartCardProps supports them.
+           *
+           * defaultStart={defaultStart}
+           * defaultEnd={defaultEnd}
+           * color={color}
+           */
           showSwap={false}
         />
       </Box>
