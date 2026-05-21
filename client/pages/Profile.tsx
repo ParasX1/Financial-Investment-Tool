@@ -18,7 +18,7 @@ const recentActivities = [
   },
   {
     title: 'Updated Watchlist',
-    detail: 'Added TSLA, AMZN to watchlist',
+    detail: 'Added TSLA and AMZN to watchlist',
     time: '5 days ago',
   },
   {
@@ -39,7 +39,7 @@ function Profile() {
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  // const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
 
@@ -58,45 +58,19 @@ function Profile() {
     const loadProfile = async () => {
       const { data, error } = await supabase
         .from(PROFILE_TABLE)
-        .select('first_name,last_name,avatar_url')
+        .select('first_name,last_name,phone,avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
-      // Keep this fallback around in case phone support is reintroduced.
-      // It needs these missing pieces before it can be enabled again:
-      // isPhoneColumnError, setPhoneColumnAvailable, and a phone field in the select/upsert/UI.
-      //
-      // if (isPhoneColumnError(error)) {
-      //   setPhoneColumnAvailable(false)
-      //   const fallback = await supabase
-      //     .from(PROFILE_TABLE)
-      //     .select('first_name,last_name,avatar_url')
-      //     .eq('id', user.id)
-      //     .single()
-      //
-      //   if (fallback.error) {
-      //     setMessage({ type: 'info', text: 'Profile details are ready to edit.' })
-      //     return
-      //   }
-      //
-      //   setFirstName(fallback.data?.first_name || '')
-      //   setLastName(fallback.data?.last_name || '')
-      //   setAvatarUrl(fallback.data?.avatar_url || null)
-      //   setPhone('')
-      //   return
-      // }
-
       if (error) {
-        // Previously used setMessage({ type: 'info', text: ... }); this page currently uses msg/setMsg.
         setMsg('Profile details are ready to edit.')
         return
       }
 
-      // setPhoneColumnAvailable(true)
       setFirstName(data?.first_name || '')
       setLastName(data?.last_name || '')
+      setPhone(data?.phone || '')
       setAvatarUrl(data?.avatar_url || null)
-      // setPhone(data?.phone || '')
     }
 
     loadProfile()
@@ -108,23 +82,23 @@ function Profile() {
     }
   }, [avatarPreviewUrl])
 
+  const displayName = useMemo(() => {
+    const name = `${firstName} ${lastName}`.trim()
+    return name || email.split('@')[0] || 'Profile'
+  }, [email, firstName, lastName])
+
   const initials = useMemo(() => {
     const first = firstName.trim().charAt(0)
     const last = lastName.trim().charAt(0)
     const fromEmail = email.trim().charAt(0)
-    return `${first || fromEmail || 'A'}${last || ''}`.toUpperCase()
+    return `${first || fromEmail || 'F'}${last || ''}`.toUpperCase()
   }, [email, firstName, lastName])
+
+  const userIdPreview = user?.id ? `${user.id.slice(0, 8)}-${user.id.slice(9, 13)}-${user.id.slice(14, 18)}...` : 'Not signed in'
+  const emailVerified = Boolean(user?.email_confirmed_at)
 
   const handleSaveProfile = async () => {
     if (!user) return
-
-    // Profile validation can be restored here when validateProfile is reintroduced.
-    //
-    // const { values, valid } = validateProfile()
-    // if (!valid) {
-    //   setMessage({ type: 'error', text: 'Fix the highlighted fields before saving.' })
-    //   return
-    // }
 
     setSaving(true)
     setMsg(null)
@@ -137,6 +111,7 @@ function Profile() {
           first_name: firstName,
           last_name: lastName,
           email,
+          phone,
           avatar_url: avatarUrl,
         },
         { onConflict: 'id' }
@@ -182,7 +157,7 @@ function Profile() {
       const bucketMissing = uploadError.message.toLowerCase().includes('bucket not found')
       setMsg(
         bucketMissing
-          ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist. Create that bucket or set NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET to an existing bucket.`
+          ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
           : `Upload failed: ${uploadError.message}`
       )
       event.target.value = ''
@@ -201,16 +176,12 @@ function Profile() {
       .from(PROFILE_TABLE)
       .upsert({ id: user.id, email, avatar_url: publicUrl }, { onConflict: 'id' })
 
-    if (profileError) {
-      setMsg(`Avatar uploaded, but profile save failed: ${profileError.message}`)
-    } else {
-      setMsg('Avatar updated successfully.')
-    }
+    setMsg(profileError ? `Avatar uploaded, but profile save failed: ${profileError.message}` : 'Avatar updated successfully.')
     event.target.value = ''
   }
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChangePassword = async (event: React.FormEvent) => {
+    event.preventDefault()
 
     if (!currentPassword) {
       setMsg('Please enter your current password.')
@@ -240,232 +211,198 @@ function Profile() {
     }
   }
 
-  const cardClass =
-    'rounded-3xl border border-white/8 bg-[#101014] p-7 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]'
-  const labelClass = 'mb-2 block text-sm font-medium text-white/65'
+  const cardClass = 'rounded-lg border border-white/70 bg-[#050505] p-8'
+  const labelClass = 'mb-2 block text-sm text-white/65'
   const inputClass =
-    'w-full rounded-xl border border-white/6 bg-[#1c1c21] px-12 py-3 text-base text-white outline-none transition focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 placeholder:text-white/30'
+    'h-14 w-full rounded-md border border-white/75 bg-[#1b1b1f] px-5 text-base text-white outline-none transition placeholder:text-white/30 focus:border-white focus:ring-2 focus:ring-white/10'
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
-      <div className="flex min-h-screen">
-        <Sidebar />
+    <div className="min-h-screen bg-black text-white">
+      <Sidebar />
 
-        <main className="flex-1 px-6 py-8 md:ml-[50px] md:px-10">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <main className="min-h-screen px-6 py-16 md:ml-[50px] md:px-12 lg:px-20">
+        <div className="mx-auto w-full max-w-[1728px]">
+          <header className="flex flex-col gap-6 border-b border-white/15 pb-16 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-4xl font-semibold tracking-tight text-white">Profile Settings</h1>
-              <p className="mt-2 text-lg text-white/55">Manage your account information and preferences</p>
+              <h1 className="text-4xl font-semibold tracking-normal text-white">Profile Settings</h1>
+              <p className="mt-4 text-xl text-white/70">Manage account details, verification, and security.</p>
             </div>
 
-            {msg && (
-              <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
-                {msg}
-              </div>
-            )}
+            <div className="inline-flex w-fit items-center gap-3 rounded-md border border-white/75 px-6 py-3 text-base text-emerald-200">
+              <span className="h-3 w-3 rounded-full bg-emerald-400" />
+              {emailVerified ? 'Email verified' : 'Email not verified'}
+            </div>
+          </header>
 
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Profile Picture</h2>
+          {msg && (
+            <div className="mt-8 rounded-md border border-white/30 bg-white/8 px-5 py-4 text-sm text-white/85">
+              {msg}
+            </div>
+          )}
 
-              <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-center">
-                <div className="relative h-24 w-24">
-                  {avatarPreviewUrl || avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      className="h-24 w-24 rounded-full object-cover"
-                      src={(avatarPreviewUrl || avatarUrl) ?? undefined}
-                      alt="avatar"
-                    />
-                  ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-fuchsia-600 text-4xl font-bold text-white">
-                      {initials}
-                    </div>
-                  )}
+          <div className="mt-9 grid grid-cols-1 gap-9 xl:grid-cols-[420px_minmax(0,1fr)]">
+            <div className="flex flex-col gap-9">
+              <section className={cardClass}>
+                <div className="flex items-center gap-9">
+                  <div className="h-[120px] w-[120px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
+                    {avatarPreviewUrl || avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="h-full w-full object-cover"
+                        src={(avatarPreviewUrl || avatarUrl) ?? undefined}
+                        alt="Profile avatar"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-zinc-950">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
 
-                  <label className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-600 shadow-lg shadow-blue-500/25">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-2">
-                      <path d="M4 8h3l2-2h6l2 2h3v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-                      <circle cx="12" cy="13" r="3.5" />
-                    </svg>
-                    <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
-                  </label>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <p className="text-base text-white/55">Upload a new profile picture. JPG or PNG, max 5MB.</p>
-                  <label className="inline-flex w-fit cursor-pointer rounded-xl border border-white/8 bg-[#1d1d22] px-5 py-2.5 text-sm font-medium text-white transition hover:border-white/14 hover:bg-[#24242a]">
-                    Choose File
-                    <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Personal Information</h2>
-
-              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className={labelClass}>First Name</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
-                        <path d="M5 20a7 7 0 0 1 14 0" />
-                      </svg>
-                    </span>
-                    <input
-                      className={inputClass}
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Alex"
-                    />
+                  <div className="min-w-0">
+                    <h2 className="truncate text-2xl font-semibold text-white">{displayName}</h2>
+                    <p className="mt-7 truncate text-base text-white/45">{email}</p>
                   </div>
                 </div>
 
-                <div>
-                  <label className={labelClass}>Last Name</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
-                        <path d="M5 20a7 7 0 0 1 14 0" />
-                      </svg>
+                <label className="mt-9 flex h-14 cursor-pointer items-center justify-center rounded-md border border-white/75 text-lg font-medium text-white transition hover:bg-white hover:text-black">
+                  Change avatar
+                  <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
+                </label>
+
+                <div className="mt-9 border-t border-white/15 pt-8">
+                  <div className="grid grid-cols-[80px_minmax(0,1fr)] gap-3 text-lg">
+                    <span className="text-white/50">User ID</span>
+                    <span className="truncate text-white">{userIdPreview}</span>
+
+                    <span className="text-white/50">Verification</span>
+                    <span className={emailVerified ? 'text-right text-emerald-300' : 'text-right text-amber-300'}>
+                      {emailVerified ? 'Verified' : 'Pending'}
                     </span>
-                    <input
-                      className={inputClass}
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Johnson"
-                    />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="mt-4">
-                <label className={labelClass}>Email Address</label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                      <path d="M4 6h16v12H4z" />
-                      <path d="m4 8 8 6 8-6" />
-                    </svg>
-                  </span>
-                  <input className={inputClass} value={email} readOnly placeholder="alex.johnson@example.com" />
-                </div>
-              </div>
-              {/* This used to close an <aside>, but the surrounding element is a <section>. */}
-              {/* </aside> */}
+              <section className={cardClass}>
+                <h2 className="text-2xl font-semibold text-white">Security</h2>
 
-              <button
-                className="mt-7 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-600 px-6 py-3 text-base font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={handleSaveProfile}
-                disabled={saving}
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                  <path d="M5 4h11l3 3v13H5z" />
-                  <path d="M8 4v6h8V4" />
-                  <path d="M9 17h6" />
-                </svg>
-                {saving ? 'Saving...' : 'Save Profile'}
-              </button>
-            </section>
-
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Change Password</h2>
-
-              <form className="mt-6 flex flex-col gap-4" onSubmit={handleChangePassword}>
-                <div>
-                  <label className={labelClass}>Current Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
+                <form className="mt-8 flex flex-col gap-5" onSubmit={handleChangePassword}>
+                  <div>
+                    <label className={labelClass}>Current password</label>
                     <input
                       type="password"
                       className={inputClass}
                       value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
+                      onChange={(event) => setCurrentPassword(event.target.value)}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className={labelClass}>New Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
+                  <div>
+                    <label className={labelClass}>New password</label>
                     <input
                       type="password"
                       className={inputClass}
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
+                      onChange={(event) => setNewPassword(event.target.value)}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className={labelClass}>Confirm New Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
+                  <div>
+                    <label className={labelClass}>Confirm new password</label>
                     <input
                       type="password"
                       className={inputClass}
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="mt-4 h-14 rounded-md border border-white/75 text-lg font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={updatingPass}
+                  >
+                    {updatingPass ? 'Updating password...' : 'Update password'}
+                  </button>
+                </form>
+              </section>
+            </div>
+
+            <div className="flex flex-col gap-9">
+              <section className={cardClass}>
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <h2 className="text-2xl font-semibold text-white">Personal Information</h2>
+                  <button
+                    type="button"
+                    className="h-14 w-full rounded-md bg-white px-10 text-lg font-medium text-black transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save profile'}
+                  </button>
+                </div>
+
+                <div className="mt-9 grid grid-cols-1 gap-7 md:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>First name</label>
+                    <input
+                      className={inputClass}
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                      placeholder="alex"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Last name</label>
+                    <input
+                      className={inputClass}
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
+                      placeholder="Z32323"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Email address</label>
+                    <input className={inputClass} value={email} readOnly placeholder="name@example.com" />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Phone</label>
+                    <input
+                      className={inputClass}
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      placeholder="+1 (415) 555-2671"
                     />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="mt-2 inline-flex w-fit items-center gap-2 rounded-xl border border-white/8 bg-[#1d1d22] px-5 py-3 text-base font-medium text-white transition hover:border-white/14 hover:bg-[#24242a] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={updatingPass}
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                    <rect x="5" y="10" width="14" height="10" rx="2" />
-                    <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                  </svg>
-                  {updatingPass ? 'Updating Password...' : 'Update Password'}
-                </button>
-              </form>
-            </section>
+                <p className="mt-7 text-sm text-white/45">
+                  Email changes are not trusted until the verification link is opened from the new inbox.
+                </p>
+              </section>
 
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Recent Activity</h2>
+              <section className={cardClass}>
+                <h2 className="text-2xl font-semibold text-white">Recent Activity</h2>
 
-              <div className="mt-6 divide-y divide-white/8">
-                {recentActivities.map((activity) => (
-                  <div key={activity.title} className="flex flex-col gap-2 py-5 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-xl font-medium text-white">{activity.title}</p>
-                      <p className="mt-1 text-base text-white/45">{activity.detail}</p>
+                <div className="mt-8 divide-y divide-white/15">
+                  {recentActivities.map((activity) => (
+                    <div key={activity.title} className="grid gap-3 py-8 md:grid-cols-[minmax(0,1fr)_120px]">
+                      <div>
+                        <p className="text-xl font-medium text-white">{activity.title}</p>
+                        <p className="mt-6 text-base text-white/45">{activity.detail}</p>
+                      </div>
+                      <span className="text-base text-white/45 md:text-right">{activity.time}</span>
                     </div>
-                    <span className="shrink-0 text-base text-white/35">{activity.time}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
-        </main>
-      </div>
-      {/* Restore this if a time value is added back to the component. */}
-      {/* <span className="text-xs text-zinc-500 sm:text-right">{time}</span> */}
+        </div>
+      </main>
     </div>
   )
 }
