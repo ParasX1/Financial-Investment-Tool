@@ -364,18 +364,18 @@ function Profile() {
     setMsg(error ? `Verification email failed: ${error.message}` : 'Verification email sent. Check your inbox.')
   }
 
-  const cardClass = 'rounded-lg border border-white/60 bg-[#050505] p-5'
-  const labelClass = 'mb-1.5 block text-sm text-white/65'
+  const cardClass = 'rounded-lg border border-white/60 bg-[#050505] p-4'
+  const labelClass = 'mb-1 block text-sm text-white/65'
   const inputClass =
-    'h-11 w-full rounded-md border border-white/65 bg-[#1b1b1f] px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white focus:ring-2 focus:ring-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-[#111113] disabled:text-white/45'
+    'h-10 w-full rounded-md border border-white/65 bg-[#1b1b1f] px-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white focus:ring-2 focus:ring-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-[#111113] disabled:text-white/45'
 
   return (
     <div className="min-h-screen bg-black text-white">
       <Sidebar />
 
-      <main className="min-h-screen px-5 py-8 md:ml-[50px] md:px-8 lg:px-12">
+      <main className="min-h-screen px-5 py-6 md:ml-[50px] md:px-8 lg:px-10">
         <div className="mx-auto w-full max-w-[1280px]">
-          <header className="flex flex-col gap-4 border-b border-white/15 pb-8 md:flex-row md:items-center md:justify-between">
+          <header className="flex flex-col gap-4 border-b border-white/15 pb-6 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-normal text-white">Profile Settings</h1>
               <p className="mt-2 text-base text-white/70">Manage account details, verification, and security.</p>
@@ -429,219 +429,216 @@ function Profile() {
             </div>
           )}
 
-          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-stretch">
-              <section className={`${cardClass} xl:col-start-1 xl:row-start-1`}>
-                <div className="flex items-center gap-5">
-                  <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
-                    {avatarPreviewUrl || avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        className="h-full w-full object-cover"
-                        src={(avatarPreviewUrl || avatarUrl) ?? undefined}
-                        alt="Profile avatar"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-zinc-950">
-                        {initials}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-w-0">
-                    <h2 className="truncate text-xl font-semibold text-white">{displayName}</h2>
-                    <p className="mt-3 truncate text-sm text-white/45">{email}</p>
-                  </div>
+          <div className="mt-5 grid grid-cols-1 items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+            <section className={`${cardClass} xl:col-start-1 xl:row-start-1 xl:self-stretch`}>
+              <div className="flex items-center gap-4">
+                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
+                  {avatarPreviewUrl || avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className="h-full w-full object-cover"
+                      src={(avatarPreviewUrl || avatarUrl) ?? undefined}
+                      alt="Profile avatar"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-zinc-950">
+                      {initials}
+                    </div>
+                  )}
                 </div>
 
-                <label
-                  className={`mt-6 flex h-11 items-center justify-center rounded-md border text-sm font-medium transition ${
-                    isEditing
-                      ? 'cursor-pointer border-white/65 text-white hover:bg-white hover:text-black'
-                      : 'cursor-not-allowed border-white/20 text-white/35'
-                  }`}
-                >
-                  Change avatar
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl font-semibold text-white">{displayName}</h2>
+                  <p className="mt-2 truncate text-sm text-white/45">{email}</p>
+                </div>
+              </div>
+
+              <label
+                className={`mt-4 flex h-10 items-center justify-center rounded-md border text-sm font-medium transition ${
+                  isEditing
+                    ? 'cursor-pointer border-white/65 text-white hover:bg-white hover:text-black'
+                    : 'cursor-not-allowed border-white/20 text-white/35'
+                }`}
+              >
+                Change avatar
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={!isEditing}
+                  onChange={onAvatarChange}
+                />
+              </label>
+
+              <div className="mt-4 border-t border-white/15 pt-4">
+                <div className="grid grid-cols-[78px_minmax(0,1fr)] gap-2 text-sm">
+                  <span className="text-white/50">User ID</span>
+                  <span className="truncate text-white">{userIdPreview}</span>
+
+                  <span className="text-white/50">Verification</span>
+                  <span className={emailVerified ? 'text-right text-emerald-300' : 'text-right text-amber-300'}>
+                    {emailVerified ? 'Verified' : 'Pending'}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section className={`${cardClass} xl:col-start-1 xl:row-start-2 xl:self-stretch`}>
+              <h2 className="text-xl font-semibold text-white">Security</h2>
+
+              <form className="mt-4 flex flex-col gap-3" onSubmit={handleChangePassword}>
+                <div>
+                  <label className={labelClass}>Current password</label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
+                    type="password"
+                    className={inputClass}
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
                     disabled={!isEditing}
-                    onChange={onAvatarChange}
                   />
-                </label>
-
-                <div className="mt-6 border-t border-white/15 pt-5">
-                  <div className="grid grid-cols-[78px_minmax(0,1fr)] gap-2 text-sm">
-                    <span className="text-white/50">User ID</span>
-                    <span className="truncate text-white">{userIdPreview}</span>
-
-                    <span className="text-white/50">Verification</span>
-                    <span className={emailVerified ? 'text-right text-emerald-300' : 'text-right text-amber-300'}>
-                      {emailVerified ? 'Verified' : 'Pending'}
-                    </span>
-                  </div>
                 </div>
-              </section>
 
-              <section className={`${cardClass} xl:col-start-1 xl:row-start-2`}>
-                <h2 className="text-xl font-semibold text-white">Security</h2>
+                <div>
+                  <label className={labelClass}>New password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
 
-                <form className="mt-5 flex flex-col gap-4" onSubmit={handleChangePassword}>
-                  <div>
-                    <label className={labelClass}>Current password</label>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      disabled={!isEditing}
-                    />
-                  </div>
+                <div>
+                  <label className={labelClass}>Confirm new password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
 
-                  <div>
-                    <label className={labelClass}>New password</label>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      disabled={!isEditing}
-                    />
-                  </div>
+                <button
+                  type="submit"
+                  className="mt-1 h-10 rounded-md border border-white/65 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!isEditing || updatingPass}
+                >
+                  {updatingPass ? 'Updating password...' : 'Update password'}
+                </button>
+              </form>
+            </section>
 
-                  <div>
-                    <label className={labelClass}>Confirm new password</label>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      disabled={!isEditing}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="mt-2 h-11 rounded-md border border-white/65 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={!isEditing || updatingPass}
-                  >
-                    {updatingPass ? 'Updating password...' : 'Update password'}
-                  </button>
-                </form>
-              </section>
-
-              <section className={`${cardClass} xl:col-start-2 xl:row-start-1`}>
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Personal Information</h2>
-                    <p className="mt-1 text-xs text-white/45">
-                      Locked by default to prevent accidental changes to sensitive account details.
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    {!emailVerified && (
-                      <button
-                        type="button"
-                        className="h-11 rounded-md border border-amber-300/60 px-4 text-sm text-amber-100 transition hover:bg-amber-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={handleResendVerification}
-                        disabled={sendingVerification}
-                      >
-                        {sendingVerification ? 'Sending...' : 'Verify email'}
-                      </button>
-                    )}
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-1 xl:self-stretch`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Personal Information</h2>
+                  <p className="mt-1 text-xs text-white/45">
+                    Locked by default to prevent accidental changes to sensitive account details.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  {!emailVerified && (
                     <button
                       type="button"
-                      className="h-11 w-full rounded-md bg-white px-7 text-sm font-medium text-black transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
-                      onClick={handleSaveProfile}
-                      disabled={!isEditing || saving}
+                      className="h-10 rounded-md border border-amber-300/60 px-4 text-sm text-amber-100 transition hover:bg-amber-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleResendVerification}
+                      disabled={sendingVerification}
                     >
-                      {saving ? 'Saving...' : 'Save profile'}
+                      {sendingVerification ? 'Sending...' : 'Verify email'}
                     </button>
-                  </div>
+                  )}
+                  <button
+                    type="button"
+                    className="h-10 w-full rounded-md bg-white px-6 text-sm font-medium text-black transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                    onClick={handleSaveProfile}
+                    disabled={!isEditing || saving}
+                  >
+                    {saving ? 'Saving...' : 'Save profile'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className={labelClass}>First name</label>
+                  <input
+                    className={inputClass}
+                    value={firstName}
+                    onChange={(event) => {
+                      setFirstName(sanitizeNameInput(event.target.value))
+                      setErrors((current) => ({ ...current, firstName: undefined }))
+                    }}
+                    placeholder="alex"
+                    disabled={!isEditing}
+                  />
+                  {errors.firstName && <p className="mt-1 text-xs text-red-300">{errors.firstName}</p>}
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <div>
-                    <label className={labelClass}>First name</label>
-                    <input
-                      className={inputClass}
-                      value={firstName}
-                      onChange={(event) => {
-                        setFirstName(sanitizeNameInput(event.target.value))
-                        setErrors((current) => ({ ...current, firstName: undefined }))
-                      }}
-                      placeholder="alex"
-                      disabled={!isEditing}
-                    />
-                    {errors.firstName && <p className="mt-1 text-xs text-red-300">{errors.firstName}</p>}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Last name</label>
-                    <input
-                      className={inputClass}
-                      value={lastName}
-                      onChange={(event) => {
-                        setLastName(sanitizeNameInput(event.target.value))
-                        setErrors((current) => ({ ...current, lastName: undefined }))
-                      }}
-                      placeholder="Z32323"
-                      disabled={!isEditing}
-                    />
-                    {errors.lastName && <p className="mt-1 text-xs text-red-300">{errors.lastName}</p>}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Email address</label>
-                    <input
-                      className={inputClass}
-                      value={email}
-                      onChange={(event) => {
-                        setEmail(sanitizeEmail(event.target.value))
-                        setErrors((current) => ({ ...current, email: undefined }))
-                      }}
-                      placeholder="name@example.com"
-                      disabled={!isEditing}
-                    />
-                    {errors.email && <p className="mt-1 text-xs text-red-300">{errors.email}</p>}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Phone</label>
-                    <input
-                      className={inputClass}
-                      value={phone}
-                      onChange={(event) => {
-                        setPhone(sanitizePhone(event.target.value))
-                        setErrors((current) => ({ ...current, phone: undefined }))
-                      }}
-                      placeholder="+1 (415) 555-2671"
-                      disabled={!isEditing}
-                    />
-                    {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone}</p>}
-                  </div>
+                <div>
+                  <label className={labelClass}>Last name</label>
+                  <input
+                    className={inputClass}
+                    value={lastName}
+                    onChange={(event) => {
+                      setLastName(sanitizeNameInput(event.target.value))
+                      setErrors((current) => ({ ...current, lastName: undefined }))
+                    }}
+                    placeholder="Z32323"
+                    disabled={!isEditing}
+                  />
+                  {errors.lastName && <p className="mt-1 text-xs text-red-300">{errors.lastName}</p>}
                 </div>
 
-                <p className="mt-5 text-sm text-white/45">
-                  Email changes are not trusted until the verification link is opened from the new inbox.
-                </p>
-              </section>
+                <div>
+                  <label className={labelClass}>Email address</label>
+                  <input
+                    className={inputClass}
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(sanitizeEmail(event.target.value))
+                      setErrors((current) => ({ ...current, email: undefined }))
+                    }}
+                    placeholder="name@example.com"
+                    disabled={!isEditing}
+                  />
+                  {errors.email && <p className="mt-1 text-xs text-red-300">{errors.email}</p>}
+                </div>
 
-              <section className={`${cardClass} xl:col-start-2 xl:row-start-2`}>
-                <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input
+                    className={inputClass}
+                    value={phone}
+                    onChange={(event) => {
+                      setPhone(sanitizePhone(event.target.value))
+                      setErrors((current) => ({ ...current, phone: undefined }))
+                    }}
+                    placeholder="+1 (415) 555-2671"
+                    disabled={!isEditing}
+                  />
+                  {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone}</p>}
+                </div>
+              </div>
 
-                <div className="mt-5 divide-y divide-white/15">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.title} className="grid gap-2 py-5 md:grid-cols-[minmax(0,1fr)_96px]">
-                      <div>
-                        <p className="text-base font-medium text-white">{activity.title}</p>
-                        <p className="mt-2 text-sm text-white/45">{activity.detail}</p>
-                      </div>
-                      <span className="text-sm text-white/45 md:text-right">{activity.time}</span>
+            </section>
+
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-2 xl:self-stretch`}>
+              <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
+
+              <div className="mt-4 divide-y divide-white/15">
+                {recentActivities.map((activity) => (
+                  <div key={activity.title} className="grid gap-1.5 py-3.5 md:grid-cols-[minmax(0,1fr)_96px]">
+                    <div>
+                      <p className="text-base font-medium text-white">{activity.title}</p>
+                      <p className="mt-1.5 text-sm text-white/45">{activity.detail}</p>
                     </div>
-                  ))}
-                </div>
-              </section>
+                    <span className="text-sm text-white/45 md:text-right">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
       </main>
