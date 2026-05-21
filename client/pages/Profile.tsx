@@ -429,9 +429,8 @@ function Profile() {
             </div>
           )}
 
-          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="flex flex-col gap-6">
-              <section className={cardClass}>
+          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-stretch">
+              <section className={`${cardClass} xl:col-start-1 xl:row-start-1`}>
                 <div className="flex items-center gap-5">
                   <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
                     {avatarPreviewUrl || avatarUrl ? (
@@ -484,7 +483,7 @@ function Profile() {
                 </div>
               </section>
 
-              <section className={cardClass}>
+              <section className={`${cardClass} xl:col-start-1 xl:row-start-2`}>
                 <h2 className="text-xl font-semibold text-white">Security</h2>
 
                 <form className="mt-5 flex flex-col gap-4" onSubmit={handleChangePassword}>
@@ -530,10 +529,8 @@ function Profile() {
                   </button>
                 </form>
               </section>
-            </div>
 
-            <div className="flex flex-col gap-6">
-              <section className={cardClass}>
+              <section className={`${cardClass} xl:col-start-2 xl:row-start-1`}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 className="text-xl font-semibold text-white">Personal Information</h2>
@@ -630,7 +627,7 @@ function Profile() {
                 </p>
               </section>
 
-              <section className={cardClass}>
+              <section className={`${cardClass} xl:col-start-2 xl:row-start-2`}>
                 <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
 
                 <div className="mt-5 divide-y divide-white/15">
@@ -645,7 +642,6 @@ function Profile() {
                   ))}
                 </div>
               </section>
-            </div>
           </div>
         </div>
       </main>
