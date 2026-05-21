@@ -251,7 +251,15 @@ function Profile() {
       <div className="flex min-h-screen">
         <Sidebar />
 
-        <main className="flex-1 px-6 py-8 md:ml-[50px] md:px-10">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 px-6 py-8 md:px-10"
+          style={{
+            marginLeft: 'var(--app-sidebar-width, 64px)',
+            transition: 'margin-left 200ms ease',
+          }}
+        >
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
             <div>
               <h1 className="text-4xl font-semibold tracking-tight text-white">Profile Settings</h1>

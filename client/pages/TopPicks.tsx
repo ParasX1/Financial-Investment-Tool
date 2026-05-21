@@ -161,7 +161,17 @@ export default function TopPicksPage() {
   return (
     <Box sx={{ display:'flex', minHeight:'100vh' }}>
       <Sidebar />
-      <Box sx={{ flex:1, pl:'50px', bgcolor:'black' }}>
+      <Box
+        component="main"
+        id="main-content"
+        tabIndex={-1}
+        sx={{
+          flex: 1,
+          pl: 'var(--app-sidebar-width, 64px)',
+          bgcolor: 'black',
+          transition: 'padding-left 200ms ease',
+        }}
+      >
         <Box sx={{ px:2, pt:2 }}>
           <Typography
             variant="h6"

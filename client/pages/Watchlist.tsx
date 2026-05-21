@@ -295,7 +295,17 @@ export default function WatchlistPage() {
       <CssBaseline />
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         <Sidebar />
-        <Box sx={{ flex: 1, pl: '50px', bgcolor: 'black' }}>
+        <Box
+          component="main"
+          id="main-content"
+          tabIndex={-1}
+          sx={{
+            flex: 1,
+            pl: 'var(--app-sidebar-width, 64px)',
+            bgcolor: 'black',
+            transition: 'padding-left 200ms ease',
+          }}
+        >
 
           {/* ── Sticky header (new UI glass style) ── */}
           <Paper elevation={0} sx={{
