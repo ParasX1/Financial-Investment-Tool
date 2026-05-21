@@ -53,7 +53,7 @@ export const COMMUNITY_TOP_TIME_RANGE_ITEMS: Array<{
   { id: "today", label: "Today" },
   { id: "past-hour", label: "Past hour" },
 ];
-export const COMMUNITY_APP_RAIL_WIDTH_PX = 50;
+export const COMMUNITY_APP_RAIL_WIDTH_PX = 64;
 export const COMMUNITY_CONTENT_MAX_WIDTH_PX = 1180;
 export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;
 export const COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX = 12;
