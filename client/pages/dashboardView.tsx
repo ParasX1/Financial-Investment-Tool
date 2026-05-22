@@ -306,12 +306,16 @@ const DashboardView: React.FC = () => {
             <div style={{ display: 'flex', height: '100%' }}>
                 <Sidebar />
                 <Box
+                    component="main"
+                    id="main-content"
+                    tabIndex={-1}
                     sx={{
                         flex: 1,
                         minWidth: 0,
                         height: '100vh',
                         overflow: 'hidden',
-                        paddingLeft: '50px',
+                        paddingLeft: 'var(--app-sidebar-width, 64px)',
+                        transition: 'padding-left 200ms ease',
                         backgroundColor: 'black',
                         display: 'flex',
                         flexDirection: 'column',

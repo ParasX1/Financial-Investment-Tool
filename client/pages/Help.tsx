@@ -259,25 +259,27 @@ const Help: React.FC = () => {
 
   const activeSection = helpSections.find((s) => s.id === activeId) ?? helpSections[0];
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const contentRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
   contentRef.current?.scrollTo({ top: 0 });
 }, [activeId]);
 
   return (
-    <>
-      {/* Left: App Sidebar */}      
-      <Sidebar onHoverChange={setSidebarOpen} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#07080a' }}>
+      <Sidebar />
       
-      <div style={{ 
-        marginLeft: sidebarOpen ? '200px' : '50px', 
-        transition: 'margin-left 0.3s ease', 
+      <div
+        id="main-content"
+        tabIndex={-1}
+        style={{
+        marginLeft: 'var(--app-sidebar-width, 64px)',
+        transition: 'margin-left 200ms ease',
         display: 'flex', 
         height: '100vh', 
         backgroundColor: '#0f1117', 
-        color: '#ffffff' }}>
+        color: '#ffffff',
+        }}
+      >
 
         {/* Middle: Help Center nav */}
         <div
@@ -401,7 +403,7 @@ const Help: React.FC = () => {
 
         </main>
       </div>
-  </>
+    </div>
   );
 };
 
