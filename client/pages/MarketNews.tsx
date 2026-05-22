@@ -259,9 +259,12 @@ const MarketNews: React.FC = () => {
 
       <Box
         component="main"
+        id="main-content"
+        tabIndex={-1}
         sx={{
           flex: 1,
-          ml: { xs: 0, md: '50px' },
+          ml: 'var(--app-sidebar-width, 64px)',
+          transition: 'margin-left 200ms ease',
           px: { xs: 2, md: 5 },
           py: { xs: 2, md: 4 },
           display: 'flex',

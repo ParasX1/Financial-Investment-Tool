@@ -155,24 +155,27 @@ const InfoCard: React.FC<InfoCardProps> = ({ iconClass, iconColor, title, childr
 const Guide: React.FC = () => {
   const [activeId, setActiveId] = useState<string>('sharpe-ratio');
   const active = guideSections.find((s) => s.id === activeId) ?? guideSections[0];
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   
 
   return (
-    <div style={{ 
-      marginLeft: sidebarOpen ? '200px' : '50px', 
-      transition: 'margin-left 0.3s ease', 
-      display: 'flex', 
-      height: '100vh', 
-      backgroundColor: '#0f1117', 
-      color: '#ffffff' }}>
-      
-      {/* Left: App Sidebar */}
-      <Sidebar onHoverChange={setSidebarOpen} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#07080a' }}>
+      <Sidebar />
 
-      {/* Middle: Guide nav */}
       <div
+        id="main-content"
+        tabIndex={-1}
         style={{
+          marginLeft: 'var(--app-sidebar-width, 64px)',
+          transition: 'margin-left 200ms ease',
+          display: 'flex',
+          height: '100vh',
+          backgroundColor: '#0f1117',
+          color: '#ffffff',
+        }}
+      >
+        {/* Middle: Guide nav */}
+        <div
+          style={{
           width: '280px',
           flexShrink: 0,
           borderRight: '1px solid #27272A',
@@ -284,6 +287,7 @@ const Guide: React.FC = () => {
           </p>
         </InfoCard>
       </main>
+    </div>
     </div>
   );
 };
