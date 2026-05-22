@@ -292,6 +292,8 @@ export default function WatchlistPage() {
     { stock_name: 'VIX', stock_value: 14.23, stock_growth_rate: -2.45 },
   ];
 
+  const allExpanded = [0, 1, 2].every(i => expandedSet.has(i));
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -405,8 +407,9 @@ export default function WatchlistPage() {
 
           {/* ── Stock rows ── */}
           <Box sx={{ px: 4, pb: 4 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 16, color: 'white', p: 2 }}>My Watchlist</Typography>
             <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-              <ButtonGroup variant="outlined" size="small">
+              {/* <ButtonGroup variant="outlined" size="small">
                 <Tooltip title="Expand all">
                   <Button onClick={handleExpandAll} startIcon={<UnfoldMoreIcon fontSize="small" />}>
                     OPEN ALL
@@ -417,7 +420,33 @@ export default function WatchlistPage() {
                     CLOSE ALL
                   </Button>
                 </Tooltip>
-              </ButtonGroup>
+              </ButtonGroup> */}
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <Tooltip title={allExpanded ? 'Collapse all' : 'Expand all'}>
+                  {/* <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+                    startIcon={allExpanded ? <UnfoldLessIcon fontSize="small" /> : <UnfoldMoreIcon fontSize="small" />}
+                  >
+                    {allExpanded ? 'CLOSE ALL' : 'OPEN ALL'}
+                  </Button> */}
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+                    startIcon={allExpanded ? <UnfoldLessIcon fontSize="small" /> : <UnfoldMoreIcon fontSize="small" />}
+                    sx={{
+                      background: 'linear-gradient(45deg, #5a5afc 30%, #ea19ea 90%)',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      '&:hover': { background: 'linear-gradient(45deg, #4444e0 30%, #c010c0 90%)' },
+                    }}
+                  >
+                    {allExpanded ? 'CLOSE ALL' : 'OPEN ALL'}
+                  </Button>
+                </Tooltip>
+              </Box>
             </Box>
             {[0, 1, 2].map(row => (
               <CollapsableStockItem
