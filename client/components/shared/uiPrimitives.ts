@@ -8,17 +8,18 @@ export const FIT_FOCUS_VISIBLE =
 export const FIT_CONTENT_MAX_WIDTH_PX = 1180;
 
 export const fitSurface = {
-  page: "bg-black text-white",
-  panel: "rounded-xl border border-[rgba(132,146,176,0.12)] bg-[#09090b]",
-  card: "rounded-xl border border-[rgba(132,146,176,0.12)] bg-[#09090b]",
+  page: "bg-[var(--fit-color-page-bg)] text-white",
+  panel:
+    "rounded-xl border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface)]",
+  card: "rounded-xl border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface)]",
 } as const;
 
 export const fitText = {
-  body: "text-[#b9c1d0]",
-  subtle: "text-[#8f98aa]",
+  body: "text-[var(--fit-color-text-body)]",
+  subtle: "text-[var(--fit-color-text-muted)]",
   strong: "text-[#e2e7f2]",
-  label: "text-[#687184]",
+  label: "text-[var(--fit-color-text-label)]",
   nav: "text-[#dce4ff]",
   info: "text-[#dbe4ff]",
-  accent: "text-[#8ea0ff]",
+  accent: "text-[var(--fit-color-accent)]",
 } as const;
