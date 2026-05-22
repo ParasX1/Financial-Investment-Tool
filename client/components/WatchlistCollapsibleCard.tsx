@@ -81,9 +81,10 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
           onActivate={handleActivate}
           onUpdateSettings={handleUpdateSettings}
           height={height}
-          defaultStart={defaultStart}
-          defaultEnd={defaultEnd}
-          color={color}
+          // Defaults are already passed through cardSettings.
+          // defaultStart={defaultStart}
+          // defaultEnd={defaultEnd}
+          // color={color}
           showSwap={false}
         />
       </Box>
@@ -137,9 +138,6 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
           onActivate={handleActivate}
           onUpdateSettings={handleUpdateSettings}
           height={height}
-          defaultStart={defaultStart}
-          defaultEnd={defaultEnd}
-          color={color}
           showSwap={false}
         />
       )}

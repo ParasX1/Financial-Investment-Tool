@@ -1,6 +1,29 @@
 import * as d3 from "d3"
 import React, { useRef, useEffect } from 'react';
 
+const CHART_BG = '#111';
+const AXIS_COLOR = 'rgba(255,255,255,0.5)';
+const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+
+const positionTooltip = (
+    event: MouseEvent,
+    tooltip: d3.Selection<HTMLDivElement | null, unknown, null, undefined>,
+) => {
+    const tooltipWidth = 160;
+    const tooltipHeight = 92;
+    const gap = 12;
+    const left = event.clientX + tooltipWidth + gap > window.innerWidth
+        ? event.clientX - tooltipWidth - gap
+        : event.clientX + gap;
+    const top = event.clientY + tooltipHeight + gap > window.innerHeight
+        ? event.clientY - tooltipHeight - gap
+        : event.clientY + gap;
+
+    tooltip
+        .style('left', `${left}px`)
+        .style('top', `${top}px`);
+};
+
 // inputs are data, width heigh and color (optional)
 interface HeatMapProps {
     data: number[][];
@@ -45,16 +68,26 @@ interface HeatMapProps {
             svg.append('rect')
                 .attr('width', width)
                 .attr('height', height)
-                .attr('fill', '#FFFFFF');
+                .attr('fill', CHART_BG);
 
             // Add graph group
             const g = svg.append('g')
                 .attr('transform', `translate(${l},${t})`);
+
+            const tooltip = d3.select(tooltipRef.current)
+                .style('position', 'fixed')
+                .style('background', '#1b1b20')
+                .style('color', '#fff')
+                .style('border', '1px solid rgba(255,255,255,0.14)')
+                .style('border-radius', '8px')
+                .style('padding', '10px')
+                .style('display', 'none')
+                .style('pointer-events', 'none');
             
             // Define color scale
             const colorScale = d3.scaleLinear<string>()
                 .domain([-1, 0, 1])
-                .range([invertColor(barColor || '#c00000ff'), "#FFFFFF", barColor || '#004e00ff']);
+                .range([invertColor(barColor || '#c00000ff'), '#1b1b20', barColor || '#004e00ff']);
 
             function invertColor(hex: string): string {
                 if (hex.startsWith('#')) {
@@ -81,6 +114,22 @@ interface HeatMapProps {
                 .attr("width", cellWidth)
                 .attr("height", cellHeight)
                 .attr("fill", (d) => colorScale(d.value))
+                .on("mouseover", (event: MouseEvent, d) => {
+                    const rowLabel = labels[d.row] ?? d.row.toString();
+                    const colLabel = labels[d.col] ?? d.col.toString();
+                    tooltip
+                        .style('display', 'block')
+                        .html(
+                            `<div>${rowLabel} / ${colLabel}</div><div style="color:${TEXT_COLOR}; margin-top: 8px;">Correlation: ${d.value.toFixed(2)}</div>`
+                        );
+                    positionTooltip(event, tooltip);
+                })
+                .on("mousemove", (event: MouseEvent) => {
+                    positionTooltip(event, tooltip);
+                })
+                .on("mouseout", () => {
+                    tooltip.style('display', 'none');
+                })
             
             g.selectAll("text.cell-label")
                 .data(data.flatMap((row, i) => row.map((value, j) => ({row: i, col: j, value }))))
@@ -91,7 +140,7 @@ interface HeatMapProps {
                 .attr("text-anchor", "middle")
                 .attr("dominant-baseline", "middle")
                 .style("font-size", Math.min(cellWidth, cellHeight) / 5)
-                .attr("fill", d => d.value > 0 ? "#fff" : "#000")
+                .attr("fill", d => Math.abs(d.value) > 0.35 ? "#fff" : TEXT_COLOR)
                 .text(d => d.value.toFixed(2));
                 
             const xAxis = d3.axisTop(d3.scaleBand()
@@ -102,14 +151,21 @@ interface HeatMapProps {
                 .domain(labels.length ? labels : data.map((_, i) => i.toString()))
                 .range([0, graphHeight]));
 
-            g.append("g").call(xAxis);
+            const xAxisGroup = g.append("g").call(xAxis);
 
-            g.append("g").call(yAxis);
-    }, [data, labels, width, height]);
+            const yAxisGroup = g.append("g").call(yAxis);
+
+            g.selectAll('.domain, .tick line')
+                .attr('stroke', AXIS_COLOR)
+                .attr('stroke-dasharray', '3 4');
+            xAxisGroup.selectAll('text').attr('fill', TEXT_COLOR);
+            yAxisGroup.selectAll('text').attr('fill', TEXT_COLOR);
+    }, [data, labels, width, height, barColor]);
   
     return (
         <>
           <svg ref={svgRef}></svg>
+          <div ref={tooltipRef}></div>
         </>
       );
   };
