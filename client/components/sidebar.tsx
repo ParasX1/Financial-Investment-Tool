@@ -18,6 +18,8 @@ import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
 import 'boxicons/css/boxicons.min.css'
 import { useAuth } from '@/components/authContext'
 import ModalLogin from '@/components/Modal/ModalLogin'
+import { fitNav } from '@/components/shared/fitStyles'
+import { FIT_FOCUS_VISIBLE } from '@/components/shared/uiPrimitives'
 
 const DESKTOP_COLLAPSED_WIDTH = 64
 const COMPACT_COLLAPSED_WIDTH = 52
@@ -32,12 +34,7 @@ let rememberedCompactExpanded = false
 let lastPointerPosition: { x: number; y: number } | null = null
 let pointerTrackerStarted = false
 
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b8cff]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
-const activeExpandedStyle =
-  'bg-gradient-to-r from-[#1f2466] via-[#24175a] to-[#3a155f] text-white shadow-[inset_0_0_0_1px_rgba(123,140,255,0.42),0_12px_28px_rgba(83,103,255,0.18)]'
-const activeIconStyle =
-  'bg-gradient-to-br from-[#5367ff] via-[#6d4cff] to-[#2b164f] text-white shadow-[0_0_22px_rgba(83,103,255,0.42),inset_0_0_0_1px_rgba(213,220,255,0.24)]'
+const focusRing = FIT_FOCUS_VISIBLE
 
 type SidebarIcon = React.ElementType<SvgIconProps>
 
@@ -185,8 +182,8 @@ function SidebarItem({
           'grid h-8 w-8 shrink-0 place-items-center rounded-md transition-[background-color,color,box-shadow] duration-150',
           active
             ? activeExpanded
-              ? 'bg-white/[0.12] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]'
-              : activeIconStyle
+              ? fitNav.iconActive
+              : fitNav.iconActiveStandalone
             : 'bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]',
         ].join(' ')}
         aria-hidden="true"
@@ -214,10 +211,10 @@ function SidebarItem({
     'group relative flex min-h-[44px] w-full touch-manipulation items-center gap-3 rounded-lg py-2 text-left no-underline transition-[background-color,color,box-shadow] duration-150 hover:no-underline',
     expanded ? 'justify-start px-2' : 'justify-center px-0',
     activeExpanded
-      ? activeExpandedStyle
+      ? fitNav.itemActive
       : active
-        ? 'bg-[#101225] text-white shadow-[inset_0_0_0_1px_rgba(123,140,255,0.28),0_0_24px_rgba(83,103,255,0.12)]'
-      : 'text-[#a5adbf] hover:bg-[linear-gradient(135deg,rgba(83,103,255,0.10),rgba(124,58,237,0.12))] hover:text-[#f4f7ff]',
+        ? fitNav.itemActiveCompact
+        : fitNav.itemIdle,
     locked ? 'cursor-pointer opacity-70' : '',
     focusRing,
   ].join(' ')

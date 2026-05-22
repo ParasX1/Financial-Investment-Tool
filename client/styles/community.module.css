@@ -3,11 +3,11 @@
 }
 
 .softBorder {
-  border: 1px solid rgba(132, 146, 176, 0.12);
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
 }
 
 .panelBorder {
-  border: 1px solid #202230;
+  border: 1px solid var(--fit-color-border-control, #202230);
 }
 
 .inputBorder {
