@@ -10,6 +10,15 @@ const AVATAR_BUCKET =
 const PROFILE_TABLE = 'Users'
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
+type ProfileErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'phone', string>>
+type ProfileSnapshot = {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  avatarUrl: string | null
+}
+
 const recentActivities = [
   {
     title: 'Posted in Community',
@@ -18,7 +27,7 @@ const recentActivities = [
   },
   {
     title: 'Updated Watchlist',
-    detail: 'Added TSLA, AMZN to watchlist',
+    detail: 'Added TSLA and AMZN to watchlist',
     time: '5 days ago',
   },
   {
@@ -33,17 +42,57 @@ const recentActivities = [
   },
 ]
 
+const sanitizeNameInput = (value: string) =>
+  value
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .slice(0, 50)
+
+const sanitizeName = (value: string) => sanitizeNameInput(value).trim()
+
+const sanitizeEmail = (value: string) => value.trim().toLowerCase().slice(0, 254)
+
+const sanitizePhone = (value: string) =>
+  value
+    .replace(/[^\d+\-().\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .slice(0, 24)
+    .trim()
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
+
+const hasLetter = (value: string) => /\p{L}/u.test(value)
+
+const validateName = (label: string, value: string) => {
+  if (!value) return `${label} is required`
+  if (!hasLetter(value)) return `${label} must include letters`
+  if (/^\d+$/.test(value.replace(/\s/g, ''))) return `${label} cannot be only numbers`
+  return ''
+}
+
+const validatePhone = (value: string) => {
+  if (!value) return ''
+  const digits = value.replace(/\D/g, '')
+  if (digits.length < 7 || digits.length > 15) return 'Phone number must contain 7 to 15 digits'
+  if (!/^\+?[\d\s().-]+$/.test(value)) return 'Phone number contains unsupported characters'
+  return ''
+}
+
 function Profile() {
   const { user, loading } = useAuth()
 
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  // const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
+  const [profileSnapshot, setProfileSnapshot] = useState<ProfileSnapshot | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [errors, setErrors] = useState<ProfileErrors>({})
 
   const [saving, setSaving] = useState(false)
+  const [sendingVerification, setSendingVerification] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -53,50 +102,34 @@ function Profile() {
   useEffect(() => {
     if (loading || !user) return
 
-    setEmail(user.email || '')
+    const authEmail = user.email || ''
+    setEmail(authEmail)
 
     const loadProfile = async () => {
       const { data, error } = await supabase
         .from(PROFILE_TABLE)
-        .select('first_name,last_name,avatar_url')
+        .select('first_name,last_name,phone,avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
-      // Keep this fallback around in case phone support is reintroduced.
-      // It needs these missing pieces before it can be enabled again:
-      // isPhoneColumnError, setPhoneColumnAvailable, and a phone field in the select/upsert/UI.
-      //
-      // if (isPhoneColumnError(error)) {
-      //   setPhoneColumnAvailable(false)
-      //   const fallback = await supabase
-      //     .from(PROFILE_TABLE)
-      //     .select('first_name,last_name,avatar_url')
-      //     .eq('id', user.id)
-      //     .single()
-      //
-      //   if (fallback.error) {
-      //     setMessage({ type: 'info', text: 'Profile details are ready to edit.' })
-      //     return
-      //   }
-      //
-      //   setFirstName(fallback.data?.first_name || '')
-      //   setLastName(fallback.data?.last_name || '')
-      //   setAvatarUrl(fallback.data?.avatar_url || null)
-      //   setPhone('')
-      //   return
-      // }
-
       if (error) {
-        // Previously used setMessage({ type: 'info', text: ... }); this page currently uses msg/setMsg.
         setMsg('Profile details are ready to edit.')
         return
       }
 
-      // setPhoneColumnAvailable(true)
-      setFirstName(data?.first_name || '')
-      setLastName(data?.last_name || '')
-      setAvatarUrl(data?.avatar_url || null)
-      // setPhone(data?.phone || '')
+      const nextProfile = {
+        firstName: data?.first_name || '',
+        lastName: data?.last_name || '',
+        email: authEmail,
+        phone: data?.phone || '',
+        avatarUrl: data?.avatar_url || null,
+      }
+
+      setFirstName(nextProfile.firstName)
+      setLastName(nextProfile.lastName)
+      setPhone(nextProfile.phone)
+      setAvatarUrl(nextProfile.avatarUrl)
+      setProfileSnapshot(nextProfile)
     }
 
     loadProfile()
@@ -108,46 +141,116 @@ function Profile() {
     }
   }, [avatarPreviewUrl])
 
+  const displayName = useMemo(() => {
+    const name = `${firstName} ${lastName}`.trim()
+    return name || email.split('@')[0] || 'Profile'
+  }, [email, firstName, lastName])
+
   const initials = useMemo(() => {
     const first = firstName.trim().charAt(0)
     const last = lastName.trim().charAt(0)
     const fromEmail = email.trim().charAt(0)
-    return `${first || fromEmail || 'A'}${last || ''}`.toUpperCase()
+    return `${first || fromEmail || 'F'}${last || ''}`.toUpperCase()
   }, [email, firstName, lastName])
 
-  const handleSaveProfile = async () => {
-    if (!user) return
+  const userIdPreview = user?.id ? `${user.id.slice(0, 8)}-${user.id.slice(9, 13)}-${user.id.slice(14, 18)}...` : 'Not signed in'
+  const emailVerified = Boolean(user?.email_confirmed_at)
 
-    // Profile validation can be restored here when validateProfile is reintroduced.
-    //
-    // const { values, valid } = validateProfile()
-    // if (!valid) {
-    //   setMessage({ type: 'error', text: 'Fix the highlighted fields before saving.' })
-    //   return
-    // }
+  const validateProfile = () => {
+    const nextFirstName = sanitizeName(firstName)
+    const nextLastName = sanitizeName(lastName)
+    const nextEmail = sanitizeEmail(email)
+    const nextPhone = sanitizePhone(phone)
+    const nextErrors: ProfileErrors = {}
+
+    const firstNameError = validateName('First name', nextFirstName)
+    const lastNameError = validateName('Last name', nextLastName)
+    const phoneError = validatePhone(nextPhone)
+
+    if (firstNameError) nextErrors.firstName = firstNameError
+    if (lastNameError) nextErrors.lastName = lastNameError
+    if (!nextEmail) nextErrors.email = 'Email is required'
+    else if (!isValidEmail(nextEmail)) nextErrors.email = 'Enter a valid email address'
+    if (phoneError) nextErrors.phone = phoneError
+
+    setFirstName(nextFirstName)
+    setLastName(nextLastName)
+    setEmail(nextEmail)
+    setPhone(nextPhone)
+    setErrors(nextErrors)
+
+    return {
+      values: { firstName: nextFirstName, lastName: nextLastName, email: nextEmail, phone: nextPhone },
+      valid: Object.keys(nextErrors).length === 0,
+    }
+  }
+
+  const handleCancelEditing = () => {
+    if (profileSnapshot) {
+      setFirstName(profileSnapshot.firstName)
+      setLastName(profileSnapshot.lastName)
+      setEmail(profileSnapshot.email)
+      setPhone(profileSnapshot.phone)
+      setAvatarUrl(profileSnapshot.avatarUrl)
+    }
+    setErrors({})
+    setMsg(null)
+    setIsEditing(false)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!user || !isEditing) return
+
+    const { values, valid } = validateProfile()
+    if (!valid) {
+      setMsg('Fix the highlighted fields before saving.')
+      return
+    }
 
     setSaving(true)
     setMsg(null)
+
+    const emailChanged = values.email !== (profileSnapshot?.email || user.email || '')
+    if (emailChanged) {
+      const { error: emailError } = await supabase.auth.updateUser(
+        { email: values.email },
+        { emailRedirectTo: `${window.location.origin}/Profile` }
+      )
+
+      if (emailError) {
+        setSaving(false)
+        setMsg(`Email update failed: ${emailError.message}`)
+        return
+      }
+    }
 
     const { error } = await supabase
       .from(PROFILE_TABLE)
       .upsert(
         {
           id: user.id,
-          first_name: firstName,
-          last_name: lastName,
-          email,
+          first_name: values.firstName,
+          last_name: values.lastName,
+          email: values.email,
+          phone: values.phone,
           avatar_url: avatarUrl,
         },
         { onConflict: 'id' }
       )
 
     setSaving(false)
-    setMsg(error ? `Save failed: ${error.message}` : 'Profile saved successfully.')
+    if (error) {
+      setMsg(`Save failed: ${error.message}`)
+      return
+    }
+
+    setProfileSnapshot({ ...values, avatarUrl })
+    setIsEditing(false)
+    setMsg(emailChanged ? 'Profile saved. Check your new inbox to verify the email change.' : 'Profile saved successfully.')
   }
 
   const onAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return
+    if (!user || !isEditing) return
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -182,7 +285,7 @@ function Profile() {
       const bucketMissing = uploadError.message.toLowerCase().includes('bucket not found')
       setMsg(
         bucketMissing
-          ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist. Create that bucket or set NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET to an existing bucket.`
+          ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
           : `Upload failed: ${uploadError.message}`
       )
       event.target.value = ''
@@ -201,16 +304,17 @@ function Profile() {
       .from(PROFILE_TABLE)
       .upsert({ id: user.id, email, avatar_url: publicUrl }, { onConflict: 'id' })
 
-    if (profileError) {
-      setMsg(`Avatar uploaded, but profile save failed: ${profileError.message}`)
-    } else {
-      setMsg('Avatar updated successfully.')
-    }
+    setMsg(profileError ? `Avatar uploaded, but profile save failed: ${profileError.message}` : 'Avatar updated successfully.')
     event.target.value = ''
   }
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChangePassword = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!isEditing) {
+      setMsg('Unlock editing before changing your password.')
+      return
+    }
 
     if (!currentPassword) {
       setMsg('Please enter your current password.')
@@ -240,232 +344,304 @@ function Profile() {
     }
   }
 
-  const cardClass =
-    'rounded-3xl border border-white/8 bg-[#101014] p-7 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]'
-  const labelClass = 'mb-2 block text-sm font-medium text-white/65'
+  const handleResendVerification = async () => {
+    const targetEmail = sanitizeEmail(email || user?.email || '')
+    if (!targetEmail || !isValidEmail(targetEmail)) {
+      setErrors((current) => ({ ...current, email: 'Enter a valid email address before sending verification.' }))
+      return
+    }
+
+    setSendingVerification(true)
+    setMsg(null)
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: targetEmail,
+      options: { emailRedirectTo: `${window.location.origin}/Profile` },
+    })
+
+    setSendingVerification(false)
+    setMsg(error ? `Verification email failed: ${error.message}` : 'Verification email sent. Check your inbox.')
+  }
+
+  const cardClass = 'rounded-lg border border-white/60 bg-[#050505] p-4'
+  const labelClass = 'mb-1 block text-sm text-white/65'
   const inputClass =
-    'w-full rounded-xl border border-white/6 bg-[#1c1c21] px-12 py-3 text-base text-white outline-none transition focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 placeholder:text-white/30'
+    'h-10 w-full rounded-md border border-white/65 bg-[#1b1b1f] px-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white focus:ring-2 focus:ring-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-[#111113] disabled:text-white/45'
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
-      <div className="flex min-h-screen">
-        <Sidebar />
+    <div className="min-h-screen bg-black text-white">
+      <Sidebar />
 
-        <main className="flex-1 px-6 py-8 md:ml-[50px] md:px-10">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <main className="min-h-screen px-5 py-6 md:ml-[50px] md:px-8 lg:px-10">
+        <div className="mx-auto w-full max-w-[1280px]">
+          <header className="flex flex-col gap-4 border-b border-white/15 pb-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-4xl font-semibold tracking-tight text-white">Profile Settings</h1>
-              <p className="mt-2 text-lg text-white/55">Manage your account information and preferences</p>
+              <h1 className="text-3xl font-semibold tracking-normal text-white">Profile Settings</h1>
+              <p className="mt-2 text-base text-white/70">Manage account details, verification, and security.</p>
             </div>
 
-            {msg && (
-              <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
-                {msg}
+            <div className="flex flex-wrap gap-3">
+              <div
+                className={`inline-flex w-fit items-center gap-2 rounded-md border px-4 py-2 text-sm ${
+                  emailVerified ? 'border-white/65 text-emerald-200' : 'border-amber-300/70 text-amber-200'
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${emailVerified ? 'bg-emerald-400' : 'bg-amber-300'}`} />
+                {emailVerified ? 'Email verified' : 'Email not verified'}
               </div>
-            )}
 
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Profile Picture</h2>
+              <div
+                className={`inline-flex w-fit items-center rounded-md border px-4 py-2 text-sm ${
+                  isEditing ? 'border-amber-300/70 text-amber-200' : 'border-white/40 text-white/65'
+                }`}
+              >
+                {isEditing ? 'Editing unlocked' : 'Editing locked'}
+              </div>
 
-              <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-center">
-                <div className="relative h-24 w-24">
+              {isEditing ? (
+                <button
+                  type="button"
+                  className="rounded-md border border-white/50 px-4 py-2 text-sm text-white transition hover:bg-white hover:text-black"
+                  onClick={handleCancelEditing}
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-white/85"
+                  onClick={() => {
+                    setErrors({})
+                    setMsg(null)
+                    setIsEditing(true)
+                  }}
+                >
+                  Unlock editing
+                </button>
+              )}
+            </div>
+          </header>
+
+          {msg && (
+            <div className="mt-5 rounded-md border border-white/30 bg-white/8 px-4 py-3 text-sm text-white/85">
+              {msg}
+            </div>
+          )}
+
+          <div className="mt-5 grid grid-cols-1 items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+            <section className={`${cardClass} xl:col-start-1 xl:row-start-1 xl:self-stretch`}>
+              <div className="flex items-center gap-4">
+                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
                   {avatarPreviewUrl || avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      className="h-24 w-24 rounded-full object-cover"
+                      className="h-full w-full object-cover"
                       src={(avatarPreviewUrl || avatarUrl) ?? undefined}
-                      alt="avatar"
+                      alt="Profile avatar"
                     />
                   ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-fuchsia-600 text-4xl font-bold text-white">
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-zinc-950">
                       {initials}
                     </div>
                   )}
-
-                  <label className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-600 shadow-lg shadow-blue-500/25">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-2">
-                      <path d="M4 8h3l2-2h6l2 2h3v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-                      <circle cx="12" cy="13" r="3.5" />
-                    </svg>
-                    <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
-                  </label>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <p className="text-base text-white/55">Upload a new profile picture. JPG or PNG, max 5MB.</p>
-                  <label className="inline-flex w-fit cursor-pointer rounded-xl border border-white/8 bg-[#1d1d22] px-5 py-2.5 text-sm font-medium text-white transition hover:border-white/14 hover:bg-[#24242a]">
-                    Choose File
-                    <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Personal Information</h2>
-
-              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className={labelClass}>First Name</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
-                        <path d="M5 20a7 7 0 0 1 14 0" />
-                      </svg>
-                    </span>
-                    <input
-                      className={inputClass}
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Alex"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className={labelClass}>Last Name</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
-                        <path d="M5 20a7 7 0 0 1 14 0" />
-                      </svg>
-                    </span>
-                    <input
-                      className={inputClass}
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Johnson"
-                    />
-                  </div>
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl font-semibold text-white">{displayName}</h2>
+                  <p className="mt-2 truncate text-sm text-white/45">{email}</p>
                 </div>
               </div>
 
-              <div className="mt-4">
-                <label className={labelClass}>Email Address</label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                      <path d="M4 6h16v12H4z" />
-                      <path d="m4 8 8 6 8-6" />
-                    </svg>
-                  </span>
-                  <input className={inputClass} value={email} readOnly placeholder="alex.johnson@example.com" />
-                </div>
-              </div>
-              {/* This used to close an <aside>, but the surrounding element is a <section>. */}
-              {/* </aside> */}
-
-              <button
-                className="mt-7 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-fuchsia-600 px-6 py-3 text-base font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={handleSaveProfile}
-                disabled={saving}
+              <label
+                className={`mt-4 flex h-10 items-center justify-center rounded-md border text-sm font-medium transition ${
+                  isEditing
+                    ? 'cursor-pointer border-white/65 text-white hover:bg-white hover:text-black'
+                    : 'cursor-not-allowed border-white/20 text-white/35'
+                }`}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                  <path d="M5 4h11l3 3v13H5z" />
-                  <path d="M8 4v6h8V4" />
-                  <path d="M9 17h6" />
-                </svg>
-                {saving ? 'Saving...' : 'Save Profile'}
-              </button>
+                Change avatar
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={!isEditing}
+                  onChange={onAvatarChange}
+                />
+              </label>
+
+              <div className="mt-4 border-t border-white/15 pt-4">
+                <div className="grid grid-cols-[78px_minmax(0,1fr)] gap-2 text-sm">
+                  <span className="text-white/50">User ID</span>
+                  <span className="truncate text-white">{userIdPreview}</span>
+
+                  <span className="text-white/50">Verification</span>
+                  <span className={emailVerified ? 'text-right text-emerald-300' : 'text-right text-amber-300'}>
+                    {emailVerified ? 'Verified' : 'Pending'}
+                  </span>
+                </div>
+              </div>
             </section>
 
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Change Password</h2>
+            <section className={`${cardClass} xl:col-start-1 xl:row-start-2 xl:self-stretch`}>
+              <h2 className="text-xl font-semibold text-white">Security</h2>
 
-              <form className="mt-6 flex flex-col gap-4" onSubmit={handleChangePassword}>
+              <form className="mt-4 flex flex-col gap-3" onSubmit={handleChangePassword}>
                 <div>
-                  <label className={labelClass}>Current Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                    />
-                  </div>
+                  <label className={labelClass}>Current password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
                 </div>
 
                 <div>
-                  <label className={labelClass}>New Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                    />
-                  </div>
+                  <label className={labelClass}>New password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
                 </div>
 
                 <div>
-                  <label className={labelClass}>Confirm New Password</label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                        <rect x="5" y="10" width="14" height="10" rx="2" />
-                        <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                      </svg>
-                    </span>
-                    <input
-                      type="password"
-                      className={inputClass}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                    />
-                  </div>
+                  <label className={labelClass}>Confirm new password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
                 </div>
 
                 <button
                   type="submit"
-                  className="mt-2 inline-flex w-fit items-center gap-2 rounded-xl border border-white/8 bg-[#1d1d22] px-5 py-3 text-base font-medium text-white transition hover:border-white/14 hover:bg-[#24242a] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={updatingPass}
+                  className="mt-1 h-10 rounded-md border border-white/65 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!isEditing || updatingPass}
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                    <rect x="5" y="10" width="14" height="10" rx="2" />
-                    <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-                  </svg>
-                  {updatingPass ? 'Updating Password...' : 'Update Password'}
+                  {updatingPass ? 'Updating password...' : 'Update password'}
                 </button>
               </form>
             </section>
 
-            <section className={cardClass}>
-              <h2 className="text-2xl font-semibold text-white">Recent Activity</h2>
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-1 xl:self-stretch`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Personal Information</h2>
+                  <p className="mt-1 text-xs text-white/45">
+                    Locked by default to prevent accidental changes to sensitive account details.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  {!emailVerified && (
+                    <button
+                      type="button"
+                      className="h-10 rounded-md border border-amber-300/60 px-4 text-sm text-amber-100 transition hover:bg-amber-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleResendVerification}
+                      disabled={sendingVerification}
+                    >
+                      {sendingVerification ? 'Sending...' : 'Verify email'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="h-10 w-full rounded-md bg-white px-6 text-sm font-medium text-black transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                    onClick={handleSaveProfile}
+                    disabled={!isEditing || saving}
+                  >
+                    {saving ? 'Saving...' : 'Save profile'}
+                  </button>
+                </div>
+              </div>
 
-              <div className="mt-6 divide-y divide-white/8">
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className={labelClass}>First name</label>
+                  <input
+                    className={inputClass}
+                    value={firstName}
+                    onChange={(event) => {
+                      setFirstName(sanitizeNameInput(event.target.value))
+                      setErrors((current) => ({ ...current, firstName: undefined }))
+                    }}
+                    placeholder="alex"
+                    disabled={!isEditing}
+                  />
+                  {errors.firstName && <p className="mt-1 text-xs text-red-300">{errors.firstName}</p>}
+                </div>
+
+                <div>
+                  <label className={labelClass}>Last name</label>
+                  <input
+                    className={inputClass}
+                    value={lastName}
+                    onChange={(event) => {
+                      setLastName(sanitizeNameInput(event.target.value))
+                      setErrors((current) => ({ ...current, lastName: undefined }))
+                    }}
+                    placeholder="Z32323"
+                    disabled={!isEditing}
+                  />
+                  {errors.lastName && <p className="mt-1 text-xs text-red-300">{errors.lastName}</p>}
+                </div>
+
+                <div>
+                  <label className={labelClass}>Email address</label>
+                  <input
+                    className={inputClass}
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(sanitizeEmail(event.target.value))
+                      setErrors((current) => ({ ...current, email: undefined }))
+                    }}
+                    placeholder="name@example.com"
+                    disabled={!isEditing}
+                  />
+                  {errors.email && <p className="mt-1 text-xs text-red-300">{errors.email}</p>}
+                </div>
+
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input
+                    className={inputClass}
+                    value={phone}
+                    onChange={(event) => {
+                      setPhone(sanitizePhone(event.target.value))
+                      setErrors((current) => ({ ...current, phone: undefined }))
+                    }}
+                    placeholder="+1 (415) 555-2671"
+                    disabled={!isEditing}
+                  />
+                  {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone}</p>}
+                </div>
+              </div>
+
+            </section>
+
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-2 xl:self-stretch`}>
+              <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
+
+              <div className="mt-4 divide-y divide-white/15">
                 {recentActivities.map((activity) => (
-                  <div key={activity.title} className="flex flex-col gap-2 py-5 md:flex-row md:items-start md:justify-between">
+                  <div key={activity.title} className="grid gap-1.5 py-3.5 md:grid-cols-[minmax(0,1fr)_96px]">
                     <div>
-                      <p className="text-xl font-medium text-white">{activity.title}</p>
-                      <p className="mt-1 text-base text-white/45">{activity.detail}</p>
+                      <p className="text-base font-medium text-white">{activity.title}</p>
+                      <p className="mt-1.5 text-sm text-white/45">{activity.detail}</p>
                     </div>
-                    <span className="shrink-0 text-base text-white/35">{activity.time}</span>
+                    <span className="text-sm text-white/45 md:text-right">{activity.time}</span>
                   </div>
                 ))}
               </div>
             </section>
           </div>
-        </main>
-      </div>
-      {/* Restore this if a time value is added back to the component. */}
-      {/* <span className="text-xs text-zinc-500 sm:text-right">{time}</span> */}
+        </div>
+      </main>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import * as React from "react";
 import Sidebar from "@/components/sidebar";
-import communityStyles from "@/styles/community.module.css";
 
 export function CommunityPageShell({
   children,
@@ -35,10 +34,7 @@ export function CommunityPageShell({
         }
       `}</style>
       <div className="min-h-screen overflow-x-hidden bg-[#000000]">
-        <a href="#community-main" className={communityStyles.skipLink}>
-          {skipLabel}
-        </a>
-        <Sidebar />
+        <Sidebar skipLabel={skipLabel} skipTargetId="community-main" />
         {children}
       </div>
     </>
