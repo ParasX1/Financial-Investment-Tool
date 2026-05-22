@@ -7,6 +7,7 @@ import {
   FormulaBlock,
   LearningCard,
   LearningPageLayout,
+  LearningTopicCard,
 } from "@/components/learning/LearningPageLayout";
 import type { LearningNavItem } from "@/components/learning/types";
 import { useLearningSection } from "@/components/learning/useLearningSection";
@@ -42,17 +43,9 @@ export default function Guide() {
       title="Guide"
     >
       <div className="space-y-4">
-        <section className="rounded-xl border border-[rgba(132,146,176,0.12)] bg-[#09090b] p-[18px] sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#687184]">
-            Current Topic
-          </p>
-          <h2 className="mt-2 text-balance text-2xl font-extrabold leading-tight text-white">
-            {active.label}
-          </h2>
-          <p className="mt-3 max-w-[56rem] text-pretty text-[15px] leading-7 text-[#b9c1d0]">
-            {active.description}
-          </p>
-        </section>
+        <LearningTopicCard eyebrow="Current Topic" title={active.label}>
+          {active.description}
+        </LearningTopicCard>
 
         <LearningCard icon={FunctionsRoundedIcon} title="Formula">
           <FormulaBlock>{active.formula}</FormulaBlock>

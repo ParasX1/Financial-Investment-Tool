@@ -3,8 +3,8 @@ import ContactSupportRoundedIcon from "@mui/icons-material/ContactSupportRounded
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import {
   LearningActionPanel,
-  LearningCard,
   LearningPageLayout,
+  LearningTopicCard,
   QuestionCard,
 } from "@/components/learning/LearningPageLayout";
 import type { LearningNavItem } from "@/components/learning/types";
@@ -43,9 +43,9 @@ export default function Help() {
       title="Help Center"
     >
       <div className="space-y-4">
-        <LearningCard icon={active.icon} title={active.label} tone="support">
+        <LearningTopicCard eyebrow="Current Topic" title={active.label}>
           {active.subtitle}
-        </LearningCard>
+        </LearningTopicCard>
 
         <div className="space-y-3" aria-label={`${active.label} questions`}>
           {active.faqs.map((faq, index) => (
