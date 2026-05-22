@@ -330,14 +330,14 @@ const DashboardView: React.FC = () => {
 {/* Title and Search Bar-----------------------------------------------------------------------------------------------------------*/}
                     <Box
                         sx={{
-                            height: 'clamp(96px, 12vh, 128px)',
+                            height: 'clamp(114px, 14vh, 148px)',
                             px: 'clamp(8px, 0.85vw, 16px)',
                             py: 'clamp(6px, 1vh, 12px)',
                             backgroundColor: 'transparent',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'stretch',
-                            gap: 'clamp(4px, 0.7vh, 8px)',
+                            gap: 'clamp(16px, 1.8vh, 22px)',
                             flexShrink: 0,
                             overflow: 'hidden',
                             '@media (max-height: 720px), (max-width: 900px)': {
@@ -368,7 +368,7 @@ const DashboardView: React.FC = () => {
                                 alignItems: 'flex-end',
                                 gap: 'clamp(10px, 1vw, 16px)',
                                 flexWrap: { xs: 'wrap', lg: 'nowrap' },
-                                mt: 7,
+                                mt: 0,
                                 minHeight: 0,
                             }}
                         >
@@ -376,7 +376,7 @@ const DashboardView: React.FC = () => {
                                 <Typography
                                     variant="h5"
                                     sx={{ 
-                                        color: 'rgba(255, 255, 255, 0.65)', 
+                                        color: 'white', 
                                         fontWeight: 300, 
                                         fontSize: 'clamp(11px, 0.72vw, 14px)',
                                         mb: 'clamp(2px, 0.35vh, 4px)',
@@ -510,7 +510,7 @@ const DashboardView: React.FC = () => {
                             <Box sx={{ flex: 1 }}>
                                 <Typography
                                     sx={{
-                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        color: 'white',
                                         fontSize: 'clamp(11px, 0.68vw, 13px)',
                                         fontWeight: 300,
                                         mb: 'clamp(2px, 0.35vh, 4px)',
@@ -559,7 +559,7 @@ const DashboardView: React.FC = () => {
                             <Box sx={{ flex: 1 }}>
                                 <Typography
                                     sx={{
-                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        color: 'white',
                                         fontSize: 'clamp(11px, 0.68vw, 13px)',
                                         fontWeight: 300,
                                         mb: 'clamp(2px, 0.35vh, 4px)',
