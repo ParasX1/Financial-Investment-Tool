@@ -193,7 +193,7 @@ export function CommunitySidebar({
           <div
             className={cn(
               "rounded-lg py-2 text-center",
-              fitNav.itemActiveCompact,
+              fitNav.itemActiveCompactQuiet,
             )}
             aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
           >
@@ -204,7 +204,7 @@ export function CommunitySidebar({
             <div
               className={cn(
                 "rounded-lg py-2 text-center",
-                fitNav.itemActiveCompact,
+                fitNav.itemActiveCompactQuiet,
               )}
               aria-label={
                 activeTimeItem
@@ -255,14 +255,14 @@ export function CommunitySidebar({
                   fitNav.itemBase,
                   "relative min-w-[142px] lg:min-w-0",
                   drawerOpen ? "min-w-0" : "",
-                  active ? fitNav.itemActive : fitNav.itemIdle,
+                  active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
                   FOCUS_VISIBLE,
                 )}
               >
                 <span
                   className={cn(
                     "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors",
-                    active ? fitNav.iconActive : fitNav.iconIdle,
+                    active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
                   )}
                   aria-hidden="true"
                 >
@@ -311,14 +311,14 @@ export function CommunitySidebar({
                   className={cn(
                     "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors lg:min-w-0",
                     drawerOpen ? "min-w-0" : "",
-                    active ? fitNav.itemActive : fitNav.itemIdle,
+                    active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
                     FOCUS_VISIBLE,
                   )}
                 >
                   <span
                     className={cn(
                       "grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors",
-                      active ? fitNav.iconActive : fitNav.iconIdle,
+                      active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
                     )}
                     aria-hidden="true"
                   >

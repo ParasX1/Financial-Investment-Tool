@@ -18,6 +18,8 @@
     --fit-color-text-label: #687184;
     --fit-color-accent: #8ea0ff;
     --fit-color-accent-strong: #65a0fd;
+    --fit-nav-active-bg: #101939;
+    --fit-nav-active-border: #203773;
   }
 
   @media (max-width: 767px) {

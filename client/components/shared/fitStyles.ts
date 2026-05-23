@@ -3,12 +3,17 @@ export const fitNav = {
     "group flex min-h-[44px] min-w-0 touch-manipulation items-center gap-3 rounded-lg px-3 py-2 text-left transition-[background-color,color,box-shadow] duration-150",
   itemActive:
     "bg-gradient-to-r from-[#1f2466] via-[#24175a] to-[#3a155f] text-white shadow-[inset_0_0_0_1px_rgba(123,140,255,0.42),0_12px_28px_rgba(83,103,255,0.18)]",
+  itemActiveQuiet:
+    "bg-[var(--fit-nav-active-bg)] text-white shadow-[inset_0_0_0_1px_var(--fit-nav-active-border)]",
   itemActiveCompact:
     "bg-[#101225] text-white shadow-[inset_0_0_0_1px_rgba(123,140,255,0.28),0_0_24px_rgba(83,103,255,0.12)]",
+  itemActiveCompactQuiet:
+    "bg-[var(--fit-nav-active-bg)] text-[var(--fit-color-accent-strong)] shadow-[inset_0_0_0_1px_var(--fit-nav-active-border)]",
   itemIdle:
     "text-[#a5adbf] hover:bg-[linear-gradient(135deg,rgba(83,103,255,0.10),rgba(124,58,237,0.12))] hover:text-[#f4f7ff]",
   iconActive:
     "bg-white/[0.12] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]",
+  iconActiveQuiet: "bg-[#141419] text-[var(--fit-color-accent-strong)]",
   iconActiveStandalone:
     "bg-gradient-to-br from-[#5367ff] via-[#6d4cff] to-[#2b164f] text-white shadow-[0_0_22px_rgba(83,103,255,0.42),inset_0_0_0_1px_rgba(213,220,255,0.24)]",
   iconIdle: "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
@@ -19,10 +24,8 @@ export const fitNav = {
 } as const;
 
 export const fitButton = {
-  primary:
-    "bg-[#5d67ff] text-white transition-colors hover:bg-[#7079ff]",
-  secondary:
-    "bg-[#15151a] text-[#dce4ff] transition-colors hover:bg-[#20212a]",
+  primary: "bg-[#5d67ff] text-white transition-colors hover:bg-[#7079ff]",
+  secondary: "bg-[#15151a] text-[#dce4ff] transition-colors hover:bg-[#20212a]",
   subtle:
     "text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
 } as const;

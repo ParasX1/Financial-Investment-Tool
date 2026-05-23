@@ -6,8 +6,8 @@
   --learning-accent-border: #1d2a5c;
   --learning-support-bg: #0a0818;
   --learning-support-border: #1c2a5c;
-  --learning-active-bg: #101939;
-  --learning-active-border: #203773;
+  --learning-active-bg: var(--fit-nav-active-bg, #101939);
+  --learning-active-border: var(--fit-nav-active-border, #203773);
   --learning-idle-bg: var(--fit-color-field, #18181b);
 }
 
