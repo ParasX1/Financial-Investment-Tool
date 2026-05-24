@@ -439,6 +439,27 @@ const DashboardView: React.FC = () => {
                                             opacity: 1,
                                         },
                                     }}
+                                    slotProps={{
+                                        paper: {
+                                            sx: {
+                                                bgcolor: '#1b1b20',
+                                                color: '#fff',
+                                                border: '1px solid #2c2c33',
+                                                borderRadius: 1,
+                                                boxShadow: '0 12px 32px rgba(0,0,0,.45)',
+                                                '& .MuiAutocomplete-option': {
+                                                    color: '#fff',
+                                                    fontSize: 'clamp(12px, 0.75vw, 14px)',
+                                                },
+                                                '& .MuiAutocomplete-option[aria-selected="true"]': {
+                                                    bgcolor: 'rgba(109,93,252,.22)',
+                                                },
+                                                '& .MuiAutocomplete-option.Mui-focused': {
+                                                    bgcolor: 'rgba(109,93,252,.28)',
+                                                },
+                                            },
+                                        },
+                                    }}
                                     renderTags={(value, getTagProps) =>
                                         value.map((option, idx) => {
                                             const tagProps = getTagProps({ index: idx });
