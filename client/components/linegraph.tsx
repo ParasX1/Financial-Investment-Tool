@@ -94,17 +94,21 @@ interface LineGraphProps {
         .attr('d', line);
     });
 
+    const legendMarkerWidth = compact ? 12 : LEGEND_MARKER_WIDTH;
+    const legendTextGap = compact ? 4 : LEGEND_TEXT_GAP;
+    const legendItemGap = compact ? 12 : LEGEND_ITEM_GAP;
+    const legendFontSize = compact ? 11 : 16;
     const legendData = data.map((series, i) => ({
         ticker: series.ticker,
         color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
-        width: LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP + series.ticker.length * 9,
+        width: legendMarkerWidth + legendTextGap + series.ticker.length * (compact ? 7 : 9),
     }));
     const totalLegendWidth = legendData.reduce((sum, item) => sum + item.width, 0) +
-        Math.max(0, legendData.length - 1) * LEGEND_ITEM_GAP;
+        Math.max(0, legendData.length - 1) * legendItemGap;
 
     const legend = g.append('g')
         .attr('class', 'line-legend')
-        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + (compact ? 34 : 38)})`);
+        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + (compact ? 30 : 38)})`);
 
     const legendItems = legend.selectAll('g')
         .data(legendData)
@@ -113,13 +117,13 @@ interface LineGraphProps {
         .attr('transform', (_, i) => {
             const x = legendData
                 .slice(0, i)
-                .reduce((sum, item) => sum + item.width + LEGEND_ITEM_GAP, 0);
+                .reduce((sum, item) => sum + item.width + legendItemGap, 0);
             return `translate(${x},0)`;
         });
 
     legendItems.append('line')
         .attr('x1', 0)
-        .attr('x2', 18)
+        .attr('x2', legendMarkerWidth)
         .attr('y1', 0)
         .attr('y2', 0)
         .attr('stroke', d => d.color)
@@ -127,18 +131,18 @@ interface LineGraphProps {
         .attr('stroke-linecap', 'round');
 
     legendItems.append('circle')
-        .attr('cx', 9)
+        .attr('cx', legendMarkerWidth / 2)
         .attr('cy', 0)
-        .attr('r', 3)
+        .attr('r', compact ? 2.5 : 3)
         .attr('fill', CHART_BG)
         .attr('stroke', d => d.color)
         .attr('stroke-width', 1.5);
 
     legendItems.append('text')
-        .attr('x', LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP)
+        .attr('x', legendMarkerWidth + legendTextGap)
         .attr('y', compact ? 3 : 4)
         .attr('fill', d => d.color)
-        .attr('font-size', compact ? 13 : 16)
+        .attr('font-size', legendFontSize)
         .text(d => d.ticker);
 
     const xGridLines = d3.axisBottom(xScale)
