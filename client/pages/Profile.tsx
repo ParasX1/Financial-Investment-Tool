@@ -61,7 +61,8 @@ const sanitizePhone = (value: string) =>
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
 
-const hasLetter = (value: string) => /\p{L}/u.test(value)
+const hasLetter = (value: string) =>
+  Array.from(value).some((char) => char.toLocaleLowerCase() !== char.toLocaleUpperCase())
 
 const validateName = (label: string, value: string) => {
   if (!value) return `${label} is required`
@@ -373,7 +374,11 @@ function Profile() {
     <div className="min-h-screen bg-black text-white">
       <Sidebar />
 
-      <main className="min-h-screen px-5 py-6 md:ml-[50px] md:px-8 lg:px-10">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="ml-[var(--app-sidebar-width,52px)] min-h-screen min-w-0 overflow-x-hidden px-5 py-6 outline-none transition-[margin-left] duration-200 ease-out md:px-8 lg:px-10"
+      >
         <div className="mx-auto w-full max-w-[1280px]">
           <header className="flex flex-col gap-4 border-b border-white/15 pb-6 md:flex-row md:items-center md:justify-between">
             <div>

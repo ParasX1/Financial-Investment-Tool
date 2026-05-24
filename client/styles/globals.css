@@ -5,6 +5,21 @@
 @layer base {
   :root {
     --app-sidebar-width: 64px;
+    --fit-color-page-bg: #000000;
+    --fit-color-surface: #09090b;
+    --fit-color-surface-soft: #111114;
+    --fit-color-field: #18181b;
+    --fit-color-inner-surface: #050506;
+    --fit-color-border-subtle: rgba(132, 146, 176, 0.12);
+    --fit-color-border-panel: #27272a;
+    --fit-color-border-control: #202230;
+    --fit-color-text-body: #b9c1d0;
+    --fit-color-text-muted: #8f98aa;
+    --fit-color-text-label: #687184;
+    --fit-color-accent: #8ea0ff;
+    --fit-color-accent-strong: #65a0fd;
+    --fit-nav-active-bg: #101939;
+    --fit-nav-active-border: #203773;
   }
 
   @media (max-width: 767px) {
@@ -14,7 +29,7 @@
   }
 
   body {
-    background-color: #050505;
+    background-color: var(--fit-color-page-bg, #050505);
     min-height: 100vh;
     margin: 0;
   }

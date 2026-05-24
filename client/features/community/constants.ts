@@ -3,6 +3,7 @@ import type {
   CommunityTopTimeRange,
   SeedPost,
 } from "./types";
+import { FIT_CONTENT_MAX_WIDTH_PX } from "@/components/shared/uiPrimitives";
 
 export const COMMUNITY_PAGE_WIDTH = "100%";
 export const COMMUNITY_FEED_NAV_ITEMS: Array<{
@@ -54,7 +55,7 @@ export const COMMUNITY_TOP_TIME_RANGE_ITEMS: Array<{
   { id: "past-hour", label: "Past hour" },
 ];
 export const COMMUNITY_APP_RAIL_WIDTH_PX = 64;
-export const COMMUNITY_CONTENT_MAX_WIDTH_PX = 1180;
+export const COMMUNITY_CONTENT_MAX_WIDTH_PX = FIT_CONTENT_MAX_WIDTH_PX;
 export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;
 export const COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX = 12;
 export const COMMUNITY_SIDEBAR_FLOAT_GAP_PX = 16;
