@@ -1,5 +1,6 @@
 import * as d3 from "d3"
 import React, { useState, useRef, useEffect } from 'react';
+import { STOCK_SERIES_COLORS, getChartSeriesColor } from './chartColors';
 
 const CHART_BG = '#111';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
@@ -40,8 +41,8 @@ interface BarGraphProps {
         data,
         width = 500,
         height = 300,
-        barColor = '#fc03d7',
-        lineColors = ['#FF0000', '#008000', '#0000FF'],
+        barColor,
+        lineColors = STOCK_SERIES_COLORS,
         compact = false
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -76,6 +77,10 @@ interface BarGraphProps {
         const svg = d3.select(svgRef.current)
         .attr('width', width)
         .attr('height', height);
+        const colorPalette = lineColors.length >= data.length ? lineColors : STOCK_SERIES_COLORS;
+        const getBarColor = (index: number) => barColor && data.length === 1
+            ? barColor
+            : getChartSeriesColor(index, colorPalette);
         svg.selectAll('*').remove();
 
     // Set background color
@@ -113,7 +118,7 @@ interface BarGraphProps {
         .attr("height", 0) // Start with height 0
         .attr("rx", Math.min(8, xScale.bandwidth() / 2))
         .attr("ry", Math.min(8, xScale.bandwidth() / 2))
-        .attr("fill", (d, i) => i === 0 ? barColor : lineColors[(i-1) % lineColors.length])
+        .attr("fill", (d, i) => getBarColor(i))
         .on("mouseover", function (event: MouseEvent, d) {
             tooltip
             .style("display", "block")
