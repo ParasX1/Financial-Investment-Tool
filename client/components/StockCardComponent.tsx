@@ -279,13 +279,6 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       const singleValue = chartData[0].series.singleValue || {};
       const validTickers = Object.entries(singleValue).filter(
         ([, data]) => (typeof data === 'number' && !isNaN(data)) || (data && typeof (data as any).value === 'number')
-      ).sort(
-        ([tickerA], [tickerB]) => {
-          const indexA = selectedStocks.indexOf(tickerA);
-          const indexB = selectedStocks.indexOf(tickerB);
-          return (indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA) -
-            (indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB);
-        }
       );
 
       if (validTickers.length === 0) {

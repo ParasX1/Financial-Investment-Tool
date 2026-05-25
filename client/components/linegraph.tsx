@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import React, { useState, useRef, useEffect } from 'react';
-import { STOCK_SERIES_COLORS, getChartSeriesColor } from './chartColors';
 
 const CHART_BG = '#111';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
@@ -24,8 +23,8 @@ interface LineGraphProps {
     data,
     width = 500,
     height = 300,
-    mainColor,
-    lineColors = STOCK_SERIES_COLORS,
+    mainColor = '#fc03d7',
+    lineColors = ['#FF0000', '#008000', '#0000FF'],
     compact = false,
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -69,10 +68,6 @@ interface LineGraphProps {
         .curve(d3.curveMonotoneX)
 
     const svg = d3.select(svgRef.current).attr('width', width).attr('height', height);
-    const colorPalette = lineColors.length >= data.length ? lineColors : STOCK_SERIES_COLORS;
-    const getSeriesColor = (index: number) => mainColor && data.length === 1
-        ? mainColor
-        : getChartSeriesColor(index, colorPalette);
 
     // Clear previous elements
     svg.selectAll('*').remove();
@@ -88,7 +83,7 @@ interface LineGraphProps {
 
     // Append line paths for each series
     data.forEach((series, i) => {
-        const lineColor = getSeriesColor(i);
+        const lineColor = i === 0 ? mainColor : lineColors[(i-1) % lineColors.length];
         g.append('path')
             .datum(series.values)
             .attr('fill', 'none')
@@ -105,7 +100,7 @@ interface LineGraphProps {
     const legendFontSize = compact ? 11 : 16;
     const legendData = data.map((series, i) => ({
         ticker: series.ticker,
-        color: getSeriesColor(i),
+        color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
         width: legendMarkerWidth + legendTextGap + series.ticker.length * (compact ? 7 : 9),
     }));
     const totalLegendWidth = legendData.reduce((sum, item) => sum + item.width, 0) +
@@ -247,7 +242,7 @@ interface LineGraphProps {
                 .map(d => ({
                     ...d,
                     ticker: series.ticker,
-                    color: getSeriesColor(i),
+                    color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
                 }))
         );
 
@@ -269,7 +264,7 @@ interface LineGraphProps {
                 const closest = validValues.reduce((a, b) =>
                     Math.abs(+a.date - +anchorPoint.date) < Math.abs(+b.date - +anchorPoint.date) ? a : b
                 );
-                const color = getSeriesColor(i);
+                const color = i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length];
                 return { ...closest, ticker: series.ticker, color };
             })
             .filter(Boolean) as Array<{ date: Date; value: number; ticker: string; color: string }>;
