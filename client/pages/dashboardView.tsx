@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
@@ -26,6 +26,7 @@ import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
 import { MetricType } from '@/components/graphSettingsModal';
 import { useAuth } from '@/components/authContext'
 import { loadPortfolioConfig, savePortfolioConfig } from '@/services/portfolioPrefs'
+import { fetchTopPicks } from '@/services/topPicks';
 
 export interface CardSettings {
     barColor: string;
@@ -123,9 +124,12 @@ const DashboardView: React.FC = () => {
     const { user, loading } = useAuth()
     const [searchTags, setSearchTags] = useState<string[]>([])
     const [selectedStocks, setSelectedStocks] = useState<string[]>([])
+    const [topPickStocks, setTopPickStocks] = useState<string[]>([])
     const [prefsLoaded, setPrefsLoaded] = useState(false)
     const [activeCards, setActiveCards] = useState<boolean[]>([false, false, false, false, false, false]);
     const skipNextGlobalDateSync = useRef(false);
+    const stockSelectRef = useRef<HTMLDivElement | null>(null);
+    const [stockSelectWidth, setStockSelectWidth] = useState(0);
 
     // global time range to initialize and pass to each card
     const [globalStart, setGlobalStart] = useState<string>(() => {
@@ -160,6 +164,17 @@ const DashboardView: React.FC = () => {
             })
         )
     }, [globalStart, globalEnd])
+
+    useEffect(() => {
+        if (!stockSelectRef.current) return;
+
+        const observer = new ResizeObserver(([entry]) => {
+            setStockSelectWidth(entry.contentRect.width);
+        });
+
+        observer.observe(stockSelectRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     const userId = user?.id;
 
@@ -269,7 +284,36 @@ const DashboardView: React.FC = () => {
         });
     };
 
-    const stockOptions = Object.keys(stockDataMap);
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchTopPicks({ limit: 10, sort_key: 'sharpe', sort_dir: 'desc' })
+            .then(rows => {
+                if (cancelled) return;
+
+                setTopPickStocks(
+                    rows
+                        .map(row => row.symbol.trim().toUpperCase())
+                        .filter(Boolean)
+                );
+            })
+            .catch(error => {
+                console.error('load top picks for dashboard error:', error);
+                if (!cancelled) setTopPickStocks([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const topPickSet = useMemo(() => new Set(topPickStocks), [topPickStocks]);
+    const stockOptions = useMemo(() => {
+        const localStocks = Object.keys(stockDataMap).map(stock => stock.trim().toUpperCase());
+        const merged = new Set([...topPickStocks, ...localStocks, ...searchTags]);
+        return Array.from(merged).filter(Boolean);
+    }, [topPickStocks, searchTags]);
+
     useEffect(() => {
         if (!userId || !prefsLoaded) return
         const h = setTimeout(() => {
@@ -339,7 +383,7 @@ const DashboardView: React.FC = () => {
                             alignItems: 'stretch',
                             gap: 'clamp(16px, 1.8vh, 22px)',
                             flexShrink: 0,
-                            overflow: 'hidden',
+                            overflow: 'visible',
                             '@media (max-height: 720px), (max-width: 900px)': {
                                 height: 'auto',
                                 minHeight: 'unset',
@@ -372,7 +416,7 @@ const DashboardView: React.FC = () => {
                                 minHeight: 0,
                             }}
                         >
-                            <Box sx={{ flex: '1 1 420px', minWidth: { xs: '100%', md: 320 } }}>
+                            <Box ref={stockSelectRef} sx={{ flex: '1 1 420px', minWidth: { xs: '100%', md: 320 }, position: 'relative', zIndex: 20 }}>
                                 <Typography
                                     variant="h5"
                                     sx={{ 
@@ -389,8 +433,10 @@ const DashboardView: React.FC = () => {
                                 <Autocomplete
                                     multiple
                                     freeSolo
+                                    disablePortal
                                     filterSelectedOptions
                                     options={stockOptions}
+                                    groupBy={(option) => topPickSet.has(option) ? 'Top Picks Recommended' : 'All Stocks'}
                                     value={searchTags}
                                     onChange={(_, newTags) => {
                                         const normalizedTags = Array.from(
@@ -438,8 +484,20 @@ const DashboardView: React.FC = () => {
                                             color: '#a09ca8',
                                             opacity: 1,
                                         },
+                                        '& .MuiAutocomplete-popperDisablePortal': {
+                                            width: stockSelectWidth ? `${stockSelectWidth}px !important` : '100%',
+                                            maxWidth: stockSelectWidth ? `${stockSelectWidth}px` : '100%',
+                                            zIndex: 40,
+                                        },
                                     }}
                                     slotProps={{
+                                        popper: {
+                                            sx: {
+                                                width: stockSelectWidth ? `${stockSelectWidth}px !important` : '100%',
+                                                maxWidth: stockSelectWidth ? `${stockSelectWidth}px` : '100%',
+                                                zIndex: 40,
+                                            },
+                                        },
                                         paper: {
                                             sx: {
                                                 bgcolor: '#1b1b20',
@@ -457,9 +515,38 @@ const DashboardView: React.FC = () => {
                                                 '& .MuiAutocomplete-option.Mui-focused': {
                                                     bgcolor: 'rgba(109,93,252,.28)',
                                                 },
+                                                '& .MuiAutocomplete-listbox': {
+                                                    p: 0,
+                                                    maxHeight: 'min(380px, calc(100vh - 180px))',
+                                                },
                                             },
                                         },
                                     }}
+                                    renderGroup={(params) => (
+                                        <li key={params.key}>
+                                            <Box
+                                                sx={{
+                                                    position: 'sticky',
+                                                    top: 0,
+                                                    zIndex: 1,
+                                                    bgcolor: '#141419',
+                                                    color: '#9aa7ff',
+                                                    px: 1.5,
+                                                    minHeight: 38,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    fontSize: 'clamp(11px, 0.68vw, 13px)',
+                                                    fontWeight: 700,
+                                                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                    boxShadow: '0 8px 12px rgba(20,20,25,0.92)',
+                                                }}
+                                            >
+                                                {params.group}
+                                            </Box>
+                                            <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>{params.children}</ul>
+                                        </li>
+                                    )}
                                     renderTags={(value, getTagProps) =>
                                         value.map((option, idx) => {
                                             const tagProps = getTagProps({ index: idx });
