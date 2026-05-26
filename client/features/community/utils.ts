@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import {
   COMMUNITY_IMAGE_EXTENSIONS,
   COMMUNITY_IMAGE_TYPES,
@@ -227,7 +228,7 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
   const copy = normalizeDiscussionDraft(draft);
 
   return {
-    id: `local-${crypto.randomUUID()}`,
+    id: `local-${randomUUID()}`,
     user: "You",
     initials: "YU",
     title: copy.title || "Untitled discussion",
@@ -245,7 +246,7 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
 
 export function createLocalComment(text: string): CommentUI {
   return {
-    id: `local-comment-${crypto.randomUUID()}`,
+    id: `local-comment-${randomUUID()}`,
     user: "You",
     text,
     createdAt: new Date().toISOString(),
