@@ -10,6 +10,7 @@ const HOVER_LINE_COLOR = 'rgba(255,255,255,0.32)';
 const LEGEND_MARKER_WIDTH = 18;
 const LEGEND_TEXT_GAP = 6;
 const LEGEND_ITEM_GAP = 24;
+const CHART_ANIMATION_MS = 700;
 
 interface LineGraphProps {
     data: {ticker: string; values: { date: Date; value: number }[]}[];
@@ -89,14 +90,22 @@ interface LineGraphProps {
     // Append line paths for each series
     data.forEach((series, i) => {
         const lineColor = getSeriesColor(i);
-        g.append('path')
+        const path = g.append('path')
             .datum(series.values)
             .attr('fill', 'none')
             .attr('stroke', lineColor)
             .attr('stroke-width', 2)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-        .attr('d', line);
+            .attr('d', line);
+
+        const totalLength = path.node()?.getTotalLength() ?? 0;
+        path
+            .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
+            .attr('stroke-dashoffset', totalLength)
+            .transition()
+            .duration(CHART_ANIMATION_MS)
+            .attr('stroke-dashoffset', 0);
     });
 
     const legendMarkerWidth = compact ? 12 : LEGEND_MARKER_WIDTH;

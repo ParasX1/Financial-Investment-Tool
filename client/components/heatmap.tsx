@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 const CHART_BG = '#111';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
 const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+const CHART_ANIMATION_MS = 500;
 
 const positionTooltip = (
     event: MouseEvent,
@@ -114,6 +115,7 @@ interface HeatMapProps {
                 .attr("width", cellWidth)
                 .attr("height", cellHeight)
                 .attr("fill", (d) => colorScale(d.value))
+                .attr("opacity", 0)
                 .on("mouseover", (event: MouseEvent, d) => {
                     const rowLabel = labels[d.row] ?? d.row.toString();
                     const colLabel = labels[d.col] ?? d.col.toString();
@@ -130,6 +132,9 @@ interface HeatMapProps {
                 .on("mouseout", () => {
                     tooltip.style('display', 'none');
                 })
+                .transition()
+                .duration(CHART_ANIMATION_MS)
+                .attr("opacity", 1)
             
             g.selectAll("text.cell-label")
                 .data(data.flatMap((row, i) => row.map((value, j) => ({row: i, col: j, value }))))
@@ -141,7 +146,11 @@ interface HeatMapProps {
                 .attr("dominant-baseline", "middle")
                 .style("font-size", Math.min(cellWidth, cellHeight) / 5)
                 .attr("fill", d => Math.abs(d.value) > 0.35 ? "#fff" : TEXT_COLOR)
-                .text(d => d.value.toFixed(2));
+                .text(d => d.value.toFixed(2))
+                .attr("opacity", 0)
+                .transition()
+                .duration(CHART_ANIMATION_MS)
+                .attr("opacity", 1);
                 
             const xAxis = d3.axisTop(d3.scaleBand()
                 .domain(labels.length ? labels : data[0].map((_, i) => i.toString()))

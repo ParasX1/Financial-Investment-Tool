@@ -5,6 +5,7 @@ import { getChartSeriesColor } from './chartColors';
 const GRID_COLOR = 'rgba(255,255,255,0.12)';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
 const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+const CHART_ANIMATION_MS = 500;
 
 const positionTooltip = (
   event: MouseEvent,
@@ -167,7 +168,11 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("y1", d => yScale(d.low))
-        .attr("y2", d => yScale(d.high));
+        .attr("y2", d => yScale(d.high))
+        .attr("opacity", 0)
+        .transition()
+        .duration(CHART_ANIMATION_MS)
+        .attr("opacity", 1);
 
       // Open ticks
       tickerGroup.selectAll(`.open-${tickerIndex}`)
@@ -180,7 +185,11 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr("x1", d => (xScale(d.date) || 0) + xOffset)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("y1", d => yScale(d.open))
-        .attr("y2", d => yScale(d.open));
+        .attr("y2", d => yScale(d.open))
+        .attr("opacity", 0)
+        .transition()
+        .duration(CHART_ANIMATION_MS)
+        .attr("opacity", 1);
 
       // Close ticks
       tickerGroup.selectAll(`.close-${tickerIndex}`)
@@ -193,7 +202,11 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth)
         .attr("y1", d => yScale(d.close))
-        .attr("y2", d => yScale(d.close));
+        .attr("y2", d => yScale(d.close))
+        .attr("opacity", 0)
+        .transition()
+        .duration(CHART_ANIMATION_MS)
+        .attr("opacity", 1);
     });
 
     // Invisible bars for tooltip (cover full width for all tickers on that date)
