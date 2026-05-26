@@ -3,6 +3,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import type { MouseEvent } from "react";
 import Link from "next/link";
+import { fitButton } from "@/components/shared/fitStyles";
 import communityStyles from "@/styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 
@@ -74,9 +75,7 @@ export function CommunityToolbar({
           className={cn(
             "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white no-underline transition-colors hover:no-underline sm:px-4",
             communityStyles.toolbarControl,
-            actionType === "create"
-              ? "bg-[#5d67ff] hover:bg-[#7079ff]"
-              : "bg-[#15151a] text-[#dce4ff] hover:bg-[#20212a]",
+            actionType === "create" ? fitButton.primary : fitButton.secondary,
             FOCUS_VISIBLE,
           )}
         >

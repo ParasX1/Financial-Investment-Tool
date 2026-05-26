@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
+import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import {
   COMMUNITY_APP_RAIL_WIDTH_PX,
   COMMUNITY_COMPACT_MEDIA_QUERY,
@@ -381,14 +382,11 @@ export function CommunityMain({
           />
         ) : null}
 
-        <header>
-          <h1 className="text-balance text-[28px] font-extrabold leading-tight tracking-normal text-white sm:text-[30px]">
-            Community
-          </h1>
-          <p className="mt-2 max-w-[34rem] text-pretty text-[15px] text-[#b9c1d0]">
-            Connect with fellow investors and share market insights
-          </p>
-        </header>
+        <FitPageHeader
+          title="Community"
+          subtitle="Connect with fellow investors and share market insights"
+          subtitleClassName="max-w-[34rem]"
+        />
 
         <div
           className={cn(
