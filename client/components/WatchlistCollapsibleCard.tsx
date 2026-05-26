@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Box, Button } from '@mui/material';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import KeyboardArrowRightRoundedIcon from '@mui/icons-material/KeyboardArrowRightRounded';
 import StockChartCard from '@/components/StockCardComponent';
-import type { CardSettings } from '@/pages/dashboardView';
-import type { MetricType } from '@/components/graphSettingsModal';
+import type { CardSettings } from '@/features/portfolio/types';
 
 type Props = {
   index: number;
@@ -44,7 +45,7 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
   const [cardSettings, setCardSettings] = useState<CardSettings>(() => ({
     barColor: color,
     dateRange: { start: defaultStart, end: defaultEnd },
-    metricType: 'BetaAnalysis' as MetricType,
+    metricType: 'BetaAnalysis',
     marketTicker: 'SPY',
     riskRate: 0.01,
     confidenceLevel: 0.05,
@@ -60,7 +61,9 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
   }, [defaultStart, defaultEnd, color]);
 
   const handleActivate = (idx: number) => { setIsActive(true); };
-  const handleUpdateSettings = (idx: number, settings: CardSettings) => { setCardSettings(settings); };
+  const handleUpdateSettings = (idx: number, settings: Partial<CardSettings>) => {
+    setCardSettings(prev => ({ ...prev, ...settings }));
+  };
   const handleClear = (idx: number) => {
     setIsActive(false);
     setCardSettings(s => ({ ...s, graphMade: false }));
@@ -108,15 +111,20 @@ const WatchlistCollapsibleCard: React.FC<Props> = ({
         mb: isCollapsed ? 0 : 1,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* <Button
+          <Button
             variant="contained"
             size="small"
             onClick={toggle}
+            aria-expanded={!isCollapsed}
             aria-label="Toggle collapse"
             title={isCollapsed ? 'Expand' : 'Collapse'}
           >
-            {isCollapsed ? '▸' : '▾'}
-          </Button> */}
+            {isCollapsed ? (
+              <KeyboardArrowRightRoundedIcon fontSize="small" aria-hidden="true" />
+            ) : (
+              <KeyboardArrowDownRoundedIcon fontSize="small" aria-hidden="true" />
+            )}
+          </Button>
           <Box sx={{ color: '#fff', fontWeight: 600 }}>
             {selectedStock ?? 'Select a stock'}
           </Box>

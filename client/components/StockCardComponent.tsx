@@ -9,9 +9,9 @@ import BarGraph from './bargraph';
 import LineGraph from './linegraph';
 import GraphSettingsModal, {GraphSettings, MetricType} from './graphSettingsModal';
 import { fetchMetrics, MetricsResponse } from './fetchMetrics';
-import { CardSettings } from '@/pages/dashboardView';
 import ScatterPlotGraph from './scatterplot';
 import HeatMap from './heatmap';
+import { CardSettings, getPortfolioMetricLabel } from '@/features/portfolio/types';
 
 type OHLCData = {
     date: string;
@@ -157,10 +157,10 @@ interface StockChartCardProps {
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
   onActivate: (index: number) => void;
-  onUpdateSettings: (index: number, settings: CardSettings) => void;
+  onUpdateSettings: (index: number, settings: Partial<CardSettings>) => void;
   height?: number | string;
   showSwap?: boolean;
-  variant?: 'default' | 'main';
+  variant?: 'default' | 'main' | 'workspace';
   chartLayout?: 'default' | 'compact';
 }
 
@@ -394,8 +394,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
     };
   }
 
-  const isMainVariant = variant === 'main';
-  const availableChartWidth = Math.max(dimensions.width - 32, 120);
+  const isWorkspaceVariant = variant === 'workspace';
+  const isMainVariant = variant === 'main' || isWorkspaceVariant;
+  const availableChartWidth = Math.max(dimensions.width - (isWorkspaceVariant ? 24 : 32), 120);
   const chartWidth = Math.floor(availableChartWidth);
   const chartVerticalReserve = isMainVariant
     ? Math.min(isCompactChart ? 62 : 90, Math.max(isCompactChart ? 48 : 66, dimensions.height * 0.16))
@@ -403,6 +404,13 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
   const chart = renderChart();
   const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
+  const swapLabel = isWorkspaceVariant
+    ? index === 0
+      ? 'Primary graph'
+      : 'Swap with Graph 1'
+    : index === 0
+      ? 'Main view'
+      : 'Switch to main view';
 
   // render
   return (
@@ -414,10 +422,10 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         left:     isFullscreen ? 0 : 'unset',
         width:    isFullscreen ? '100vw' : '100%',
         height:   isFullscreen ? '100vh' : height,
-        bgcolor:  '#111',
-        border:   '1px solid #555',
-        borderRadius: isMainVariant ? 2 : 0,
-        p:        isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
+        bgcolor:  isWorkspaceVariant ? 'transparent' : '#111',
+        border:   isWorkspaceVariant ? '0' : '1px solid #555',
+        borderRadius: isWorkspaceVariant ? 0 : isMainVariant ? 2 : 0,
+        p:        isWorkspaceVariant ? 'clamp(8px, 0.7vw, 12px)' : isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
         overflow: 'hidden',
         zIndex:   isFullscreen ? 1000 : 'unset',
       }}
@@ -426,9 +434,9 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         <Box
           sx={{
             position: 'absolute',
-            top: 'clamp(10px, 0.85vw, 16px)',
-            left: 'clamp(10px, 0.85vw, 16px)',
-            right: 'clamp(10px, 0.85vw, 16px)',
+            top: isWorkspaceVariant ? 'clamp(8px, 0.7vw, 12px)' : 'clamp(10px, 0.85vw, 16px)',
+            left: isWorkspaceVariant ? 'clamp(8px, 0.7vw, 12px)' : 'clamp(10px, 0.85vw, 16px)',
+            right: isWorkspaceVariant ? 'clamp(8px, 0.7vw, 12px)' : 'clamp(10px, 0.85vw, 16px)',
             zIndex: 1,
             display: 'flex',
             alignItems: 'center',
@@ -440,9 +448,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
             <Select
               size="small"
               value={metricType}
+              inputProps={{
+                'aria-label': `Metric type for graph ${index + 1}`,
+              }}
               renderValue={(value) =>
                 graphMade
-                  ? metricOptions.find(option => option.value === value)?.label
+                  ? getPortfolioMetricLabel(value as MetricType)
                   : 'Select Metric'
               }
               sx={{
@@ -487,30 +498,43 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={index === 0 ? 'Main view' : 'Switch to main view'} arrow>
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={() => onSwap(index)}
-                  disabled={index === 0}
-                  sx={{
-                    color: '#9aa0aa',
-                    '&.Mui-disabled': {
-                      color: 'rgba(154,160,170,0.32)',
-                    },
-                  }}
-                >
-                  <SwapHorizIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
+            {showSwap && (
+              <Tooltip title={swapLabel} arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => onSwap(index)}
+                    disabled={index === 0}
+                    aria-label={swapLabel}
+                    sx={{
+                      color: '#9aa0aa',
+                      '&.Mui-disabled': {
+                        color: 'rgba(154,160,170,0.32)',
+                      },
+                    }}
+                  >
+                    <SwapHorizIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
             <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
-              <IconButton size="small" onClick={handleFullscreenToggle} sx={{ color: '#9aa0aa' }}>
+              <IconButton
+                size="small"
+                onClick={handleFullscreenToggle}
+                aria-label={isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'}
+                sx={{ color: '#9aa0aa' }}
+              >
                 {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
               </IconButton>
             </Tooltip>
             <Tooltip title="Clear" arrow>
-              <IconButton size="small" onClick={() => onClear(index)} sx={{ color: '#9aa0aa' }}>
+              <IconButton
+                size="small"
+                onClick={() => onClear(index)}
+                aria-label={`Clear graph ${index + 1}`}
+                sx={{ color: '#9aa0aa' }}
+              >
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -522,13 +546,27 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
           {!isMainVariant && (
           <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
             {showSwap && (
-              <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
+              <Button variant="contained" size="small" onClick={() => onSwap(index)} aria-label="Swap graph">
+                ↔
+              </Button>
             )}
-            <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
-            <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
+            <Button variant="contained" size="small" onClick={() => onClear(index)} aria-label="Clear graph">
+              ×
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleFullscreenToggle}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'}
+            >
               {isFullscreen ? '⤡' : '⤢'}
             </Button>
-          <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => setShowSettings(true)}
+            aria-label="Open graph settings"
+          >
             ⚙︎
           </Button>
         </Box>

@@ -1,48 +1,26 @@
-import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
-import {
-    Navbar,
-    NavbarContent,
-    NavbarItem,
-    Link as NextUILink,
-    Button as NextUIButton,
-    Spacer,
-} from '@nextui-org/react';
-import ModalLogin from '@/components/Modal/ModalLogin';
-import ModalSignUp from '@/components/Modal/ModalSignUp';
-import CardComponent from '@/components/CardComponent';
 import { Box, Autocomplete, TextField, Chip, Tooltip, Typography, InputAdornment} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import img1 from '@/assets/gridBackground1.png';
-import teamImage from '@/assets/team.png';
-import { StaticImageData } from 'next/image';
-import supabase from "@/components/supabase";
-import OHLCChart from '@/components/ohlc';
-import { Select, SelectItem } from "@nextui-org/react";
-import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
-import { MetricType } from '@/components/graphSettingsModal';
+import { stockDataMap } from '@/components/StockCardComponent';
 import { useAuth } from '@/components/authContext'
 import { loadPortfolioConfig, savePortfolioConfig } from '@/services/portfolioPrefs'
 import { fetchTopPicks } from '@/services/topPicks';
-
-export interface CardSettings {
-    barColor: string;
-    dateRange: { start: string; end: string };
-    metricType: MetricType;
-    marketTicker?: string;
-    riskRate?: number;
-    confidenceLevel?: number;
-    graphMade: boolean;
-}
+import { PortfolioWorkspace } from '@/features/portfolio/components/PortfolioWorkspace';
+import {
+    createDefaultPortfolioPanelLayout,
+    normalisePortfolioPanelLayouts,
+} from '@/features/portfolio/portfolioWorkspaceLayout';
+import type { CardSettings, PortfolioPanelLayout } from '@/features/portfolio/types';
 
 type DashboardState = {
     searchTags: string[];
     selectedStocks: string[];
     activeCards: boolean[];
     cardSettings: CardSettings[];
+    panelLayouts: PortfolioPanelLayout[];
     globalStart: string;
     globalEnd: string;
 }
@@ -56,10 +34,10 @@ const getTodayDate = () => {
 
 const createDefaultCardSettings = (start: string, end: string): CardSettings[] =>
     Array.from({length: 6},
-        () => ({
+        (): CardSettings => ({
             barColor: '#fc03d7',
             dateRange: {start, end},
-            metricType: 'BetaAnalysis' as MetricType,
+            metricType: 'BetaAnalysis',
             graphMade: false
         })
     );
@@ -101,6 +79,7 @@ const readDashboardState = (userId?: string): DashboardState | null => {
                 },
                 graphMade: Boolean(parsed.cardSettings?.[index]?.graphMade),
             })),
+            panelLayouts: normalisePortfolioPanelLayouts(parsed.panelLayouts),
             globalStart: parsed.globalStart,
             globalEnd: parsed.globalEnd,
         };
@@ -140,6 +119,9 @@ const DashboardView: React.FC = () => {
 
     const [cardSettings, setCardSettings] = useState<CardSettings[]>(
         () => createDefaultCardSettings(globalStart, globalEnd)
+    );
+    const [panelLayouts, setPanelLayouts] = useState<PortfolioPanelLayout[]>(
+        () => createDefaultPortfolioPanelLayout()
     );
 
     useEffect(() => {
@@ -202,6 +184,7 @@ const DashboardView: React.FC = () => {
                 setSelectedStocks(savedState.selectedStocks);
                 setActiveCards(savedState.activeCards);
                 setCardSettings(savedState.cardSettings);
+                setPanelLayouts(savedState.panelLayouts);
                 setGlobalStart(savedState.globalStart);
                 setGlobalEnd(savedState.globalEnd);
             }
@@ -325,15 +308,18 @@ const DashboardView: React.FC = () => {
     useEffect(() => {
         if (loading || !prefsLoaded) return;
 
-        saveDashboardState(userId, {
+        const saveHandle = window.setTimeout(() => saveDashboardState(userId, {
             searchTags,
             selectedStocks,
             activeCards,
             cardSettings,
+            panelLayouts,
             globalStart,
             globalEnd,
-        });
-    }, [loading, prefsLoaded, userId, searchTags, selectedStocks, activeCards, cardSettings, globalStart, globalEnd]);
+        }), 250);
+
+        return () => window.clearTimeout(saveHandle);
+    }, [loading, prefsLoaded, userId, searchTags, selectedStocks, activeCards, cardSettings, panelLayouts, globalStart, globalEnd]);
 
     return (
         <Box
@@ -588,6 +574,10 @@ const DashboardView: React.FC = () => {
                                             placeholder={searchTags.length >= 5 ? 'Maximum 5 stocks' : `Add stock (${searchTags.length}/5)`}
                                             size="small"
                                             variant="outlined"
+                                            inputProps={{
+                                                ...params.inputProps,
+                                                'aria-label': 'Select portfolio stocks',
+                                            }}
                                             InputProps={{
                                                 ...params.InputProps,
                                                 startAdornment: (
@@ -635,6 +625,9 @@ const DashboardView: React.FC = () => {
                                         size="small"
                                         value={globalStart}
                                         onChange={e => setGlobalStart(e.target.value)}
+                                        inputProps={{
+                                            'aria-label': 'Portfolio start date',
+                                        }}
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -684,6 +677,9 @@ const DashboardView: React.FC = () => {
                                         size="small"
                                         value={globalEnd}
                                         onChange={e => setGlobalEnd(e.target.value)}
+                                        inputProps={{
+                                            'aria-label': 'Portfolio end date',
+                                        }}
 
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -723,109 +719,25 @@ const DashboardView: React.FC = () => {
                             minHeight: 0,
                             p: 'clamp(8px, 0.85vw, 16px)',
                             pt: 0,
+                            overflow: 'hidden',
                             '@media (max-height: 720px), (max-width: 900px)': {
                                 flex: 'none',
                                 minHeight: 'unset',
+                                overflow: 'visible',
                             },
                         }}
                     >
-                        <Box
-                            sx={{
-                                height: '100%',
-                                minHeight: 0,
-                                display: 'grid',
-                                gap: 'clamp(8px, 0.85vw, 16px)',
-                                gridTemplateColumns: {
-                                    xs: 'repeat(3, minmax(0, 1fr))',
-                                    md: 'repeat(6, minmax(0, 1fr))',
-                                },
-                                gridTemplateRows: {
-                                    xs: 'repeat(3, minmax(0, 1fr))',
-                                    md: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.72fr)',
-                                },
-                                '& > *': {
-                                    minWidth: 0,
-                                    minHeight: 0,
-                                },
-                                '@media (max-height: 720px), (max-width: 900px)': {
-                                    height: 'auto',
-                                    minHeight: 'unset',
-                                    gridTemplateColumns: '1fr',
-                                    gridTemplateRows: 'none',
-                                    gridAutoRows: 'clamp(280px, 58vh, 420px)',
-                                    '& > *': {
-                                        gridColumn: 'auto !important',
-                                        gridRow: 'auto !important',
-                                        minHeight: 0,
-                                    },
-                                },
-                            }}
-                        >
-                            <Box sx={{ gridColumn: { xs: '1 / 4', md: '1 / 5' }, gridRow: { xs: '1 / 2', md: '1 / 3' } }}>
-                                <StockChartCard
-                                    index={0}
-                                    selectedStocks={selectedStocks}
-                                    isActive={activeCards[0]}
-                                    cardSettings={cardSettings[0]}
-                                    onClear={handleClear}
-                                    onSwap={handleSwap}
-                                    onActivate={handleActivate}
-                                    onUpdateSettings={handleCardSettingsUpdate}
-                                    height="100%"
-                                    variant="main"
-                                />
-                            </Box>
-
-                            {[1, 2].map((index) => (
-                                <Box
-                                    key={index}
-                                    sx={{
-                                        gridColumn: { xs: index === 1 ? '1 / 2' : '2 / 4', md: '5 / 7' },
-                                        gridRow: { xs: '2 / 3', md: `${index} / ${index + 1}` },
-                                    }}
-                                >
-                                    <StockChartCard
-                                        index={index}
-                                        selectedStocks={selectedStocks}
-                                        isActive={activeCards[index]}
-                                        cardSettings={cardSettings[index]}
-                                        onClear={handleClear}
-                                        onSwap={handleSwap}
-                                        onActivate={handleActivate}
-                                        onUpdateSettings={handleCardSettingsUpdate}
-                                        height="100%"
-                                        variant="main"
-                                    />
-                                </Box>
-                            ))}
-
-                            {[3, 4, 5].map((index) => (
-                                <Box
-                                    key={index}
-                                    sx={{
-                                        gridColumn: {
-                                            xs: `${index - 2} / ${index - 1}`,
-                                            md: `${(index - 3) * 2 + 1} / ${(index - 3) * 2 + 3}`,
-                                        },
-                                        gridRow: { xs: '3 / 4', md: '3 / 4' },
-                                    }}
-                                >
-                                    <StockChartCard
-                                        index={index}
-                                        selectedStocks={selectedStocks}
-                                        isActive={activeCards[index]}
-                                        cardSettings={cardSettings[index]}
-                                        onClear={handleClear}
-                                        onSwap={handleSwap}
-                                        onActivate={handleActivate}
-                                        onUpdateSettings={handleCardSettingsUpdate}
-                                        height="100%"
-                                        variant="main"
-                                        chartLayout="compact"
-                                    />
-                                </Box>
-                            ))}
-                        </Box>
+                        <PortfolioWorkspace
+                            activeCards={activeCards}
+                            cardSettings={cardSettings}
+                            panelLayouts={panelLayouts}
+                            selectedStocks={selectedStocks}
+                            onActivate={handleActivate}
+                            onClear={handleClear}
+                            onPanelLayoutsChange={setPanelLayouts}
+                            onSwap={handleSwap}
+                            onUpdateSettings={handleCardSettingsUpdate}
+                        />
                     </Box>
                 </Box>
             </div>
