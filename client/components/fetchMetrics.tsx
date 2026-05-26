@@ -45,15 +45,58 @@ export async function fetchMetrics(
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch metrics ${response.statusText}`);
+      const serverMessage = await readMetricsError(response);
+      toast.error(`Unable to fetch ${metricType}: ${serverMessage}`);
+      return createEmptyMetricsResponse(req.tickers, metricType);
     }
 
     const data = await response.json();
     return formatMetricsResponse(req.tickers, metricType, data);
   } catch (error) {
     console.error('Error fetching metrics:', error);
-    throw error;
+    toast.error(`Unable to fetch ${metricType}. Check that the backend server is running.`);
+    return createEmptyMetricsResponse(req.tickers, metricType);
   }
+}
+
+async function readMetricsError(response: Response) {
+  try {
+    const data = await response.json();
+    return data?.error || response.statusText || 'Unknown backend error';
+  } catch {
+    return response.statusText || 'Unknown backend error';
+  }
+}
+
+function createEmptyMetricsResponse(tickers: string[], metricType: string): MetricsResponse {
+  const response: MetricsResponse = {
+    tickers,
+    metricType,
+    series: {},
+  };
+
+  switch (metricType) {
+    case 'BetaAnalysis':
+    case 'AlphaComparison':
+    case 'SharpeRatioMatrix':
+    case 'SortinoRatioVisualization':
+    case 'ValueAtRiskAnalysis':
+    case 'VolatilityAnalysis':
+      response.series.singleValue = {};
+      break;
+    case 'MaxDrawdownAnalysis':
+    case 'CumulativeReturnComparison':
+      response.series.timeSeries = {};
+      break;
+    case 'MarketCorrelationAnalysis':
+      response.series.correlationMatrix = {};
+      break;
+    case 'EfficientFrontierVisualization':
+      response.series.portfolio = { returns: [], risks: [], sharpe_ratios: [] };
+      break;
+  }
+
+  return response;
 }
 
 function formatMetricsResponse(tickers: string[], metricType: string, data: any): MetricsResponse {
@@ -74,7 +117,9 @@ function formatMetricsResponse(tickers: string[], metricType: string, data: any)
         toast.error('Not enough days for calculation (need at least 3 days).');
       } else {
         tickers.forEach(ticker => {
-        response.series.singleValue![ticker] = data[ticker];
+          if (data[ticker] !== undefined && data[ticker] !== null) {
+            response.series.singleValue![ticker] = data[ticker];
+          }
       });
       }
       break;
