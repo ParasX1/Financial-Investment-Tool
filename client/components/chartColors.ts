@@ -4,6 +4,7 @@ export const STOCK_SERIES_COLORS = [
   '#00a83b',
   '#1f4fff',
   '#ffb020',
+  
 ];
 
 export const getChartSeriesColor = (index: number, palette = STOCK_SERIES_COLORS) =>
