@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
-import BoltIcon from "@mui/icons-material/Bolt";
+// import BoltIcon from "@mui/icons-material/Bolt";
 import ModalLogin from "@/components/Modal/ModalLogin";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
@@ -22,10 +22,29 @@ export function Navbar({ items }: NavbarProps) {
     const [showLogIn, setShowLogIn] = useState(false)
     const router = useRouter()
 
+    const [visible, setVisible] = useState(true)
+    const lastScrollY = useRef(0)
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY
+            setVisible(currentScrollY < lastScrollY.current || currentScrollY < 64)
+            lastScrollY.current = currentScrollY
+        }
+
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+
     const handleNavClick = (href: string) => {
         if (href.startsWith('#')) {
             const el = document.getElementById(href.slice(1))
-            el?.scrollIntoView({ behavior: 'smooth' })
+            if (!el) return
+
+            const navbarHeight = 64
+            const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight
+
+            window.scrollTo({ top, behavior: 'smooth' })
         } else {
             router.push(href)
         }
@@ -38,6 +57,8 @@ export function Navbar({ items }: NavbarProps) {
                 backdropFilter: 'blur(10px)',
                 boxShadow: 'none',
                 borderBottom: '1px solid rgba(255,255,255,0.1)',
+                transform: visible ? 'translateY(0)' : 'translateY(-100%)',
+                transition: 'transform 0.3s ease',
             }}>
                 <Toolbar sx={{ gap: 2 }}>
                     {/* Logo */}
@@ -117,94 +138,3 @@ export function Navbar({ items }: NavbarProps) {
 }
 
 export default Navbar
-
-// import {
-// 	Button,
-// 	Link,
-// 	NavbarContent,
-// 	NavbarItem,
-// 	Navbar as Nb,
-// 	Spacer
-// } from "@nextui-org/react"
-
-// import React, { useEffect, useState, Fragment } from "react";
-// import ModalLogin from "@/components/Modal/ModalLogin";
-// import ModalSignUp from "@/components/Modal/ModalSignUp";
-// import {useAuth} from "@/components/authContext";
-
-// export interface NavbarElem {
-//     id: number
-//     label: string
-//     href: string 
-// }
-
-// interface NavbarProps {
-//     items: NavbarElem[]
-// }
-
-  
-// export function Navbar({ items } : NavbarProps) {
-//     const { user, loading, signOut } = useAuth()
-//     const [showSignUp, setSignUp] = useState(false)
-//     const [showLogIn, setShowLogIn] = useState(false)
-
-//     const handleLoginShow = () => setShowLogIn(true)
-//     const handleLoginClose = () => setShowLogIn(false)
-
-//     const handleSignUpShow = () => setSignUp(true)
-//     const handleSignUpClose = () => setSignUp(false)
-    
-//         return (
-//         <Nb maxWidth="full" shouldHideOnScroll>
-//         <NavbarContent className="hidden sm:flex gap-4" justify="center">
-//             {items.map((child, idx) => {
-//             return (
-//                 <React.Fragment key={child.href + idx}>
-
-//                 <NavbarItem>
-//                     <Link color="foreground" href={child.href}>
-//                         {child.label}
-//                     </Link>
-//                 </NavbarItem>
-//                 <Spacer x={6} />
-//                 </React.Fragment>
-//             )
-//             })}
-//         </NavbarContent>
-
-
-//         <NavbarContent justify="end">
-//             {user ? (
-//             <NavbarItem>
-//                 <Button className="bg-black text-white" variant="flat" onClick={() => signOut()}>
-//                 Log Out
-
-//                 </Button>
-//             </NavbarItem>
-//             ) : (
-//             <>
-//                 <NavbarItem>
-//                 <Button
-//                     className="bg-white text-black border-1 border-black"
-//                     variant="flat"
-//                     onClick={handleLoginShow}
-//                     isDisabled={loading}
-//                 >
-//                     Log In
-//                 </Button>
-//                 <ModalLogin show={showLogIn} onHide={handleLoginClose} />
-//                 </NavbarItem>
-//                 <NavbarItem>
-//                 <Button className="bg-black text-white" variant="flat" onClick={handleSignUpShow} isDisabled={loading}>
-//                     Sign Up
-//                 </Button>
-//                 <ModalSignUp show={showSignUp} onHide={handleSignUpClose} setLogin={setShowLogIn} />
-//                 </NavbarItem>
-//             </>
-//             )}
-//         </NavbarContent>
-//         </Nb>
-//     )
-// }
-
-// export default Navbar
