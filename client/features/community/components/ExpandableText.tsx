@@ -5,6 +5,7 @@ import communityStyles from "@/styles/community.module.css";
 import { POST_BODY_PREVIEW_MAX_CHARS } from "../constants";
 import { FOCUS_VISIBLE, cn } from "../design";
 import { getExpandableText } from "../utils";
+import { MarkdownBody } from "./MarkdownBody";
 
 export function ExpandableText({
   footer,
@@ -30,15 +31,14 @@ export function ExpandableText({
 
   return (
     <div className={cn("mt-[10px]", communityStyles.postCopyMeasure)}>
-      <p
+      <MarkdownBody
         id={contentId}
         className={cn(
-          "whitespace-pre-line text-[15px] leading-[1.65] text-[#c4ccdc]",
-          communityStyles.wrapAnywhere
+          "text-[15px] leading-[1.65] text-[#c4ccdc]",
+          communityStyles.wrapAnywhere,
         )}
-      >
-        {visibleText}
-      </p>
+        text={visibleText}
+      />
 
       {hasFooterRow ? (
         <div className="mt-[9px] flex flex-wrap items-center justify-between gap-x-[14px] gap-y-[7px]">

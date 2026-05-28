@@ -1,6 +1,6 @@
-import { randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { COMMUNITY_IMAGE_BUCKET } from "./constants";
+import { createCommunityId } from "./id";
 import { getUploadErrorMessage, validateCommunityImage } from "./utils";
 
 export type UploadedCommunityImage = {
@@ -62,7 +62,7 @@ async function uploadCommunityImage(
   const extension = file.name.includes(".")
     ? file.name.split(".").pop()!.toLowerCase()
     : "jpg";
-  const path = `${folder}/${randomUUID()}.${extension}`;
+  const path = `${folder}/${createCommunityId()}.${extension}`;
   const { error } = await db.storage
     .from(COMMUNITY_IMAGE_BUCKET)
     .upload(path, file);
