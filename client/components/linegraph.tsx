@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import React, { useState, useRef, useEffect } from 'react';
+import { STOCK_SERIES_COLORS, getChartSeriesColor } from './chartColors';
 
 const CHART_BG = '#111';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
@@ -9,6 +10,7 @@ const HOVER_LINE_COLOR = 'rgba(255,255,255,0.32)';
 const LEGEND_MARKER_WIDTH = 18;
 const LEGEND_TEXT_GAP = 6;
 const LEGEND_ITEM_GAP = 24;
+const CHART_ANIMATION_MS = 700;
 
 interface LineGraphProps {
     data: {ticker: string; values: { date: Date; value: number }[]}[];
@@ -23,8 +25,8 @@ interface LineGraphProps {
     data,
     width = 500,
     height = 300,
-    mainColor = '#fc03d7',
-    lineColors = ['#FF0000', '#008000', '#0000FF'],
+    mainColor,
+    lineColors = STOCK_SERIES_COLORS,
     compact = false,
     }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -68,6 +70,10 @@ interface LineGraphProps {
         .curve(d3.curveMonotoneX)
 
     const svg = d3.select(svgRef.current).attr('width', width).attr('height', height);
+    const colorPalette = lineColors.length >= data.length ? lineColors : STOCK_SERIES_COLORS;
+    const getSeriesColor = (index: number) => mainColor && data.length === 1
+        ? mainColor
+        : getChartSeriesColor(index, colorPalette);
 
     // Clear previous elements
     svg.selectAll('*').remove();
@@ -83,28 +89,40 @@ interface LineGraphProps {
 
     // Append line paths for each series
     data.forEach((series, i) => {
-        const lineColor = i === 0 ? mainColor : lineColors[(i-1) % lineColors.length];
-        g.append('path')
+        const lineColor = getSeriesColor(i);
+        const path = g.append('path')
             .datum(series.values)
             .attr('fill', 'none')
             .attr('stroke', lineColor)
             .attr('stroke-width', 2)
             .attr('stroke-linecap', 'round')
             .attr('stroke-linejoin', 'round')
-        .attr('d', line);
+            .attr('d', line);
+
+        const totalLength = path.node()?.getTotalLength() ?? 0;
+        path
+            .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
+            .attr('stroke-dashoffset', totalLength)
+            .transition()
+            .duration(CHART_ANIMATION_MS)
+            .attr('stroke-dashoffset', 0);
     });
 
+    const legendMarkerWidth = compact ? 12 : LEGEND_MARKER_WIDTH;
+    const legendTextGap = compact ? 4 : LEGEND_TEXT_GAP;
+    const legendItemGap = compact ? 12 : LEGEND_ITEM_GAP;
+    const legendFontSize = compact ? 11 : 16;
     const legendData = data.map((series, i) => ({
         ticker: series.ticker,
-        color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
-        width: LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP + series.ticker.length * 9,
+        color: getSeriesColor(i),
+        width: legendMarkerWidth + legendTextGap + series.ticker.length * (compact ? 7 : 9),
     }));
     const totalLegendWidth = legendData.reduce((sum, item) => sum + item.width, 0) +
-        Math.max(0, legendData.length - 1) * LEGEND_ITEM_GAP;
+        Math.max(0, legendData.length - 1) * legendItemGap;
 
     const legend = g.append('g')
         .attr('class', 'line-legend')
-        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + (compact ? 34 : 38)})`);
+        .attr('transform', `translate(${Math.max(0, (graphWidth - totalLegendWidth) / 2)},${graphHeight + (compact ? 30 : 38)})`);
 
     const legendItems = legend.selectAll('g')
         .data(legendData)
@@ -113,13 +131,13 @@ interface LineGraphProps {
         .attr('transform', (_, i) => {
             const x = legendData
                 .slice(0, i)
-                .reduce((sum, item) => sum + item.width + LEGEND_ITEM_GAP, 0);
+                .reduce((sum, item) => sum + item.width + legendItemGap, 0);
             return `translate(${x},0)`;
         });
 
     legendItems.append('line')
         .attr('x1', 0)
-        .attr('x2', 18)
+        .attr('x2', legendMarkerWidth)
         .attr('y1', 0)
         .attr('y2', 0)
         .attr('stroke', d => d.color)
@@ -127,18 +145,18 @@ interface LineGraphProps {
         .attr('stroke-linecap', 'round');
 
     legendItems.append('circle')
-        .attr('cx', 9)
+        .attr('cx', legendMarkerWidth / 2)
         .attr('cy', 0)
-        .attr('r', 3)
+        .attr('r', compact ? 2.5 : 3)
         .attr('fill', CHART_BG)
         .attr('stroke', d => d.color)
         .attr('stroke-width', 1.5);
 
     legendItems.append('text')
-        .attr('x', LEGEND_MARKER_WIDTH + LEGEND_TEXT_GAP)
+        .attr('x', legendMarkerWidth + legendTextGap)
         .attr('y', compact ? 3 : 4)
         .attr('fill', d => d.color)
-        .attr('font-size', compact ? 13 : 16)
+        .attr('font-size', legendFontSize)
         .text(d => d.ticker);
 
     const xGridLines = d3.axisBottom(xScale)
@@ -238,7 +256,7 @@ interface LineGraphProps {
                 .map(d => ({
                     ...d,
                     ticker: series.ticker,
-                    color: i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length],
+                    color: getSeriesColor(i),
                 }))
         );
 
@@ -260,7 +278,7 @@ interface LineGraphProps {
                 const closest = validValues.reduce((a, b) =>
                     Math.abs(+a.date - +anchorPoint.date) < Math.abs(+b.date - +anchorPoint.date) ? a : b
                 );
-                const color = i === 0 ? mainColor : lineColors[(i - 1) % lineColors.length];
+                const color = getSeriesColor(i);
                 return { ...closest, ticker: series.ticker, color };
             })
             .filter(Boolean) as Array<{ date: Date; value: number; ticker: string; color: string }>;

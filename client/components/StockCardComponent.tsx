@@ -118,6 +118,22 @@ const stockDataMap: { [key: string]: OHLCData[] } = {
     GOOGL: googleOHLCData,
     AMZN: amazonOHLCData,
     MSFT: microsoftOHLCData,
+    META: googleOHLCData,
+    TSLA: appleOHLCData,
+    NVDA: microsoftOHLCData,
+    NFLX: amazonOHLCData,
+    JPM: microsoftOHLCData,
+    V: appleOHLCData,
+    BAC: microsoftOHLCData,
+    WMT: googleOHLCData,
+    KO: appleOHLCData,
+    DIS: amazonOHLCData,
+    PFE: microsoftOHLCData,
+    INTC: googleOHLCData,
+    ORCL: appleOHLCData,
+    CRM: amazonOHLCData,
+    ADBE: googleOHLCData,
+    CSCO: microsoftOHLCData,
   };
 
 const metricOptions: { value: MetricType; label: string }[] = [
@@ -263,6 +279,13 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       const singleValue = chartData[0].series.singleValue || {};
       const validTickers = Object.entries(singleValue).filter(
         ([, data]) => (typeof data === 'number' && !isNaN(data)) || (data && typeof (data as any).value === 'number')
+      ).sort(
+        ([tickerA], [tickerB]) => {
+          const indexA = selectedStocks.indexOf(tickerA);
+          const indexB = selectedStocks.indexOf(tickerB);
+          return (indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA) -
+            (indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB);
+        }
       );
 
       if (validTickers.length === 0) {
@@ -373,7 +396,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
 
   const isMainVariant = variant === 'main';
   const availableChartWidth = Math.max(dimensions.width - 32, 120);
-  const chartWidth = Math.floor(availableChartWidth * (isCompactChart && !isFullscreen ? 0.84 : 1));
+  const chartWidth = Math.floor(availableChartWidth);
   const chartVerticalReserve = isMainVariant
     ? Math.min(isCompactChart ? 62 : 90, Math.max(isCompactChart ? 48 : 66, dimensions.height * 0.16))
     : 90;

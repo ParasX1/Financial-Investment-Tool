@@ -1,0 +1,111 @@
+.root {
+  --learning-panel-bg: var(--fit-color-surface, #09090b);
+  --learning-panel-border: var(--fit-color-border-panel, #27272a);
+  --learning-inner-bg: var(--fit-color-inner-surface, #050506);
+  --learning-accent-bg: #07051a;
+  --learning-accent-border: #1d2a5c;
+  --learning-support-bg: #0a0818;
+  --learning-support-border: #1c2a5c;
+  --learning-active-bg: var(--fit-nav-active-bg, #101939);
+  --learning-active-border: var(--fit-nav-active-border, #203773);
+  --learning-idle-bg: var(--fit-color-field, #18181b);
+}
+
+.navPanel,
+.cardDefault,
+.topicCard {
+  background: var(--learning-panel-bg, var(--fit-color-surface, #09090b));
+  border: 1px solid
+    var(--learning-panel-border, var(--fit-color-border-panel, #27272a));
+}
+
+.cardAccent {
+  background: var(--learning-accent-bg, #07051a);
+  border: 1px solid var(--learning-accent-border, #1d2a5c);
+}
+
+.cardSupport,
+.actionPanel {
+  background: var(--learning-support-bg, #0a0818);
+  border: 1px solid var(--learning-support-border, #1c2a5c);
+}
+
+.formula {
+  background: var(--learning-inner-bg, var(--fit-color-inner-surface, #050506));
+  border: 1px solid
+    var(--learning-panel-border, var(--fit-color-border-panel, #27272a));
+}
+
+.navItemActive {
+  background: var(--learning-active-bg, #101939);
+  box-shadow: inset 0 0 0 1px var(--learning-active-border, #203773);
+  color: #ffffff;
+}
+
+.navItemIdle {
+  color: var(--fit-color-text-muted, #8f98aa);
+}
+
+.navItemIdle:hover {
+  background: var(--learning-idle-bg, var(--fit-color-field, #18181b));
+  color: #ffffff;
+}
+
+.headerIcon {
+  background: linear-gradient(135deg, #14182d, #151126, #0f1016);
+  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+  color: var(--fit-color-accent, #8ea0ff);
+}
+
+.contentIcon {
+  background: #141419;
+}
+
+.iconActive {
+  color: var(--fit-color-accent-strong, #65a0fd);
+}
+
+.iconIdle {
+  color: var(--fit-color-text-muted, #8f98aa);
+}
+
+.navItemIdle:hover .iconIdle {
+  color: #ffffff;
+}
+
+.questionBadge {
+  background: var(--learning-active-bg, #101939);
+  border: 1px solid var(--learning-active-border, #203773);
+  color: var(--fit-color-accent-strong, #65a0fd);
+}
+
+.actionIcon {
+  background: rgba(83, 103, 255, 0.15);
+  color: #dbe4ff;
+}
+
+.actionButton {
+  background: linear-gradient(90deg, #2d5bf2, #8a21f0);
+  color: #ffffff;
+  transition:
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.actionButton:hover {
+  filter: brightness(1.1);
+}
+
+.actionButton:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actionButton {
+    transition: none;
+  }
+
+  .actionButton:active {
+    transform: none;
+  }
+}

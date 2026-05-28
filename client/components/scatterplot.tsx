@@ -5,6 +5,7 @@ const CHART_BG = '#111';
 const AXIS_COLOR = 'rgba(255,255,255,0.5)';
 const GRID_COLOR = 'rgba(255,255,255,0.12)';
 const TEXT_COLOR = 'rgba(255,255,255,0.65)';
+const CHART_ANIMATION_MS = 500;
 
 const positionTooltip = (
     event: MouseEvent,
@@ -189,11 +190,14 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
         .append('circle')
         .attr('cx', d => xScale(d.risk))
         .attr('cy', d => yScale(d.return))
-        .attr('r', 5)
+        .attr('r', 0)
         .attr('fill', mainColor)
         .on('mouseover', handleMouseOver)
         .on('mousemove', handleMouseMove)
         .on('mouseout', handleMouseOut)
+        .transition()
+        .duration(CHART_ANIMATION_MS)
+        .attr('r', 5)
 
         function invertColor(hex: string): string {
             if (hex.startsWith('#')) {
@@ -217,11 +221,14 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
             .attr('class', 'frontier')
             .attr('cx', d => xScale(d.risk))
             .attr('cy', d => yScale(d.return))
-            .attr('r', 6)
+            .attr('r', 0)
             .attr('fill', invertColor(mainColor))
             .on('mouseover', handleMouseOver)
             .on('mousemove', handleMouseMove)
             .on('mouseout', handleMouseOut)
+            .transition()
+            .duration(CHART_ANIMATION_MS)
+            .attr('r', 6)
 
         }, [data, width, height, mainColor]);
 
