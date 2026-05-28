@@ -63,6 +63,25 @@ describe("Community post mapping", () => {
     expect(post.tags).toEqual([]);
   });
 
+  it("allows title-only discussions without injecting placeholder body copy", () => {
+    const remotePost = postFromRow(
+      {
+        ...baseRow,
+        title: "Title-only update",
+        body: "",
+      },
+      "user-1",
+    );
+    const localPost = createLocalPost({
+      title: "Title-only update",
+      body: "",
+      tags: [],
+    });
+
+    expect(remotePost.body).toBe("");
+    expect(localPost.body).toBe("");
+  });
+
   it("keeps local discussions tagless when no tags are selected", () => {
     const post = createLocalPost({
       title: "NVDA earnings risk",

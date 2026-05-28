@@ -1,10 +1,10 @@
-import { randomUUID } from "crypto";
 import {
   COMMUNITY_IMAGE_EXTENSIONS,
   COMMUNITY_IMAGE_TYPES,
   MAX_COMMUNITY_IMAGE_BYTES,
   POST_BODY_PREVIEW_MIN_WORD_BOUNDARY,
 } from "./constants";
+import { createCommunityId } from "./id";
 import type {
   CommentRow,
   CommentUI,
@@ -168,9 +168,10 @@ export function postFromRow(
   currentUserId?: string | null,
 ): PostUI {
   const fallbackCopy = splitPostCopy(row.title);
-  const body = row.body?.trim() || fallbackCopy.body;
+  const hasBodyColumn = row.body !== undefined && row.body !== null;
+  const body = hasBodyColumn ? row.body?.trim() ?? "" : fallbackCopy.body;
   const title =
-    row.body === undefined || row.body === null
+    !hasBodyColumn
       ? fallbackCopy.title
       : row.title.trim() || fallbackCopy.title;
   const savedTags = Array.isArray(row.tags)
@@ -228,11 +229,11 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
   const copy = normalizeDiscussionDraft(draft);
 
   return {
-    id: `local-${randomUUID()}`,
+    id: `local-${createCommunityId()}`,
     user: "You",
     initials: "YU",
     title: copy.title || "Untitled discussion",
-    body: copy.body || "Open for feedback and discussion.",
+    body: copy.body,
     votes: 0,
     time: "just now",
     sortTime: Date.now(),
@@ -246,7 +247,7 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
 
 export function createLocalComment(text: string): CommentUI {
   return {
-    id: `local-comment-${randomUUID()}`,
+    id: `local-comment-${createCommunityId()}`,
     user: "You",
     text,
     createdAt: new Date().toISOString(),

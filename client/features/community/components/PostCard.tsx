@@ -6,6 +6,7 @@ import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
 import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
 import communityStyles from "@/styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { bodyContainsImageUrl } from "../markdownEditor";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
@@ -42,6 +43,7 @@ export function PostCard({
   const [busy, setBusy] = React.useState(false);
   const commentsId = React.useId();
   const formattedVotes = post.votes.toLocaleString();
+  const hasInlineImage = bodyContainsImageUrl(post.body, post.imageUrl);
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
@@ -119,7 +121,7 @@ export function PostCard({
 
           <ExpandableText footer={tagBadges} text={post.body} />
 
-          {post.imageUrl ? (
+          {post.imageUrl && !hasInlineImage ? (
             <div
               className={cn(
                 "mt-[12px] overflow-hidden rounded-lg bg-black/30",

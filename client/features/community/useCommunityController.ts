@@ -37,6 +37,7 @@ import {
   getVisibleCommunityPosts,
   normalizeDiscussionDraft,
 } from "./utils";
+import { replaceDraftImageMarkers } from "./markdownEditor";
 import {
   MAX_DISCUSSION_TAGS,
   getDefaultSelectedTags,
@@ -444,7 +445,7 @@ export function useCommunityController(supabase: SupabaseClient | null) {
 
   async function handleCreatePost() {
     const nextDraft = normalizeDiscussionDraft(draft);
-    if (!nextDraft.title || !nextDraft.body || creating) return false;
+    if (!nextDraft.title || creating) return false;
 
     if (supabase && !currentUserId) {
       pushFeedback({
@@ -466,15 +467,20 @@ export function useCommunityController(supabase: SupabaseClient | null) {
         uploadedImagePath = upload.path;
         imageUrl = upload.publicUrl;
       }
+      const bodyWithInlineImage = replaceDraftImageMarkers(
+        nextDraft.body,
+        imageUrl ?? draft.imagePreviewUrl,
+      );
+      const postDraft = { ...nextDraft, body: bodyWithInlineImage };
 
       const newPost = supabase
         ? await createCommunityPost(supabase, {
-            ...nextDraft,
+            ...postDraft,
             imageUrl,
             imagePath: uploadedImagePath,
           })
         : createLocalPost({
-            ...nextDraft,
+            ...postDraft,
             imageUrl: draft.imagePreviewUrl,
           });
 
