@@ -19,29 +19,6 @@ type ProfileSnapshot = {
   avatarUrl: string | null
 }
 
-const recentActivities = [
-  {
-    title: 'Posted in Community',
-    detail: 'Deep dive analysis on NVDA valuation',
-    time: '2 days ago',
-  },
-  {
-    title: 'Updated Watchlist',
-    detail: 'Added TSLA and AMZN to watchlist',
-    time: '5 days ago',
-  },
-  {
-    title: 'Created Portfolio Analysis',
-    detail: 'Tech sector performance review',
-    time: '1 week ago',
-  },
-  {
-    title: 'Subscribed to Email Updates',
-    detail: 'Top Picks weekly digest',
-    time: '2 weeks ago',
-  },
-]
-
 const sanitizeNameInput = (value: string) =>
   value
     .replace(/[<>]/g, '')
@@ -365,10 +342,10 @@ function Profile() {
     setMsg(error ? `Verification email failed: ${error.message}` : 'Verification email sent. Check your inbox.')
   }
 
-  const cardClass = 'rounded-lg border border-white/60 bg-[#050505] p-4'
+  const cardClass = 'rounded-lg border border-white/10 bg-[#09090b] p-5 shadow-[0_16px_50px_rgba(0,0,0,0.28)]'
   const labelClass = 'mb-1 block text-sm text-white/65'
   const inputClass =
-    'h-10 w-full rounded-md border border-white/65 bg-[#1b1b1f] px-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white focus:ring-2 focus:ring-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-[#111113] disabled:text-white/45'
+    'h-10 w-full rounded-md border border-white/15 bg-[#151519] px-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/70 focus:ring-2 focus:ring-white/10 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-[#101013] disabled:text-white/45'
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -377,10 +354,10 @@ function Profile() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,52px)] min-h-screen min-w-0 overflow-x-hidden px-5 py-6 outline-none transition-[margin-left] duration-200 ease-out md:px-8 lg:px-10"
+        className="ml-[var(--app-sidebar-width,52px)] min-h-screen min-w-0 overflow-x-hidden px-4 py-6 outline-none transition-[margin-left] duration-200 ease-out md:px-8 lg:px-10"
       >
-        <div className="mx-auto w-full max-w-[1280px]">
-          <header className="flex flex-col gap-4 border-b border-white/15 pb-6 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto w-full max-w-[1180px]">
+          <header className="flex flex-col gap-4 rounded-lg border border-white/10 bg-[#08080a] p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-normal text-white">Profile Settings</h1>
               <p className="mt-2 text-base text-white/70">Manage account details, verification, and security.</p>
@@ -407,7 +384,7 @@ function Profile() {
               {isEditing ? (
                 <button
                   type="button"
-                  className="rounded-md border border-white/50 px-4 py-2 text-sm text-white transition hover:bg-white hover:text-black"
+                  className="rounded-md border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white hover:text-black"
                   onClick={handleCancelEditing}
                 >
                   Cancel
@@ -434,10 +411,10 @@ function Profile() {
             </div>
           )}
 
-          <div className="mt-5 grid grid-cols-1 items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-            <section className={`${cardClass} xl:col-start-1 xl:row-start-1 xl:self-stretch`}>
-              <div className="flex items-center gap-4">
-                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border border-white/70 bg-gradient-to-b from-zinc-400 to-white">
+          <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <section className={`${cardClass} flex flex-col xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:self-stretch`}>
+              <div className="flex flex-col items-center text-center">
+                <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-white/20 bg-gradient-to-b from-zinc-400 to-white">
                   {avatarPreviewUrl || avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -446,16 +423,14 @@ function Profile() {
                       alt="Profile avatar"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-zinc-950">
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-zinc-950">
                       {initials}
                     </div>
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <h2 className="truncate text-xl font-semibold text-white">{displayName}</h2>
-                  <p className="mt-2 truncate text-sm text-white/45">{email}</p>
-                </div>
+                <h2 className="mt-4 max-w-full truncate text-xl font-semibold text-white">{displayName}</h2>
+                <p className="mt-2 max-w-full truncate text-sm text-white/45">{email}</p>
               </div>
 
               <label
@@ -475,8 +450,8 @@ function Profile() {
                 />
               </label>
 
-              <div className="mt-4 border-t border-white/15 pt-4">
-                <div className="grid grid-cols-[78px_minmax(0,1fr)] gap-2 text-sm">
+              <div className="mt-5 rounded-md bg-white/[0.04] p-4 xl:mt-auto">
+                <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2 text-sm">
                   <span className="text-white/50">User ID</span>
                   <span className="truncate text-white">{userIdPreview}</span>
 
@@ -488,54 +463,7 @@ function Profile() {
               </div>
             </section>
 
-            <section className={`${cardClass} xl:col-start-1 xl:row-start-2 xl:self-stretch`}>
-              <h2 className="text-xl font-semibold text-white">Security</h2>
-
-              <form className="mt-4 flex flex-col gap-3" onSubmit={handleChangePassword}>
-                <div>
-                  <label className={labelClass}>Current password</label>
-                  <input
-                    type="password"
-                    className={inputClass}
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>New password</label>
-                  <input
-                    type="password"
-                    className={inputClass}
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>Confirm new password</label>
-                  <input
-                    type="password"
-                    className={inputClass}
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="mt-1 h-10 rounded-md border border-white/65 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!isEditing || updatingPass}
-                >
-                  {updatingPass ? 'Updating password...' : 'Update password'}
-                </button>
-              </form>
-            </section>
-
-            <section className={`${cardClass} xl:col-start-2 xl:row-start-1 xl:self-stretch`}>
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-1`}>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-white">Personal Information</h2>
@@ -565,7 +493,7 @@ function Profile() {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
                 <div>
                   <label className={labelClass}>First name</label>
                   <input
@@ -626,24 +554,55 @@ function Profile() {
                   {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone}</p>}
                 </div>
               </div>
-
             </section>
 
-            <section className={`${cardClass} xl:col-start-2 xl:row-start-2 xl:self-stretch`}>
-              <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
+            <section className={`${cardClass} xl:col-start-2 xl:row-start-2`}>
+              <h2 className="text-xl font-semibold text-white">Security</h2>
 
-              <div className="mt-4 divide-y divide-white/15">
-                {recentActivities.map((activity) => (
-                  <div key={activity.title} className="grid gap-1.5 py-3.5 md:grid-cols-[minmax(0,1fr)_96px]">
-                    <div>
-                      <p className="text-base font-medium text-white">{activity.title}</p>
-                      <p className="mt-1.5 text-sm text-white/45">{activity.detail}</p>
-                    </div>
-                    <span className="text-sm text-white/45 md:text-right">{activity.time}</span>
-                  </div>
-                ))}
-              </div>
+              <form className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3" onSubmit={handleChangePassword}>
+                <div>
+                  <label className={labelClass}>Current password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass}>New password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass}>Confirm new password</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="h-10 rounded-md border border-white/35 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50 md:col-start-3"
+                  disabled={!isEditing || updatingPass}
+                >
+                  {updatingPass ? 'Updating password...' : 'Update password'}
+                </button>
+              </form>
             </section>
+
           </div>
         </div>
       </main>
