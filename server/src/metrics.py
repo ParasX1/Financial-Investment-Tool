@@ -37,6 +37,40 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
     
     return stock_data
 
+
+def get_adjusted_close_prices(data):
+    if data is None or data.empty:
+        return pd.DataFrame()
+
+    try:
+        adj_close = data.xs('Adj Close', level=1, axis=1)
+    except (KeyError, ValueError):
+        return pd.DataFrame()
+
+    if isinstance(adj_close, pd.Series):
+        adj_close = adj_close.to_frame()
+
+    return adj_close.dropna(axis=1, how='all')
+
+
+def select_available_prices(adj_close, requested_tickers):
+    available_tickers = []
+    for ticker in requested_tickers:
+        if ticker in adj_close.columns and ticker not in available_tickers:
+            available_tickers.append(ticker)
+
+    if not available_tickers:
+        return pd.DataFrame(index=adj_close.index)
+
+    return adj_close[available_tickers].dropna(axis=1, how='all')
+
+
+def calculate_returns(price_frame):
+    if price_frame.empty:
+        return pd.DataFrame(index=price_frame.index)
+
+    return price_frame.pct_change(fill_method=None).dropna(how='all')
+
 # Function to calculate Beta
 def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     """
@@ -56,11 +90,15 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
     
     # Extract adjusted close prices
-    adj_close = data.xs('Adj Close', level=1, axis=1)
+    adj_close = get_adjusted_close_prices(data)
+    stock_prices = select_available_prices(adj_close, stock_tickers)
+
+    if stock_prices.empty or market_ticker not in adj_close.columns:
+        return {}
 
     # Calculate daily returns for stocks and market
-    stock_returns = adj_close[stock_tickers].pct_change().dropna()
-    market_returns = adj_close[market_ticker].pct_change().dropna()
+    stock_returns = calculate_returns(stock_prices)
+    market_returns = adj_close[market_ticker].pct_change(fill_method=None).dropna()
 
     if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
         return {}
@@ -72,16 +110,27 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
     
     betas = {}
     for ticker in stock_returns.columns:
+        aligned = pd.concat(
+            [stock_returns[ticker], market_returns],
+            axis=1,
+            join='inner'
+        ).dropna()
+        if aligned.shape[0] < 2:
+            continue
+
         # Calculate the covariance between the stock and the market returns
-        covariance = np.cov(stock_returns[ticker], market_returns)[0][1]
+        covariance = np.cov(aligned.iloc[:, 0], aligned.iloc[:, 1])[0][1]
         
         # Calculate the variance of the market returns
-        market_variance = market_returns.var()
+        market_variance = aligned.iloc[:, 1].var()
+        if market_variance == 0 or pd.isna(market_variance):
+            continue
         
         # Calculate Beta: Beta = Covariance(stock, market) / Variance(market)
         beta = covariance / market_variance
         
-        betas[ticker] = beta
+        if np.isfinite(beta):
+            betas[ticker] = beta
     
     return betas
 
@@ -106,11 +155,15 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     
     # Fetch data for stocks and market
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
-    adj_close = data.xs('Adj Close', level=1, axis=1)
+    adj_close = get_adjusted_close_prices(data)
+    stock_prices = select_available_prices(adj_close, stock_tickers)
+
+    if stock_prices.empty or market_ticker not in adj_close.columns:
+        return {}
     
     # Calculate daily returns
-    stock_returns = adj_close[stock_tickers].pct_change().dropna()
-    market_returns = adj_close[market_ticker].pct_change().dropna()
+    stock_returns = calculate_returns(stock_prices)
+    market_returns = adj_close[market_ticker].pct_change(fill_method=None).dropna()
 
     if stock_returns.shape[0] < 2 or market_returns.shape[0] < 2:
         return {}
@@ -122,6 +175,9 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     
     alphas = {}
     for ticker in stock_returns.columns:
+        if ticker not in betas:
+            continue
+
         # Calculate the average annualized return for the stock
 
         stock_avg_return = stock_returns[ticker].mean() * 252  # 252 trading days in a year
@@ -272,19 +328,26 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
     
     # Fetch adjusted close prices
     data = fetch_stock_data(stock_tickers + [market_ticker], start_date, end_date)
-    adj_close = data.xs('Adj Close', level=1, axis=1)
+    adj_close = get_adjusted_close_prices(data)
+    available_prices = select_available_prices(
+        adj_close,
+        stock_tickers + [market_ticker]
+    )
+
+    if available_prices.empty or market_ticker not in available_prices.columns:
+        return {}
     
     # Calculate daily returns
-    returns = adj_close.pct_change().dropna()
+    returns = calculate_returns(available_prices)
     if len(returns) < 21:
         return {}
     rolling_corr = returns.rolling(window=21).corr()
     corr_matrix = rolling_corr.groupby(level=1).mean()
 
     correlations = {}
-    for ticker in stock_tickers:
-        correlations[ticker] = corr_matrix[ticker].to_dict()
-    correlations[market_ticker] = corr_matrix[market_ticker].to_dict()
+    for ticker in stock_tickers + [market_ticker]:
+        if ticker in corr_matrix.columns:
+            correlations[ticker] = corr_matrix[ticker].dropna().to_dict()
 
     return correlations
 
@@ -305,10 +368,11 @@ def calculate_sharpe_ratio(stock_tickers, start_date, end_date, risk_free_rate=0
     """
     # Fetch adjusted close prices and calculate daily returns
     data = fetch_stock_data(stock_tickers, start_date, end_date)
-    adj_close = data.xs('Adj Close', level=1, axis=1)
-    stock_returns = adj_close.pct_change().dropna()
+    adj_close = get_adjusted_close_prices(data)
+    stock_prices = select_available_prices(adj_close, stock_tickers)
+    stock_returns = calculate_returns(stock_prices)
 
-    if stock_returns.shape[0] < 2:
+    if stock_returns.shape[0] < 2 or stock_returns.shape[1] < 2:
         return {}
     
     sharpe_ratios = {}
@@ -419,7 +483,7 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
     cov_matrix = stock_returns.cov() * 252
     
     results = {'returns': [], 'risks': [], 'sharpe_ratios': []}
-    num_assets = len(stock_tickers)
+    num_assets = len(mean_returns)
     
     for _ in range(num_portfolios):
         # Generate random weights that sum to 1
@@ -433,6 +497,9 @@ def calculate_efficient_frontier(stock_tickers, start_date, end_date, num_portfo
         portfolio_risk = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
         
         # Calculate Sharpe Ratio for the portfolio
+        if portfolio_risk == 0 or pd.isna(portfolio_risk):
+            continue
+
         sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_risk
         
         # Store the results
