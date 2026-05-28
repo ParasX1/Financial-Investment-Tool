@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
+from src import metrics
 from src.metrics import (
     calculate_alpha,
     calculate_beta,
@@ -21,6 +22,44 @@ def adjusted_close_frame(values_by_ticker):
 
 def rising_prices(start):
     return [start + index for index in range(35)]
+
+
+def test_fetch_stock_data_retries_missing_tickers_individually():
+    first_response = adjusted_close_frame(
+        {"AAPL": rising_prices(100), "SPY": rising_prices(300)}
+    )
+    retry_response = adjusted_close_frame({"MSFT": rising_prices(200)})
+    calls = []
+
+    def fake_download(tickers, **kwargs):
+        calls.append((tickers, kwargs))
+        if tickers == ["MSFT"]:
+            return retry_response
+        return first_response
+
+    metrics.clear_stock_data_cache()
+    with patch("src.metrics.yf.download", side_effect=fake_download):
+        data = metrics.fetch_stock_data(
+            ["AAPL", "MSFT", "SPY"], "2023-01-01", "2024-01-01"
+        )
+
+    adj_close = metrics.get_adjusted_close_prices(data)
+
+    assert set(adj_close.columns) == {"AAPL", "MSFT", "SPY"}
+    assert calls[0][1]["threads"] is False
+    assert calls[0][1]["progress"] is False
+    assert [call[0] for call in calls] == [["AAPL", "MSFT", "SPY"], ["MSFT"]]
+
+
+def test_fetch_stock_data_reuses_cached_downloads():
+    data = adjusted_close_frame({"AAPL": rising_prices(100)})
+
+    metrics.clear_stock_data_cache()
+    with patch("src.metrics.yf.download", return_value=data) as download:
+        metrics.fetch_stock_data(["AAPL"], "2023-01-01", "2024-01-01")
+        metrics.fetch_stock_data(["AAPL"], "2023-01-01", "2024-01-01")
+
+    assert download.call_count == 1
 
 
 def test_beta_skips_missing_market_ticker_without_keyerror():

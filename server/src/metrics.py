@@ -1,9 +1,86 @@
 # metrics.py
 
 # Import necessary libraries
+from threading import RLock
+from time import monotonic
+
 import yfinance as yf   # Used to fetch stock data from Yahoo Finance
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
+
+STOCK_DATA_CACHE_TTL_SECONDS = 120
+_stock_data_cache = {}
+_stock_data_lock = RLock()
+
+
+def clear_stock_data_cache():
+    with _stock_data_lock:
+        _stock_data_cache.clear()
+
+
+def normalize_tickers(stock_tickers):
+    if isinstance(stock_tickers, str):
+        stock_tickers = [stock_tickers]
+
+    normalized = []
+    for ticker in stock_tickers:
+        clean_ticker = str(ticker).strip().upper()
+        if clean_ticker and clean_ticker not in normalized:
+            normalized.append(clean_ticker)
+
+    return normalized
+
+
+def ensure_multiindex_stock_data(stock_data, stock_tickers):
+    if stock_data is None or stock_data.empty:
+        return pd.DataFrame()
+
+    if not isinstance(stock_data.columns, pd.MultiIndex):
+        stock_data = pd.concat({stock_tickers[0]: stock_data}, axis=1)
+
+    if hasattr(stock_data.index, 'strftime'):
+        stock_data = stock_data.copy()
+        stock_data.index = stock_data.index.strftime('%Y-%m-%d')
+
+    return stock_data
+
+
+def get_missing_adjusted_close_tickers(stock_data, requested_tickers):
+    adj_close = get_adjusted_close_prices(stock_data)
+    missing = []
+
+    for ticker in requested_tickers:
+        if ticker not in adj_close.columns or adj_close[ticker].dropna().empty:
+            missing.append(ticker)
+
+    return missing
+
+
+def merge_stock_data_frames(stock_data_frames):
+    usable_frames = [frame for frame in stock_data_frames if frame is not None and not frame.empty]
+    if not usable_frames:
+        return pd.DataFrame()
+
+    merged = pd.concat(usable_frames, axis=1)
+    return merged.loc[:, ~merged.columns.duplicated()]
+
+
+def download_stock_data(stock_tickers, start_date, end_date):
+    try:
+        stock_data = yf.download(
+            stock_tickers,
+            start=start_date,
+            end=end_date,
+            group_by='ticker',
+            auto_adjust=False,
+            threads=False,
+            progress=False
+        )
+    except Exception as error:
+        print(f"yfinance download failed for {stock_tickers}: {error}")
+        return pd.DataFrame()
+
+    return ensure_multiindex_stock_data(stock_data, stock_tickers)
 
 # Function to fetch full stock data
 def fetch_stock_data(stock_tickers, start_date, end_date):
@@ -18,24 +95,36 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
     Returns:
     - pd.DataFrame: MultiIndex DataFrame where each column represents a data field (Open, High, Low, Close, Adj Close, Volume) for each stock.
     """
-    # Fetch data for the provided stock tickers
-    stock_data = yf.download(
-        stock_tickers,
-        start=start_date,
-        end=end_date,
-        group_by='ticker',  # Group data by ticker symbol
-        auto_adjust=False   # Do not adjust prices for dividends or splits
-    )
-    
-    # Ensure the DataFrame has MultiIndex columns for consistency
-    if not isinstance(stock_data.columns, pd.MultiIndex):
-        # If only one ticker is provided, the columns are not MultiIndex by default
-        stock_data = pd.concat({stock_tickers[0]: stock_data}, axis=1)
-    
-    # Convert the index (dates) to string format for consistency in JSON serialization
-    stock_data.index = stock_data.index.strftime('%Y-%m-%d')
-    
-    return stock_data
+    stock_tickers = normalize_tickers(stock_tickers)
+    if not stock_tickers:
+        return pd.DataFrame()
+
+    cache_key = (tuple(sorted(stock_tickers)), start_date, end_date)
+    now = monotonic()
+
+    with _stock_data_lock:
+        cached = _stock_data_cache.get(cache_key)
+        if cached and now - cached["created_at"] < STOCK_DATA_CACHE_TTL_SECONDS:
+            return cached["data"].copy(deep=True)
+
+        stock_data = download_stock_data(stock_tickers, start_date, end_date)
+        missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
+        retry_frames = []
+
+        for ticker in missing_tickers:
+            retry_frame = download_stock_data([ticker], start_date, end_date)
+            if not retry_frame.empty:
+                retry_frames.append(retry_frame)
+
+        if retry_frames:
+            stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+
+        _stock_data_cache[cache_key] = {
+            "created_at": monotonic(),
+            "data": stock_data.copy(deep=True),
+        }
+
+        return stock_data
 
 
 def get_adjusted_close_prices(data):
