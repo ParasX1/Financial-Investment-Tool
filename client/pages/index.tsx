@@ -9,8 +9,8 @@ import SecurityIcon from '@mui/icons-material/Security';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { SvgIconComponent } from '@mui/icons-material';
 import BoltIcon from '@mui/icons-material/Bolt';
-import pic1 from '@/assets/graphs.png';
-import pic2 from '@/assets/teamimage.png';
+import pic1 from '@/assets/pic1.jpg';
+import pic2 from '@/assets/pic2.jpg';
 import { theme } from '@/styles/theme';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/authContext';
@@ -86,25 +86,25 @@ export default function Index() {
                     { id: 2, label: 'About', href: '#about' },
                 ]} />
  
-                {/* 主内容区 */}
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, py: 6, mt: 8 }}>
  
                     {/* Hero Section */}
                     <Box sx={{ width: '80%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', width: '50%', gap: 2 }}>
                             <Box>
-                                <Typography variant="h2" sx={{ fontWeight: 'bold' }}>Master Your</Typography>
+                                <Typography variant="h2" sx={{ fontWeight: 'bold', userSelect: 'none'}}>Master Your</Typography>
                                 <Typography variant="h2" sx={{
                                     background: 'linear-gradient(45deg, #5a5afc 30%, #ea19ea 90%)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
                                     fontWeight: 'bold',
+                                    userSelect: 'none',
                                 }}>
                                     Investment
                                 </Typography>
-                                <Typography variant="h2" sx={{ fontWeight: 'bold' }}>Strategy</Typography>
+                                <Typography variant="h2" sx={{ fontWeight: 'bold', userSelect: 'none' }}>Strategy</Typography>
                             </Box>
-                            <Typography color="text.secondary">
+                            <Typography color="text.secondary" sx={{userSelect: 'none'}}>
                                 FIT empowers investors and portfolio managers with advanced analytics, risk-adjusted metrics, and real-time market insights to make smarter investment decisions.
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
@@ -128,7 +128,7 @@ export default function Index() {
                                         color: 'grey.300',
                                         '&:hover': { borderColor: 'grey.400', backgroundColor: 'grey.800' },
                                     }}
-                                    onClick={()=>{const element=document.getElementById('info');element?.scrollIntoView({behavior:'smooth'})}}
+                                    onClick={()=>{const element=document.getElementById('info');element?.scrollIntoView({behavior:'smooth', block: 'center'})}}
                                 >
                                     Learn More
                                 </Button>
@@ -140,9 +140,9 @@ export default function Index() {
                     </Box>
  
                     {/* Powerful Features */}
-                    <Divider id="features" sx={{ width: '80%' }} />
+                    <Divider sx={{ width: '80%'}} />
  
-                    <Box sx={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Box id="features" sx={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <Typography variant="h3" sx={{ textAlign: "center", fontWeight: 'bold' }}>Powerful Features</Typography>
                         <Typography color="text.secondary" sx={{ textAlign: "center" }}>Everything you need for sophisticated investment analysis</Typography>
                         <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
@@ -160,9 +160,9 @@ export default function Index() {
                     </Box>
  
                     {/* Trusted by Investors */}
-                    <Divider id="performance" sx={{ width: '80%' }} />
+                    <Divider sx={{ width: '80%' }} />
  
-                    <Box sx={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Box id="performance" sx={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <Typography variant="h3" sx={{ textAlign: "center", fontWeight: 'bold' }}>Trusted by Investors</Typography>
                         <Typography color="text.secondary" sx={{ textAlign: "center" }}>Real performance metrics from our platform</Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, width: '100%', justifyContent: 'center' }}>
@@ -175,9 +175,9 @@ export default function Index() {
                     </Box>
  
                     {/* Built for Modern Investors */}
-                    <Divider id="about" sx={{ width: '80%' }} />
+                    <Divider sx={{ width: '80%' }} />
  
-                    <Box sx={{ width: '80%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Box id="about" sx={{ width: '80%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', width: '50%', gap: 2 }}>
                             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>Built for Modern Investors</Typography>
                             <Typography color="text.secondary">FIT was created by a team of quantitative analysts, software engineers, and portfolio managers who understand the challenges of modern investing.</Typography>
@@ -212,7 +212,7 @@ export default function Index() {
  
                 </Box>
  
-                <Divider id="info"/>
+                <Divider  id="info"/>
                 <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
  
                 {/* Footer */}
