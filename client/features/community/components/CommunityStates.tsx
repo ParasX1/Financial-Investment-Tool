@@ -1,4 +1,4 @@
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { cn, communityUi } from "../design";
 import type { CommunityFeedView } from "../types";
 

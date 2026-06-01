@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { COMMUNITY_IMAGE_BUCKET } from "./constants";
 import { createCommunityId } from "./id";
-import { getUploadErrorMessage, validateCommunityImage } from "./utils";
+import { getUploadErrorMessage } from "./communityErrors";
+import { validateCommunityImage } from "./communityValidation";
 
 export type UploadedCommunityImage = {
   path: string;

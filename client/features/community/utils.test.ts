@@ -1,13 +1,18 @@
 import {
   createLocalPost,
+  postFromRow,
+} from "./communityMappers";
+import {
   getCommunityFeedCounts,
   getTopTimeRangeCutoff,
   getVisibleCommunityPosts,
+} from "./communitySelectors";
+import { getCommunityLoadErrorMessage } from "./communityLoadStatus";
+import {
   isDiscussionDraftDirty,
   normalizeDiscussionDraft,
-  postFromRow,
-  validateCommunityImage,
-} from "./utils";
+} from "./communityDraft";
+import { validateCommunityImage } from "./communityValidation";
 import type { CommentsState, DBPost, PostUI } from "./types";
 
 const baseRow: DBPost = {
@@ -153,6 +158,23 @@ describe("Discussion draft dirty state", () => {
     expect(isDiscussionDraftDirty({ ...emptyDraft, title: "Draft" })).toBe(true);
     expect(isDiscussionDraftDirty({ ...emptyDraft, body: "Body" })).toBe(true);
     expect(isDiscussionDraftDirty({ ...emptyDraft, tags: ["Risk"] })).toBe(true);
+  });
+});
+
+describe("Community load status", () => {
+  it("preserves all partial-load warnings when multiple secondary queries fail", () => {
+    expect(
+      getCommunityLoadErrorMessage({
+        commentsError: "Posts loaded, but comments could not be loaded.",
+        likesError: "Posts loaded, but saved like state could not be loaded.",
+      }),
+    ).toBe(
+      "Posts loaded, but comments could not be loaded. Posts loaded, but saved like state could not be loaded.",
+    );
+  });
+
+  it("returns null when community data loaded without secondary warnings", () => {
+    expect(getCommunityLoadErrorMessage({})).toBeNull();
   });
 });
 

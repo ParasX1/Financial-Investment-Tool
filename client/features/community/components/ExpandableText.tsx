@@ -1,10 +1,10 @@
 import * as React from "react";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { POST_BODY_PREVIEW_MAX_CHARS } from "../constants";
 import { FOCUS_VISIBLE, cn } from "../design";
-import { getExpandableText } from "../utils";
+import { getExpandableText } from "../communityText";
 import { MarkdownBody } from "./MarkdownBody";
 
 export function ExpandableText({

@@ -204,13 +204,45 @@ describe("Community delete image cleanup", () => {
     expect(events).toEqual([
       "table.posts",
       "table.comments",
-      "storage.remove",
       "table.posts",
+      "storage.remove",
     ]);
     expect(remove).toHaveBeenCalledWith([
       "posts/post.png",
       "comments/post-1/a.png",
       "comments/post-1/b.png",
     ]);
+  });
+
+  it("keeps storage images when discussion row deletion fails", async () => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "posts",
+        result: {
+          data: {
+            author_id: "user-1",
+            image_path: "posts/post.png",
+          },
+          error: null,
+        },
+      },
+      {
+        table: "comments",
+        result: {
+          data: [{ image_path: "comments/post-1/a.png" }],
+          error: null,
+        },
+      },
+      {
+        table: "posts",
+        result: { data: null, error: new Error("delete failed") },
+      },
+    ]);
+
+    await expect(deleteCommunityPost(db, "post-1", "user-1")).rejects.toThrow(
+      "delete failed",
+    );
+
+    expect(remove).not.toHaveBeenCalled();
   });
 });

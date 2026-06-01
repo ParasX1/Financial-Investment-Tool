@@ -2,7 +2,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { FOCUS_VISIBLE, cn } from "../design";
 import {
   MAX_DISCUSSION_TAGS,

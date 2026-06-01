@@ -4,7 +4,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import type { MouseEvent } from "react";
 import Link from "next/link";
 import { fitButton } from "@/components/shared/fitStyles";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 
 export function CommunityToolbar({

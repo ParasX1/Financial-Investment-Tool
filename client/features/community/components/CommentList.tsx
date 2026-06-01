@@ -1,8 +1,8 @@
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { CommentUI } from "../types";
-import { initials, toRelativeTime } from "../utils";
+import { initials, toRelativeTime } from "../communityFormat";
 
 export function CommentList({
   items,

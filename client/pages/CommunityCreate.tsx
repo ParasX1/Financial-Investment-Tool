@@ -1,6 +1,8 @@
-import { CommunityPageShell } from "@/features/community/components/CommunityPageShell";
-import { CommunityMain } from "@/features/community/components/CommunityMain";
-import { getSupabaseClient } from "@/features/community/communityService";
+import {
+  CommunityMain,
+  CommunityPageShell,
+  getSupabaseClient,
+} from "@/features/community";
 
 const supabase = getSupabaseClient();
 

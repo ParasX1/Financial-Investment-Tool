@@ -21,11 +21,11 @@ describe("MarkdownBody", () => {
     expect(html).toContain("<strong>bold and <em>italic</em></strong>");
     expect(html).toContain("<s><strong>removed</strong></s>");
     expect(html).toContain(
-      '<a href="https://example.com/" target="_blank" rel="noreferrer"',
+      '<a href="https://example.com/" target="_blank" rel="noopener noreferrer"',
     );
     expect(html).toContain("<strong>docs</strong>");
     expect(html).toContain(
-      '<strong><em><a href="https://example.com/" target="_blank" rel="noreferrer"',
+      '<strong><em><a href="https://example.com/" target="_blank" rel="noopener noreferrer"',
     );
   });
 

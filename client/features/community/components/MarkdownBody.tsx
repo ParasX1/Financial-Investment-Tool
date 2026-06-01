@@ -1,5 +1,5 @@
 import * as React from "react";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { cn } from "../design";
 import { DRAFT_IMAGE_MARKER } from "../markdownEditor";
 
@@ -184,7 +184,7 @@ function renderInlineMarkdown(text: string, keyPrefix: string) {
             key={key}
             href={safeHref}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="font-semibold text-[#9eb2ff] underline decoration-[#6f7cff]/50 underline-offset-4 hover:text-[#dce3ff]"
           >
             {renderInlineMarkdown(token.text, `${key}-label`)}

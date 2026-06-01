@@ -1,6 +1,6 @@
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { FOCUS_VISIBLE, cn, feedbackToneClasses } from "../design";
 import type { FeedbackMessage, FeedbackTone } from "../types";
 

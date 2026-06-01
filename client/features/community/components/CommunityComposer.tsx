@@ -10,7 +10,7 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import StrikethroughSRoundedIcon from "@mui/icons-material/StrikethroughSRounded";
 import SuperscriptRoundedIcon from "@mui/icons-material/SuperscriptRounded";
 import TitleRoundedIcon from "@mui/icons-material/TitleRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { COMMUNITY_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import {
@@ -25,7 +25,7 @@ import {
 } from "../markdownEditor";
 import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../smartTags";
 import type { DiscussionDraft, DiscussionDraftField } from "../types";
-import { validateCommunityImage } from "../utils";
+import { validateCommunityImage } from "../communityValidation";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 

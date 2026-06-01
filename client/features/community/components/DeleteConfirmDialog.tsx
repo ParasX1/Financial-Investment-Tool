@@ -1,5 +1,5 @@
 import * as React from "react";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { FOCUS_VISIBLE, cn } from "../design";
 import type { PendingDelete } from "../types";
 

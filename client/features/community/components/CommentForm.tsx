@@ -2,11 +2,12 @@ import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../community.module.css";
 import { COMMENT_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { NewComment } from "../types";
-import { getErrorMessage, validateCommentImage } from "../utils";
+import { getErrorMessage } from "../communityErrors";
+import { validateCommentImage } from "../communityValidation";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({
