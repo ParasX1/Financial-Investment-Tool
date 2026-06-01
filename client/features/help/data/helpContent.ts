@@ -1,3 +1,4 @@
+// File purpose: Defines the static Help Center topics and FAQ copy rendered by the Help feature.
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
@@ -5,20 +6,7 @@ import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import type { LearningIcon } from "@/components/learning/types";
-
-export interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-export interface HelpSection {
-  id: string;
-  label: string;
-  subtitle: string;
-  icon: LearningIcon;
-  faqs: FAQItem[];
-}
+import type { HelpSection } from "../types";
 
 export const helpSections: HelpSection[] = [
   {
@@ -218,5 +206,3 @@ export const helpSections: HelpSection[] = [
     ],
   },
 ];
-
-export const helpSectionIds = helpSections.map((section) => section.id);

@@ -1,3 +1,4 @@
+// File purpose: Defines the static Guide topic content rendered by the Guide feature.
 import AccountTreeRoundedIcon from "@mui/icons-material/AccountTreeRounded";
 import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
@@ -6,17 +7,7 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import TimelineRoundedIcon from "@mui/icons-material/TimelineRounded";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
-import type { LearningIcon } from "@/components/learning/types";
-
-export interface GuideSection {
-  id: string;
-  label: string;
-  description: string;
-  formula: string;
-  interpretation: string;
-  takeaway: string;
-  icon: LearningIcon;
-}
+import type { GuideSection } from "../types";
 
 export const guideSections: GuideSection[] = [
   {
@@ -121,5 +112,3 @@ export const guideSections: GuideSection[] = [
       "The Efficient Frontier explains why diversification can improve the risk-return tradeoff.",
   },
 ];
-
-export const guideSectionIds = guideSections.map((section) => section.id);
