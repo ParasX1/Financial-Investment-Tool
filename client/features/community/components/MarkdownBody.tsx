@@ -1,7 +1,8 @@
+// File purpose: Renders the supported Community markdown subset without using raw HTML injection.
 import * as React from "react";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { cn } from "../design";
-import { DRAFT_IMAGE_MARKER } from "../markdownEditor";
+import { DRAFT_IMAGE_MARKER } from "../lib/markdownEditor";
 
 type ImageToken = {
   index: number;

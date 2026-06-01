@@ -1,3 +1,4 @@
+// File purpose: Tests markdown rendering behavior and safety-sensitive output.
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MarkdownBody } from "./MarkdownBody";

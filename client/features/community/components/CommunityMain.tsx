@@ -1,3 +1,4 @@
+// File purpose: Composes the Community page experience across feed and create modes.
 import * as React from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
@@ -14,14 +15,14 @@ import {
 import {
   getCommunityCreateHref,
   getCommunityFeedHref,
-} from "../communityRouting";
+} from "../lib/communityRouting";
 import { cn, communityUi } from "../design";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import type { CommunityFeedView, CommunityTopTimeRange } from "../types";
-import { useCommunityController } from "../useCommunityController";
-import { useCommunityDraftNavigation } from "../useCommunityDraftNavigation";
-import { useCommunityRouteSync } from "../useCommunityRouteSync";
-import { useCommunitySidebarLayout } from "../useCommunitySidebarLayout";
+import { useCommunityController } from "../hooks/useCommunityController";
+import { useCommunityDraftNavigation } from "../hooks/useCommunityDraftNavigation";
+import { useCommunityRouteSync } from "../hooks/useCommunityRouteSync";
+import { useCommunitySidebarLayout } from "../hooks/useCommunitySidebarLayout";
 import { CommunityComposer } from "./CommunityComposer";
 import { CommunityNotice, FeedbackStack, StatusMessage } from "./CommunityFeedback";
 import { CommunitySidebar } from "./CommunitySidebar";

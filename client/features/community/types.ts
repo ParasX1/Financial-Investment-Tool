@@ -1,3 +1,4 @@
+// File purpose: Defines shared Community TypeScript contracts for posts, comments, feeds, and UI state.
 export type CommunityFeedView =
   | "top"
   | "new"

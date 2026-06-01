@@ -1,13 +1,14 @@
+// File purpose: Renders the comment composer, image attachment controls, validation feedback, and submit action.
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { COMMENT_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import type { NewComment } from "../types";
-import { getErrorMessage } from "../communityErrors";
-import { validateCommentImage } from "../communityValidation";
+import { getErrorMessage } from "../lib/communityErrors";
+import { validateCommentImage } from "../lib/communityValidation";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({

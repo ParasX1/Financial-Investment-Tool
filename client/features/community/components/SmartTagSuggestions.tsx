@@ -1,14 +1,15 @@
+// File purpose: Renders selectable smart tag suggestions for the discussion composer.
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { FOCUS_VISIBLE, cn } from "../design";
 import {
   MAX_DISCUSSION_TAGS,
   normalizeSelectedTags,
   type SmartTagSuggestion,
-} from "../smartTags";
+} from "../lib/smartTags";
 
 const TAG_KIND_CLASS: Record<SmartTagSuggestion["kind"], string> = {
   type: "border-[#5367ff]/60 bg-[#141a3f] text-[#d5ddff]",

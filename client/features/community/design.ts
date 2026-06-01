@@ -1,3 +1,4 @@
+// File purpose: Maps shared FIT design primitives into Community-specific class helpers.
 import type { FeedbackTone } from "./types";
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";

@@ -1,6 +1,7 @@
+// File purpose: Renders inline notices, status messages, and dismissible Community feedback.
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { FOCUS_VISIBLE, cn, feedbackToneClasses } from "../design";
 import type { FeedbackMessage, FeedbackTone } from "../types";
 

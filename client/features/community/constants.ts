@@ -1,3 +1,4 @@
+// File purpose: Centralizes static Community options, labels, limits, and responsive layout constants.
 import type {
   CommunityFeedView,
   CommunityTopTimeRange,

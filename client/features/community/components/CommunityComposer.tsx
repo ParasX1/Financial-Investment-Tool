@@ -1,3 +1,4 @@
+// File purpose: Renders the create-post form, markdown toolbar, tag suggestions, and draft image controls.
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import FormatBoldRoundedIcon from "@mui/icons-material/FormatBoldRounded";
@@ -10,7 +11,7 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import StrikethroughSRoundedIcon from "@mui/icons-material/StrikethroughSRounded";
 import SuperscriptRoundedIcon from "@mui/icons-material/SuperscriptRounded";
 import TitleRoundedIcon from "@mui/icons-material/TitleRounded";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { COMMUNITY_IMAGE_TYPES } from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
 import {
@@ -22,10 +23,10 @@ import {
   type MarkdownCommand,
   type MarkdownEdit,
   type TextSelection,
-} from "../markdownEditor";
-import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../smartTags";
+} from "../lib/markdownEditor";
+import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../lib/smartTags";
 import type { DiscussionDraft, DiscussionDraftField } from "../types";
-import { validateCommunityImage } from "../communityValidation";
+import { validateCommunityImage } from "../lib/communityValidation";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 

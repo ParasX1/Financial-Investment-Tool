@@ -1,3 +1,4 @@
+// File purpose: Renders the Community feed, time-range, and resources navigation sidebar.
 import * as React from "react";
 import AccessibilityNewRoundedIcon from "@mui/icons-material/AccessibilityNewRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
@@ -18,7 +19,7 @@ import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { fitNav } from "@/components/shared/fitStyles";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import {
   COMMUNITY_FEED_NAV_ITEMS,
   COMMUNITY_RESOURCE_LINKS,

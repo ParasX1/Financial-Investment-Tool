@@ -1,12 +1,13 @@
+// File purpose: Renders a single discussion card with markdown content, tags, comments, likes, and delete actions.
 import * as React from "react";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
 import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
-import communityStyles from "../community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi } from "../design";
-import { bodyContainsImageUrl } from "../markdownEditor";
+import { bodyContainsImageUrl } from "../lib/markdownEditor";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
