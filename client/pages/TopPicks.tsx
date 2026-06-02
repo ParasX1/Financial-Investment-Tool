@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Sidebar from '@/components/sidebar'
+import { FIT_APP_SIDEBAR_WIDTH_FALLBACK } from '@/components/shared/layoutMetrics'
 import {
   Box, Typography, Button, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
   Checkbox, FormControlLabel, Table, TableHead, TableRow, TableCell, TableBody, TableSortLabel,
@@ -167,7 +168,7 @@ export default function TopPicksPage() {
         tabIndex={-1}
         sx={{
           flex: 1,
-          pl: 'var(--app-sidebar-width, 64px)',
+          pl: `var(--app-sidebar-width, ${FIT_APP_SIDEBAR_WIDTH_FALLBACK})`,
           bgcolor: 'black',
           transition: 'padding-left 200ms ease',
         }}

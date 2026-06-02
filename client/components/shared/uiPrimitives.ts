@@ -1,3 +1,8 @@
+export {
+  FIT_APP_SIDEBAR_WIDTH_FALLBACK,
+  FIT_CONTENT_MAX_WIDTH_PX,
+} from "./layoutMetrics";
+
 export function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
@@ -5,11 +10,9 @@ export function cn(...xs: Array<string | false | null | undefined>) {
 export const FIT_FOCUS_VISIBLE =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fit-color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--fit-color-page-bg)]";
 
-export const FIT_CONTENT_MAX_WIDTH_PX = 1180;
-
 export const fitLayout = {
   appMain:
-    "ml-[var(--app-sidebar-width,64px)] min-h-screen overflow-x-hidden bg-[color:var(--fit-color-page-bg)] text-white transition-[margin-left] duration-200 ease-out",
+    "ml-[var(--app-sidebar-width)] min-h-screen overflow-x-hidden bg-[color:var(--fit-color-page-bg)] text-white transition-[margin-left] duration-200 ease-out",
   appMainPadding:
     "px-3 pb-8 pt-8 sm:px-8 sm:pb-10 sm:pt-10 lg:px-10",
 } as const;

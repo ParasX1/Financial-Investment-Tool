@@ -8,7 +8,10 @@ import {
   COMMUNITY_FEED_VIEW_IDS,
   COMMUNITY_TOP_TIME_RANGE_IDS,
 } from "./config/communityOptions";
-import { FIT_CONTENT_MAX_WIDTH_PX } from "@/components/shared/uiPrimitives";
+import {
+  FIT_APP_SIDEBAR_WIDTHS,
+  FIT_CONTENT_MAX_WIDTH_PX,
+} from "@/components/shared/layoutMetrics";
 
 export const COMMUNITY_PAGE_WIDTH = "100%";
 const COMMUNITY_FEED_NAV_COPY: Record<
@@ -67,7 +70,8 @@ export const COMMUNITY_TOP_TIME_RANGE_ITEMS =
     label: COMMUNITY_TOP_TIME_RANGE_LABELS[id],
   }));
 
-export const COMMUNITY_APP_RAIL_WIDTH_PX = 64;
+export const COMMUNITY_APP_RAIL_WIDTH_PX =
+  FIT_APP_SIDEBAR_WIDTHS.desktopCollapsed;
 export const COMMUNITY_CONTENT_MAX_WIDTH_PX = FIT_CONTENT_MAX_WIDTH_PX;
 export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;
 export const COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX = 12;

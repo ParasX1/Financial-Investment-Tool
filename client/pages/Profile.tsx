@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Sidebar from '@/components/sidebar'
 import supabase from '@/components/supabase'
 import { useAuth } from '@/components/authContext'
+import { FIT_APP_SIDEBAR_WIDTH_FALLBACK } from '@/components/shared/layoutMetrics'
 
 const AVATAR_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET ||
@@ -354,7 +355,10 @@ function Profile() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,52px)] min-h-screen min-w-0 overflow-x-hidden px-4 py-6 outline-none transition-[margin-left] duration-200 ease-out md:px-8 lg:px-10"
+        className="min-h-screen min-w-0 overflow-x-hidden px-4 py-6 outline-none transition-[margin-left] duration-200 ease-out md:px-8 lg:px-10"
+        style={{
+          marginLeft: `var(--app-sidebar-width, ${FIT_APP_SIDEBAR_WIDTH_FALLBACK})`,
+        }}
       >
         <div className="mx-auto w-full max-w-[1180px]">
           <header className="flex flex-col gap-4 rounded-lg border border-white/10 bg-[#08080a] p-5 md:flex-row md:items-center md:justify-between">

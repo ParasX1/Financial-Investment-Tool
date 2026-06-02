@@ -221,10 +221,7 @@ export function CommunityMain({
           <div className="min-w-0">
             <div
               ref={sidebarPinnedRef}
-              className={cn(
-                communityStyles.sidebarPinned,
-                sidebarCollapsed ? "lg:w-16" : "lg:w-56",
-              )}
+              className={communityStyles.sidebarPinned}
             >
               <CommunitySidebar
                 activeView={community.feedView}

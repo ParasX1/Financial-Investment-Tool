@@ -4,7 +4,9 @@
 
 @layer base {
   :root {
-    --app-sidebar-width: 64px;
+    --fit-app-sidebar-desktop-collapsed-width: 64px;
+    --fit-app-sidebar-compact-collapsed-width: 52px;
+    --app-sidebar-width: var(--fit-app-sidebar-desktop-collapsed-width);
     --fit-color-page-bg: #000000;
     --fit-color-surface: #09090b;
     --fit-color-surface-soft: #111114;
@@ -74,7 +76,7 @@
 
   @media (max-width: 767px) {
     :root {
-      --app-sidebar-width: 52px;
+      --app-sidebar-width: var(--fit-app-sidebar-compact-collapsed-width);
     }
   }
 

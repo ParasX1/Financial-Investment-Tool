@@ -19,15 +19,19 @@ import 'boxicons/css/boxicons.min.css'
 import { useAuth } from '@/components/authContext'
 import ModalLogin from '@/components/Modal/ModalLogin'
 import { fitNav } from '@/components/shared/fitStyles'
+import {
+  FIT_APP_SIDEBAR_MEDIA,
+  FIT_APP_SIDEBAR_WIDTHS,
+} from '@/components/shared/layoutMetrics'
 import { FIT_FOCUS_VISIBLE } from '@/components/shared/uiPrimitives'
 
-const DESKTOP_COLLAPSED_WIDTH = 64
-const COMPACT_COLLAPSED_WIDTH = 52
-const EXPANDED_WIDTH = 232
+const DESKTOP_COLLAPSED_WIDTH = FIT_APP_SIDEBAR_WIDTHS.desktopCollapsed
+const COMPACT_COLLAPSED_WIDTH = FIT_APP_SIDEBAR_WIDTHS.compactCollapsed
+const EXPANDED_WIDTH = FIT_APP_SIDEBAR_WIDTHS.expanded
 const LABEL_DELAY_MS = 115
 const CLOSE_DELAY_MS = 120
-const COMPACT_MEDIA_QUERY = '(max-width: 767px)'
-const HOVER_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
+const COMPACT_MEDIA_QUERY = FIT_APP_SIDEBAR_MEDIA.compact
+const HOVER_MEDIA_QUERY = FIT_APP_SIDEBAR_MEDIA.hoverExpandable
 
 let rememberedDesktopExpanded = false
 let rememberedCompactExpanded = false

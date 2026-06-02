@@ -2,6 +2,7 @@ import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 // @ts-ignore
 import Sidebar from '@/components/sidebar';
+import { FIT_APP_SIDEBAR_WIDTH_FALLBACK } from '@/components/shared/layoutMetrics';
 import {
     Navbar,
     NavbarContent,
@@ -639,7 +640,7 @@ const DashboardView: React.FC = () => {
                         minWidth: 0,
                         height: '100vh',
                         overflow: 'hidden',
-                        paddingLeft: 'var(--app-sidebar-width, 64px)',
+                        paddingLeft: `var(--app-sidebar-width, ${FIT_APP_SIDEBAR_WIDTH_FALLBACK})`,
                         transition: 'padding-left 200ms ease',
                         backgroundColor: 'black',
                         display: 'flex',

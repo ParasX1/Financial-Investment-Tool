@@ -22,6 +22,7 @@ import {
   FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import Sidebar from '@/components/sidebar';
+import { FIT_APP_SIDEBAR_WIDTH_FALLBACK } from '@/components/shared/layoutMetrics';
 import NewsCardComponent from '@/components/NewsCardComponent';
 import { useAuth } from '@/components/authContext';
 import supabase from '@/components/supabase';
@@ -263,7 +264,7 @@ const MarketNews: React.FC = () => {
         tabIndex={-1}
         sx={{
           flex: 1,
-          ml: 'var(--app-sidebar-width, 64px)',
+          ml: `var(--app-sidebar-width, ${FIT_APP_SIDEBAR_WIDTH_FALLBACK})`,
           transition: 'margin-left 200ms ease',
           px: { xs: 2, md: 5 },
           py: { xs: 2, md: 4 },
