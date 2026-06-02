@@ -257,7 +257,7 @@ export function CommunityComposer({
 
           <div
             className={cn(
-              "overflow-hidden rounded-lg bg-[var(--fit-color-field)]",
+              "overflow-hidden rounded-lg bg-[color:var(--fit-color-field)]",
               communityStyles.inputBorder,
             )}
           >

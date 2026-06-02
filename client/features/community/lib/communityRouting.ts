@@ -1,17 +1,17 @@
 // File purpose: Builds and parses Community feed, search, and top-time route query state.
 import {
-  COMMUNITY_FEED_NAV_ITEMS,
-  COMMUNITY_TOP_TIME_RANGE_ITEMS,
-} from "../constants";
+  COMMUNITY_FEED_VIEW_IDS,
+  COMMUNITY_TOP_TIME_RANGE_IDS,
+} from "../config/communityOptions";
 import type { CommunityFeedView, CommunityTopTimeRange } from "../types";
 
 type QueryValue = string | string[] | undefined;
 
 const communityFeedViewIds = new Set(
-  COMMUNITY_FEED_NAV_ITEMS.map((item) => item.id),
+  COMMUNITY_FEED_VIEW_IDS,
 );
 const communityTopTimeRangeIds = new Set(
-  COMMUNITY_TOP_TIME_RANGE_ITEMS.map((item) => item.id),
+  COMMUNITY_TOP_TIME_RANGE_IDS,
 );
 
 function readQueryValue(value: QueryValue) {

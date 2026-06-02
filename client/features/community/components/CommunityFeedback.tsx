@@ -9,8 +9,8 @@ export function CommunityNotice({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        "rounded-lg bg-[#5367ff]/10 px-4 py-3 text-sm text-[#dbe4ff]",
-        communityStyles.noticeBorder
+        "rounded-lg border px-4 py-3 text-sm",
+        feedbackToneClasses("info"),
       )}
     >
       {children}

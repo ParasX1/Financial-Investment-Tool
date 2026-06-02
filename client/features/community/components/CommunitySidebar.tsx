@@ -18,14 +18,13 @@ import PrivacyTipOutlinedIcon from "@mui/icons-material/PrivacyTipOutlined";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import { fitNav } from "@/components/shared/fitStyles";
 import communityStyles from "../styles/community.module.css";
 import {
   COMMUNITY_FEED_NAV_ITEMS,
   COMMUNITY_RESOURCE_LINKS,
   COMMUNITY_TOP_TIME_RANGE_ITEMS,
 } from "../constants";
-import { FOCUS_VISIBLE, cn } from "../design";
+import { FOCUS_VISIBLE, cn, communityNav } from "../design";
 import type {
   CommunityFeedCounts,
   CommunityFeedView,
@@ -194,7 +193,7 @@ export function CommunitySidebar({
           <div
             className={cn(
               "rounded-lg py-2 text-center",
-              fitNav.itemActiveCompactQuiet,
+              communityNav.itemActiveCompactQuiet,
             )}
             aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
           >
@@ -205,7 +204,7 @@ export function CommunitySidebar({
             <div
               className={cn(
                 "rounded-lg py-2 text-center",
-                fitNav.itemActiveCompactQuiet,
+                communityNav.itemActiveCompactQuiet,
               )}
               aria-label={
                 activeTimeItem
@@ -225,7 +224,7 @@ export function CommunitySidebar({
         <p
           className={cn(
             "mb-2 px-2",
-            fitNav.sectionLabel,
+            communityNav.sectionLabel,
             collapsed ? "hidden" : "",
           )}
         >
@@ -253,17 +252,17 @@ export function CommunitySidebar({
                 aria-pressed={active}
                 aria-label={`${item.label}: ${item.description}`}
                 className={cn(
-                  fitNav.itemBase,
+                  communityNav.itemBase,
                   "relative min-w-[142px] lg:min-w-0",
                   drawerOpen ? "min-w-0" : "",
-                  active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
+                  active ? communityNav.itemActiveQuiet : communityNav.itemIdle,
                   FOCUS_VISIBLE,
                 )}
               >
                 <span
                   className={cn(
                     "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors",
-                    active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
+                    active ? communityNav.iconActiveQuiet : communityNav.iconIdle,
                   )}
                   aria-hidden="true"
                 >
@@ -274,7 +273,7 @@ export function CommunitySidebar({
                     {item.label}
                   </span>
                 </span>
-                <span className={fitNav.countPill}>
+                <span className={communityNav.countPill}>
                   {counts[item.id].toLocaleString()}
                 </span>
               </button>
@@ -288,7 +287,7 @@ export function CommunitySidebar({
           className={cn("mt-4 min-w-0", collapsed ? "hidden" : "")}
           aria-label="Top feed time range"
         >
-          <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>
+          <p className={cn("mb-2 px-2", communityNav.sectionLabel)}>
             Time
           </p>
           <div
@@ -312,14 +311,14 @@ export function CommunitySidebar({
                   className={cn(
                     "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors lg:min-w-0",
                     drawerOpen ? "min-w-0" : "",
-                    active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
+                    active ? communityNav.itemActiveQuiet : communityNav.itemIdle,
                     FOCUS_VISIBLE,
                   )}
                 >
                   <span
                     className={cn(
                       "grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors",
-                      active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
+                      active ? communityNav.iconActiveQuiet : communityNav.iconIdle,
                     )}
                     aria-hidden="true"
                   >
@@ -342,7 +341,7 @@ export function CommunitySidebar({
         className={cn("min-w-0", collapsed ? "hidden" : "")}
         aria-label="Community resources"
       >
-        <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>
+        <p className={cn("mb-2 px-2", communityNav.sectionLabel)}>
           Resources
         </p>
         <div

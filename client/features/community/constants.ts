@@ -4,57 +4,69 @@ import type {
   CommunityTopTimeRange,
   SeedPost,
 } from "./types";
+import {
+  COMMUNITY_FEED_VIEW_IDS,
+  COMMUNITY_TOP_TIME_RANGE_IDS,
+} from "./config/communityOptions";
 import { FIT_CONTENT_MAX_WIDTH_PX } from "@/components/shared/uiPrimitives";
 
 export const COMMUNITY_PAGE_WIDTH = "100%";
-export const COMMUNITY_FEED_NAV_ITEMS: Array<{
-  id: CommunityFeedView;
-  label: string;
-  description: string;
-}> = [
+const COMMUNITY_FEED_NAV_COPY: Record<
+  CommunityFeedView,
   {
-    id: "top",
+    label: string;
+    description: string;
+  }
+> = {
+  top: {
     label: "Top",
     description: "Highest-voted discussions",
   },
-  {
-    id: "new",
+  new: {
     label: "New",
     description: "Latest discussions first",
   },
-  {
-    id: "my-posts",
+  "my-posts": {
     label: "My Posts",
     description: "Discussions you created",
   },
-  {
-    id: "liked",
+  liked: {
     label: "Liked",
     description: "Discussions you voted for",
   },
-  {
-    id: "commented",
+  commented: {
     label: "Commented",
     description: "Discussions you joined",
   },
-];
+};
+
+export const COMMUNITY_FEED_NAV_ITEMS = COMMUNITY_FEED_VIEW_IDS.map((id) => ({
+  id,
+  ...COMMUNITY_FEED_NAV_COPY[id],
+}));
+
 export const COMMUNITY_RESOURCE_LINKS = [
   "Community Rules",
   "Privacy Policy",
   "User Agreement",
   "Accessibility",
 ];
-export const COMMUNITY_TOP_TIME_RANGE_ITEMS: Array<{
-  id: CommunityTopTimeRange;
-  label: string;
-}> = [
-  { id: "all-time", label: "All time" },
-  { id: "past-year", label: "Past year" },
-  { id: "past-month", label: "Past month" },
-  { id: "past-week", label: "Past week" },
-  { id: "today", label: "Today" },
-  { id: "past-hour", label: "Past hour" },
-];
+
+const COMMUNITY_TOP_TIME_RANGE_LABELS: Record<CommunityTopTimeRange, string> = {
+  "all-time": "All time",
+  "past-year": "Past year",
+  "past-month": "Past month",
+  "past-week": "Past week",
+  today: "Today",
+  "past-hour": "Past hour",
+};
+
+export const COMMUNITY_TOP_TIME_RANGE_ITEMS =
+  COMMUNITY_TOP_TIME_RANGE_IDS.map((id) => ({
+    id,
+    label: COMMUNITY_TOP_TIME_RANGE_LABELS[id],
+  }));
+
 export const COMMUNITY_APP_RAIL_WIDTH_PX = 64;
 export const COMMUNITY_CONTENT_MAX_WIDTH_PX = FIT_CONTENT_MAX_WIDTH_PX;
 export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;

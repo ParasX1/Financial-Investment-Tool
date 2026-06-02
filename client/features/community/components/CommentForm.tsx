@@ -5,7 +5,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import communityStyles from "../styles/community.module.css";
 import { COMMENT_IMAGE_TYPES } from "../constants";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { FOCUS_VISIBLE, cn, communityButton, communityUi } from "../design";
 import type { NewComment } from "../types";
 import { getErrorMessage } from "../lib/communityErrors";
 import { validateCommentImage } from "../lib/communityValidation";
@@ -104,9 +104,9 @@ export function CommentForm({
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
-          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
+          "w-full resize-none overflow-hidden rounded-md px-[12px] py-[10px] text-sm",
+          communityUi.fieldBase,
           communityStyles.softBorder,
-          "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20"
         )}
       />
 
@@ -178,8 +178,8 @@ export function CommentForm({
           type="submit"
           disabled={busy || !text.trim()}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[14px] py-[8px] text-sm font-semibold text-white transition-colors",
-            "hover:bg-[#7079ff]",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-[14px] py-[8px] text-sm font-semibold",
+              communityButton.primary,
             communityUi.disabled,
             FOCUS_VISIBLE
           )}

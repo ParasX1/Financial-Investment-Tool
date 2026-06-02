@@ -4,9 +4,14 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import type { MouseEvent } from "react";
 import Link from "next/link";
-import { fitButton } from "@/components/shared/fitStyles";
 import communityStyles from "../styles/community.module.css";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import {
+  FOCUS_VISIBLE,
+  cn,
+  communityButton,
+  communityText,
+  communityUi,
+} from "../design";
 
 export function CommunityToolbar({
   actionHref,
@@ -28,7 +33,7 @@ export function CommunityToolbar({
   return (
     <section
       className={cn(
-        "fixed right-0 top-0 z-[850] border-b border-[#202230] bg-black/95 px-3 backdrop-blur-md sm:px-8 lg:px-10",
+        "fixed right-0 top-0 z-[850] border-b border-[color:var(--fit-color-border-control)] bg-black/95 px-3 backdrop-blur-md sm:px-8 lg:px-10",
         communityStyles.toolbar,
       )}
       data-community-toolbar
@@ -49,7 +54,10 @@ export function CommunityToolbar({
           Search discussions
         </label>
         <SearchRoundedIcon
-          className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[#7f8798]"
+          className={cn(
+            "pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2",
+            communityText.placeholder,
+          )}
           sx={{ fontSize: 20 }}
           aria-hidden="true"
         />
@@ -65,7 +73,7 @@ export function CommunityToolbar({
             "w-full pl-[44px] pr-[16px] text-[15px]",
             communityStyles.toolbarControl,
             communityUi.field,
-            communityStyles.panelBorder
+            communityStyles.panelBorder,
           )}
         />
       </div>
@@ -76,7 +84,7 @@ export function CommunityToolbar({
           className={cn(
             "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white no-underline transition-colors hover:no-underline sm:px-4",
             communityStyles.toolbarControl,
-            actionType === "create" ? fitButton.primary : fitButton.secondary,
+            actionType === "create" ? communityButton.primary : communityButton.secondary,
             FOCUS_VISIBLE,
           )}
         >

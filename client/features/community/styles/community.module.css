@@ -1,7 +1,4 @@
 /* File purpose: Styles Community-specific layout, sticky sidebar, skeletons, dividers, and text wrapping details. */
-.noticeBorder {
-  border: 1px solid rgba(111, 124, 255, 0.28);
-}
 
 .softBorder {
   border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));

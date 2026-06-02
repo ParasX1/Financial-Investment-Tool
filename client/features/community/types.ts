@@ -1,20 +1,15 @@
 // File purpose: Defines shared Community TypeScript contracts for posts, comments, feeds, and UI state.
-export type CommunityFeedView =
-  | "top"
-  | "new"
-  | "my-posts"
-  | "liked"
-  | "commented";
+import type {
+  CommunityFeedView,
+  CommunityTopTimeRange,
+} from "./config/communityOptions";
+
+export type {
+  CommunityFeedView,
+  CommunityTopTimeRange,
+} from "./config/communityOptions";
 
 export type CommunityFeedCounts = Record<CommunityFeedView, number>;
-
-export type CommunityTopTimeRange =
-  | "all-time"
-  | "past-year"
-  | "past-month"
-  | "past-week"
-  | "today"
-  | "past-hour";
 
 export type DiscussionDraft = {
   title: string;
