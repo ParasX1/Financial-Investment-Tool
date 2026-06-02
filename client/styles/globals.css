@@ -8,18 +8,68 @@
     --fit-color-page-bg: #000000;
     --fit-color-surface: #09090b;
     --fit-color-surface-soft: #111114;
+    --fit-color-surface-accent: #07051a;
+    --fit-color-surface-support: #0a0818;
     --fit-color-field: #18181b;
+    --fit-color-icon-surface: #141419;
     --fit-color-inner-surface: #050506;
     --fit-color-border-subtle: rgba(132, 146, 176, 0.12);
     --fit-color-border-panel: #27272a;
     --fit-color-border-control: #202230;
+    --fit-color-border-accent: #1d2a5c;
+    --fit-color-border-support: #1c2a5c;
     --fit-color-text-body: #b9c1d0;
+    --fit-color-text-strong: #e2e7f2;
     --fit-color-text-muted: #8f98aa;
+    --fit-color-text-placeholder: #7f8798;
     --fit-color-text-label: #687184;
+    --fit-color-text-nav: #dce4ff;
+    --fit-color-text-nav-muted: #a5adbf;
+    --fit-color-text-info: #dbe4ff;
+    --fit-color-text-danger: #ffd9e2;
     --fit-color-accent: #8ea0ff;
     --fit-color-accent-strong: #65a0fd;
+    --fit-color-primary: #5d67ff;
+    --fit-color-primary-hover: #7079ff;
+    --fit-color-danger: #ff3d68;
+    --fit-color-danger-strong: #ff5b7c;
+    --fit-color-success: #38d996;
+    --fit-color-focus: #7b8cff;
+    --fit-color-focus-soft: rgba(111, 124, 255, 0.2);
     --fit-nav-active-bg: #101939;
     --fit-nav-active-border: #203773;
+    --fit-nav-hover-bg: linear-gradient(
+      135deg,
+      rgba(83, 103, 255, 0.1),
+      rgba(124, 58, 237, 0.12)
+    );
+    --fit-gradient-nav-active: linear-gradient(
+      90deg,
+      #1f2466,
+      #24175a,
+      #3a155f
+    );
+    --fit-gradient-icon-active: linear-gradient(
+      135deg,
+      #5367ff,
+      #6d4cff,
+      #2b164f
+    );
+    --fit-gradient-icon-header: linear-gradient(135deg, #14182d, #151126, #0f1016);
+    --fit-gradient-primary-action: linear-gradient(90deg, #2d5bf2, #8a21f0);
+    --fit-shadow-nav-active: inset 0 0 0 1px rgba(123, 140, 255, 0.42),
+      0 12px 28px rgba(83, 103, 255, 0.18);
+    --fit-shadow-nav-compact-active: inset 0 0 0 1px
+        rgba(123, 140, 255, 0.28),
+      0 0 24px rgba(83, 103, 255, 0.12);
+    --fit-shadow-icon-active: 0 0 22px rgba(83, 103, 255, 0.42),
+      inset 0 0 0 1px rgba(213, 220, 255, 0.24);
+    --fit-feedback-info-border: rgba(83, 103, 255, 0.35);
+    --fit-feedback-info-bg: rgba(83, 103, 255, 0.1);
+    --fit-feedback-error-border: rgba(255, 91, 124, 0.35);
+    --fit-feedback-error-bg: rgba(255, 61, 104, 0.1);
+    --fit-feedback-success-border: rgba(56, 217, 150, 0.35);
+    --fit-feedback-success-bg: rgba(31, 191, 122, 0.1);
   }
 
   @media (max-width: 767px) {

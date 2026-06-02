@@ -13,7 +13,12 @@ export function FitPageHeader({
 }) {
   return (
     <header className={cn("mb-6 sm:mb-7", className)}>
-      <h1 className="text-balance text-[28px] font-extrabold leading-tight tracking-normal text-white sm:text-[30px]">
+      <h1
+        className={cn(
+          "text-balance text-[28px] font-extrabold leading-tight tracking-normal sm:text-[30px]",
+          fitText.inverse,
+        )}
+      >
         {title}
       </h1>
       <p
