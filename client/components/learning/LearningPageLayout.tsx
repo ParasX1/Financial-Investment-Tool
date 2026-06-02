@@ -6,6 +6,7 @@ import {
   FIT_CONTENT_MAX_WIDTH_PX,
   FIT_FOCUS_VISIBLE,
   cn,
+  fitLayout,
   fitText,
 } from "@/components/shared/uiPrimitives";
 import styles from "./LearningPageLayout.module.css";
@@ -65,7 +66,7 @@ export function LearningPageLayout({
       <main
         id={mainId}
         tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,64px)] min-h-screen overflow-x-hidden bg-black px-3 pb-8 pt-8 text-white transition-[margin-left] duration-200 ease-out sm:px-8 sm:pb-10 sm:pt-10 lg:px-10"
+        className={cn(fitLayout.appMain, fitLayout.appMainPadding)}
       >
         <div
           className="mx-auto w-full"
@@ -183,7 +184,12 @@ export function LearningCard({
         >
           <Icon sx={{ fontSize: 19 }} />
         </span>
-        <h2 className="min-w-0 truncate text-base font-extrabold text-white">
+        <h2
+          className={cn(
+            "min-w-0 truncate text-base font-extrabold",
+            fitText.inverse,
+          )}
+        >
           {title}
         </h2>
       </div>
@@ -198,7 +204,7 @@ export function FormulaBlock({ children }: { children: React.ReactNode }) {
   return (
     <code
       className={cn(
-        "block overflow-x-auto px-4 py-3 font-mono text-sm leading-6 text-[var(--fit-color-accent-strong)]",
+        "block overflow-x-auto px-4 py-3 font-mono text-sm leading-6 text-[color:var(--fit-color-accent-strong)]",
         "rounded-lg",
         styles.formula,
       )}
@@ -231,7 +237,12 @@ export function QuestionCard({
           {index + 1}
         </span>
         <div className="min-w-0">
-          <h2 className="text-pretty text-base font-extrabold leading-6 text-white">
+          <h2
+            className={cn(
+              "text-pretty text-base font-extrabold leading-6",
+              fitText.inverse,
+            )}
+          >
             {question}
           </h2>
           <p
@@ -281,7 +292,9 @@ export function LearningActionPanel({
           <Icon sx={{ fontSize: 20 }} />
         </span>
       ) : null}
-      <h2 className="text-xl font-extrabold text-white">{title}</h2>
+      <h2 className={cn("text-xl font-extrabold", fitText.inverse)}>
+        {title}
+      </h2>
       <p
         className={cn(
           "mx-auto mt-2 max-w-[36rem] text-pretty text-[15px] leading-6",
@@ -343,7 +356,8 @@ export function LearningTopicCard({
       ) : null}
       <h2
         className={cn(
-          "text-balance text-2xl font-extrabold leading-tight text-white",
+          "text-balance text-2xl font-extrabold leading-tight",
+          fitText.inverse,
           eyebrow ? "mt-2" : "mt-0",
         )}
       >
