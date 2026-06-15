@@ -1,0 +1,123 @@
+.shell {
+  --market-news-green: #00b884;
+  --market-news-red: #ff4d5d;
+  --market-news-line: rgba(132, 146, 176, 0.14);
+  --market-news-panel: rgba(13, 15, 18, 0.96);
+  --market-news-panel-soft: rgba(18, 20, 25, 0.92);
+  --market-news-text: #dce4ff;
+  --market-news-muted: #8f98aa;
+}
+
+.topBar {
+  border-bottom: 1px solid var(--market-news-line);
+  background:
+    linear-gradient(180deg, rgba(9, 10, 13, 0.98), rgba(7, 8, 10, 0.94));
+}
+
+.categoryRail {
+  border-bottom: 1px solid rgba(0, 184, 132, 0.42);
+  background: #030404;
+}
+
+.tickerRail {
+  border-bottom: 1px solid var(--market-news-line);
+  background: rgba(13, 16, 19, 0.96);
+}
+
+.mainGrid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.storyGrid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.secondaryGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.latestPanel {
+  border-left: 0;
+}
+
+.rightRail {
+  min-width: 0;
+}
+
+.articleImage {
+  aspect-ratio: 16 / 10;
+}
+
+.heroImage {
+  aspect-ratio: 16 / 9;
+}
+
+.sparklinePath {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 184, 132, 0.12),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-size: 200% 100%;
+  animation: marketNewsSkeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes marketNewsSkeleton {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .storyGrid {
+    grid-template-columns: minmax(22rem, 1.05fr) minmax(17rem, 0.82fr);
+    align-items: start;
+  }
+
+  .secondaryGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1180px) {
+  .mainGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+    align-items: start;
+  }
+
+  .latestPanel {
+    border-left: 1px solid var(--market-news-line);
+    padding-left: 1.25rem;
+  }
+
+  .rightRail {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+

@@ -33,20 +33,26 @@ export function getMarketNewsGroupForTopic(
   topicId: MarketNewsTopicId | string,
   groups: readonly MarketNewsNavGroup[] = MARKET_NEWS_NAV_GROUPS,
 ): MarketNewsNavGroup | undefined {
-  return groups.find((group) => group.topics.some((topic) => topic.id === topicId));
+  return groups.find((group) =>
+    group.topics.some((topic) => topic.id === topicId),
+  );
 }
 
 export function getMarketNewsGroupIdForTopic(
   topicId: MarketNewsTopicId | string,
 ): MarketNewsGroupId {
-  return getMarketNewsGroupForTopic(topicId)?.id ?? MARKET_NEWS_NAV_GROUPS[0]!.id;
+  return (
+    getMarketNewsGroupForTopic(topicId)?.id ?? MARKET_NEWS_NAV_GROUPS[0]!.id
+  );
 }
 
 export function buildMarketNewsRequest(
   topic: MarketNewsTopic,
   searchQuery: string,
+  tickerSymbol = "",
 ): MarketNewsRequest {
   const cleanedSearch = searchQuery.trim();
+  const cleanedTicker = tickerSymbol.trim().toUpperCase();
 
   if (cleanedSearch) {
     return {
@@ -54,6 +60,15 @@ export function buildMarketNewsRequest(
       query: cleanedSearch,
       context: topic.source.context,
       title: `Search results for "${cleanedSearch}"`,
+    };
+  }
+
+  if (cleanedTicker) {
+    return {
+      kind: "ticker",
+      ticker: cleanedTicker,
+      context: `${cleanedTicker} company stock market news`,
+      title: `${cleanedTicker} News`,
     };
   }
 
@@ -99,4 +114,3 @@ export function buildMarketNewsRequest(
     title: topic.label,
   };
 }
-

@@ -1,13 +1,11 @@
-import type {
-  MarketNewsNavGroup,
-  MarketNewsTicker,
-} from "../types";
+import type { MarketNewsNavGroup, MarketNewsTicker } from "../types";
 
 export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
     id: "cost-of-living",
     label: "Cost of Living",
-    description: "Household budgets, inflation pressure, wages, and everyday costs.",
+    description:
+      "Household budgets, inflation pressure, wages, and everyday costs.",
     futureRoute: "/MarketNews?topic=cost-of-living",
     topics: [
       {
@@ -19,7 +17,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         futureRoute: "/MarketNews?topic=cost-of-living",
         source: {
           kind: "search",
-          query: "Australia cost of living inflation wages bills interest rates",
+          query:
+            "Australia cost of living inflation wages bills interest rates",
           context: "Australian household finance cost of living",
         },
       },
@@ -28,7 +27,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
     id: "markets",
     label: "Markets",
-    description: "Australian shares, global markets, commodities, currencies, and macro signals.",
+    description:
+      "Australian shares, global markets, commodities, currencies, and macro signals.",
     futureRoute: "/MarketNews?group=markets",
     topics: [
       {
@@ -77,7 +77,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
     id: "money",
     label: "Money",
-    description: "Personal finance, property, banking, superannuation, tax, and saving decisions.",
+    description:
+      "Personal finance, property, banking, superannuation, tax, and saving decisions.",
     futureRoute: "/MarketNews?group=money",
     topics: [
       {
@@ -103,7 +104,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         futureRoute: "/MarketNews?topic=personal-finance",
         source: {
           kind: "search",
-          query: "personal finance Australia mortgage retirement insurance savings",
+          query:
+            "personal finance Australia mortgage retirement insurance savings",
           context: "personal finance household money Australia",
         },
       },
@@ -117,7 +119,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         futureRoute: "/MarketNews?topic=property-news",
         source: {
           kind: "search",
-          query: "Australia property news housing prices rent mortgage affordability",
+          query:
+            "Australia property news housing prices rent mortgage affordability",
           context: "Australian property housing market",
         },
       },
@@ -126,7 +129,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
     id: "work",
     label: "Work",
-    description: "Labour market shifts, wages, career decisions, and workplace trends.",
+    description:
+      "Labour market shifts, wages, career decisions, and workplace trends.",
     futureRoute: "/MarketNews?topic=work",
     topics: [
       {
@@ -147,7 +151,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
     id: "technology",
     label: "Technology",
-    description: "Tech companies, AI, platforms, cybersecurity, and innovation-led market moves.",
+    description:
+      "Tech companies, AI, platforms, cybersecurity, and innovation-led market moves.",
     futureRoute: "/MarketNews?topic=technology",
     topics: [
       {
@@ -232,4 +237,3 @@ export const MARKET_NEWS_TRENDING_SYMBOLS = [
   "WOW.AX",
   "CBA.AX",
 ] as const;
-

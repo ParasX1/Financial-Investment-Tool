@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@jest/globals";
 import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
   buildMarketNewsRequest,
@@ -18,9 +19,9 @@ describe("marketNewsNavigation", () => {
     ]);
 
     expect(
-      MARKET_NEWS_NAV_GROUPS.find((group) => group.id === "markets")?.topics.map(
-        (topic) => topic.label,
-      ),
+      MARKET_NEWS_NAV_GROUPS.find(
+        (group) => group.id === "markets",
+      )?.topics.map((topic) => topic.label),
     ).toEqual(["Australian Markets", "International Markets", "Commodities"]);
 
     expect(
@@ -59,6 +60,16 @@ describe("marketNewsNavigation", () => {
       query: "RBA rates",
       context: topic.source.context,
       title: 'Search results for "RBA rates"',
+    });
+  });
+
+  it("builds ticker requests for quote and watchlist drill-downs", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+
+    expect(buildMarketNewsRequest(topic, "", " cba.ax ")).toMatchObject({
+      kind: "ticker",
+      ticker: "CBA.AX",
+      title: "CBA.AX News",
     });
   });
 });

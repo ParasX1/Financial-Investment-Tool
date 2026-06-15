@@ -1,3 +1,4 @@
+export { MarketNewsMain } from "./components/MarketNewsMain";
 export {
   MARKET_NEWS_NAV_GROUPS,
   MARKET_NEWS_TICKERS,

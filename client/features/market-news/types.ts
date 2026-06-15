@@ -71,12 +71,12 @@ export interface MarketNewsTicker {
 }
 
 export interface MarketNewsRequest {
-  kind: MarketNewsSource["kind"];
+  kind: MarketNewsSource["kind"] | "ticker";
   title: string;
   context: string;
   query?: string;
+  ticker?: string;
   country?: string;
   industry?: string;
   commodity?: string;
 }
-
