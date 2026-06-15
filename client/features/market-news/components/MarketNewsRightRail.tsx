@@ -1,6 +1,10 @@
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
-import type { MarketNewsTicker, MarketNewsTopic } from "../types";
+import type {
+  MarketNewsMarketScope,
+  MarketNewsTicker,
+  MarketNewsTopic,
+} from "../types";
 
 const toneClass = {
   negative: "text-[#ff4d5d]",
@@ -12,6 +16,7 @@ export function MarketNewsRightRail({
   activeTopic,
   authenticated,
   lookupDraft,
+  marketScope,
   selectedSymbol,
   tickers,
   watchlistLoading,
@@ -22,6 +27,7 @@ export function MarketNewsRightRail({
   activeTopic: MarketNewsTopic;
   authenticated: boolean;
   lookupDraft: string;
+  marketScope: MarketNewsMarketScope;
   selectedSymbol: string;
   tickers: readonly MarketNewsTicker[];
   watchlistLoading: boolean;
@@ -85,7 +91,9 @@ export function MarketNewsRightRail({
       <section className="rounded-lg border border-white/10 bg-[#0d0f12] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-extrabold text-white">Trending Tickers</h2>
-          <span className="text-xs font-bold text-[#8f98aa]">AU</span>
+          <span className="text-xs font-bold text-[#8f98aa]">
+            {marketScope.shortLabel}
+          </span>
         </div>
         <div className="mt-3 divide-y divide-white/10">
           {tickers.slice(0, 5).map((ticker) => (

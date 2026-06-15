@@ -1,10 +1,15 @@
 import { describe, expect, it } from "@jest/globals";
-import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
+import {
+  MARKET_NEWS_MARKET_SCOPES,
+  MARKET_NEWS_NAV_GROUPS,
+} from "../data/marketNewsConfig";
 import {
   buildMarketNewsRequest,
+  defaultMarketNewsMarketScopeId,
   defaultMarketNewsTopicId,
   getMarketNewsGroupForTopic,
   getMarketNewsTopics,
+  resolveMarketNewsMarketScope,
   resolveMarketNewsTopic,
 } from "./marketNewsNavigation";
 
@@ -71,5 +76,25 @@ describe("marketNewsNavigation", () => {
       ticker: "CBA.AX",
       title: "CBA.AX News",
     });
+  });
+
+  it("models the market scope selector shown above the ticker strip", () => {
+    expect(MARKET_NEWS_MARKET_SCOPES.map((scope) => scope.label)).toEqual([
+      "Australia",
+      "US Markets",
+      "Europe Markets",
+      "Asia Markets",
+      "Cryptocurrencies",
+      "Rates",
+      "Commodities",
+      "Currencies",
+    ]);
+
+    expect(defaultMarketNewsMarketScopeId).toBe("australia");
+    expect(resolveMarketNewsMarketScope(undefined).label).toBe("Australia");
+    expect(resolveMarketNewsMarketScope("not-a-scope").label).toBe("Australia");
+    expect(resolveMarketNewsMarketScope("commodities").tickers[0]?.symbol).toBe(
+      "CL=F",
+    );
   });
 });

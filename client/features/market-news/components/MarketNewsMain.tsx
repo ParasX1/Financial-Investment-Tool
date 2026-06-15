@@ -2,14 +2,16 @@ import * as React from "react";
 import { FitPageShell } from "@/components/shared/FitPageShell";
 import { cn } from "@/components/shared/uiPrimitives";
 import {
+  MARKET_NEWS_MARKET_SCOPES,
   MARKET_NEWS_NAV_GROUPS,
-  MARKET_NEWS_TICKERS,
 } from "../data/marketNewsConfig";
 import {
+  defaultMarketNewsMarketScopeId,
   defaultMarketNewsTopicId,
+  resolveMarketNewsMarketScope,
   resolveMarketNewsTopic,
 } from "../lib/marketNewsNavigation";
-import type { MarketNewsTopicId } from "../types";
+import type { MarketNewsMarketScopeId, MarketNewsTopicId } from "../types";
 import { useMarketNewsArticles } from "../hooks/useMarketNewsArticles";
 import { useMarketNewsWatchlist } from "../hooks/useMarketNewsWatchlist";
 import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
@@ -28,15 +30,18 @@ export function MarketNewsMain({
 }) {
   const [activeTopicId, setActiveTopicId] =
     React.useState<MarketNewsTopicId>(defaultMarketNewsTopicId);
+  const [activeMarketScopeId, setActiveMarketScopeId] =
+    React.useState<MarketNewsMarketScopeId>(defaultMarketNewsMarketScopeId);
   const [searchDraft, setSearchDraft] = React.useState("");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [tickerSymbol, setTickerSymbol] = React.useState("");
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [lookupDraft, setLookupDraft] = React.useState("");
-  const [selectedSymbol, setSelectedSymbol] = React.useState(
-    MARKET_NEWS_TICKERS[0]!.symbol,
-  );
   const activeTopic = resolveMarketNewsTopic(activeTopicId);
+  const activeMarketScope = resolveMarketNewsMarketScope(activeMarketScopeId);
+  const [selectedSymbol, setSelectedSymbol] = React.useState(
+    activeMarketScope.tickers[0]!.symbol,
+  );
   const watchlist = useMarketNewsWatchlist();
   const { articles, error, loading, request } = useMarketNewsArticles({
     limit: ARTICLE_LIMIT,
@@ -79,6 +84,18 @@ export function MarketNewsMain({
   const handleRefresh = React.useCallback(() => {
     setRefreshKey((key) => key + 1);
   }, []);
+
+  const handleMarketScopeChange = React.useCallback(
+    (scopeId: MarketNewsMarketScopeId) => {
+      const nextScope = resolveMarketNewsMarketScope(scopeId);
+      const nextSymbol = nextScope.tickers[0]?.symbol ?? "";
+
+      setActiveMarketScopeId(nextScope.id);
+      setSelectedSymbol(nextSymbol);
+      setLookupDraft("");
+    },
+    [],
+  );
 
   const handleQuoteLookup = React.useCallback(
     (value: string) => {
@@ -137,8 +154,11 @@ export function MarketNewsMain({
 
         <div className={styles.tickerRail}>
           <MarketNewsTickerStrip
+            marketScope={activeMarketScope}
+            marketScopes={MARKET_NEWS_MARKET_SCOPES}
             selectedSymbol={selectedSymbol}
-            tickers={MARKET_NEWS_TICKERS}
+            tickers={activeMarketScope.tickers}
+            onMarketScopeChange={handleMarketScopeChange}
             onTickerSelect={handleQuoteLookup}
           />
         </div>
@@ -182,8 +202,9 @@ export function MarketNewsMain({
                 activeTopic={activeTopic}
                 authenticated={watchlist.authenticated}
                 lookupDraft={lookupDraft}
+                marketScope={activeMarketScope}
                 selectedSymbol={selectedSymbol}
-                tickers={MARKET_NEWS_TICKERS}
+                tickers={activeMarketScope.tickers}
                 watchlistLoading={watchlist.loading}
                 watchlistSymbols={watchlist.symbols}
                 onLookupDraftChange={setLookupDraft}

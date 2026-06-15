@@ -70,6 +70,25 @@ export interface MarketNewsTicker {
   futureQuoteRoute?: string;
 }
 
+export type MarketNewsMarketScopeId =
+  | "australia"
+  | "us-markets"
+  | "europe-markets"
+  | "asia-markets"
+  | "cryptocurrencies"
+  | "rates"
+  | "commodities"
+  | "currencies";
+
+export interface MarketNewsMarketScope {
+  id: MarketNewsMarketScopeId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  tickers: readonly MarketNewsTicker[];
+  futureRoute?: string;
+}
+
 export interface MarketNewsRequest {
   kind: MarketNewsSource["kind"] | "ticker";
   title: string;
