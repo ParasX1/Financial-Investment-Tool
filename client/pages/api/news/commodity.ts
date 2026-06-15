@@ -1,34 +1,54 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import type { Article } from '@/services/news';
+import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  buildNewsSearchQueries,
+  businessHeadlineFallback,
+  fetchNewsApiArticles,
+  normaliseNewsApiPageSize,
+} from "@/lib/newsApi";
+import type { Article } from "@/services/news";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ articles?: Article[]; error?: string }>
+  res: NextApiResponse<{ articles?: Article[]; error?: string }>,
 ) {
-  const apiKey    = process.env.NEXT_PUBLIC_NEWSAPI_KEY!;
-  const commodity = (Array.isArray(req.query.commodity) ? req.query.commodity[0] : req.query.commodity) || 'gold';
-  const pageSize  = (Array.isArray(req.query.pageSize) ? req.query.pageSize[0] : req.query.pageSize) || '10';
-
-  // Using business category to search commodity category
-  const url = new URL('https://newsapi.org/v2/top-headlines');
-  url.searchParams.set('category', 'business');
-  url.searchParams.set('q', commodity);
-  url.searchParams.set('pageSize', pageSize);
-  url.searchParams.set('apiKey', apiKey);
-
   try {
-    const r = await fetch(url.toString());
-    if (!r.ok) throw new Error(`NewsAPI ${r.status}`);
-    const data = await r.json();
-    const articles: Article[] = (data.articles || []).map((a: any) => ({
-      id:          a.url,
-      title:       a.title,
-      summary:     a.description || '',
-      url:         a.url,
-      image:       a.urlToImage || null,
-      publishedAt: a.publishedAt,
-      source:      a.source.name || 'Unknown'
-    }));
+    const apiKey = process.env.NEXT_PUBLIC_NEWSAPI_KEY;
+    const commodity =
+      (Array.isArray(req.query.commodity)
+        ? req.query.commodity[0]
+        : req.query.commodity) || "gold";
+    const pageSize = normaliseNewsApiPageSize(
+      Array.isArray(req.query.pageSize)
+        ? req.query.pageSize[0]
+        : req.query.pageSize,
+    );
+    const commodityQueries = buildNewsSearchQueries({
+      fallback: "commodities oil gold copper energy metals markets",
+      query: String(commodity),
+    });
+    const articles = await fetchNewsApiArticles({
+      apiKey,
+      candidates: [
+        {
+          endpoint: "top-headlines",
+          params: {
+            category: "business",
+            q: String(commodity),
+          },
+        },
+        ...commodityQueries.map((q) => ({
+          endpoint: "everything" as const,
+          params: {
+            language: "en",
+            q,
+            sortBy: "publishedAt",
+          },
+        })),
+        ...businessHeadlineFallback(),
+      ],
+      pageSize,
+    });
+
     res.status(200).json({ articles });
   } catch (e: any) {
     console.error(e);
