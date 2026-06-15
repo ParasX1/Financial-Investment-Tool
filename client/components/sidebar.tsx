@@ -85,14 +85,6 @@ function shouldKeepDesktopSidebarExpanded() {
   )
 }
 
-function getInitialExpandedMode() {
-  if (getInitialCompactMode()) return rememberedCompactExpanded
-
-  if (getInitialHoverExpandMode()) return shouldKeepDesktopSidebarExpanded()
-
-  return rememberedDesktopExpanded
-}
-
 interface SidebarNavItem {
   href: string
   label: string
@@ -260,11 +252,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   skipTargetId = 'main-content',
 }) => {
   const { user, signOut } = useAuth()
-  const [expanded, setExpanded] = useState(getInitialExpandedMode)
-  const [showLabel, setShowLabel] = useState(getInitialExpandedMode)
+  const [expanded, setExpanded] = useState(false)
+  const [showLabel, setShowLabel] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
-  const [compact, setCompact] = useState(getInitialCompactMode)
-  const [canHoverExpand, setCanHoverExpand] = useState(getInitialHoverExpandMode)
+  const [compact, setCompact] = useState(false)
+  const [canHoverExpand, setCanHoverExpand] = useState(false)
   const [responsiveReady, setResponsiveReady] = useState(false)
   const sidebarRef = useRef<HTMLElement | null>(null)
   const manualToggleRef = useRef<HTMLButtonElement | null>(null)
