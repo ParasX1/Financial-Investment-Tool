@@ -1,6 +1,11 @@
 import * as React from "react";
+import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
-import { cn } from "@/components/shared/uiPrimitives";
+import {
+  FIT_CONTENT_MAX_WIDTH_PX,
+  cn,
+  fitText,
+} from "@/components/shared/uiPrimitives";
 import {
   MARKET_NEWS_MARKET_SCOPES,
   MARKET_NEWS_NAV_GROUPS,
@@ -11,11 +16,20 @@ import {
   resolveMarketNewsMarketScope,
   resolveMarketNewsTopic,
 } from "../lib/marketNewsNavigation";
-import type { MarketNewsMarketScopeId, MarketNewsTopicId } from "../types";
+import {
+  buildMarketNewsLensOptions,
+  filterArticlesByLens,
+} from "../lib/marketNewsLens";
+import type {
+  MarketNewsLensId,
+  MarketNewsMarketScopeId,
+  MarketNewsTopicId,
+} from "../types";
 import { useMarketNewsArticles } from "../hooks/useMarketNewsArticles";
 import { useMarketNewsWatchlist } from "../hooks/useMarketNewsWatchlist";
 import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
 import { MarketNewsCategoryNav } from "./MarketNewsCategoryNav";
+import { MarketNewsLensBar } from "./MarketNewsLensBar";
 import { MarketNewsRightRail } from "./MarketNewsRightRail";
 import { MarketNewsSearchBar } from "./MarketNewsSearchBar";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
@@ -28,13 +42,16 @@ export function MarketNewsMain({
 }: {
   onQuoteLookup?: (symbol: string) => void;
 }) {
-  const [activeTopicId, setActiveTopicId] =
-    React.useState<MarketNewsTopicId>(defaultMarketNewsTopicId);
+  const [activeTopicId, setActiveTopicId] = React.useState<MarketNewsTopicId>(
+    defaultMarketNewsTopicId,
+  );
   const [activeMarketScopeId, setActiveMarketScopeId] =
     React.useState<MarketNewsMarketScopeId>(defaultMarketNewsMarketScopeId);
   const [searchDraft, setSearchDraft] = React.useState("");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [tickerSymbol, setTickerSymbol] = React.useState("");
+  const [activeLensId, setActiveLensId] =
+    React.useState<MarketNewsLensId>("all");
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [lookupDraft, setLookupDraft] = React.useState("");
   const activeTopic = resolveMarketNewsTopic(activeTopicId);
@@ -43,8 +60,9 @@ export function MarketNewsMain({
     activeMarketScope.tickers[0]!.symbol,
   );
   const watchlist = useMarketNewsWatchlist();
-  const { articles, error, loading, request } = useMarketNewsArticles({
+  const { articles, error, loading, meta, request } = useMarketNewsArticles({
     limit: ARTICLE_LIMIT,
+    marketScope: activeMarketScope,
     refreshKey,
     searchQuery,
     tickerSymbol,
@@ -63,17 +81,102 @@ export function MarketNewsMain({
     return activeTopic.description;
   }, [activeTopic.description, activeTopic.label, searchQuery, tickerSymbol]);
 
-  const handleTopicChange = React.useCallback((topicId: MarketNewsTopicId) => {
-    setActiveTopicId(topicId);
-    setSearchQuery("");
-    setSearchDraft("");
-    setTickerSymbol("");
-  }, []);
+  const lensOptions = React.useMemo(
+    () =>
+      buildMarketNewsLensOptions({
+        articles,
+        watchlistSymbols: watchlist.symbols,
+      }),
+    [articles, watchlist.symbols],
+  );
+  const activeLens =
+    lensOptions.find((option) => option.id === activeLensId) ?? lensOptions[0]!;
+  const visibleArticles = React.useMemo(
+    () =>
+      filterArticlesByLens({
+        articles,
+        lensId: activeLens.id,
+        watchlistSymbols: watchlist.symbols,
+      }),
+    [activeLens.id, articles, watchlist.symbols],
+  );
+
+  const watchlistArticleCount = React.useMemo(() => {
+    const watchlistSet = new Set(
+      watchlist.symbols.map((symbol) => symbol.toUpperCase()),
+    );
+
+    if (!watchlistSet.size) return 0;
+
+    return visibleArticles.filter((article) =>
+      (article.relatedSymbols ?? []).some((symbol) =>
+        watchlistSet.has(symbol.toUpperCase()),
+      ),
+    ).length;
+  }, [visibleArticles, watchlist.symbols]);
+
+  const providerStatus = React.useMemo(() => {
+    if (loading) return "Refreshing";
+    if (meta?.provider === "demo") return "Demo mode";
+    if (meta?.provider === "none") return "Provider setup needed";
+    if (meta?.providerLabel) return `Provider: ${meta.providerLabel}`;
+    return "Provider: Market news service";
+  }, [loading, meta?.provider, meta?.providerLabel]);
+
+  const emptyState = React.useMemo(() => {
+    if (articles.length && !visibleArticles.length) {
+      return {
+        title: `No ${activeLens.label.toLowerCase()} stories in this view`,
+        message:
+          "This trader lens is strict, so it only shows headlines that match the selected signal. Switch back to All to see every story.",
+        detail: activeLens.description,
+      };
+    }
+
+    if (meta?.provider === "none") {
+      return {
+        title: "Connect a market news provider",
+        message:
+          "Set MARKETAUX_API_KEY on the server to load finance-specific stories for this category.",
+        detail: meta.warnings[0],
+      };
+    }
+
+    return {
+      title: `No ${request.title} stories found`,
+      message:
+        "This view uses a strict category query, so it will stay empty instead of filling with unrelated business headlines.",
+      detail: meta?.query ? `Query checked: ${meta.query}` : undefined,
+    };
+  }, [
+    activeLens.description,
+    activeLens.label,
+    articles.length,
+    meta,
+    request.title,
+    visibleArticles.length,
+  ]);
+
+  const handleTopicChange = React.useCallback(
+    (topicId: MarketNewsTopicId) => {
+      setActiveTopicId(topicId);
+      setSearchQuery("");
+      setSearchDraft("");
+      setTickerSymbol("");
+      setLookupDraft("");
+      setSelectedSymbol(activeMarketScope.tickers[0]?.symbol ?? "");
+    },
+    [activeMarketScope.tickers],
+  );
 
   const handleSearchSubmit = React.useCallback(() => {
+    const defaultSymbol = activeMarketScope.tickers[0]?.symbol ?? "";
+
     setSearchQuery(searchDraft.trim());
     setTickerSymbol("");
-  }, [searchDraft]);
+    setLookupDraft("");
+    setSelectedSymbol(defaultSymbol);
+  }, [activeMarketScope.tickers, searchDraft]);
 
   const handleSearchClear = React.useCallback(() => {
     setSearchDraft("");
@@ -93,6 +196,9 @@ export function MarketNewsMain({
       setActiveMarketScopeId(nextScope.id);
       setSelectedSymbol(nextSymbol);
       setLookupDraft("");
+      setSearchDraft("");
+      setSearchQuery("");
+      setTickerSymbol("");
     },
     [],
   );
@@ -118,21 +224,21 @@ export function MarketNewsMain({
       skipLabel="Skip to market news"
       skipTargetId="market-news-main"
     >
-      <main
-        id="market-news-main"
-        tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,64px)] min-h-screen bg-black text-white transition-[margin-left] duration-200 ease-out"
-      >
-        <header className={styles.topBar}>
-          <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 px-3 py-4 sm:px-8 lg:flex-row lg:items-center lg:px-10">
-            <div className="min-w-0 lg:w-[14rem]">
-              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#00b884]">
-                FIT Finance
-              </p>
-              <h1 className="mt-1 text-2xl font-extrabold leading-tight text-white">
-                Market News
-              </h1>
-            </div>
+      <main id="market-news-main" tabIndex={-1} className={styles.page}>
+        <div
+          className={styles.pageInner}
+          style={{ maxWidth: FIT_CONTENT_MAX_WIDTH_PX }}
+        >
+          <FitPageHeader
+            title="Market News"
+            subtitle="Track market-moving headlines, ticker context, and watchlist signals in the same FIT workspace."
+            subtitleClassName="max-w-[46rem]"
+          />
+
+          <section
+            className={styles.commandPanel}
+            aria-label="Search and news categories"
+          >
             <MarketNewsSearchBar
               draft={searchDraft}
               searchQuery={searchQuery}
@@ -141,47 +247,93 @@ export function MarketNewsMain({
               onRefresh={handleRefresh}
               onSubmit={handleSearchSubmit}
             />
-          </div>
-        </header>
 
-        <div className={styles.categoryRail}>
-          <MarketNewsCategoryNav
-            activeTopicId={activeTopic.id}
-            groups={MARKET_NEWS_NAV_GROUPS}
-            onTopicChange={handleTopicChange}
-          />
-        </div>
+            <MarketNewsCategoryNav
+              activeTopicId={activeTopic.id}
+              groups={MARKET_NEWS_NAV_GROUPS}
+              onTopicChange={handleTopicChange}
+            />
+          </section>
 
-        <div className={styles.tickerRail}>
-          <MarketNewsTickerStrip
-            marketScope={activeMarketScope}
-            marketScopes={MARKET_NEWS_MARKET_SCOPES}
-            selectedSymbol={selectedSymbol}
-            tickers={activeMarketScope.tickers}
-            onMarketScopeChange={handleMarketScopeChange}
-            onTickerSelect={handleQuoteLookup}
-          />
-        </div>
-
-        <div className="mx-auto w-full max-w-[1500px] px-3 py-5 sm:px-8 sm:py-6 lg:px-10">
-          <section className="mb-5 min-w-0" aria-live="polite">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#687184]">
-              {activeTopic.eyebrow}
-            </p>
-            <div className="mt-2 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <section className={styles.marketPanel} aria-label="Market snapshot">
+            <div className={styles.marketPanelHeader}>
               <div className="min-w-0">
-                <h2 className="text-balance text-2xl font-extrabold leading-tight text-white sm:text-3xl">
+                <p className={cn("text-xs font-bold uppercase", fitText.label)}>
+                  Market scope
+                </p>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">
+                  {activeMarketScope.label}
+                </h2>
+                <p className={cn("mt-1 text-sm leading-6", fitText.body)}>
+                  {activeMarketScope.description}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  styles.providerPill,
+                  loading ? styles.providerPillLoading : "",
+                )}
+              >
+                {providerStatus}
+              </span>
+            </div>
+
+            <MarketNewsTickerStrip
+              marketScope={activeMarketScope}
+              marketScopes={MARKET_NEWS_MARKET_SCOPES}
+              selectedSymbol={selectedSymbol}
+              tickers={activeMarketScope.tickers}
+              onMarketScopeChange={handleMarketScopeChange}
+              onTickerSelect={handleQuoteLookup}
+            />
+          </section>
+
+          <section className={styles.storyIntro} aria-live="polite">
+            <div className="min-w-0">
+              <p className={cn("text-xs font-bold uppercase", fitText.label)}>
+                {activeTopic.eyebrow}
+              </p>
+              <div className="min-w-0">
+                <h2 className="mt-2 text-balance text-2xl font-extrabold leading-tight text-white">
                   {request.title}
                 </h2>
-                <p className="mt-2 max-w-[48rem] text-pretty text-[15px] leading-6 text-[#b9c1d0]">
+                <p
+                  className={cn(
+                    "mt-2 max-w-[42rem] text-pretty text-[15px] leading-6",
+                    fitText.body,
+                  )}
+                >
                   {activeSummary}
                 </p>
               </div>
-              <p className="shrink-0 text-sm font-semibold text-[#8f98aa]">
-                Data provider: NewsAPI.org
-              </p>
             </div>
+
+            <dl
+              className={styles.statusGrid}
+              aria-label="Current market news view"
+            >
+              <div className={styles.statusCard}>
+                <dt>Shown</dt>
+                <dd>
+                  {visibleArticles.length}/{articles.length}
+                </dd>
+              </div>
+              <div className={styles.statusCard}>
+                <dt>Watchlist hits</dt>
+                <dd>{watchlistArticleCount}</dd>
+              </div>
+              <div className={styles.statusCard}>
+                <dt>Selected</dt>
+                <dd>{selectedSymbol}</dd>
+              </div>
+            </dl>
           </section>
+
+          <MarketNewsLensBar
+            activeLensId={activeLens.id}
+            options={lensOptions}
+            onLensChange={setActiveLensId}
+          />
 
           <div className={styles.mainGrid}>
             <section
@@ -190,9 +342,13 @@ export function MarketNewsMain({
               aria-busy={loading}
             >
               <MarketNewsArticleLayout
-                articles={articles}
+                articles={visibleArticles}
+                emptyState={emptyState}
                 error={error}
                 loading={loading}
+                providerWarning={
+                  meta?.provider === "demo" ? undefined : meta?.warnings[0]
+                }
                 title={request.title}
               />
             </section>
@@ -200,11 +356,15 @@ export function MarketNewsMain({
             <div className={cn(styles.rightRail, "min-w-0")}>
               <MarketNewsRightRail
                 activeTopic={activeTopic}
+                articleCount={visibleArticles.length}
                 authenticated={watchlist.authenticated}
                 lookupDraft={lookupDraft}
                 marketScope={activeMarketScope}
+                providerLabel={meta?.providerLabel ?? "Pending"}
+                providerWarning={meta?.warnings[0]}
                 selectedSymbol={selectedSymbol}
                 tickers={activeMarketScope.tickers}
+                watchlistArticleCount={watchlistArticleCount}
                 watchlistLoading={watchlist.loading}
                 watchlistSymbols={watchlist.symbols}
                 onLookupDraftChange={setLookupDraft}

@@ -68,16 +68,35 @@ export function buildMarketNewsRequest(
   topic: MarketNewsTopic,
   searchQuery: string,
   tickerSymbol = "",
+  marketScope?: MarketNewsMarketScope,
 ): MarketNewsRequest {
   const cleanedSearch = searchQuery.trim();
   const cleanedTicker = tickerSymbol.trim().toUpperCase();
+  const scopePrefix = marketScope
+    ? `${marketScope.label} ${marketScope.description} ${marketScope.tickers
+        .slice(0, 4)
+        .map((ticker) => `${ticker.label} ${ticker.symbol}`)
+        .join(" ")}`
+    : "";
+  const scopedContext = [scopePrefix, topic.source.context]
+    .filter(Boolean)
+    .join(" ");
+  const scopedTitle =
+    marketScope && marketScope.id !== defaultMarketNewsMarketScopeId
+      ? `${topic.label} - ${marketScope.label}`
+      : topic.label;
+  const scopedQuery = (query: string) =>
+    [marketScope?.label, query, scopePrefix].filter(Boolean).join(" ");
 
   if (cleanedSearch) {
     return {
       kind: "search",
       query: cleanedSearch,
-      context: topic.source.context,
+      context: scopedContext || topic.source.context,
       title: `Search results for "${cleanedSearch}"`,
+      marketScopeId: marketScope?.id,
+      topicId: topic.id,
+      userSearch: true,
     };
   }
 
@@ -86,7 +105,9 @@ export function buildMarketNewsRequest(
       kind: "ticker",
       ticker: cleanedTicker,
       context: `${cleanedTicker} company stock market news`,
+      marketScopeId: marketScope?.id,
       title: `${cleanedTicker} News`,
+      topicId: topic.id,
     };
   }
 
@@ -94,8 +115,10 @@ export function buildMarketNewsRequest(
     return {
       kind: "regional",
       country: topic.source.country,
-      context: topic.source.context,
-      title: topic.label,
+      context: scopedContext || topic.source.context,
+      marketScopeId: marketScope?.id,
+      title: scopedTitle,
+      topicId: topic.id,
     };
   }
 
@@ -103,8 +126,10 @@ export function buildMarketNewsRequest(
     return {
       kind: "industry",
       industry: topic.source.industry,
-      context: topic.source.context,
-      title: topic.label,
+      context: scopedContext || topic.source.context,
+      marketScopeId: marketScope?.id,
+      title: scopedTitle,
+      topicId: topic.id,
     };
   }
 
@@ -112,23 +137,30 @@ export function buildMarketNewsRequest(
     return {
       kind: "commodity",
       commodity: topic.source.commodity,
-      context: topic.source.context,
-      title: topic.label,
+      context: scopedContext || topic.source.context,
+      marketScopeId: marketScope?.id,
+      title: scopedTitle,
+      topicId: topic.id,
     };
   }
 
   if (topic.source.kind === "search") {
     return {
       kind: "search",
-      query: topic.source.query,
-      context: topic.source.context,
-      title: topic.label,
+      query: marketScope ? scopedQuery(topic.source.query) : topic.source.query,
+      context: scopedContext || topic.source.context,
+      marketScopeId: marketScope?.id,
+      title: scopedTitle,
+      topicId: topic.id,
+      userSearch: false,
     };
   }
 
   return {
     kind: "general",
-    context: topic.source.context,
-    title: topic.label,
+    context: scopedContext || topic.source.context,
+    marketScopeId: marketScope?.id,
+    title: scopedTitle,
+    topicId: topic.id,
   };
 }

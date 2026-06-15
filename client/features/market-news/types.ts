@@ -89,13 +89,31 @@ export interface MarketNewsMarketScope {
   futureRoute?: string;
 }
 
+export type MarketNewsLensId =
+  | "all"
+  | "watchlist"
+  | "ticker-linked"
+  | "high-relevance"
+  | "positive"
+  | "negative";
+
+export interface MarketNewsLensOption {
+  id: MarketNewsLensId;
+  label: string;
+  description: string;
+  count: number;
+}
+
 export interface MarketNewsRequest {
   kind: MarketNewsSource["kind"] | "ticker";
   title: string;
   context: string;
   query?: string;
   ticker?: string;
+  topicId?: MarketNewsTopicId;
+  userSearch?: boolean;
   country?: string;
   industry?: string;
   commodity?: string;
+  marketScopeId?: MarketNewsMarketScopeId;
 }

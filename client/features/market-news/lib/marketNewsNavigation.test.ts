@@ -65,6 +65,60 @@ describe("marketNewsNavigation", () => {
       query: "RBA rates",
       context: topic.source.context,
       title: 'Search results for "RBA rates"',
+      userSearch: true,
+    });
+  });
+
+  it("uses market scope as an article filter when not searching or drilling into a ticker", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+    const usScope = resolveMarketNewsMarketScope("us-markets");
+
+    const request = buildMarketNewsRequest(topic, "", "", usScope);
+
+    expect(request).toMatchObject({
+      kind: "search",
+      marketScopeId: "us-markets",
+      title: "Cost of Living - US Markets",
+      topicId: "cost-of-living",
+      userSearch: false,
+    });
+    expect(request.query).toContain("US Markets");
+    expect(request.query).toContain("Australia cost of living");
+    expect(request.query).toContain("S&P 500");
+    expect(request.query).toContain("^GSPC");
+  });
+
+  it("keeps ticker drill-down stronger than the active market scope", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+    const usScope = resolveMarketNewsMarketScope("us-markets");
+
+    expect(buildMarketNewsRequest(topic, "", "cba.ax", usScope)).toMatchObject({
+      kind: "ticker",
+      marketScopeId: "us-markets",
+      ticker: "CBA.AX",
+      title: "CBA.AX News",
+    });
+  });
+
+  it("distinguishes topic search sources from user-submitted searches", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+
+    expect(buildMarketNewsRequest(topic, "")).toMatchObject({
+      kind: "search",
+      query: "Australia cost of living inflation wages bills interest rates",
+      title: "Cost of Living",
+      topicId: "cost-of-living",
+      userSearch: false,
+    });
+  });
+
+  it("keeps commodities on the commodity source path", () => {
+    expect(
+      buildMarketNewsRequest(resolveMarketNewsTopic("commodities"), ""),
+    ).toMatchObject({
+      commodity: "commodities",
+      kind: "commodity",
+      title: "Commodities",
     });
   });
 

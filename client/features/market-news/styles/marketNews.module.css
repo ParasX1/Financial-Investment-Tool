@@ -1,27 +1,270 @@
 .shell {
-  --market-news-green: #00b884;
-  --market-news-red: #ff4d5d;
-  --market-news-line: rgba(132, 146, 176, 0.14);
-  --market-news-panel: rgba(13, 15, 18, 0.96);
-  --market-news-panel-soft: rgba(18, 20, 25, 0.92);
+  --market-news-positive: #38d996;
+  --market-news-negative: #ff5b7c;
+  --market-news-line: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  --market-news-panel: var(--fit-color-surface, #09090b);
+  --market-news-panel-soft: var(--fit-color-surface-soft, #111114);
   --market-news-text: #dce4ff;
   --market-news-muted: #8f98aa;
 }
 
-.topBar {
-  border-bottom: 1px solid var(--market-news-line);
-  background:
-    linear-gradient(180deg, rgba(9, 10, 13, 0.98), rgba(7, 8, 10, 0.94));
+.page {
+  margin-left: var(--app-sidebar-width, 64px);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--fit-color-page-bg, #000000);
+  padding: 2rem 0.75rem 2rem;
+  color: #ffffff;
+  transition: margin-left 200ms ease-out;
 }
 
-.categoryRail {
-  border-bottom: 1px solid rgba(0, 184, 132, 0.42);
-  background: #030404;
+.pageInner {
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
 }
 
-.tickerRail {
-  border-bottom: 1px solid var(--market-news-line);
-  background: rgba(13, 16, 19, 0.96);
+.commandPanel,
+.marketPanel,
+.storyIntro {
+  min-width: 0;
+  border: 1px solid var(--fit-color-border-panel, #27272a);
+  border-radius: 0.75rem;
+  background: var(--market-news-panel);
+}
+
+.commandPanel {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.85rem;
+}
+
+.marketPanel {
+  margin-top: 1rem;
+  padding: 0.85rem;
+}
+
+.marketPanelHeader {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scopeGrid {
+  display: grid;
+  min-width: 0;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 0.9rem;
+}
+
+.scopeButton {
+  display: grid;
+  min-height: 3.65rem;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-radius: 0.7rem;
+  background: var(--market-news-panel-soft);
+  padding: 0.65rem 0.7rem;
+  color: #dce4ff;
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.scopeButton:hover {
+  border-color: rgba(83, 103, 255, 0.45);
+  background: #171820;
+}
+
+.scopeButtonActive {
+  border-color: rgba(83, 103, 255, 0.62);
+  background: rgba(83, 103, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+}
+
+.scopeIcon {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgba(83, 103, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(83, 103, 255, 0.1);
+  color: var(--fit-color-accent-strong, #65a0fd);
+}
+
+.scopeShortLabel {
+  display: block;
+  overflow: hidden;
+  color: #8fc7ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scopeLabel {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.15rem;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tickerScroller {
+  display: flex;
+  min-width: 0;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-top: 0.85rem;
+  padding-bottom: 0.1rem;
+  scrollbar-width: none;
+}
+
+.tickerScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.providerPill {
+  align-self: flex-start;
+  white-space: nowrap;
+  border: 1px solid rgba(83, 103, 255, 0.3);
+  border-radius: 0.5rem;
+  background: rgba(83, 103, 255, 0.1);
+  padding: 0.4rem 0.6rem;
+  color: #dbe4ff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.providerPillLoading {
+  border-color: rgba(246, 200, 95, 0.3);
+  background: rgba(246, 200, 95, 0.1);
+  color: #ffe7a3;
+}
+
+.storyIntro {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.lensPanel {
+  display: grid;
+  min-width: 0;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--fit-color-border-panel, #27272a);
+  border-radius: 0.75rem;
+  background: var(--market-news-panel);
+  padding: 1rem;
+}
+
+.lensGrid {
+  display: grid;
+  min-width: 0;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lensButton {
+  display: flex;
+  min-width: 0;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-radius: 0.65rem;
+  background: var(--market-news-panel-soft);
+  padding: 0.55rem 0.65rem;
+  color: #dce4ff;
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.lensButton:hover {
+  border-color: rgba(83, 103, 255, 0.45);
+  background: #171820;
+}
+
+.lensButtonActive {
+  border-color: rgba(83, 103, 255, 0.62);
+  background: rgba(83, 103, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+}
+
+.lensLabel {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lensCount {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.26);
+  padding: 0.1rem 0.45rem;
+  color: #dbe4ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusGrid {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statusCard {
+  min-width: 0;
+  border: 1px solid var(--market-news-line);
+  border-radius: 0.65rem;
+  background: var(--market-news-panel-soft);
+  padding: 0.75rem;
+}
+
+.statusCard dt {
+  overflow: hidden;
+  color: var(--fit-color-text-muted, #8f98aa);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusCard dd {
+  min-width: 0;
+  margin-top: 0.3rem;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mainGrid {
@@ -58,6 +301,94 @@
   aspect-ratio: 16 / 9;
 }
 
+.marketVisual {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgba(132, 146, 176, 0.16);
+  background:
+    linear-gradient(135deg, rgba(83, 103, 255, 0.18), transparent 38%),
+    linear-gradient(160deg, rgba(142, 160, 255, 0.16), transparent 42%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(132, 146, 176, 0.1) 0,
+      rgba(132, 146, 176, 0.1) 1px,
+      transparent 1px,
+      transparent 2.1rem
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(132, 146, 176, 0.08) 0,
+      rgba(132, 146, 176, 0.08) 1px,
+      transparent 1px,
+      transparent 2.6rem
+    ),
+    #09090b;
+  padding: 1rem;
+}
+
+.marketVisual::after {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.9rem;
+  left: 0.9rem;
+  height: 34%;
+  content: "";
+  background: linear-gradient(
+    158deg,
+    transparent 0 17%,
+    rgba(101, 160, 253, 0.9) 17% 18.5%,
+    transparent 18.5% 34%,
+    rgba(101, 160, 253, 0.82) 34% 35.5%,
+    transparent 35.5% 52%,
+    rgba(101, 160, 253, 0.9) 52% 53.5%,
+    transparent 53.5% 70%,
+    rgba(101, 160, 253, 0.72) 70% 71.5%,
+    transparent 71.5%
+  );
+  opacity: 0.78;
+}
+
+.marketVisualLabel,
+.marketVisualSignal {
+  position: relative;
+  z-index: 1;
+}
+
+.marketVisualLabel {
+  color: #8ea0ff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.marketVisualSignal {
+  max-width: 100%;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marketVisual[data-variant="feature"] {
+  padding: 0.75rem;
+}
+
+.marketVisual[data-variant="feature"] .marketVisualLabel {
+  font-size: 0.62rem;
+}
+
+.marketVisual[data-variant="feature"] .marketVisualSignal {
+  font-size: 1.2rem;
+}
+
 .sparklinePath {
   fill: none;
   stroke: currentColor;
@@ -70,7 +401,7 @@
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.05),
-    rgba(0, 184, 132, 0.12),
+    rgba(83, 103, 255, 0.16),
     rgba(255, 255, 255, 0.05)
   );
   background-size: 200% 100%;
@@ -88,6 +419,24 @@
 }
 
 @media (min-width: 900px) {
+  .scopeGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .storyIntro {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+    align-items: end;
+  }
+
+  .lensPanel {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .lensGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .storyGrid {
     grid-template-columns: minmax(22rem, 1.05fr) minmax(17rem, 0.82fr);
     align-items: start;
@@ -99,8 +448,27 @@
 }
 
 @media (min-width: 1180px) {
+  .scopeGrid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .scopeButton {
+    min-height: 4rem;
+    padding-right: 0.55rem;
+    padding-left: 0.55rem;
+  }
+
+  .scopeIcon {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .lensGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
   .mainGrid {
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
     align-items: start;
   }
 
@@ -115,9 +483,42 @@
   }
 }
 
+@media (min-width: 640px) {
+  .page {
+    padding: 2.5rem 2rem 2.5rem;
+  }
+
+  .commandPanel,
+  .marketPanel {
+    padding: 1rem;
+  }
+
+  .marketPanelHeader {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .storyIntro {
+    padding: 1.1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page {
+    padding-right: 2.5rem;
+    padding-left: 2.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .statusGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
   }
 }
-

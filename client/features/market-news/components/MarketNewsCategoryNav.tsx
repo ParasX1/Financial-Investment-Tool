@@ -1,7 +1,6 @@
 import { fitNav } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type {
-  MarketNewsGroupId,
   MarketNewsNavGroup,
   MarketNewsTopicId,
 } from "../types";
@@ -22,7 +21,7 @@ export function MarketNewsCategoryNav({
 
   return (
     <nav aria-label="Market news sections" className="min-w-0">
-      <div className="flex min-w-0 gap-2 overflow-x-auto px-3 py-3 [scrollbar-width:none] sm:px-8 lg:px-10 [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {groups.map((group) => {
           const active = group.id === activeGroupId;
           const targetTopic = group.topics[0]!.id;
@@ -47,7 +46,7 @@ export function MarketNewsCategoryNav({
 
       {activeGroup.topics.length > 1 ? (
         <div
-          className="flex min-w-0 gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none] sm:px-8 lg:px-10 [&::-webkit-scrollbar]:hidden"
+          className="mt-2 flex min-w-0 gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label={`${activeGroup.label} topics`}
         >
           {activeGroup.topics.map((topic) => {
@@ -62,8 +61,8 @@ export function MarketNewsCategoryNav({
                 className={cn(
                   "min-h-[34px] shrink-0 rounded-md border px-3 text-xs font-bold transition-colors",
                   active
-                    ? "border-[#00b884]/60 bg-[#00b884]/12 text-white"
-                    : "border-white/10 bg-white/[0.035] text-[#a5adbf] hover:border-[#00b884]/40 hover:text-white",
+                    ? "border-[var(--fit-nav-active-border)] bg-[var(--fit-nav-active-bg)] text-[var(--fit-color-accent-strong)]"
+                    : "border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] text-[#a5adbf] hover:border-[#5367ff]/40 hover:text-white",
                   FIT_FOCUS_VISIBLE,
                 )}
               >
@@ -76,4 +75,3 @@ export function MarketNewsCategoryNav({
     </nav>
   );
 }
-

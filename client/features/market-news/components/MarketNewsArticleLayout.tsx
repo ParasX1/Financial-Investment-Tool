@@ -25,30 +25,63 @@ function LoadingSkeleton() {
 
 export function MarketNewsArticleLayout({
   articles,
+  emptyState,
   error,
   loading,
+  providerWarning,
   title,
 }: {
   articles: readonly Article[];
+  emptyState: {
+    detail?: string;
+    message: string;
+    title: string;
+  };
   error: string | null;
   loading: boolean;
+  providerWarning?: string;
   title: string;
 }) {
-  if (loading) return <LoadingSkeleton />;
+  if (loading && !articles.length) return <LoadingSkeleton />;
 
   if (error) {
-    return <EmptyArticleState message={`Failed to load ${title}: ${error}`} />;
+    return (
+      <EmptyArticleState
+        title={`Failed to load ${title}`}
+        message={error}
+        detail="The page kept your category and ticker selection intact."
+      />
+    );
   }
 
   if (!articles.length) {
     return (
-      <EmptyArticleState message="No stories matched this view. Try another search term or category." />
+      <EmptyArticleState
+        title={emptyState.title}
+        message={emptyState.message}
+        detail={emptyState.detail ?? providerWarning}
+      />
     );
   }
 
   const [hero, ...rest] = articles;
   const featureArticles = rest.slice(0, 3);
   const latestArticles = rest.slice(3);
+
+  if (!latestArticles.length) {
+    return (
+      <div className="min-w-0 space-y-4">
+        <HeroArticleCard article={hero!} />
+        {featureArticles.length ? (
+          <div className={styles.secondaryGrid} aria-label="Featured stories">
+            {featureArticles.map((article) => (
+              <FeatureArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.storyGrid}>
@@ -64,6 +97,11 @@ export function MarketNewsArticleLayout({
       </div>
 
       <div className={styles.latestPanel}>
+        {providerWarning ? (
+          <div className="mb-4 rounded-xl border border-[#f6c85f]/30 bg-[#f6c85f]/10 px-4 py-3 text-sm font-semibold leading-6 text-[#ffe7a3]">
+            {providerWarning}
+          </div>
+        ) : null}
         <LatestArticleList articles={latestArticles} />
       </div>
     </div>

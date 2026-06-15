@@ -71,8 +71,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
           "Energy, metals, agriculture, and supply-chain stories that move inflation and earnings expectations.",
         futureRoute: "/MarketNews?topic=commodities",
         source: {
-          kind: "search",
-          query: "commodities oil gold copper wheat market",
+          kind: "commodity",
+          commodity: "commodities",
           context: "commodity markets energy metals agriculture",
         },
       },

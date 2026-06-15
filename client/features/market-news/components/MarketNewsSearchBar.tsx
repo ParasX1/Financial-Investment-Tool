@@ -1,6 +1,7 @@
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import { fitButton } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 
 export function MarketNewsSearchBar({
@@ -21,7 +22,7 @@ export function MarketNewsSearchBar({
   return (
     <form
       role="search"
-      className="flex min-w-0 flex-1 items-center gap-2"
+      className="flex min-w-0 items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
@@ -43,10 +44,10 @@ export function MarketNewsSearchBar({
           autoComplete="off"
           value={draft}
           onChange={(event) => onDraftChange(event.target.value)}
-          placeholder="Search for news, tickers, or companies"
+          placeholder="Search news"
           className={cn(
-            "h-12 w-full rounded-full border border-[#202230] bg-[#181c22] pl-12 pr-12 text-[15px] font-semibold text-white placeholder:text-[#8791a3]",
-            "transition-colors hover:border-[#00b884]/45 focus:border-[#00b884]/70 focus:outline-none focus:ring-2 focus:ring-[#00b884]/15",
+            "h-12 w-full rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-field)] pl-12 pr-12 text-[15px] font-semibold text-white placeholder:text-[#7f8798]",
+            "transition-colors hover:border-[#5367ff]/45 focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
           )}
         />
         {draft || searchQuery ? (
@@ -67,12 +68,13 @@ export function MarketNewsSearchBar({
       <button
         type="submit"
         className={cn(
-          "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#00b884] text-sm font-extrabold text-[#03110d] transition-colors hover:bg-[#18d39d] sm:w-auto sm:px-5",
+          "inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-extrabold sm:w-auto sm:px-4",
+          fitButton.primary,
           FIT_FOCUS_VISIBLE,
         )}
         aria-label="Search market news"
       >
-        <SearchRoundedIcon className="sm:hidden" sx={{ fontSize: 21 }} aria-hidden="true" />
+        <SearchRoundedIcon sx={{ fontSize: 20 }} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
       </button>
 
@@ -81,7 +83,8 @@ export function MarketNewsSearchBar({
         onClick={onRefresh}
         aria-label="Refresh market news"
         className={cn(
-          "grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-[#dce4ff] transition-colors hover:border-[#00b884]/45 hover:bg-white/[0.07]",
+          "grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-[var(--fit-color-border-subtle)] text-[#dce4ff]",
+          fitButton.secondary,
           FIT_FOCUS_VISIBLE,
         )}
       >
