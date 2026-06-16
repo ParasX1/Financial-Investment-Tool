@@ -14,6 +14,8 @@ function ArticleMeta({ article }: { article: Article }) {
     article.provider === "demo"
       ? "category demo"
       : getArticleDomain(article.url);
+  const href = getSafeArticleHref(article.url);
+  const external = /^https?:\/\//i.test(href);
   const confidence =
     typeof article.confidence === "number" && Number.isFinite(article.confidence)
       ? article.confidence.toFixed(1)
@@ -36,6 +38,11 @@ function ArticleMeta({ article }: { article: Article }) {
       {article.providerLabel ? (
         <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
           {article.providerLabel}
+        </span>
+      ) : null}
+      {external ? (
+        <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
+          Open original
         </span>
       ) : null}
       {relatedSymbols.map((symbol) => (
@@ -66,7 +73,7 @@ function articleLinkProps(article: Article) {
 
   return {
     href,
-    rel: external ? "noreferrer" : undefined,
+    rel: external ? "noopener noreferrer" : undefined,
     target: external ? "_blank" : undefined,
   };
 }

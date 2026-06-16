@@ -1,5 +1,8 @@
 import { describe, expect, it, jest } from "@jest/globals";
-import { fetchMarketNewsWithProviders } from "./newsService";
+import {
+  fetchMarketNewsWithProviders,
+  resolveNewsProviders,
+} from "./newsService";
 import type { NewsProvider, ServerNewsRequest } from "./types";
 
 const request: ServerNewsRequest = {
@@ -11,6 +14,7 @@ const request: ServerNewsRequest = {
 
 function provider({
   articles,
+  broadFallback,
   configured = true,
   id,
   label,
@@ -18,11 +22,15 @@ function provider({
 }: {
   articles: any[];
   configured?: boolean;
-  id: "marketaux" | "newsapi";
+  id: "marketaux" | "newsapi" | "yahoo-finance-rss";
   label: string;
+  broadFallback?: boolean;
   rejects?: boolean;
 }): NewsProvider {
   return {
+    allowBroadFallback: broadFallback
+      ? (request) => !request.userSearch && request.kind !== "ticker"
+      : undefined,
     id,
     label,
     isConfigured: () => configured,
@@ -34,6 +42,14 @@ function provider({
 }
 
 describe("fetchMarketNewsWithProviders", () => {
+  it("resolves provider order from env without leaking provider details into callers", () => {
+    expect(
+      resolveNewsProviders({
+        NEWS_PROVIDER_ORDER: "yahoo-rss, marketaux, yahoo-rss, unknown",
+      }).map((resolvedProvider) => resolvedProvider.id),
+    ).toEqual(["yahoo-finance-rss", "marketaux"]);
+  });
+
   it("tries same-request providers but does not fabricate broad fallback news", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
@@ -120,6 +136,122 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.meta.provider).toBe("newsapi");
     expect(result.meta.warnings[0]).toContain("strict");
     expect(result.articles.map((article) => article.id)).toEqual(["cost"]);
+  });
+
+  it("can show broad Yahoo RSS headlines transparently for category pages", async () => {
+    const result = await fetchMarketNewsWithProviders(request, {
+      providers: [
+        provider({ articles: [], id: "marketaux", label: "MarketAux" }),
+        provider({
+          articles: [
+            {
+              id: "yahoo-broad",
+              image: null,
+              provider: "yahoo-finance-rss",
+              providerLabel: "Yahoo Finance RSS",
+              publishedAt: "2026-06-16T04:00:00Z",
+              source: "Yahoo Finance",
+              summary: "Broad finance headline.",
+              title: "Apple shares rise as investors watch demand",
+              url: "https://finance.yahoo.com/news/apple-demand.html",
+            },
+          ],
+          broadFallback: true,
+          id: "yahoo-finance-rss",
+          label: "Yahoo Finance RSS",
+        }),
+      ],
+    });
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "yahoo-broad",
+    ]);
+    expect(result.meta).toMatchObject({
+      provider: "yahoo-finance-rss",
+      providerLabel: "Yahoo Finance RSS",
+      strictCategory: false,
+    });
+    expect(result.meta.warnings[0]).toContain("broad finance headlines");
+    expect(result.meta.warnings[1]).toContain("strict");
+  });
+
+  it("does not let Yahoo broad fallback preempt later strict providers", async () => {
+    const result = await fetchMarketNewsWithProviders(request, {
+      providers: [
+        provider({
+          articles: [
+            {
+              id: "yahoo-broad",
+              image: null,
+              provider: "yahoo-finance-rss",
+              providerLabel: "Yahoo Finance RSS",
+              publishedAt: "2026-06-16T04:00:00Z",
+              source: "Yahoo Finance",
+              summary: "Broad finance headline.",
+              title: "Apple shares rise as investors watch demand",
+              url: "https://finance.yahoo.com/news/apple-demand.html",
+            },
+          ],
+          broadFallback: true,
+          id: "yahoo-finance-rss",
+          label: "Yahoo Finance RSS",
+        }),
+        provider({
+          articles: [
+            {
+              id: "strict-cost",
+              image: null,
+              publishedAt: "2026-06-16T04:00:00Z",
+              source: "Market Desk",
+              summary: "Mortgage pressure and grocery bills remain high.",
+              title: "Household budgets stay under pressure",
+              url: "https://example.com/cost",
+            },
+          ],
+          id: "marketaux",
+          label: "MarketAux",
+        }),
+      ],
+    });
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "strict-cost",
+    ]);
+    expect(result.meta).toMatchObject({
+      provider: "marketaux",
+      strictCategory: true,
+    });
+  });
+
+  it("does not use broad Yahoo RSS fallback for user search", async () => {
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, userSearch: true },
+      {
+        providers: [
+          provider({
+            articles: [
+              {
+                id: "yahoo-broad",
+                image: null,
+                provider: "yahoo-finance-rss",
+                providerLabel: "Yahoo Finance RSS",
+                publishedAt: "2026-06-16T04:00:00Z",
+                source: "Yahoo Finance",
+                summary: "Broad finance headline.",
+                title: "Apple shares rise as investors watch demand",
+                url: "https://finance.yahoo.com/news/apple-demand.html",
+              },
+            ],
+            broadFallback: true,
+            id: "yahoo-finance-rss",
+            label: "Yahoo Finance RSS",
+          }),
+        ],
+      },
+    );
+
+    expect(result.articles).toEqual([]);
+    expect(result.meta.strictCategory).toBe(true);
   });
 
   it("returns strict demo articles when no server provider key exists", async () => {

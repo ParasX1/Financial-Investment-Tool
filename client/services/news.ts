@@ -18,7 +18,7 @@ export type NewsResponseMeta = {
   provider: string;
   providerLabel: string;
   query: string;
-  strictCategory: true;
+  strictCategory: boolean;
   warnings: string[];
 };
 

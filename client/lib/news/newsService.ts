@@ -1,7 +1,9 @@
+import type { Article } from "@/services/news";
 import { normaliseNewsPageSize, describeNewsRequest } from "./providerUtils";
 import { getDemoMarketNewsArticles } from "./providers/demoMarketNewsProvider";
 import { marketAuxProvider } from "./providers/marketAuxProvider";
 import { newsApiProvider } from "./providers/newsApiProvider";
+import { yahooFinanceRssProvider } from "./providers/yahooFinanceRssProvider";
 import { filterRelevantNewsArticles } from "./relevance";
 import type {
   NewsProvider,
@@ -10,10 +12,54 @@ import type {
   ServerNewsResponse,
 } from "./types";
 
-const DEFAULT_PROVIDERS: readonly NewsProvider[] = [
-  marketAuxProvider,
-  newsApiProvider,
+const PROVIDER_REGISTRY: Record<
+  Exclude<NewsProviderId, "demo">,
+  NewsProvider
+> = {
+  marketaux: marketAuxProvider,
+  newsapi: newsApiProvider,
+  "yahoo-finance-rss": yahooFinanceRssProvider,
+};
+
+const DEFAULT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
+  "marketaux",
+  "newsapi",
+  "yahoo-finance-rss",
 ];
+
+const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
+  marketaux: "marketaux",
+  "market-aux": "marketaux",
+  newsapi: "newsapi",
+  "news-api": "newsapi",
+  yahoo: "yahoo-finance-rss",
+  "yahoo-finance": "yahoo-finance-rss",
+  "yahoo-finance-rss": "yahoo-finance-rss",
+  "yahoo-rss": "yahoo-finance-rss",
+};
+
+function normaliseProviderId(value: string) {
+  return PROVIDER_ALIASES[value.trim().toLowerCase()];
+}
+
+export function resolveNewsProviders(
+  env: Record<string, string | undefined> = process.env,
+): NewsProvider[] {
+  const requested = (env.NEWS_PROVIDER_ORDER ?? "")
+    .split(",")
+    .map(normaliseProviderId)
+    .filter((id): id is Exclude<NewsProviderId, "demo"> => Boolean(id));
+  const orderedIds = requested.length ? requested : DEFAULT_PROVIDER_IDS;
+  const seen = new Set<NewsProviderId>();
+
+  return orderedIds
+    .filter((id) => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .map((id) => PROVIDER_REGISTRY[id]);
+}
 
 function providerWarning(provider: NewsProvider, cause: unknown) {
   const message = cause instanceof Error ? cause.message : "Unavailable";
@@ -34,7 +80,7 @@ export async function fetchMarketNewsWithProviders(
   {
     env = process.env,
     fetcher = fetch,
-    providers = DEFAULT_PROVIDERS,
+    providers,
   }: {
     env?: Record<string, string | undefined>;
     fetcher?: typeof fetch;
@@ -43,13 +89,19 @@ export async function fetchMarketNewsWithProviders(
 ): Promise<ServerNewsResponse> {
   const pageSize = normaliseNewsPageSize(request.pageSize);
   const normalizedRequest = { ...request, pageSize };
-  const configuredProviders = providers.filter((provider) =>
+  const providerList = providers ?? resolveNewsProviders(env);
+  const configuredProviders = providerList.filter((provider) =>
     provider.isConfigured(env),
   );
   const attemptedProviders: NewsProviderId[] = [];
   const warnings: string[] = [];
   let emptyProvider: NewsProvider | null = null;
   let failedProviders = 0;
+  let broadFallback: {
+    articles: Article[];
+    provider: NewsProvider;
+    warning: string;
+  } | null = null;
 
   if (!configuredProviders.length) {
     const demoArticles = getDemoMarketNewsArticles(normalizedRequest);
@@ -63,7 +115,7 @@ export async function fetchMarketNewsWithProviders(
         query: describeNewsRequest(normalizedRequest),
         strictCategory: true,
         warnings: [
-          "Demo stories are shown because MARKETAUX_API_KEY is not configured.",
+          "Demo stories are shown because no live market news provider is configured.",
         ],
       },
     };
@@ -73,11 +125,12 @@ export async function fetchMarketNewsWithProviders(
     attemptedProviders.push(provider.id);
 
     try {
+      const providerArticles = await provider.fetchArticles(normalizedRequest, {
+        env,
+        fetcher,
+      });
       const articles = filterRelevantNewsArticles(
-        await provider.fetchArticles(normalizedRequest, {
-          env,
-          fetcher,
-        }),
+        providerArticles,
         normalizedRequest,
       );
 
@@ -95,12 +148,43 @@ export async function fetchMarketNewsWithProviders(
         };
       }
 
+      if (
+        providerArticles.length &&
+        provider.allowBroadFallback?.(normalizedRequest)
+      ) {
+        const warning = `${provider.label}: showing broad finance headlines because this free feed does not expose exact FIT categories.`;
+        broadFallback ??= {
+          articles: providerArticles,
+          provider,
+          warning,
+        };
+        warnings.push(warning);
+        continue;
+      }
+
       emptyProvider = provider;
       warnings.push(strictEmptyWarning(provider, normalizedRequest));
     } catch (cause) {
       failedProviders += 1;
       warnings.push(providerWarning(provider, cause));
     }
+  }
+
+  if (broadFallback) {
+    return {
+      articles: broadFallback.articles,
+      meta: {
+        attemptedProviders,
+        provider: broadFallback.provider.id,
+        providerLabel: broadFallback.provider.label,
+        query: describeNewsRequest(normalizedRequest),
+        strictCategory: false,
+        warnings: [
+          broadFallback.warning,
+          ...warnings.filter((warning) => warning !== broadFallback.warning),
+        ],
+      },
+    };
   }
 
   if (failedProviders === configuredProviders.length) {

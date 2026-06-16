@@ -1,6 +1,10 @@
 import type { Article } from "@/services/news";
 
-export type NewsProviderId = "marketaux" | "newsapi" | "demo";
+export type NewsProviderId =
+  | "marketaux"
+  | "newsapi"
+  | "yahoo-finance-rss"
+  | "demo";
 
 export type ServerNewsRequestKind =
   | "general"
@@ -32,6 +36,7 @@ export interface NewsProviderFetchContext {
 export interface NewsProvider {
   id: NewsProviderId;
   label: string;
+  allowBroadFallback?: (request: ServerNewsRequest) => boolean;
   isConfigured: (env: Record<string, string | undefined>) => boolean;
   fetchArticles: (
     request: ServerNewsRequest,
@@ -44,7 +49,7 @@ export interface NewsResponseMeta {
   provider: NewsProviderId | "none";
   providerLabel: string;
   query: string;
-  strictCategory: true;
+  strictCategory: boolean;
   warnings: string[];
 }
 

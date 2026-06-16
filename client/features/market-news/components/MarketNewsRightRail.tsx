@@ -24,6 +24,7 @@ export function MarketNewsRightRail({
   marketScope,
   providerLabel,
   providerWarning,
+  strictCategory,
   selectedSymbol,
   tickers,
   watchlistArticleCount,
@@ -39,6 +40,7 @@ export function MarketNewsRightRail({
   marketScope: MarketNewsMarketScope;
   providerLabel: string;
   providerWarning?: string;
+  strictCategory: boolean;
   selectedSymbol: string;
   tickers: readonly MarketNewsTicker[];
   watchlistArticleCount: number;
@@ -115,9 +117,9 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">News Quality</h2>
+          <h2 className="text-lg font-extrabold text-white">Source Check</h2>
           <span className="rounded-md border border-[#5367ff]/30 bg-[#5367ff]/10 px-2 py-1 text-xs font-extrabold text-[#dbe4ff]">
-            Strict
+            {strictCategory ? "Exact category" : "Broad feed"}
           </span>
         </div>
         <dl className="mt-3 grid gap-3 text-sm">
@@ -186,7 +188,7 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Selected Quote</h2>
+          <h2 className="text-lg font-extrabold text-white">Focus Ticker</h2>
           <span
             className={`text-xs font-bold ${toneClass[selectedTicker.tone]}`}
           >
@@ -202,6 +204,32 @@ export function MarketNewsRightRail({
         <p className="mt-3 text-xl font-extrabold text-white">
           {selectedTicker.value}
         </p>
+        <p className="mt-2 text-xs font-semibold leading-5 text-[#8f98aa]">
+          Snapshot context. Open a quote page before making time-sensitive
+          decisions.
+        </p>
+      </section>
+
+      <section className={railSectionClass}>
+        <h2 className="text-lg font-extrabold text-white">Continue In FIT</h2>
+        <div className="mt-3 grid gap-2">
+          {[
+            { href: "/Watchlist", label: "Watchlist" },
+            { href: "/Community", label: "Community" },
+            { href: "/Guide", label: "Guide" },
+          ].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-sm font-extrabold text-[#dbe4ff] no-underline transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white hover:no-underline",
+                FIT_FOCUS_VISIBLE,
+              )}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className={railSectionClass}>

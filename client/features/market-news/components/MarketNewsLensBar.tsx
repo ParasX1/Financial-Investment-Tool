@@ -12,14 +12,14 @@ export function MarketNewsLensBar({
   onLensChange: (lensId: MarketNewsLensId) => void;
 }) {
   return (
-    <section className={styles.lensPanel} aria-label="Trader news lens">
+    <section className={styles.lensPanel} aria-label="News filters">
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase text-[var(--fit-color-text-label)]">
-          Trader lens
+          News filters
         </p>
         <p className="mt-1 text-sm leading-6 text-[var(--fit-color-text-body)]">
-          Filter headlines by portfolio relevance, ticker linkage, match
-          strength, and sentiment.
+          Narrow headlines by saved tickers, company links, match strength, and
+          market tone.
         </p>
       </div>
       <div className={styles.lensGrid} role="list">

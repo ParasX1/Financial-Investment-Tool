@@ -70,6 +70,10 @@ export function MarketNewsMain({
   });
 
   const activeSummary = React.useMemo(() => {
+    if (meta?.strictCategory === false) {
+      return "Showing broad finance headlines from a free external RSS feed while exact category coverage is unavailable.";
+    }
+
     if (searchQuery.trim()) {
       return `Showing market news results for "${searchQuery.trim()}" within ${activeTopic.label}.`;
     }
@@ -79,7 +83,13 @@ export function MarketNewsMain({
     }
 
     return activeTopic.description;
-  }, [activeTopic.description, activeTopic.label, searchQuery, tickerSymbol]);
+  }, [
+    activeTopic.description,
+    activeTopic.label,
+    meta?.strictCategory,
+    searchQuery,
+    tickerSymbol,
+  ]);
 
   const lensOptions = React.useMemo(
     () =>
@@ -91,6 +101,8 @@ export function MarketNewsMain({
   );
   const activeLens =
     lensOptions.find((option) => option.id === activeLensId) ?? lensOptions[0]!;
+  const displayTitle =
+    meta?.strictCategory === false ? "Broad finance headlines" : request.title;
   const visibleArticles = React.useMemo(
     () =>
       filterArticlesByLens({
@@ -119,16 +131,19 @@ export function MarketNewsMain({
     if (loading) return "Refreshing";
     if (meta?.provider === "demo") return "Demo mode";
     if (meta?.provider === "none") return "Provider setup needed";
+    if (meta?.strictCategory === false && meta?.providerLabel) {
+      return `Broad feed: ${meta.providerLabel}`;
+    }
     if (meta?.providerLabel) return `Provider: ${meta.providerLabel}`;
     return "Provider: Market news service";
-  }, [loading, meta?.provider, meta?.providerLabel]);
+  }, [loading, meta?.provider, meta?.providerLabel, meta?.strictCategory]);
 
   const emptyState = React.useMemo(() => {
     if (articles.length && !visibleArticles.length) {
       return {
         title: `No ${activeLens.label.toLowerCase()} stories in this view`,
         message:
-          "This trader lens is strict, so it only shows headlines that match the selected signal. Switch back to All to see every story.",
+          "This filter is strict, so it only shows headlines that match the selected signal. Switch back to All to see every story.",
         detail: activeLens.description,
       };
     }
@@ -143,7 +158,7 @@ export function MarketNewsMain({
     }
 
     return {
-      title: `No ${request.title} stories found`,
+      title: `No ${displayTitle} stories found`,
       message:
         "This view uses a strict category query, so it will stay empty instead of filling with unrelated business headlines.",
       detail: meta?.query ? `Query checked: ${meta.query}` : undefined,
@@ -152,8 +167,8 @@ export function MarketNewsMain({
     activeLens.description,
     activeLens.label,
     articles.length,
+    displayTitle,
     meta,
-    request.title,
     visibleArticles.length,
   ]);
 
@@ -231,7 +246,7 @@ export function MarketNewsMain({
         >
           <FitPageHeader
             title="Market News"
-            subtitle="Track market-moving headlines, ticker context, and watchlist signals in the same FIT workspace."
+            subtitle="Scan market-moving headlines, check linked tickers, and open the original source before acting."
             subtitleClassName="max-w-[46rem]"
           />
 
@@ -295,7 +310,7 @@ export function MarketNewsMain({
               </p>
               <div className="min-w-0">
                 <h2 className="mt-2 text-balance text-2xl font-extrabold leading-tight text-white">
-                  {request.title}
+                  {displayTitle}
                 </h2>
                 <p
                   className={cn(
@@ -323,7 +338,7 @@ export function MarketNewsMain({
                 <dd>{watchlistArticleCount}</dd>
               </div>
               <div className={styles.statusCard}>
-                <dt>Selected</dt>
+                <dt>Focus ticker</dt>
                 <dd>{selectedSymbol}</dd>
               </div>
             </dl>
@@ -349,7 +364,7 @@ export function MarketNewsMain({
                 providerWarning={
                   meta?.provider === "demo" ? undefined : meta?.warnings[0]
                 }
-                title={request.title}
+                title={displayTitle}
               />
             </section>
 
@@ -362,6 +377,7 @@ export function MarketNewsMain({
                 marketScope={activeMarketScope}
                 providerLabel={meta?.providerLabel ?? "Pending"}
                 providerWarning={meta?.warnings[0]}
+                strictCategory={meta?.strictCategory ?? true}
                 selectedSymbol={selectedSymbol}
                 tickers={activeMarketScope.tickers}
                 watchlistArticleCount={watchlistArticleCount}

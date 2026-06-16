@@ -78,27 +78,27 @@ export function buildMarketNewsLensOptions({
     },
     {
       id: "watchlist",
-      label: "Watchlist",
+      label: "My watchlist",
       description: "Stories linked to symbols you already follow.",
     },
     {
       id: "ticker-linked",
-      label: "Ticker-linked",
+      label: "Company-linked",
       description: "Headlines with explicit market symbols attached.",
     },
     {
       id: "high-relevance",
-      label: "High relevance",
+      label: "Best matches",
       description: "Provider or demo stories with a strong match score.",
     },
     {
       id: "negative",
-      label: "Risk",
+      label: "Risks",
       description: "Negative sentiment stories worth checking first.",
     },
     {
       id: "positive",
-      label: "Upside",
+      label: "Opportunities",
       description: "Positive sentiment stories for opportunity scanning.",
     },
   ];
