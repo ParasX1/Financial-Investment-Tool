@@ -10,7 +10,9 @@ describe("marketAuxProvider", () => {
     context: "Australia ASX market business economy",
     country: "au",
     kind: "regional" as const,
+    marketScopeId: "australia",
     pageSize: "18",
+    topicId: "australian-markets",
   };
 
   it("builds a strict MarketAux request without embedding secrets in source", () => {
@@ -26,9 +28,8 @@ describe("marketAuxProvider", () => {
     );
     expect(url.searchParams.get("api_token")).toBe("test-key");
     expect(url.searchParams.get("countries")).toBe("au");
-    expect(url.searchParams.get("search")).toBe(
-      "Australia ASX market business economy",
-    );
+    expect(url.searchParams.get("search")).toContain("ASX");
+    expect(url.searchParams.get("search")).toContain("Australian shares");
     expect(url.searchParams.get("must_have_entities")).toBe("true");
     expect(url.searchParams.get("published_after")).toMatch(
       /^\d{4}-\d{2}-\d{2}$/,

@@ -152,7 +152,7 @@ export function MarketNewsMain({
       return {
         title: "Connect a market news provider",
         message:
-          "Set MARKETAUX_API_KEY on the server to load finance-specific stories for this category.",
+          "Enable GDELT_NEWS_ENABLED for no-key development news, or set MARKETAUX_API_KEY for finance-specific production coverage.",
         detail: meta.warnings[0],
       };
     }

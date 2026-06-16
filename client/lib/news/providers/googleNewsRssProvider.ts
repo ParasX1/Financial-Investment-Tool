@@ -1,5 +1,9 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Article } from "@/services/news";
+import {
+  buildGoogleNewsSearchQuery,
+  getGoogleNewsLocale,
+} from "../queryPacks";
 import { compact, dedupeArticles } from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
@@ -8,9 +12,7 @@ import type {
   ServerNewsRequest,
 } from "../types";
 
-const DEFAULT_YAHOO_FINANCE_RSS_URL = "https://finance.yahoo.com/news/rssindex";
-const DEFAULT_YAHOO_FINANCE_TICKER_RSS_URL =
-  "https://finance.yahoo.com/rss/headline";
+const GOOGLE_NEWS_RSS_ENDPOINT = "https://news.google.com/rss/search";
 
 const parser = new XMLParser({
   attributeNamePrefix: "@_",
@@ -18,14 +20,14 @@ const parser = new XMLParser({
   textNodeName: "#text",
 });
 
-type YahooRssSource =
+type GoogleRssSource =
   | string
   | {
       "#text"?: string;
       "@_url"?: string;
     };
 
-type YahooRssMedia =
+type GoogleRssMedia =
   | {
       "@_url"?: string;
     }
@@ -33,21 +35,21 @@ type YahooRssMedia =
       "@_url"?: string;
     }>;
 
-type YahooRssItem = {
+type GoogleRssItem = {
   description?: string;
   guid?: string | { "#text"?: string };
   link?: string;
-  "media:content"?: YahooRssMedia;
-  "media:thumbnail"?: YahooRssMedia;
+  "media:content"?: GoogleRssMedia;
+  "media:thumbnail"?: GoogleRssMedia;
   pubDate?: string;
-  source?: YahooRssSource;
+  source?: GoogleRssSource;
   title?: string;
 };
 
-type YahooRssDocument = {
+type GoogleRssDocument = {
   rss?: {
     channel?: {
-      item?: YahooRssItem | YahooRssItem[];
+      item?: GoogleRssItem | GoogleRssItem[];
     };
   };
 };
@@ -61,29 +63,25 @@ function envFlag(value: string | undefined) {
   return null;
 }
 
-function yahooRssUrl(
-  request: ServerNewsRequest,
+export function isGoogleNewsRssEnabled(
   env: Record<string, string | undefined>,
 ) {
-  if (request.kind === "ticker" && compact(request.ticker)) {
-    const url = new URL(DEFAULT_YAHOO_FINANCE_TICKER_RSS_URL);
-    url.searchParams.set("s", compact(request.ticker).toUpperCase());
-    return url.toString();
-  }
-
-  const configured = compact(env.YAHOO_FINANCE_RSS_URL);
-  if (configured) return configured;
-
-  return DEFAULT_YAHOO_FINANCE_RSS_URL;
-}
-
-export function isYahooFinanceRssEnabled(
-  env: Record<string, string | undefined>,
-) {
-  const configured = envFlag(env.YAHOO_FINANCE_RSS_ENABLED);
+  const configured = envFlag(env.GOOGLE_NEWS_RSS_ENABLED);
   if (configured !== null) return configured;
 
   return compact(env.NODE_ENV).toLowerCase() !== "production";
+}
+
+export function buildGoogleNewsRssUrl(request: ServerNewsRequest): string {
+  const locale = getGoogleNewsLocale(request);
+  const url = new URL(GOOGLE_NEWS_RSS_ENDPOINT);
+
+  url.searchParams.set("q", buildGoogleNewsSearchQuery(request));
+  url.searchParams.set("hl", locale.hl);
+  url.searchParams.set("gl", locale.gl);
+  url.searchParams.set("ceid", locale.ceid);
+
+  return url.toString();
 }
 
 function asList<T>(value: T | T[] | undefined): T[] {
@@ -99,18 +97,20 @@ function readText(value: string | { "#text"?: string } | undefined) {
 function stripHtml(value: string | undefined) {
   return compact(value)
     .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function readSource(value: YahooRssSource | undefined) {
-  if (!value) return "Yahoo Finance";
-  if (typeof value === "string") return compact(value) || "Yahoo Finance";
+function readSource(value: GoogleRssSource | undefined) {
+  if (!value) return "Google News";
+  if (typeof value === "string") return compact(value) || "Google News";
 
-  return compact(value["#text"]) || "Yahoo Finance";
+  return compact(value["#text"]) || "Google News";
 }
 
-function readMediaUrl(value: YahooRssMedia | undefined) {
+function readMediaUrl(value: GoogleRssMedia | undefined) {
   return compact(asList(value)[0]?.["@_url"]) || null;
 }
 
@@ -134,12 +134,33 @@ function readPublishedAt(value: string | undefined) {
   return date.toISOString();
 }
 
-function readGuid(value: YahooRssItem, link: string) {
+function readGuid(value: GoogleRssItem, link: string) {
   return readText(value.guid) || link;
 }
 
-export function mapYahooFinanceRssItems(
-  items: readonly YahooRssItem[] = [],
+function summaryWithoutDuplicateTitle(
+  item: GoogleRssItem,
+  title: string,
+  source: string,
+) {
+  const description = stripHtml(item.description);
+  const titleWithoutSource = title.endsWith(` - ${source}`)
+    ? title.slice(0, -` - ${source}`.length).trim()
+    : title;
+
+  if (!description) return "";
+  if (description.toLowerCase().startsWith(titleWithoutSource.toLowerCase())) {
+    const summary = compact(
+      description.slice(titleWithoutSource.length).replace(/^[\s\-:|]+/, ""),
+    );
+    return summary.toLowerCase() === source.toLowerCase() ? "" : summary;
+  }
+
+  return description;
+}
+
+export function mapGoogleNewsRssItems(
+  items: readonly GoogleRssItem[] = [],
 ): Article[] {
   const mapped = items
     .map((item) => {
@@ -148,20 +169,20 @@ export function mapYahooFinanceRssItems(
 
       if (!title || !url || !isSafeExternalUrl(url)) return null;
 
-      const summary = stripHtml(item.description);
       const source = readSource(item.source);
+      const summary = summaryWithoutDuplicateTitle(item, title, source);
       const relatedSymbols = inferRelatedSymbolsFromText(
         `${title} ${summary} ${source}`,
       );
 
       return {
-        confidence: relatedSymbols.length ? 0.62 : null,
+        confidence: relatedSymbols.length ? 0.58 : null,
         id: readGuid(item, url),
         image:
           readMediaUrl(item["media:content"]) ??
           readMediaUrl(item["media:thumbnail"]),
-        provider: "yahoo-finance-rss",
-        providerLabel: "Yahoo Finance RSS",
+        provider: "google-news-rss",
+        providerLabel: "Google News RSS",
         publishedAt: readPublishedAt(item.pubDate),
         relatedSymbols,
         sentiment: "neutral",
@@ -178,27 +199,27 @@ export function mapYahooFinanceRssItems(
   return dedupeArticles(mapped);
 }
 
-function parseYahooFinanceRss(xml: string) {
-  const document = parser.parse(xml) as YahooRssDocument;
-  return mapYahooFinanceRssItems(asList(document.rss?.channel?.item));
+function parseGoogleNewsRss(xml: string) {
+  const document = parser.parse(xml) as GoogleRssDocument;
+  return mapGoogleNewsRssItems(asList(document.rss?.channel?.item));
 }
 
-export const yahooFinanceRssProvider: NewsProvider = {
-  id: "yahoo-finance-rss",
-  label: "Yahoo Finance RSS",
-  isConfigured: isYahooFinanceRssEnabled,
+export const googleNewsRssProvider: NewsProvider = {
+  id: "google-news-rss",
+  label: "Google News RSS",
+  isConfigured: isGoogleNewsRssEnabled,
   async fetchArticles(request, context: NewsProviderFetchContext) {
-    const response = await context.fetcher(yahooRssUrl(request, context.env), {
+    const response = await context.fetcher(buildGoogleNewsRssUrl(request), {
       headers: {
         Accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Yahoo Finance RSS ${response.status}`);
+      throw new Error(`Google News RSS ${response.status}`);
     }
 
-    return parseYahooFinanceRss(await response.text()).slice(
+    return parseGoogleNewsRss(await response.text()).slice(
       0,
       Number(request.pageSize) || 10,
     );

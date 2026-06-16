@@ -25,13 +25,18 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
   ],
   "cost-of-living": [
     "bill",
+    "cash rate",
     "consumer price",
     "cost of living",
     "grocery",
     "household",
+    "housing affordability",
     "inflation",
     "interest rate",
+    "living cost",
+    "living costs",
     "mortgage",
+    "mortgage stress",
     "rent",
     "rba",
     "wage",
@@ -102,7 +107,11 @@ const TOPIC_MINIMUM_MATCHES: Record<string, number> = {
 };
 
 function normalize(value: string | undefined): string {
-  return (value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function articleText(
@@ -168,7 +177,7 @@ function articleMatchesKeywords(
 
   for (const keyword of keywords) {
     if (containsBoundedPhrase(text, keyword)) {
-      matches += 1;
+      matches += normalize(keyword).includes(" ") ? 2 : 1;
     }
 
     if (matches >= minimumMatches) {

@@ -74,6 +74,36 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["household"]);
   });
 
+  it("keeps title-only Cost of Living stories with strong household phrases", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "mortgage-stress",
+            provider: "google-news-rss",
+            title:
+              "Mortgage stress deepens as families spend half their income on housing",
+          },
+          {
+            ...baseArticle,
+            id: "sector",
+            title: "Healthcare stocks position for sector rotation amid inflation",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["mortgage-stress"]);
+  });
+
   it("does not treat source names as category evidence", () => {
     const request: ServerNewsRequest = {
       context: "money banking tax superannuation savings",

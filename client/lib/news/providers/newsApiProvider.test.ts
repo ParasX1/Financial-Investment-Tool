@@ -43,7 +43,8 @@ describe("newsApiProvider", () => {
         sortBy: "publishedAt",
       },
     });
-    expect(candidates[1]?.params.q).toContain("Australia ASX market");
+    expect(candidates[1]?.params.q).toContain("ASX");
+    expect(candidates[1]?.params.q).not.toContain("Major US equity");
   });
 
   it("expands known ticker symbols in NewsAPI everything queries", () => {

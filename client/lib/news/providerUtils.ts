@@ -1,4 +1,5 @@
 import type { Article } from "@/services/news";
+import { buildNewsSearchProfile } from "./queryPacks";
 import type { ServerNewsRequest } from "./types";
 
 const MAX_PAGE_SIZE = 100;
@@ -28,33 +29,9 @@ export function dedupeArticles(articles: readonly Article[]): Article[] {
 }
 
 export function describeNewsRequest(request: ServerNewsRequest): string {
-  const primary =
-    request.ticker ||
-    request.query ||
-    request.commodity ||
-    request.industry ||
-    request.country ||
-    request.context;
-
-  return compact(primary);
+  return compact(buildNewsSearchProfile(request).displayText);
 }
 
 export function buildStrictSearchText(request: ServerNewsRequest): string {
-  if (request.kind === "ticker") {
-    return compact(`${request.ticker ?? ""} ${request.context}`);
-  }
-
-  if (request.kind === "search") {
-    return compact(`${request.query ?? ""} ${request.context}`);
-  }
-
-  if (request.kind === "commodity") {
-    return compact(`${request.commodity ?? ""} ${request.context}`);
-  }
-
-  if (request.kind === "industry") {
-    return compact(`${request.industry ?? ""} ${request.context}`);
-  }
-
-  return compact(request.context);
+  return compact(buildNewsSearchProfile(request).searchText);
 }

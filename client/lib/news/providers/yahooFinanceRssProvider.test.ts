@@ -46,6 +46,10 @@ describe("yahooFinanceRssProvider", () => {
     ).toBe(false);
   });
 
+  it("does not provide broad category fallback behavior", () => {
+    expect(yahooFinanceRssProvider.allowBroadFallback).toBeUndefined();
+  });
+
   it("maps RSS items into safe original-link article metadata", () => {
     expect(
       mapYahooFinanceRssItems([

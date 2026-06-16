@@ -3,7 +3,7 @@ import {
   fetchMarketNewsWithProviders,
   resolveNewsProviders,
 } from "./newsService";
-import type { NewsProvider, ServerNewsRequest } from "./types";
+import type { NewsProvider, NewsProviderId, ServerNewsRequest } from "./types";
 
 const request: ServerNewsRequest = {
   context: "Australian household finance cost of living",
@@ -22,7 +22,7 @@ function provider({
 }: {
   articles: any[];
   configured?: boolean;
-  id: "marketaux" | "newsapi" | "yahoo-finance-rss";
+  id: Exclude<NewsProviderId, "demo">;
   label: string;
   broadFallback?: boolean;
   rejects?: boolean;
@@ -45,9 +45,9 @@ describe("fetchMarketNewsWithProviders", () => {
   it("resolves provider order from env without leaking provider details into callers", () => {
     expect(
       resolveNewsProviders({
-        NEWS_PROVIDER_ORDER: "yahoo-rss, marketaux, yahoo-rss, unknown",
+        NEWS_PROVIDER_ORDER: "google-rss, gdelt, marketaux, google-rss, unknown",
       }).map((resolvedProvider) => resolvedProvider.id),
-    ).toEqual(["yahoo-finance-rss", "marketaux"]);
+    ).toEqual(["google-news-rss", "gdelt", "marketaux"]);
   });
 
   it("tries same-request providers but does not fabricate broad fallback news", async () => {
@@ -97,6 +97,59 @@ describe("fetchMarketNewsWithProviders", () => {
     });
   });
 
+  it("fills a partial strict provider result with later strict providers", async () => {
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "2" },
+      {
+        providers: [
+          provider({
+            articles: [
+              {
+                id: "marketaux-cost",
+                image: null,
+                publishedAt: "2026-06-16T04:00:00Z",
+                source: "Market Desk",
+                summary: "Mortgage pressure remains high.",
+                title: "Cost of living pressure stays in focus",
+                url: "https://example.com/marketaux-cost",
+              },
+            ],
+            id: "marketaux",
+            label: "MarketAux",
+          }),
+          provider({
+            articles: [
+              {
+                id: "gdelt-cost",
+                image: null,
+                provider: "gdelt",
+                providerLabel: "GDELT",
+                publishedAt: "2026-06-16T04:10:00Z",
+                source: "example.com",
+                summary: "Household bills and inflation remain visible.",
+                title: "Inflation keeps household budgets under pressure",
+                url: "https://example.com/gdelt-cost",
+              },
+            ],
+            id: "gdelt",
+            label: "GDELT",
+          }),
+        ],
+      },
+    );
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "marketaux-cost",
+      "gdelt-cost",
+    ]);
+    expect(result.meta).toMatchObject({
+      attemptedProviders: ["marketaux", "gdelt"],
+      provider: "marketaux",
+      providerLabel: "MarketAux + GDELT",
+      strictCategory: true,
+    });
+  });
+
   it("filters provider articles before accepting them for a strict category", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
@@ -138,44 +191,45 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.articles.map((article) => article.id)).toEqual(["cost"]);
   });
 
-  it("can show broad Yahoo RSS headlines transparently for category pages", async () => {
+  it("falls back to development RSS after a GDELT outage without leaving strict category mode", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
-        provider({ articles: [], id: "marketaux", label: "MarketAux" }),
+        provider({
+          articles: [],
+          id: "gdelt",
+          label: "GDELT",
+          rejects: true,
+        }),
         provider({
           articles: [
             {
-              id: "yahoo-broad",
+              id: "google-cost",
               image: null,
-              provider: "yahoo-finance-rss",
-              providerLabel: "Yahoo Finance RSS",
+              provider: "google-news-rss",
+              providerLabel: "Google News RSS",
               publishedAt: "2026-06-16T04:00:00Z",
-              source: "Yahoo Finance",
-              summary: "Broad finance headline.",
-              title: "Apple shares rise as investors watch demand",
-              url: "https://finance.yahoo.com/news/apple-demand.html",
+              source: "Yahoo Finance Australia",
+              summary: "Mortgage pressure and grocery bills remain high.",
+              title: "Cost of living pressure hits household budgets",
+              url: "https://news.google.com/rss/articles/cost",
             },
           ],
-          broadFallback: true,
-          id: "yahoo-finance-rss",
-          label: "Yahoo Finance RSS",
+          id: "google-news-rss",
+          label: "Google News RSS",
         }),
       ],
     });
 
-    expect(result.articles.map((article) => article.id)).toEqual([
-      "yahoo-broad",
-    ]);
+    expect(result.articles.map((article) => article.id)).toEqual(["google-cost"]);
     expect(result.meta).toMatchObject({
-      provider: "yahoo-finance-rss",
-      providerLabel: "Yahoo Finance RSS",
-      strictCategory: false,
+      provider: "google-news-rss",
+      providerLabel: "Google News RSS",
+      strictCategory: true,
     });
-    expect(result.meta.warnings[0]).toContain("broad finance headlines");
-    expect(result.meta.warnings[1]).toContain("strict");
+    expect(result.meta.warnings[0]).toContain("GDELT down");
   });
 
-  it("does not let Yahoo broad fallback preempt later strict providers", async () => {
+  it("does not let broad fallback preempt later strict providers", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
         provider({
