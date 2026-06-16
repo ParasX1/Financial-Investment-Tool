@@ -188,7 +188,7 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Focus Ticker</h2>
+          <h2 className="text-lg font-extrabold text-white">Quote Snapshot</h2>
           <span
             className={`text-xs font-bold ${toneClass[selectedTicker.tone]}`}
           >

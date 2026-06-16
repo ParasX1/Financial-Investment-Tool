@@ -84,8 +84,32 @@ describe("marketNewsNavigation", () => {
     });
     expect(request.query).toContain("US Markets");
     expect(request.query).toContain("Australia cost of living");
-    expect(request.query).toContain("S&P 500");
-    expect(request.query).toContain("^GSPC");
+    expect(request.query).not.toContain("S&P 500");
+    expect(request.query).not.toContain("^GSPC");
+    expect(request.context).not.toContain("S&P 500");
+    expect(request.context).not.toContain("^GSPC");
+  });
+
+  it("does not turn the first market ticker into the default news query", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+    const australiaScope = resolveMarketNewsMarketScope("australia");
+
+    const request = buildMarketNewsRequest(topic, "", "", australiaScope);
+
+    expect(request).toMatchObject({
+      kind: "search",
+      marketScopeId: "australia",
+      title: "Cost of Living",
+      topicId: "cost-of-living",
+    });
+    expect(request.ticker).toBeUndefined();
+    expect(request.query).toContain("Australia cost of living");
+    expect(request.query).not.toContain("ALL ORDS");
+    expect(request.query).not.toContain("^AORD");
+    expect(request.query).not.toContain("AUD/USD");
+    expect(request.query).not.toContain("CL=F");
+    expect(request.context).not.toContain("ALL ORDS");
+    expect(request.context).not.toContain("^AORD");
   });
 
   it("keeps ticker drill-down stronger than the active market scope", () => {

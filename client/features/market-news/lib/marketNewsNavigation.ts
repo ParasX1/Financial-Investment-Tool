@@ -72,13 +72,10 @@ export function buildMarketNewsRequest(
 ): MarketNewsRequest {
   const cleanedSearch = searchQuery.trim();
   const cleanedTicker = tickerSymbol.trim().toUpperCase();
-  const scopePrefix = marketScope
-    ? `${marketScope.label} ${marketScope.description} ${marketScope.tickers
-        .slice(0, 4)
-        .map((ticker) => `${ticker.label} ${ticker.symbol}`)
-        .join(" ")}`
+  const scopeContext = marketScope
+    ? `${marketScope.label} ${marketScope.description}`
     : "";
-  const scopedContext = [scopePrefix, topic.source.context]
+  const scopedContext = [scopeContext, topic.source.context]
     .filter(Boolean)
     .join(" ");
   const scopedTitle =
@@ -86,7 +83,14 @@ export function buildMarketNewsRequest(
       ? `${topic.label} - ${marketScope.label}`
       : topic.label;
   const scopedQuery = (query: string) =>
-    [marketScope?.label, query, scopePrefix].filter(Boolean).join(" ");
+    [
+      marketScope && marketScope.id !== defaultMarketNewsMarketScopeId
+        ? marketScope.label
+        : "",
+      query,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
   if (cleanedSearch) {
     return {

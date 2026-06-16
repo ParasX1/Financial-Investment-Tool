@@ -294,9 +294,9 @@ export function MarketNewsMain({
             </div>
 
             <MarketNewsTickerStrip
+              activeNewsTickerSymbol={tickerSymbol}
               marketScope={activeMarketScope}
               marketScopes={MARKET_NEWS_MARKET_SCOPES}
-              selectedSymbol={selectedSymbol}
               tickers={activeMarketScope.tickers}
               onMarketScopeChange={handleMarketScopeChange}
               onTickerSelect={handleQuoteLookup}
@@ -338,8 +338,8 @@ export function MarketNewsMain({
                 <dd>{watchlistArticleCount}</dd>
               </div>
               <div className={styles.statusCard}>
-                <dt>Focus ticker</dt>
-                <dd>{selectedSymbol}</dd>
+                <dt>{tickerSymbol ? "Ticker news" : "Quote snapshot"}</dt>
+                <dd>{tickerSymbol || selectedSymbol}</dd>
               </div>
             </dl>
           </section>

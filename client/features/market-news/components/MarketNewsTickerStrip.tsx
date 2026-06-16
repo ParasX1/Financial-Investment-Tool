@@ -15,16 +15,16 @@ const toneClass = {
 } as const;
 
 export function MarketNewsTickerStrip({
+  activeNewsTickerSymbol,
   marketScope,
   marketScopes,
-  selectedSymbol,
   tickers,
   onMarketScopeChange,
   onTickerSelect,
 }: {
+  activeNewsTickerSymbol: string;
   marketScope: MarketNewsMarketScope;
   marketScopes: readonly MarketNewsMarketScope[];
-  selectedSymbol: string;
   tickers: readonly MarketNewsTicker[];
   onMarketScopeChange: (scopeId: MarketNewsMarketScopeId) => void;
   onTickerSelect: (symbol: string) => void;
@@ -63,7 +63,7 @@ export function MarketNewsTickerStrip({
 
       <div className={styles.tickerScroller}>
         {tickers.map((ticker) => {
-          const selected = selectedSymbol === ticker.symbol;
+          const selected = activeNewsTickerSymbol === ticker.symbol;
 
           return (
             <button
