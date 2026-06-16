@@ -1,6 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Article } from "@/services/news";
 import {
+  buildGoogleNewsSearchQueries,
   buildGoogleNewsSearchQuery,
   getGoogleNewsLocale,
 } from "../queryPacks";
@@ -82,6 +83,21 @@ export function buildGoogleNewsRssUrl(request: ServerNewsRequest): string {
   url.searchParams.set("ceid", locale.ceid);
 
   return url.toString();
+}
+
+export function buildGoogleNewsRssUrls(request: ServerNewsRequest): string[] {
+  const locale = getGoogleNewsLocale(request);
+
+  return buildGoogleNewsSearchQueries(request).map((query) => {
+    const url = new URL(GOOGLE_NEWS_RSS_ENDPOINT);
+
+    url.searchParams.set("q", query);
+    url.searchParams.set("hl", locale.hl);
+    url.searchParams.set("gl", locale.gl);
+    url.searchParams.set("ceid", locale.ceid);
+
+    return url.toString();
+  });
 }
 
 function asList<T>(value: T | T[] | undefined): T[] {
@@ -204,24 +220,48 @@ function parseGoogleNewsRss(xml: string) {
   return mapGoogleNewsRssItems(asList(document.rss?.channel?.item));
 }
 
+async function fetchGoogleNewsRssUrl(
+  url: string,
+  context: NewsProviderFetchContext,
+) {
+  const response = await context.fetcher(url, {
+    headers: {
+      Accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google News RSS ${response.status}`);
+  }
+
+  return parseGoogleNewsRss(await response.text());
+}
+
 export const googleNewsRssProvider: NewsProvider = {
   id: "google-news-rss",
   label: "Google News RSS",
   isConfigured: isGoogleNewsRssEnabled,
   async fetchArticles(request, context: NewsProviderFetchContext) {
-    const response = await context.fetcher(buildGoogleNewsRssUrl(request), {
-      headers: {
-        Accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
-      },
-    });
+    const results = await Promise.allSettled(
+      buildGoogleNewsRssUrls(request).map((url) =>
+        fetchGoogleNewsRssUrl(url, context),
+      ),
+    );
+    const articles = results.flatMap((result) =>
+      result.status === "fulfilled" ? result.value : [],
+    );
 
-    if (!response.ok) {
-      throw new Error(`Google News RSS ${response.status}`);
+    if (!articles.length) {
+      const firstFailure = results.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
+      );
+
+      if (firstFailure) {
+        throw firstFailure.reason;
+      }
     }
 
-    return parseGoogleNewsRss(await response.text()).slice(
-      0,
-      Number(request.pageSize) || 10,
-    );
+    return dedupeArticles(articles).slice(0, Number(request.pageSize) || 10);
   },
 };

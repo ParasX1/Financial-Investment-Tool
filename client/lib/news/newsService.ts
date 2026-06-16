@@ -37,6 +37,14 @@ const DEFAULT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
   "yahoo-finance-rss",
 ];
 
+const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
+  "google-news-rss",
+  "yahoo-finance-rss",
+  "gdelt",
+  "marketaux",
+  "newsapi",
+];
+
 const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
   gdelt: "gdelt",
   google: "google-news-rss",
@@ -57,6 +65,10 @@ function normaliseProviderId(value: string) {
   return PROVIDER_ALIASES[value.trim().toLowerCase()];
 }
 
+function isProductionEnvironment(env: Record<string, string | undefined>) {
+  return (env.NODE_ENV ?? "").trim().toLowerCase() === "production";
+}
+
 export function resolveNewsProviders(
   env: Record<string, string | undefined> = process.env,
 ): NewsProvider[] {
@@ -64,7 +76,11 @@ export function resolveNewsProviders(
     .split(",")
     .map(normaliseProviderId)
     .filter((id): id is Exclude<NewsProviderId, "demo"> => Boolean(id));
-  const orderedIds = requested.length ? requested : DEFAULT_PROVIDER_IDS;
+  const orderedIds = requested.length
+    ? requested
+    : isProductionEnvironment(env)
+      ? DEFAULT_PROVIDER_IDS
+      : DEVELOPMENT_PROVIDER_IDS;
   const seen = new Set<NewsProviderId>();
 
   return orderedIds
@@ -101,6 +117,51 @@ function providerBlendLabel(providers: readonly NewsProvider[]) {
   return `${labels[0]} + ${labels[1]} + ${labels.length - 2} more`;
 }
 
+function readPositiveInteger(value: string | undefined) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+
+  return Math.floor(parsed);
+}
+
+function minimumStrictArticles(
+  env: Record<string, string | undefined>,
+  pageSize: number,
+) {
+  const configured = readPositiveInteger(env.NEWS_MIN_STRICT_ARTICLES);
+  if (configured) return Math.min(pageSize, configured);
+
+  return isProductionEnvironment(env) ? pageSize : Math.min(pageSize, 2);
+}
+
+function providerTimeoutMs(env: Record<string, string | undefined>) {
+  const configured = readPositiveInteger(env.NEWS_PROVIDER_TIMEOUT_MS);
+  if (configured) return configured;
+
+  return isProductionEnvironment(env) ? 8000 : 2000;
+}
+
+function withTimeout(
+  fetcher: typeof fetch,
+  env: Record<string, string | undefined>,
+): typeof fetch {
+  const timeoutMs = providerTimeoutMs(env);
+
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetcher(input, {
+        ...init,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }) as typeof fetch;
+}
+
 export async function fetchMarketNewsWithProviders(
   request: ServerNewsRequest,
   {
@@ -115,8 +176,10 @@ export async function fetchMarketNewsWithProviders(
 ): Promise<ServerNewsResponse> {
   const pageSize = normaliseNewsPageSize(request.pageSize);
   const pageSizeNumber = Number(pageSize);
+  const minimumArticleCount = minimumStrictArticles(env, pageSizeNumber);
   const normalizedRequest = { ...request, pageSize };
   const providerList = providers ?? resolveNewsProviders(env);
+  const timedFetcher = withTimeout(fetcher, env);
   const configuredProviders = providerList.filter((provider) =>
     provider.isConfigured(env),
   );
@@ -156,7 +219,7 @@ export async function fetchMarketNewsWithProviders(
     try {
       const providerArticles = await provider.fetchArticles(normalizedRequest, {
         env,
-        fetcher,
+        fetcher: timedFetcher,
       });
       const articles = filterRelevantNewsArticles(
         providerArticles,
@@ -170,7 +233,7 @@ export async function fetchMarketNewsWithProviders(
           pageSizeNumber,
         );
 
-        if (strictArticles.length >= pageSizeNumber) {
+        if (strictArticles.length >= minimumArticleCount) {
           return {
             articles: strictArticles,
             meta: {

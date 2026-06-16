@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   buildGoogleNewsRssUrl,
+  buildGoogleNewsRssUrls,
   googleNewsRssProvider,
   isGoogleNewsRssEnabled,
   mapGoogleNewsRssItems,
@@ -50,10 +51,20 @@ describe("googleNewsRssProvider", () => {
       "https://news.google.com/rss/search",
     );
     expect(url.searchParams.get("q")).toContain('"cost of living"');
-    expect(url.searchParams.get("q")).toContain("when:7d");
+    expect(url.searchParams.get("q")).toContain(" OR ");
+    expect(url.searchParams.get("q")).toContain("when:30d");
     expect(url.searchParams.get("hl")).toBe("en-AU");
     expect(url.searchParams.get("gl")).toBe("AU");
     expect(url.searchParams.get("ceid")).toBe("AU:en");
+  });
+
+  it("builds multiple RSS URLs so sparse categories can merge results", () => {
+    const urls = buildGoogleNewsRssUrls(request).map((value) => new URL(value));
+
+    expect(urls.length).toBeGreaterThan(1);
+    expect(
+      new Set(urls.map((url) => url.searchParams.get("q"))).size,
+    ).toBe(urls.length);
   });
 
   it("maps RSS items into safe Google News link article metadata", () => {
@@ -107,11 +118,12 @@ describe("googleNewsRssProvider", () => {
         }),
       }),
     );
+    expect(fetcher.mock.calls.length).toBeGreaterThan(1);
     expect(articles).toHaveLength(1);
     expect(articles[0]?.provider).toBe("google-news-rss");
   });
 
-  it("surfaces Google News RSS HTTP failures", async () => {
+  it("surfaces Google News RSS HTTP failures when every candidate fails", async () => {
     const fetcher = jest.fn(async () => new Response("", { status: 429 }));
 
     await expect(

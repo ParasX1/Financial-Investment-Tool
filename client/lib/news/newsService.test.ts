@@ -50,6 +50,34 @@ describe("fetchMarketNewsWithProviders", () => {
     ).toEqual(["google-news-rss", "gdelt", "marketaux"]);
   });
 
+  it("uses free RSS-first provider order in development when no order is configured", () => {
+    expect(
+      resolveNewsProviders({ NODE_ENV: "development" }).map(
+        (resolvedProvider) => resolvedProvider.id,
+      ),
+    ).toEqual([
+      "google-news-rss",
+      "yahoo-finance-rss",
+      "gdelt",
+      "marketaux",
+      "newsapi",
+    ]);
+  });
+
+  it("keeps production provider order focused on primary finance APIs", () => {
+    expect(
+      resolveNewsProviders({ NODE_ENV: "production" }).map(
+        (resolvedProvider) => resolvedProvider.id,
+      ),
+    ).toEqual([
+      "marketaux",
+      "gdelt",
+      "newsapi",
+      "google-news-rss",
+      "yahoo-finance-rss",
+    ]);
+  });
+
   it("tries same-request providers but does not fabricate broad fallback news", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
@@ -148,6 +176,65 @@ describe("fetchMarketNewsWithProviders", () => {
       providerLabel: "MarketAux + GDELT",
       strictCategory: true,
     });
+  });
+
+  it("returns early in development after enough strict stories are available", async () => {
+    const firstProvider = provider({
+      articles: [
+        {
+          id: "cost-1",
+          image: null,
+          publishedAt: "2026-06-16T04:00:00Z",
+          source: "Market Desk",
+          summary: "Mortgage pressure remains high.",
+          title: "Cost of living pressure stays in focus",
+          url: "https://example.com/cost-1",
+        },
+        {
+          id: "cost-2",
+          image: null,
+          publishedAt: "2026-06-16T04:10:00Z",
+          source: "Market Desk",
+          summary: "Household bills and inflation remain visible.",
+          title: "Inflation keeps household budgets under pressure",
+          url: "https://example.com/cost-2",
+        },
+      ],
+      id: "google-news-rss",
+      label: "Google News RSS",
+    });
+    const secondProvider = provider({
+      articles: [
+        {
+          id: "cost-3",
+          image: null,
+          publishedAt: "2026-06-16T04:20:00Z",
+          source: "Market Desk",
+          summary: "Grocery bills remain high.",
+          title: "Household budgets remain under pressure",
+          url: "https://example.com/cost-3",
+        },
+      ],
+      id: "marketaux",
+      label: "MarketAux",
+    });
+
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "12" },
+      {
+        env: {
+          NEWS_MIN_STRICT_ARTICLES: "2",
+          NODE_ENV: "development",
+        },
+        providers: [firstProvider, secondProvider],
+      },
+    );
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "cost-1",
+      "cost-2",
+    ]);
+    expect(secondProvider.fetchArticles).not.toHaveBeenCalled();
   });
 
   it("filters provider articles before accepting them for a strict category", async () => {

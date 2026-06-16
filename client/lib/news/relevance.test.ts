@@ -104,6 +104,41 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["mortgage-stress"]);
   });
 
+  it("keeps Cost of Living stories that use common plural market wording", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "rates",
+            title:
+              "US inflation jumps as mortgage rates and grocery prices stay high",
+          },
+          {
+            ...baseArticle,
+            id: "rents",
+            title:
+              "Rents climb again as housing affordability worsens for families",
+          },
+          {
+            ...baseArticle,
+            id: "not-enough",
+            title: "Healthcare shares rise despite inflation concerns",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["rates", "rents"]);
+  });
+
   it("does not treat source names as category evidence", () => {
     const request: ServerNewsRequest = {
       context: "money banking tax superannuation savings",
@@ -133,6 +168,41 @@ describe("filterRelevantNewsArticles", () => {
         request,
       ).map((article) => article.id),
     ).toEqual(["money"]);
+  });
+
+  it("keeps international market stories using common US market language", () => {
+    const request: ServerNewsRequest = {
+      context: "global markets Wall Street stocks bonds",
+      kind: "search",
+      marketScopeId: "us-markets",
+      pageSize: "12",
+      query: "global markets Wall Street stocks bonds",
+      topicId: "international-markets",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "us-indexes",
+            title:
+              "S&P 500 and Nasdaq hit record highs as Wall Street rallies",
+          },
+          {
+            ...baseArticle,
+            id: "yields",
+            title: "Bond yields rise as Federal Reserve outlook shifts",
+          },
+          {
+            ...baseArticle,
+            id: "local-company",
+            title: "NVR stock underperforms its sector after earnings",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["us-indexes", "yields"]);
   });
 
   it("keeps ticker results scoped to the requested symbol", () => {

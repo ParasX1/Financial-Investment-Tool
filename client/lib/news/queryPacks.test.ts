@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   buildGdeltSearchQuery,
+  buildGoogleNewsSearchQueries,
   buildGoogleNewsSearchQuery,
   buildNewsSearchProfile,
   getGoogleNewsLocale,
@@ -41,14 +42,43 @@ describe("news query packs", () => {
   });
 
   it("builds Google News RSS queries with recency and market locale", () => {
-    expect(buildGoogleNewsSearchQuery(costOfLivingRequest)).toContain(
-      "when:7d",
-    );
+    const query = buildGoogleNewsSearchQuery(costOfLivingRequest);
+
+    expect(query).toContain(" OR ");
+    expect(query).toContain("when:30d");
+    expect(query).toContain("United States");
     expect(getGoogleNewsLocale(costOfLivingRequest)).toEqual({
       ceid: "US:en",
       gl: "US",
       hl: "en-US",
     });
+  });
+
+  it("builds multiple Google News RSS query variants for sparse categories", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      ...costOfLivingRequest,
+      marketScopeId: "europe-markets",
+    });
+
+    expect(queries.length).toBeGreaterThan(1);
+    expect(queries.join(" ")).toContain("Europe");
+    expect(queries.join(" ")).toContain("ECB");
+    expect(queries.every((query) => query.includes("when:30d"))).toBe(true);
+  });
+
+  it("adds market-scope Google News variants for regional market views", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      context: "global market news",
+      kind: "search",
+      marketScopeId: "us-markets",
+      pageSize: "12",
+      query: "global markets Wall Street stocks bonds",
+      topicId: "international-markets",
+    });
+
+    expect(queries.join(" ")).toContain("US stocks");
+    expect(queries.join(" ")).toContain("S&P 500");
+    expect(queries.join(" ")).toContain("Wall Street");
   });
 
   it("expands ticker requests using known company aliases", () => {

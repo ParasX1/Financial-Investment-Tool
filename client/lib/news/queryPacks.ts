@@ -14,6 +14,7 @@ type QueryPack = {
   phrases: readonly string[];
   terms: readonly string[];
   exclude?: readonly string[];
+  googleAlternates?: readonly (readonly string[])[];
   sourceCountry?: string;
 };
 
@@ -21,6 +22,7 @@ type SearchProfile = {
   displayText: string;
   gdeltQuery: string;
   googleNewsQuery: string;
+  googleNewsQueries: readonly string[];
   searchText: string;
   googleLocale: GoogleLocale;
 };
@@ -51,38 +53,80 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
   commodities: {
     phrases: ["commodity markets"],
     terms: ["oil", "gold", "copper", "energy", "metals", "supply"],
+    googleAlternates: [
+      ["oil prices", "gold prices", "copper supply", "energy markets"],
+      ["commodity prices", "metals", "crude oil", "supply disruption"],
+    ],
   },
   "cost-of-living": {
-    phrases: ["cost of living"],
-    terms: ["Australia", "inflation", "mortgage", "rent", "RBA", "wages"],
+    phrases: ["cost of living", "household bills"],
+    terms: [
+      "Australia",
+      "inflation",
+      "mortgage",
+      "rent",
+      "RBA",
+      "wages",
+      "energy bills",
+      "housing affordability",
+    ],
+    googleAlternates: [
+      ["cost of living", "inflation", "household budgets", "consumer prices"],
+      ["mortgage stress", "rent", "housing affordability", "interest rates"],
+      ["energy bills", "grocery prices", "wages", "household bills"],
+    ],
     sourceCountry: "AS",
   },
   "international-markets": {
     phrases: ["global markets", "Wall Street"],
     terms: ["stocks", "bonds", "inflation", "earnings", "Europe", "Asia"],
+    googleAlternates: [
+      ["global markets", "stocks", "bonds", "Wall Street"],
+      ["Europe markets", "Asia markets", "earnings", "central banks"],
+    ],
   },
   "money-news": {
     phrases: ["personal finance"],
     terms: ["Australia", "banking", "tax", "superannuation", "savings"],
+    googleAlternates: [
+      ["personal finance", "tax", "savings", "banking"],
+      ["superannuation", "retirement", "mortgage", "insurance"],
+    ],
     sourceCountry: "AS",
   },
   "personal-finance": {
     phrases: ["personal finance"],
     terms: ["Australia", "mortgage", "retirement", "insurance", "savings"],
+    googleAlternates: [
+      ["personal finance", "mortgage", "savings", "insurance"],
+      ["retirement", "superannuation", "household budget", "tax"],
+    ],
     sourceCountry: "AS",
   },
   "property-news": {
     phrases: ["property market"],
     terms: ["Australia", "housing", "mortgage", "rent", "prices"],
+    googleAlternates: [
+      ["property market", "house prices", "housing", "mortgage"],
+      ["rent", "housing affordability", "real estate", "home buyers"],
+    ],
     sourceCountry: "AS",
   },
   technology: {
     phrases: ["technology stocks"],
     terms: ["AI", "software", "semiconductors", "earnings", "Nvidia"],
+    googleAlternates: [
+      ["technology stocks", "AI", "semiconductors", "earnings"],
+      ["Nvidia", "software", "chip stocks", "cloud"],
+    ],
   },
   work: {
     phrases: ["labour market"],
     terms: ["Australia", "jobs", "wages", "employment", "workplace"],
+    googleAlternates: [
+      ["labour market", "jobs", "wages", "employment"],
+      ["workplace", "unemployment", "productivity", "pay growth"],
+    ],
     sourceCountry: "AS",
   },
 };
@@ -98,10 +142,31 @@ const SCOPE_QUERY_TERMS: Record<string, readonly string[]> = {
 };
 
 const SCOPE_LOCAL_CONTEXT_TERMS: Record<string, readonly string[]> = {
-  "asia-markets": ["Asia", "central banks"],
-  "europe-markets": ["Europe", "ECB"],
+  "asia-markets": ["Asia", "central banks", "Japan", "China"],
+  "europe-markets": ["Europe", "ECB", "eurozone", "UK"],
   rates: ["United States", "Federal Reserve"],
   "us-markets": ["United States", "Federal Reserve"],
+};
+
+const SCOPE_GOOGLE_ALTERNATES: Record<string, readonly (readonly string[])[]> = {
+  "asia-markets": [
+    ["Asia stocks", "Nikkei", "Hang Seng", "China markets"],
+    ["Japan stocks", "China stocks", "Asian markets", "central banks"],
+  ],
+  commodities: [
+    ["oil prices", "gold prices", "copper", "commodity markets"],
+  ],
+  "europe-markets": [
+    ["European stocks", "FTSE", "DAX", "STOXX Europe"],
+    ["eurozone markets", "European shares", "ECB", "bond yields"],
+  ],
+  rates: [
+    ["Federal Reserve", "bond yields", "interest rates", "Treasury yields"],
+  ],
+  "us-markets": [
+    ["US stocks", "Wall Street", "S&P 500", "Nasdaq", "Dow Jones"],
+    ["Federal Reserve", "bond yields", "earnings", "US markets"],
+  ],
 };
 
 const GDELT_SOURCE_COUNTRY_BY_SCOPE: Record<string, string> = {
@@ -143,6 +208,21 @@ function unique(values: readonly string[]): string[] {
     });
 }
 
+function uniqueQueries(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+
+  return values
+    .map(compact)
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+}
+
 function quoteGdelt(value: string) {
   return /\s/.test(value) ? `"${value}"` : value;
 }
@@ -157,6 +237,14 @@ function orBlock(values: readonly string[]) {
   if (cleaned.length === 1) return quoteGdelt(cleaned[0]!);
 
   return `(${cleaned.map(quoteGdelt).join(" OR ")})`;
+}
+
+function googleOrBlock(values: readonly string[]) {
+  const cleaned = unique(values);
+  if (!cleaned.length) return "";
+  if (cleaned.length === 1) return quoteGoogle(cleaned[0]!);
+
+  return `(${cleaned.map(quoteGoogle).join(" OR ")})`;
 }
 
 function googleLocaleFor(request: ServerNewsRequest) {
@@ -248,6 +336,8 @@ function sourceCountryFor(request: ServerNewsRequest, pack: QueryPack) {
 function profileFromTerms({
   displayText,
   exclude = [],
+  googleAlternates = [],
+  googleContextTerms = [],
   locale,
   phrases,
   sourceCountry,
@@ -255,29 +345,46 @@ function profileFromTerms({
 }: {
   displayText: string;
   exclude?: readonly string[];
+  googleAlternates?: readonly (readonly string[])[];
+  googleContextTerms?: readonly string[];
   locale: GoogleLocale;
   phrases: readonly string[];
   sourceCountry?: string;
   terms: readonly string[];
 }): SearchProfile {
-  const core = unique([...phrases, ...terms]).slice(0, 9);
+  const core = unique([...phrases, ...terms]).slice(0, 12);
+  const context = unique(googleContextTerms).slice(0, 5);
+  const contextKeys = new Set(
+    context.map((value) => cleanTerm(value).toLowerCase()),
+  );
+  const googleCore = core.filter(
+    (value) => !contextKeys.has(cleanTerm(value).toLowerCase()),
+  );
+  const googleContext = googleOrBlock(context);
   const gdeltCore = orBlock(core.slice(0, 8));
   const gdeltExclude = unique(exclude)
     .slice(0, 5)
     .map((value) => `-${quoteGdelt(value)}`)
     .join(" ");
   const gdeltCountry = sourceCountry ? `sourcecountry:${sourceCountry}` : "";
-  const googleCore = unique([...phrases.map(quoteGoogle), ...terms]).slice(
-    0,
-    9,
-  );
-  const googleTerms = [...googleCore, "when:7d"];
+  const recency = "when:30d";
+  const googleQueries = uniqueQueries([
+    compact(
+      [googleOrBlock(googleCore.slice(0, 10)), googleContext, recency].join(
+        " ",
+      ),
+    ),
+    ...googleAlternates.map((alternate) =>
+      compact([googleOrBlock(alternate), googleContext, recency].join(" ")),
+    ),
+  ]).slice(0, 4);
 
   return {
     displayText: compact(displayText),
     gdeltQuery: compact([gdeltCore, gdeltCountry, gdeltExclude].join(" ")),
     googleLocale: locale,
-    googleNewsQuery: compact(googleTerms.join(" ")),
+    googleNewsQuery: googleQueries[0] ?? recency,
+    googleNewsQueries: googleQueries.length ? googleQueries : [recency],
     searchText: compact(core.join(" ")),
   };
 }
@@ -311,7 +418,19 @@ export function buildNewsSearchProfile(
   }
 
   const pack = packForRequest(request);
-  const terms = [...topicTermsForScope(request, pack), ...scopedTerms(request)];
+  const marketTerms = scopedTerms(request);
+  const localContextTerms =
+    SCOPE_LOCAL_CONTEXT_TERMS[request.marketScopeId ?? ""] ?? [];
+  const googleContextTerms = request.marketScopeId
+    ? request.marketScopeId === "australia"
+      ? pack.terms.includes("Australia")
+        ? ["Australia"]
+        : []
+      : localContextTerms.length
+        ? localContextTerms
+        : marketTerms
+    : [];
+  const terms = [...topicTermsForScope(request, pack), ...marketTerms];
   const displayText =
     request.query ??
     request.ticker ??
@@ -323,6 +442,11 @@ export function buildNewsSearchProfile(
   return profileFromTerms({
     displayText,
     exclude: pack.exclude,
+    googleAlternates: [
+      ...(pack.googleAlternates ?? []),
+      ...(SCOPE_GOOGLE_ALTERNATES[request.marketScopeId ?? ""] ?? []),
+    ],
+    googleContextTerms,
     locale,
     phrases: pack.phrases,
     sourceCountry: sourceCountryFor(request, pack),
@@ -336,6 +460,12 @@ export function buildGdeltSearchQuery(request: ServerNewsRequest): string {
 
 export function buildGoogleNewsSearchQuery(request: ServerNewsRequest): string {
   return buildNewsSearchProfile(request).googleNewsQuery;
+}
+
+export function buildGoogleNewsSearchQueries(
+  request: ServerNewsRequest,
+): readonly string[] {
+  return buildNewsSearchProfile(request).googleNewsQueries;
 }
 
 export function getGoogleNewsLocale(request: ServerNewsRequest): GoogleLocale {
