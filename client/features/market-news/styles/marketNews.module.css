@@ -404,6 +404,128 @@
   border-left: 0;
 }
 
+.topicFeed {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--fit-color-border-panel, #27272a);
+  border-radius: 0.75rem;
+  background: var(--market-news-panel);
+}
+
+.topicFeedWarning {
+  border-bottom: 1px solid rgba(246, 200, 95, 0.24);
+  background: rgba(246, 200, 95, 0.08);
+  padding: 0.75rem 1rem;
+  color: #ffe7a3;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.topicFeedList {
+  display: grid;
+  min-width: 0;
+}
+
+.topicArticleRow {
+  min-width: 0;
+  border-bottom: 1px solid var(--market-news-line);
+}
+
+.topicArticleLink {
+  display: grid;
+  min-width: 0;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  color: #ffffff;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.topicArticleLink:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #dbe4ff;
+  text-decoration: none;
+}
+
+.topicArticleImage {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 0.45rem;
+  object-fit: cover;
+}
+
+.topicArticleBody {
+  min-width: 0;
+}
+
+.topicArticleTitle {
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 850;
+  line-height: 1.24;
+}
+
+.topicArticleSummary {
+  display: -webkit-box;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.topicPager {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem;
+}
+
+.topicPagerStatus {
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.topicPagerActions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.topicPagerButton {
+  min-height: 2.35rem;
+  border: 1px solid rgba(132, 146, 176, 0.22);
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.5rem 0.8rem;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.topicPagerButton:hover:not(:disabled) {
+  border-color: rgba(83, 103, 255, 0.55);
+  background: rgba(83, 103, 255, 0.14);
+}
+
+.topicPagerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .rightRail {
   min-width: 0;
 }
@@ -555,6 +677,12 @@
 
   .secondaryGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topicArticleLink {
+    grid-template-columns: minmax(8.75rem, 12rem) minmax(0, 1fr);
+    align-items: center;
+    padding: 1rem;
   }
 }
 

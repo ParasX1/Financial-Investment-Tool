@@ -20,6 +20,13 @@ import {
   buildMarketNewsLensOptions,
   filterArticlesByLens,
 } from "../lib/marketNewsLens";
+import {
+  MARKET_NEWS_TOPIC_PAGE_SIZE,
+  clampMarketNewsPageIndex,
+  getMarketNewsFetchLimit,
+  getMarketNewsPageWindow,
+  isMarketNewsPagedTopic,
+} from "../lib/marketNewsPagination";
 import type {
   MarketNewsLensId,
   MarketNewsMarketScopeId,
@@ -53,17 +60,25 @@ export function MarketNewsMain({
   const [tickerSymbol, setTickerSymbol] = React.useState("");
   const [activeLensId, setActiveLensId] =
     React.useState<MarketNewsLensId>("all");
+  const [storyPageIndex, setStoryPageIndex] = React.useState(0);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [lookupDraft, setLookupDraft] = React.useState("");
   const activeTopic = resolveMarketNewsTopic(activeTopicId);
   const activeMarketScope = resolveMarketNewsMarketScope(activeMarketScopeId);
+  const topicFeedMode =
+    !searchQuery.trim() &&
+    !tickerSymbol &&
+    isMarketNewsPagedTopic(activeTopic.id);
+  const articleLimit = topicFeedMode
+    ? getMarketNewsFetchLimit(storyPageIndex)
+    : ARTICLE_LIMIT;
   const [selectedSymbol, setSelectedSymbol] = React.useState(
     activeMarketScope.tickers[0]!.symbol,
   );
   const watchlist = useMarketNewsWatchlist();
   const marketMovers = useMarketNewsTickerQuotes(activeMarketScope.tickers);
   const { articles, error, loading, meta, request } = useMarketNewsArticles({
-    limit: ARTICLE_LIMIT,
+    limit: articleLimit,
     refreshKey,
     searchQuery,
     tickerSymbol,
@@ -118,6 +133,22 @@ export function MarketNewsMain({
       }),
     [activeLens.id, articles, watchlist.symbols],
   );
+  const pageWindow = React.useMemo(
+    () =>
+      topicFeedMode
+        ? getMarketNewsPageWindow(visibleArticles, storyPageIndex)
+        : null,
+    [storyPageIndex, topicFeedMode, visibleArticles],
+  );
+  const displayedArticles = pageWindow?.items ?? visibleArticles;
+
+  React.useEffect(() => {
+    if (!topicFeedMode || loading || !visibleArticles.length) return;
+
+    setStoryPageIndex((pageIndex) =>
+      clampMarketNewsPageIndex(pageIndex, visibleArticles.length),
+    );
+  }, [loading, topicFeedMode, visibleArticles.length]);
 
   const watchlistArticleCount = React.useMemo(() => {
     const watchlistSet = new Set(
@@ -126,12 +157,12 @@ export function MarketNewsMain({
 
     if (!watchlistSet.size) return 0;
 
-    return visibleArticles.filter((article) =>
+    return displayedArticles.filter((article) =>
       (article.relatedSymbols ?? []).some((symbol) =>
         watchlistSet.has(symbol.toUpperCase()),
       ),
     ).length;
-  }, [visibleArticles, watchlist.symbols]);
+  }, [displayedArticles, watchlist.symbols]);
 
   const emptyState = React.useMemo(() => {
     if (articles.length && !visibleArticles.length) {
@@ -170,6 +201,7 @@ export function MarketNewsMain({
   const handleTopicChange = React.useCallback(
     (topicId: MarketNewsTopicId) => {
       setActiveTopicId(topicId);
+      setStoryPageIndex(0);
       setSearchQuery("");
       setSearchDraft("");
       setTickerSymbol("");
@@ -179,18 +211,21 @@ export function MarketNewsMain({
   );
 
   const handleSearchSubmit = React.useCallback(() => {
+    setStoryPageIndex(0);
     setSearchQuery(searchDraft.trim());
     setTickerSymbol("");
     setLookupDraft("");
   }, [searchDraft]);
 
   const handleSearchClear = React.useCallback(() => {
+    setStoryPageIndex(0);
     setSearchDraft("");
     setSearchQuery("");
     setTickerSymbol("");
   }, []);
 
   const handleRefresh = React.useCallback(() => {
+    setStoryPageIndex(0);
     setRefreshKey((key) => key + 1);
   }, []);
 
@@ -212,6 +247,7 @@ export function MarketNewsMain({
 
       setSelectedSymbol(symbol);
       setLookupDraft(symbol);
+      setStoryPageIndex(0);
       setSearchDraft("");
       setSearchQuery("");
       setTickerSymbol(symbol);
@@ -219,6 +255,24 @@ export function MarketNewsMain({
     },
     [onQuoteLookup],
   );
+  const handleLensChange = React.useCallback((lensId: MarketNewsLensId) => {
+    setActiveLensId(lensId);
+    setStoryPageIndex(0);
+  }, []);
+  const handlePreviousPage = React.useCallback(() => {
+    setStoryPageIndex((pageIndex) => Math.max(0, pageIndex - 1));
+  }, []);
+  const handleNextPage = React.useCallback(() => {
+    if (!pageWindow?.hasNextPage) return;
+
+    setStoryPageIndex((pageIndex) => pageIndex + 1);
+  }, [pageWindow?.hasNextPage]);
+  const shownStatusValue =
+    topicFeedMode && pageWindow
+      ? displayedArticles.length
+        ? `${pageWindow.start + 1}-${pageWindow.start + displayedArticles.length}`
+        : "0"
+      : `${displayedArticles.length}/${articles.length}`;
 
   return (
     <FitPageShell
@@ -294,9 +348,7 @@ export function MarketNewsMain({
             >
               <div className={styles.statusCard}>
                 <dt>Shown</dt>
-                <dd>
-                  {visibleArticles.length}/{articles.length}
-                </dd>
+                <dd>{shownStatusValue}</dd>
               </div>
               <div className={styles.statusCard}>
                 <dt>Watchlist hits</dt>
@@ -312,7 +364,7 @@ export function MarketNewsMain({
           <MarketNewsLensBar
             activeLensId={activeLens.id}
             options={lensOptions}
-            onLensChange={setActiveLensId}
+            onLensChange={handleLensChange}
           />
 
           <div className={styles.mainGrid}>
@@ -322,10 +374,25 @@ export function MarketNewsMain({
               aria-busy={loading}
             >
               <MarketNewsArticleLayout
-                articles={visibleArticles}
+                articles={displayedArticles}
                 emptyState={emptyState}
                 error={error}
+                layout={topicFeedMode ? "topicFeed" : "featureGrid"}
                 loading={loading}
+                pagination={
+                  topicFeedMode && pageWindow
+                    ? {
+                        hasNextPage: pageWindow.hasNextPage,
+                        hasPreviousPage: pageWindow.hasPreviousPage,
+                        loading,
+                        pageIndex: pageWindow.pageIndex,
+                        pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
+                        totalLoaded: visibleArticles.length,
+                        onNextPage: handleNextPage,
+                        onPreviousPage: handlePreviousPage,
+                      }
+                    : undefined
+                }
                 providerWarning={
                   meta?.provider === "demo" ? undefined : meta?.warnings[0]
                 }
@@ -336,7 +403,7 @@ export function MarketNewsMain({
             <div className={cn(styles.rightRail, "min-w-0")}>
               <MarketNewsRightRail
                 activeTopic={activeTopic}
-                articleCount={visibleArticles.length}
+                articleCount={displayedArticles.length}
                 authenticated={watchlist.authenticated}
                 lookupDraft={lookupDraft}
                 marketScope={activeMarketScope}

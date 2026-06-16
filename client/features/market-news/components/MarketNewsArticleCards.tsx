@@ -202,6 +202,89 @@ export function LatestArticleList({
   );
 }
 
+export type TopicFeedPagination = {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  loading: boolean;
+  onNextPage: () => void;
+  onPreviousPage: () => void;
+  pageIndex: number;
+  pageSize: number;
+  totalLoaded: number;
+};
+
+export function TopicArticleFeed({
+  articles,
+  pagination,
+  providerWarning,
+}: {
+  articles: readonly Article[];
+  pagination?: TopicFeedPagination;
+  providerWarning?: string;
+}) {
+  const pageNumber = pagination ? pagination.pageIndex + 1 : 1;
+  const statusText = `${articles.length} ${
+    articles.length === 1 ? "story" : "stories"
+  } shown`;
+
+  return (
+    <section className={styles.topicFeed} aria-label="Topic stories">
+      {providerWarning ? (
+        <div className={styles.topicFeedWarning}>{providerWarning}</div>
+      ) : null}
+
+      <div className={styles.topicFeedList}>
+        {articles.map((article) => (
+          <article key={article.id} className={styles.topicArticleRow}>
+            <a {...articleLinkProps(article)} className={styles.topicArticleLink}>
+              <ArticleVisual
+                article={article}
+                className={styles.topicArticleImage}
+                variant="feature"
+              />
+              <div className={styles.topicArticleBody}>
+                <h3 className={styles.topicArticleTitle}>{article.title}</h3>
+                {article.summary ? (
+                  <p className={cn(styles.topicArticleSummary, fitText.body)}>
+                    {article.summary}
+                  </p>
+                ) : null}
+                <ArticleMeta article={article} />
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+
+      {pagination ? (
+        <nav className={styles.topicPager} aria-label="Story pages">
+          <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
+            Page {pageNumber} · {statusText}
+          </p>
+          <div className={styles.topicPagerActions}>
+            <button
+              type="button"
+              className={styles.topicPagerButton}
+              disabled={!pagination.hasPreviousPage || pagination.loading}
+              onClick={pagination.onPreviousPage}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className={styles.topicPagerButton}
+              disabled={!pagination.hasNextPage || pagination.loading}
+              onClick={pagination.onNextPage}
+            >
+              Next page
+            </button>
+          </div>
+        </nav>
+      ) : null}
+    </section>
+  );
+}
+
 export function EmptyArticleState({
   detail,
   message,

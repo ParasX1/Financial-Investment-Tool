@@ -4,6 +4,8 @@ import {
   FeatureArticleCard,
   HeroArticleCard,
   LatestArticleList,
+  TopicArticleFeed,
+  type TopicFeedPagination,
 } from "./MarketNewsArticleCards";
 import styles from "../styles/marketNews.module.css";
 
@@ -27,7 +29,9 @@ export function MarketNewsArticleLayout({
   articles,
   emptyState,
   error,
+  layout = "featureGrid",
   loading,
+  pagination,
   providerWarning,
   title,
 }: {
@@ -38,7 +42,9 @@ export function MarketNewsArticleLayout({
     title: string;
   };
   error: string | null;
+  layout?: "featureGrid" | "topicFeed";
   loading: boolean;
+  pagination?: TopicFeedPagination;
   providerWarning?: string;
   title: string;
 }) {
@@ -60,6 +66,16 @@ export function MarketNewsArticleLayout({
         title={emptyState.title}
         message={emptyState.message}
         detail={emptyState.detail ?? providerWarning}
+      />
+    );
+  }
+
+  if (layout === "topicFeed") {
+    return (
+      <TopicArticleFeed
+        articles={articles}
+        pagination={pagination}
+        providerWarning={providerWarning}
       />
     );
   }
