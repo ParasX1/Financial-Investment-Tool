@@ -60,16 +60,46 @@ describe("marketNewsNavigation", () => {
       title: "Australian Markets",
     });
 
-    expect(buildMarketNewsRequest(topic, "  RBA rates  ")).toMatchObject({
+    const searchRequest = buildMarketNewsRequest(topic, "  RBA rates  ");
+
+    expect(searchRequest).toMatchObject({
       kind: "search",
       query: "RBA rates",
-      context: topic.source.context,
+      context: "RBA rates",
       title: 'Search results for "RBA rates"',
       userSearch: true,
     });
+    expect(searchRequest.topicId).toBeUndefined();
+    expect(searchRequest.marketScopeId).toBeUndefined();
   });
 
-  it("uses market scope as an article filter when not searching or drilling into a ticker", () => {
+  it("keeps user search independent from the active topic and market scope", () => {
+    const topic = resolveMarketNewsTopic("cost-of-living");
+    const currencyScope = resolveMarketNewsMarketScope("currencies");
+
+    const request = buildMarketNewsRequest(
+      topic,
+      "  asx 200  ",
+      "",
+      currencyScope,
+    );
+
+    expect(request).toMatchObject({
+      kind: "search",
+      query: "asx 200",
+      context: "asx 200",
+      title: 'Search results for "asx 200"',
+      userSearch: true,
+    });
+    expect(request.topicId).toBeUndefined();
+    expect(request.marketScopeId).toBeUndefined();
+    expect(request.title).not.toContain("Cost of Living");
+    expect(request.title).not.toContain("Currencies");
+    expect(request.context).not.toContain("cost of living");
+    expect(request.context).not.toContain("Currencies");
+  });
+
+  it("keeps market scope out of category news requests", () => {
     const topic = resolveMarketNewsTopic("cost-of-living");
     const usScope = resolveMarketNewsMarketScope("us-markets");
 
@@ -77,15 +107,17 @@ describe("marketNewsNavigation", () => {
 
     expect(request).toMatchObject({
       kind: "search",
-      marketScopeId: "us-markets",
-      title: "Cost of Living - US Markets",
+      query: "Australia cost of living inflation wages bills interest rates",
+      context: "Australian household finance cost of living",
+      title: "Cost of Living",
       topicId: "cost-of-living",
       userSearch: false,
     });
-    expect(request.query).toContain("US Markets");
-    expect(request.query).toContain("Australia cost of living");
+    expect(request.marketScopeId).toBeUndefined();
+    expect(request.query).not.toContain("US Markets");
     expect(request.query).not.toContain("S&P 500");
     expect(request.query).not.toContain("^GSPC");
+    expect(request.context).not.toContain("US Markets");
     expect(request.context).not.toContain("S&P 500");
     expect(request.context).not.toContain("^GSPC");
   });
@@ -98,10 +130,10 @@ describe("marketNewsNavigation", () => {
 
     expect(request).toMatchObject({
       kind: "search",
-      marketScopeId: "australia",
       title: "Cost of Living",
       topicId: "cost-of-living",
     });
+    expect(request.marketScopeId).toBeUndefined();
     expect(request.ticker).toBeUndefined();
     expect(request.query).toContain("Australia cost of living");
     expect(request.query).not.toContain("ALL ORDS");
@@ -112,16 +144,19 @@ describe("marketNewsNavigation", () => {
     expect(request.context).not.toContain("^AORD");
   });
 
-  it("keeps ticker drill-down stronger than the active market scope", () => {
+  it("keeps ticker drill-down independent from the active market scope", () => {
     const topic = resolveMarketNewsTopic("cost-of-living");
     const usScope = resolveMarketNewsMarketScope("us-markets");
 
-    expect(buildMarketNewsRequest(topic, "", "cba.ax", usScope)).toMatchObject({
+    const request = buildMarketNewsRequest(topic, "", "cba.ax", usScope);
+
+    expect(request).toMatchObject({
       kind: "ticker",
-      marketScopeId: "us-markets",
       ticker: "CBA.AX",
       title: "CBA.AX News",
     });
+    expect(request.topicId).toBeUndefined();
+    expect(request.marketScopeId).toBeUndefined();
   });
 
   it("distinguishes topic search sources from user-submitted searches", () => {
@@ -149,11 +184,15 @@ describe("marketNewsNavigation", () => {
   it("builds ticker requests for quote and watchlist drill-downs", () => {
     const topic = resolveMarketNewsTopic("cost-of-living");
 
-    expect(buildMarketNewsRequest(topic, "", " cba.ax ")).toMatchObject({
+    const request = buildMarketNewsRequest(topic, "", " cba.ax ");
+
+    expect(request).toMatchObject({
       kind: "ticker",
       ticker: "CBA.AX",
       title: "CBA.AX News",
     });
+    expect(request.topicId).toBeUndefined();
+    expect(request.marketScopeId).toBeUndefined();
   });
 
   it("models the market scope selector shown above the ticker strip", () => {

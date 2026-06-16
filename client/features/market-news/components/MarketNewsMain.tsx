@@ -62,7 +62,6 @@ export function MarketNewsMain({
   const watchlist = useMarketNewsWatchlist();
   const { articles, error, loading, meta, request } = useMarketNewsArticles({
     limit: ARTICLE_LIMIT,
-    marketScope: activeMarketScope,
     refreshKey,
     searchQuery,
     tickerSymbol,
@@ -75,7 +74,7 @@ export function MarketNewsMain({
     }
 
     if (searchQuery.trim()) {
-      return `Showing market news results for "${searchQuery.trim()}" within ${activeTopic.label}.`;
+      return `Showing market news results for "${searchQuery.trim()}".`;
     }
 
     if (tickerSymbol) {
@@ -103,6 +102,11 @@ export function MarketNewsMain({
     lensOptions.find((option) => option.id === activeLensId) ?? lensOptions[0]!;
   const displayTitle =
     meta?.strictCategory === false ? "Broad finance headlines" : request.title;
+  const displayEyebrow = searchQuery.trim()
+    ? "Market search"
+    : tickerSymbol
+      ? "Ticker news"
+      : activeTopic.eyebrow;
   const visibleArticles = React.useMemo(
     () =>
       filterArticlesByLens({
@@ -210,10 +214,6 @@ export function MarketNewsMain({
 
       setActiveMarketScopeId(nextScope.id);
       setSelectedSymbol(nextSymbol);
-      setLookupDraft("");
-      setSearchDraft("");
-      setSearchQuery("");
-      setTickerSymbol("");
     },
     [],
   );
@@ -294,19 +294,17 @@ export function MarketNewsMain({
             </div>
 
             <MarketNewsTickerStrip
-              activeNewsTickerSymbol={tickerSymbol}
               marketScope={activeMarketScope}
               marketScopes={MARKET_NEWS_MARKET_SCOPES}
               tickers={activeMarketScope.tickers}
               onMarketScopeChange={handleMarketScopeChange}
-              onTickerSelect={handleQuoteLookup}
             />
           </section>
 
           <section className={styles.storyIntro} aria-live="polite">
             <div className="min-w-0">
               <p className={cn("text-xs font-bold uppercase", fitText.label)}>
-                {activeTopic.eyebrow}
+                {displayEyebrow}
               </p>
               <div className="min-w-0">
                 <h2 className="mt-2 text-balance text-2xl font-extrabold leading-tight text-white">

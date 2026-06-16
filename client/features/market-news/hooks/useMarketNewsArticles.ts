@@ -5,7 +5,6 @@ import {
   type NewsResponseMeta,
 } from "@/services/news";
 import type {
-  MarketNewsMarketScope,
   MarketNewsRequest,
   MarketNewsTopic,
 } from "../types";
@@ -36,22 +35,20 @@ async function fetchMarketNewsRequest(
 
 export function useMarketNewsArticles({
   limit,
-  marketScope,
   refreshKey,
   searchQuery,
   tickerSymbol,
   topic,
 }: {
   limit: number;
-  marketScope: MarketNewsMarketScope;
   refreshKey: number;
   searchQuery: string;
   tickerSymbol: string;
   topic: MarketNewsTopic;
 }) {
   const request = React.useMemo(
-    () => buildMarketNewsRequest(topic, searchQuery, tickerSymbol, marketScope),
-    [marketScope, searchQuery, tickerSymbol, topic],
+    () => buildMarketNewsRequest(topic, searchQuery, tickerSymbol),
+    [searchQuery, tickerSymbol, topic],
   );
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(false);

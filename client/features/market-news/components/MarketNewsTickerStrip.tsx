@@ -15,19 +15,15 @@ const toneClass = {
 } as const;
 
 export function MarketNewsTickerStrip({
-  activeNewsTickerSymbol,
   marketScope,
   marketScopes,
   tickers,
   onMarketScopeChange,
-  onTickerSelect,
 }: {
-  activeNewsTickerSymbol: string;
   marketScope: MarketNewsMarketScope;
   marketScopes: readonly MarketNewsMarketScope[];
   tickers: readonly MarketNewsTicker[];
   onMarketScopeChange: (scopeId: MarketNewsMarketScopeId) => void;
-  onTickerSelect: (symbol: string) => void;
 }) {
   return (
     <section aria-label="Market snapshot" className="min-w-0">
@@ -61,43 +57,34 @@ export function MarketNewsTickerStrip({
         })}
       </nav>
 
-      <div className={styles.tickerScroller}>
-        {tickers.map((ticker) => {
-          const selected = activeNewsTickerSymbol === ticker.symbol;
-
-          return (
-            <button
-              key={ticker.symbol}
-              type="button"
-              onClick={() => onTickerSelect(ticker.symbol)}
-              aria-pressed={selected}
-              className={[
-                "grid min-h-[76px] w-[13.25rem] shrink-0 grid-cols-[minmax(0,1fr)_4.25rem] items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors",
-                selected
-                  ? "border-[#5367ff]/55 bg-[#5367ff]/10"
-                  : "border-[var(--fit-color-border-subtle)] bg-white/[0.035] hover:border-[#5367ff]/45 hover:bg-white/[0.055]",
-                FIT_FOCUS_VISIBLE,
-              ].join(" ")}
-            >
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-extrabold uppercase text-[#8fc7ff]">
-                  {ticker.label}
-                </span>
-                <span className="mt-1 block whitespace-nowrap text-[15px] font-extrabold tabular-nums text-white">
-                  {ticker.value}
-                </span>
-                <span
-                  className={`mt-1 block whitespace-nowrap text-xs font-bold tabular-nums ${toneClass[ticker.tone]}`}
-                >
-                  {ticker.change}
-                </span>
+      <div
+        className={styles.tickerScroller}
+        aria-label={`${marketScope.label} quote snapshots`}
+      >
+        {tickers.map((ticker) => (
+          <article
+            key={ticker.symbol}
+            aria-label={`${ticker.label} quote snapshot`}
+            className="grid min-h-[76px] w-[13.25rem] shrink-0 grid-cols-[minmax(0,1fr)_4.25rem] items-center gap-3 rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-extrabold uppercase text-[#8fc7ff]">
+                {ticker.label}
               </span>
-              <span className={`justify-self-end ${toneClass[ticker.tone]}`}>
-                <MarketNewsSparkline data={ticker.sparkline} />
+              <span className="mt-1 block whitespace-nowrap text-[15px] font-extrabold tabular-nums text-white">
+                {ticker.value}
               </span>
-            </button>
-          );
-        })}
+              <span
+                className={`mt-1 block whitespace-nowrap text-xs font-bold tabular-nums ${toneClass[ticker.tone]}`}
+              >
+                {ticker.change}
+              </span>
+            </span>
+            <span className={`justify-self-end ${toneClass[ticker.tone]}`}>
+              <MarketNewsSparkline data={ticker.sparkline} />
+            </span>
+          </article>
+        ))}
       </div>
     </section>
   );
