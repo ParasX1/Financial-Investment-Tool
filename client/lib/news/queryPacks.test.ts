@@ -66,6 +66,24 @@ describe("news query packs", () => {
     expect(queries.every((query) => query.includes("when:30d"))).toBe(true);
   });
 
+  it("builds practical Money News variants for Australian consumer finance coverage", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      context: "Australian personal finance money news",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia money news banking tax superannuation savings",
+      topicId: "money-news",
+    });
+    const joinedQueries = queries.join(" ");
+
+    expect(queries.length).toBeGreaterThanOrEqual(5);
+    expect(joinedQueries).toContain("ATO");
+    expect(joinedQueries).toContain("tax return");
+    expect(joinedQueries).toContain("consumer finance");
+    expect(joinedQueries).toContain("mortgage rates");
+    expect(queries.every((query) => query.includes("when:30d"))).toBe(true);
+  });
+
   it("adds market-scope Google News variants for regional market views", () => {
     const queries = buildGoogleNewsSearchQueries({
       context: "global market news",

@@ -5,7 +5,7 @@ import {
   buildGoogleNewsSearchQuery,
   getGoogleNewsLocale,
 } from "../queryPacks";
-import { compact, dedupeArticles } from "../providerUtils";
+import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -237,6 +237,32 @@ async function fetchGoogleNewsRssUrl(
   return parseGoogleNewsRss(await response.text());
 }
 
+function interleaveArticleBuckets(
+  buckets: readonly (readonly Article[])[],
+  limit: number,
+): Article[] {
+  const merged: Article[] = [];
+  const seen = new Set<string>();
+  const maxBucketLength = Math.max(0, ...buckets.map((bucket) => bucket.length));
+
+  for (let index = 0; index < maxBucketLength; index += 1) {
+    for (const bucket of buckets) {
+      const article = bucket[index];
+      if (!article) continue;
+
+      const key = article.url || article.id;
+      if (!key || seen.has(key)) continue;
+
+      seen.add(key);
+      merged.push(article);
+
+      if (merged.length >= limit) return merged;
+    }
+  }
+
+  return merged;
+}
+
 export const googleNewsRssProvider: NewsProvider = {
   id: "google-news-rss",
   label: "Google News RSS",
@@ -247,8 +273,12 @@ export const googleNewsRssProvider: NewsProvider = {
         fetchGoogleNewsRssUrl(url, context),
       ),
     );
-    const articles = results.flatMap((result) =>
+    const articleBuckets = results.map((result) =>
       result.status === "fulfilled" ? result.value : [],
+    );
+    const articles = interleaveArticleBuckets(
+      articleBuckets,
+      newsCandidateLimit(request.pageSize),
     );
 
     if (!articles.length) {
@@ -262,6 +292,9 @@ export const googleNewsRssProvider: NewsProvider = {
       }
     }
 
-    return dedupeArticles(articles).slice(0, Number(request.pageSize) || 10);
+    return dedupeArticles(articles).slice(
+      0,
+      newsCandidateLimit(request.pageSize),
+    );
   },
 };

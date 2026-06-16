@@ -1,6 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Article } from "@/services/news";
-import { compact, dedupeArticles } from "../providerUtils";
+import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -200,7 +200,7 @@ export const yahooFinanceRssProvider: NewsProvider = {
 
     return parseYahooFinanceRss(await response.text()).slice(
       0,
-      Number(request.pageSize) || 10,
+      newsCandidateLimit(request.pageSize),
     );
   },
 };

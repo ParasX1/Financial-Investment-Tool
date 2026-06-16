@@ -13,7 +13,7 @@
   min-height: 100vh;
   overflow-x: hidden;
   background: var(--fit-color-page-bg, #000000);
-  padding: 2rem 0.75rem 2rem;
+  padding: 2rem clamp(0.75rem, 1.6vw, 1.5rem) 2rem;
   color: #ffffff;
   transition: margin-left 200ms ease-out;
 }
@@ -40,36 +40,35 @@
 }
 
 .marketPanel {
-  margin-top: 1rem;
-  padding: 0.85rem;
+  margin-top: 0.75rem;
+  padding: 0.55rem;
 }
 
-.marketPanelHeader {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.scopeGrid {
+.marketMoverStrip {
   display: grid;
   min-width: 0;
-  gap: 0.55rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding-top: 0.9rem;
-}
-
-.scopeButton {
-  display: grid;
-  min-height: 3.65rem;
-  min-width: 0;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  grid-template-columns: minmax(10.5rem, 12.5rem) minmax(0, 1fr);
   align-items: center;
-  gap: 0.55rem;
+}
+
+.scopePicker {
+  position: relative;
+  min-width: 0;
+}
+
+.scopeSelectButton {
+  display: grid;
+  width: 100%;
+  min-height: 3.25rem;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
   border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
-  border-radius: 0.7rem;
+  border-radius: 0.65rem;
   background: var(--market-news-panel-soft);
-  padding: 0.65rem 0.7rem;
+  padding: 0.55rem 0.65rem;
   color: #dce4ff;
   text-align: left;
   transition:
@@ -78,27 +77,25 @@
     box-shadow 150ms ease;
 }
 
-.scopeButton:hover {
+.scopeSelectButton:hover {
   border-color: rgba(83, 103, 255, 0.45);
   background: #171820;
 }
 
-.scopeButtonActive {
-  border-color: rgba(83, 103, 255, 0.62);
-  background: rgba(83, 103, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
-}
-
 .scopeIcon {
   display: grid;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 1.7rem;
+  height: 1.7rem;
   flex-shrink: 0;
   place-items: center;
   border: 1px solid rgba(83, 103, 255, 0.3);
   border-radius: 999px;
   background: rgba(83, 103, 255, 0.1);
   color: var(--fit-color-accent-strong, #65a0fd);
+}
+
+.scopeChevronOpen {
+  transform: rotate(180deg);
 }
 
 .scopeShortLabel {
@@ -125,18 +122,136 @@
   white-space: nowrap;
 }
 
+.scopeMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  display: grid;
+  width: min(16rem, calc(100vw - 2rem));
+  max-height: min(22rem, 70vh);
+  overflow-y: auto;
+  border: 1px solid var(--fit-color-border-panel, #27272a);
+  border-radius: 0.65rem;
+  background: #111114;
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
+  padding: 0.35rem;
+}
+
+.scopeMenuItem {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.55rem 0.65rem;
+  color: #dce4ff;
+  text-align: left;
+}
+
+.scopeMenuItem:hover,
+.scopeMenuItemActive {
+  background: rgba(83, 103, 255, 0.14);
+  color: #ffffff;
+}
+
+.scopeMenuShort {
+  color: #8fc7ff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.scopeMenuLabel {
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marketMoverQuotes {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .tickerScroller {
   display: flex;
   min-width: 0;
-  gap: 0.75rem;
+  gap: 0.5rem;
   overflow-x: auto;
-  padding-top: 0.85rem;
-  padding-bottom: 0.1rem;
+  padding: 0.05rem 0;
   scrollbar-width: none;
 }
 
 .tickerScroller::-webkit-scrollbar {
   display: none;
+}
+
+.tickerCard {
+  display: grid;
+  min-height: 3.7rem;
+  width: 10.75rem;
+  min-width: 10.75rem;
+  grid-template-columns: minmax(0, 1fr) 4.15rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.45rem 0.55rem;
+}
+
+.tickerText {
+  min-width: 0;
+}
+
+.tickerLabel,
+.tickerValue,
+.tickerChange {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tickerLabel {
+  color: #8fc7ff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tickerValue {
+  margin-top: 0.12rem;
+  color: #ffffff;
+  font-size: 0.93rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.tickerChange {
+  margin-top: 0.08rem;
+  font-size: 0.72rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.tickerSpark {
+  justify-self: end;
+}
+
+.marketMoverMeta {
+  color: var(--fit-color-text-muted, #8f98aa);
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .providerPill {
@@ -419,10 +534,6 @@
 }
 
 @media (min-width: 900px) {
-  .scopeGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .storyIntro {
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
     align-items: end;
@@ -448,21 +559,6 @@
 }
 
 @media (min-width: 1180px) {
-  .scopeGrid {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-
-  .scopeButton {
-    min-height: 4rem;
-    padding-right: 0.55rem;
-    padding-left: 0.55rem;
-  }
-
-  .scopeIcon {
-    width: 1.65rem;
-    height: 1.65rem;
-  }
-
   .lensGrid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -485,7 +581,10 @@
 
 @media (min-width: 640px) {
   .page {
-    padding: 2.5rem 2rem 2.5rem;
+    padding-top: 2.5rem;
+    padding-right: clamp(1rem, 1.8vw, 1.75rem);
+    padding-bottom: 2.5rem;
+    padding-left: clamp(1rem, 1.8vw, 1.75rem);
   }
 
   .commandPanel,
@@ -493,21 +592,26 @@
     padding: 1rem;
   }
 
-  .marketPanelHeader {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
-
   .storyIntro {
     padding: 1.1rem;
   }
 }
 
+@media (max-width: 899px) {
+  .marketMoverStrip,
+  .marketMoverQuotes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketMoverMeta {
+    justify-self: start;
+  }
+}
+
 @media (min-width: 1024px) {
   .page {
-    padding-right: 2.5rem;
-    padding-left: 2.5rem;
+    padding-right: clamp(1.25rem, 2vw, 2rem);
+    padding-left: clamp(1.25rem, 2vw, 2rem);
   }
 }
 

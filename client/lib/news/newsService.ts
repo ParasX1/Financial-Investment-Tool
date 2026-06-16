@@ -44,6 +44,8 @@ const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
   "marketaux",
   "newsapi",
 ];
+const DEVELOPMENT_MIN_STRICT_ARTICLES = 8;
+const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
 
 const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
   gdelt: "gdelt",
@@ -131,14 +133,16 @@ function minimumStrictArticles(
   const configured = readPositiveInteger(env.NEWS_MIN_STRICT_ARTICLES);
   if (configured) return Math.min(pageSize, configured);
 
-  return isProductionEnvironment(env) ? pageSize : Math.min(pageSize, 2);
+  return isProductionEnvironment(env)
+    ? pageSize
+    : Math.min(pageSize, DEVELOPMENT_MIN_STRICT_ARTICLES);
 }
 
 function providerTimeoutMs(env: Record<string, string | undefined>) {
   const configured = readPositiveInteger(env.NEWS_PROVIDER_TIMEOUT_MS);
   if (configured) return configured;
 
-  return isProductionEnvironment(env) ? 8000 : 2000;
+  return isProductionEnvironment(env) ? 8000 : DEVELOPMENT_PROVIDER_TIMEOUT_MS;
 }
 
 function withTimeout(

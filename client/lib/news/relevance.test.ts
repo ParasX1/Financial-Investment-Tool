@@ -170,6 +170,39 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["money"]);
   });
 
+  it("keeps practical Money News headlines with ATO, tax, banks, and mortgage signals", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian personal finance money news",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia money news banking tax superannuation savings",
+      topicId: "money-news",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "ato-tax",
+            title: "ATO warning over $528 tax liability for Australian savers",
+          },
+          {
+            ...baseArticle,
+            id: "bank-rates",
+            title: "Major bank cuts mortgage rates for Australian borrowers",
+          },
+          {
+            ...baseArticle,
+            id: "tech",
+            title: "Nvidia shares rally as AI spending accelerates",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["ato-tax", "bank-rates"]);
+  });
+
   it("keeps international market stories using common US market language", () => {
     const request: ServerNewsRequest = {
       context: "global markets Wall Street stocks bonds",

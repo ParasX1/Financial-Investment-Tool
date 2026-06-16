@@ -74,6 +74,8 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["cost of living", "inflation", "household budgets", "consumer prices"],
       ["mortgage stress", "rent", "housing affordability", "interest rates"],
       ["energy bills", "grocery prices", "wages", "household bills"],
+      ["RBA", "cash rate", "fuel prices", "electricity prices"],
+      ["consumer prices", "rent increases", "mortgage repayments"],
     ],
     sourceCountry: "AS",
   },
@@ -86,11 +88,24 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     ],
   },
   "money-news": {
-    phrases: ["personal finance"],
-    terms: ["Australia", "banking", "tax", "superannuation", "savings"],
+    phrases: ["personal finance", "money news"],
+    terms: [
+      "Australia",
+      "ATO",
+      "banking",
+      "consumer finance",
+      "mortgage rates",
+      "savings",
+      "superannuation",
+      "tax",
+      "tax return",
+    ],
     googleAlternates: [
-      ["personal finance", "tax", "savings", "banking"],
-      ["superannuation", "retirement", "mortgage", "insurance"],
+      ["Australia money news", "consumer finance", "banking", "savings"],
+      ["ATO", "tax return", "tax liability", "superannuation"],
+      ["mortgage rates", "home loans", "bank fees", "credit cards"],
+      ["superannuation", "retirement", "pension", "insurance"],
+      ["interest rates", "household savings", "financial stress", "Australia"],
     ],
     sourceCountry: "AS",
   },
@@ -100,6 +115,8 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     googleAlternates: [
       ["personal finance", "mortgage", "savings", "insurance"],
       ["retirement", "superannuation", "household budget", "tax"],
+      ["ATO", "tax return", "home loans", "credit cards"],
+      ["consumer finance", "bank fees", "mortgage rates", "Australia"],
     ],
     sourceCountry: "AS",
   },
@@ -377,7 +394,7 @@ function profileFromTerms({
     ...googleAlternates.map((alternate) =>
       compact([googleOrBlock(alternate), googleContext, recency].join(" ")),
     ),
-  ]).slice(0, 4);
+  ]).slice(0, 6);
 
   return {
     displayText: compact(displayText),

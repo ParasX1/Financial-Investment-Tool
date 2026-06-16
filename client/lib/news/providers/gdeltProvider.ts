@@ -1,6 +1,6 @@
 import type { Article } from "@/services/news";
 import { buildGdeltSearchQuery } from "../queryPacks";
-import { compact, dedupeArticles } from "../providerUtils";
+import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -9,7 +9,7 @@ import type {
 } from "../types";
 
 const GDELT_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc";
-const DEFAULT_GDELT_TIMESPAN = "1week";
+const DEFAULT_GDELT_TIMESPAN = "1month";
 const MAX_GDELT_RECORDS = 75;
 
 type GdeltArticle = {
@@ -51,10 +51,7 @@ function normaliseTimespan(value: string | undefined) {
 }
 
 function normaliseMaxRecords(pageSize: string) {
-  const parsed = Number(pageSize);
-  if (!Number.isFinite(parsed)) return 20;
-
-  return Math.min(MAX_GDELT_RECORDS, Math.max(1, Math.ceil(parsed * 2)));
+  return Math.min(MAX_GDELT_RECORDS, newsCandidateLimit(pageSize));
 }
 
 export function buildGdeltUrl({
@@ -160,7 +157,7 @@ export const gdeltProvider: NewsProvider = {
     const data = (await response.json()) as GdeltResponse;
     return mapGdeltArticles(data.articles || []).slice(
       0,
-      Number(request.pageSize) || 10,
+      normaliseMaxRecords(request.pageSize),
     );
   },
 };

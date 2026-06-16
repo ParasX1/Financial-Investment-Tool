@@ -26,6 +26,7 @@ import type {
   MarketNewsTopicId,
 } from "../types";
 import { useMarketNewsArticles } from "../hooks/useMarketNewsArticles";
+import { useMarketNewsTickerQuotes } from "../hooks/useMarketNewsTickerQuotes";
 import { useMarketNewsWatchlist } from "../hooks/useMarketNewsWatchlist";
 import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
 import { MarketNewsCategoryNav } from "./MarketNewsCategoryNav";
@@ -60,6 +61,7 @@ export function MarketNewsMain({
     activeMarketScope.tickers[0]!.symbol,
   );
   const watchlist = useMarketNewsWatchlist();
+  const marketMovers = useMarketNewsTickerQuotes(activeMarketScope.tickers);
   const { articles, error, loading, meta, request } = useMarketNewsArticles({
     limit: ARTICLE_LIMIT,
     refreshKey,
@@ -131,17 +133,6 @@ export function MarketNewsMain({
     ).length;
   }, [visibleArticles, watchlist.symbols]);
 
-  const providerStatus = React.useMemo(() => {
-    if (loading) return "Refreshing";
-    if (meta?.provider === "demo") return "Demo mode";
-    if (meta?.provider === "none") return "Provider setup needed";
-    if (meta?.strictCategory === false && meta?.providerLabel) {
-      return `Broad feed: ${meta.providerLabel}`;
-    }
-    if (meta?.providerLabel) return `Provider: ${meta.providerLabel}`;
-    return "Provider: Market news service";
-  }, [loading, meta?.provider, meta?.providerLabel, meta?.strictCategory]);
-
   const emptyState = React.useMemo(() => {
     if (articles.length && !visibleArticles.length) {
       return {
@@ -183,19 +174,15 @@ export function MarketNewsMain({
       setSearchDraft("");
       setTickerSymbol("");
       setLookupDraft("");
-      setSelectedSymbol(activeMarketScope.tickers[0]?.symbol ?? "");
     },
-    [activeMarketScope.tickers],
+    [],
   );
 
   const handleSearchSubmit = React.useCallback(() => {
-    const defaultSymbol = activeMarketScope.tickers[0]?.symbol ?? "";
-
     setSearchQuery(searchDraft.trim());
     setTickerSymbol("");
     setLookupDraft("");
-    setSelectedSymbol(defaultSymbol);
-  }, [activeMarketScope.tickers, searchDraft]);
+  }, [searchDraft]);
 
   const handleSearchClear = React.useCallback(() => {
     setSearchDraft("");
@@ -270,33 +257,13 @@ export function MarketNewsMain({
             />
           </section>
 
-          <section className={styles.marketPanel} aria-label="Market snapshot">
-            <div className={styles.marketPanelHeader}>
-              <div className="min-w-0">
-                <p className={cn("text-xs font-bold uppercase", fitText.label)}>
-                  Market scope
-                </p>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">
-                  {activeMarketScope.label}
-                </h2>
-                <p className={cn("mt-1 text-sm leading-6", fitText.body)}>
-                  {activeMarketScope.description}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  styles.providerPill,
-                  loading ? styles.providerPillLoading : "",
-                )}
-              >
-                {providerStatus}
-              </span>
-            </div>
-
+          <section className={styles.marketPanel} aria-label="Market movers">
             <MarketNewsTickerStrip
+              loading={marketMovers.loading}
               marketScope={activeMarketScope}
               marketScopes={MARKET_NEWS_MARKET_SCOPES}
-              tickers={activeMarketScope.tickers}
+              tickers={marketMovers.tickers}
+              updatedAt={marketMovers.updatedAt}
               onMarketScopeChange={handleMarketScopeChange}
             />
           </section>
@@ -377,7 +344,7 @@ export function MarketNewsMain({
                 providerWarning={meta?.warnings[0]}
                 strictCategory={meta?.strictCategory ?? true}
                 selectedSymbol={selectedSymbol}
-                tickers={activeMarketScope.tickers}
+                tickers={marketMovers.tickers}
                 watchlistArticleCount={watchlistArticleCount}
                 watchlistLoading={watchlist.loading}
                 watchlistSymbols={watchlist.symbols}

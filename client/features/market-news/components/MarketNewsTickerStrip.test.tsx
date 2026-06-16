@@ -18,7 +18,7 @@ function renderTickerStrip() {
 }
 
 describe("MarketNewsTickerStrip", () => {
-  it("renders market scopes as controls and quote snapshots as display-only cards", () => {
+  it("renders one compact scope control and quote snapshots as display-only cards", () => {
     const html = renderTickerStrip();
     const buttonMarkup = [...html.matchAll(/<button[\s\S]*?<\/button>/g)].map(
       ([markup]) => markup,
@@ -27,8 +27,9 @@ describe("MarketNewsTickerStrip", () => {
       ...html.matchAll(/<article[\s\S]*?<\/article>/g),
     ].map(([markup]) => markup);
 
-    expect(buttonMarkup).toHaveLength(2);
+    expect(buttonMarkup).toHaveLength(1);
     expect(buttonMarkup.join(" ")).toContain("Australia");
+    expect(buttonMarkup.join(" ")).toContain("AU");
     expect(buttonMarkup.join(" ")).not.toContain("ALL ORDS");
     expect(buttonMarkup.join(" ")).not.toContain("AUD/USD");
 

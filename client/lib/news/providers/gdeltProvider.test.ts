@@ -124,6 +124,44 @@ describe("gdeltProvider", () => {
     expect(articles[0]?.provider).toBe("gdelt");
   });
 
+  it("returns extra raw candidates before strict relevance trims the page", async () => {
+    const fetcher = jest.fn(async () =>
+      jsonResponse({
+        articles: [
+          {
+            domain: "example.com",
+            title: "ASX market rises as banks lead",
+            url: "https://example.com/asx-1",
+          },
+          {
+            domain: "example.com",
+            title: "Miners push Australian shares higher",
+            url: "https://example.com/asx-2",
+          },
+          {
+            domain: "example.com",
+            title: "RBA policy keeps banks in focus",
+            url: "https://example.com/asx-3",
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch;
+
+    const articles = await gdeltProvider.fetchArticles(
+      { ...request, pageSize: "2" },
+      {
+        env: { GDELT_NEWS_ENABLED: "true" },
+        fetcher,
+      },
+    );
+
+    expect(articles.map((article) => article.id)).toEqual([
+      "https://example.com/asx-1",
+      "https://example.com/asx-2",
+      "https://example.com/asx-3",
+    ]);
+  });
+
   it("surfaces GDELT HTTP failures", async () => {
     const fetcher = jest.fn(async () => jsonResponse({}, 429));
 

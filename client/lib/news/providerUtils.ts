@@ -3,6 +3,7 @@ import { buildNewsSearchProfile } from "./queryPacks";
 import type { ServerNewsRequest } from "./types";
 
 const MAX_PAGE_SIZE = 100;
+const DEFAULT_CANDIDATE_MULTIPLIER = 4;
 
 export function compact(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
@@ -14,6 +15,14 @@ export function normaliseNewsPageSize(value: string | undefined): string {
   if (!Number.isFinite(parsed)) return "10";
 
   return String(Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(parsed))));
+}
+
+export function newsCandidateLimit(
+  value: string | undefined,
+  multiplier = DEFAULT_CANDIDATE_MULTIPLIER,
+): number {
+  const pageSize = Number(normaliseNewsPageSize(value));
+  return Math.min(MAX_PAGE_SIZE, Math.max(pageSize, pageSize * multiplier));
 }
 
 export function dedupeArticles(articles: readonly Article[]): Article[] {

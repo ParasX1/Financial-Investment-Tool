@@ -178,6 +178,69 @@ describe("fetchMarketNewsWithProviders", () => {
     });
   });
 
+  it("keeps filling development results by default instead of stopping at two stories", async () => {
+    const firstProvider = provider({
+      articles: [
+        {
+          id: "cost-1",
+          image: null,
+          publishedAt: "2026-06-16T04:00:00Z",
+          source: "Market Desk",
+          summary: "Mortgage pressure remains high.",
+          title: "Cost of living pressure stays in focus",
+          url: "https://example.com/cost-1",
+        },
+        {
+          id: "cost-2",
+          image: null,
+          publishedAt: "2026-06-16T04:10:00Z",
+          source: "Market Desk",
+          summary: "Household bills and inflation remain visible.",
+          title: "Inflation keeps household budgets under pressure",
+          url: "https://example.com/cost-2",
+        },
+      ],
+      id: "google-news-rss",
+      label: "Google News RSS",
+    });
+    const secondProvider = provider({
+      articles: [
+        {
+          id: "cost-3",
+          image: null,
+          publishedAt: "2026-06-16T04:20:00Z",
+          source: "Market Desk",
+          summary: "Grocery bills remain high.",
+          title: "Household budgets remain under pressure",
+          url: "https://example.com/cost-3",
+        },
+      ],
+      id: "gdelt",
+      label: "GDELT",
+    });
+
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "12" },
+      {
+        env: {
+          NODE_ENV: "development",
+        },
+        providers: [firstProvider, secondProvider],
+      },
+    );
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "cost-1",
+      "cost-2",
+      "cost-3",
+    ]);
+    expect(secondProvider.fetchArticles).toHaveBeenCalled();
+    expect(result.meta).toMatchObject({
+      attemptedProviders: ["google-news-rss", "gdelt"],
+      providerLabel: "Google News RSS + GDELT",
+    });
+  });
+
   it("returns early in development after enough strict stories are available", async () => {
     const firstProvider = provider({
       articles: [
