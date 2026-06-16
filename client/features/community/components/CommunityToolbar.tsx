@@ -28,7 +28,7 @@ export function CommunityToolbar({
   return (
     <section
       className={cn(
-        "fixed right-0 top-0 z-[850] border-b border-[#202230] bg-black/95 px-3 backdrop-blur-md sm:px-8 lg:px-10",
+        "fixed right-0 top-0 z-[850] border-b border-[#202230] bg-black/95 px-3 backdrop-blur-md sm:px-5 lg:px-6 xl:px-7",
         communityStyles.toolbar,
       )}
       data-community-toolbar
@@ -44,31 +44,31 @@ export function CommunityToolbar({
           onSearchSubmit?.();
         }}
       >
-      <div className="relative min-w-0 flex-1">
-        <label htmlFor="community-search" className="sr-only">
-          Search discussions
-        </label>
-        <SearchRoundedIcon
-          className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[#7f8798]"
-          sx={{ fontSize: 20 }}
-          aria-hidden="true"
-        />
-        <input
-          id="community-search"
-          name="community-search"
-          type="search"
-          autoComplete="off"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search discussions…"
-          className={cn(
-            "w-full pl-[44px] pr-[16px] text-[15px]",
-            communityStyles.toolbarControl,
-            communityUi.field,
-            communityStyles.panelBorder
-          )}
-        />
-      </div>
+        <div className="relative min-w-0 flex-1">
+          <label htmlFor="community-search" className="sr-only">
+            Search discussions
+          </label>
+          <SearchRoundedIcon
+            className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[#7f8798]"
+            sx={{ fontSize: 20 }}
+            aria-hidden="true"
+          />
+          <input
+            id="community-search"
+            name="community-search"
+            type="search"
+            autoComplete="off"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search discussions…"
+            className={cn(
+              "w-full pl-[44px] pr-[16px] text-[15px]",
+              communityStyles.toolbarControl,
+              communityUi.field,
+              communityStyles.panelBorder,
+            )}
+          />
+        </div>
 
         <Link
           href={actionHref}

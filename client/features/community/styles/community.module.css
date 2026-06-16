@@ -28,11 +28,258 @@
 }
 
 .postCopyMeasure {
-  max-width: min(100%, 52rem);
+  max-width: min(100%, 68rem);
+}
+
+.postCardGrid {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.postIdentityColumn {
+  margin-top: 2px;
+}
+
+.postMetaRail {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(132, 146, 176, 0.12);
+  padding-top: 12px;
+}
+
+.postRailHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.postRailLabel {
+  color: var(--fit-color-text-label, #7f8798);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.postRailTitle {
+  margin-top: 3px;
+  color: #e5eaff;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.postRailEmpty {
+  border: 1px dashed rgba(132, 146, 176, 0.2);
+  border-radius: 8px;
+  color: #7f8798;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 10px;
+}
+
+.postRailHint {
+  color: #7f8798;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.postTagCluster,
+.postEngagementGrid {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.signalBadge {
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+  padding: 5px 8px;
+}
+
+.signalBadgeTicker {
+  background: rgba(0, 191, 166, 0.1);
+  border: 1px solid rgba(0, 191, 166, 0.42);
+  color: #53dec7;
+}
+
+.signalBadgeTopic {
+  background: rgba(83, 103, 255, 0.12);
+  border: 1px solid rgba(85, 111, 255, 0.46);
+  color: #adbbff;
+}
+
+.postSignalGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.postSignalGrid > div {
+  min-width: 0;
+  border: 1px solid rgba(132, 146, 176, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 8px;
+}
+
+.postSignalGrid dt {
+  color: #798398;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.postSignalGrid dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.signalTonePositive {
+  color: #53dec7;
+}
+
+.signalToneWarning {
+  color: #ffca6b;
+}
+
+.signalToneInfo {
+  color: #9eb2ff;
+}
+
+.signalToneNeutral {
+  color: #d3d8e8;
+}
+
+.postSourceLine {
+  margin: -2px 0 0;
+  color: #858ea1;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.postEngagementGrid {
+  align-items: center;
 }
 
 .primaryContentStart {
   margin-top: 0.5rem;
+}
+
+.feedInsights {
+  display: grid;
+  gap: 14px;
+  margin-top: 1rem;
+  padding: 16px;
+}
+
+.feedInsightsHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedInsightsTitle {
+  margin: 3px 0 0;
+  color: #f4f6ff;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.feedInsightTickerStrip {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.feedInsightMuted {
+  color: #798398;
+  font-size: 0.8rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.feedInsightMetrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.feedInsightMetrics > div {
+  min-width: 0;
+  border: 1px solid rgba(132, 146, 176, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 10px;
+}
+
+.feedInsightMetrics dt {
+  color: #798398;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.feedInsightMetrics dd {
+  margin: 4px 0 0;
+  color: #f2f5ff;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.feedInsightSetups {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedInsightSetups span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(132, 146, 176, 0.14);
+  border-radius: 8px;
+  color: #aeb7c9;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.2;
+  padding: 6px 8px;
+}
+
+.feedInsightSetups strong {
+  color: #f2f5ff;
+  font-size: 0.72rem;
 }
 
 .communityLayoutGrid {
@@ -152,11 +399,53 @@
   }
 
   .communityLayoutGridCollapsed {
-    grid-template-columns: var(--community-sidebar-collapsed-width) minmax(0, 1fr);
+    grid-template-columns: var(--community-sidebar-collapsed-width) minmax(
+        0,
+        1fr
+      );
   }
 
   .primaryPanelPadding {
     padding: 20px 24px;
+  }
+
+  .feedInsights {
+    align-items: start;
+    grid-template-columns: minmax(13rem, 0.9fr) minmax(0, 1fr) minmax(
+        12rem,
+        0.8fr
+      );
+    padding: 18px 20px;
+  }
+
+  .feedInsightsHeader {
+    display: grid;
+    gap: 12px;
+  }
+
+  .feedInsightMetrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .postCardGrid {
+    gap: 18px 22px;
+    grid-template-columns: auto minmax(0, 1fr) minmax(15rem, 18rem);
+  }
+
+  .postMetaRail {
+    grid-column: auto;
+    align-self: stretch;
+    align-content: start;
+    border-top: 0;
+    border-left: 1px solid rgba(132, 146, 176, 0.12);
+    padding-top: 0;
+    padding-left: 20px;
+  }
+
+  .postTagCluster,
+  .postEngagementGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .toolbarInner {
@@ -165,9 +454,25 @@
 
   .sidebarPinned {
     position: sticky;
-    top: var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem));
+    top: var(
+      --community-sidebar-top,
+      calc(
+        var(--community-toolbar-control-height) + var(--community-toolbar-y) +
+          var(--community-toolbar-y) + 1rem
+      )
+    );
     z-index: 820;
-    max-height: calc(100vh - var(--community-sidebar-top, calc(var(--community-toolbar-control-height) + var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem)) - 16px);
+    max-height: calc(
+      100vh -
+        var(
+          --community-sidebar-top,
+          calc(
+            var(--community-toolbar-control-height) +
+              var(--community-toolbar-y) + var(--community-toolbar-y) + 1rem
+          )
+        ) -
+        16px
+    );
     overflow-y: auto;
   }
 }

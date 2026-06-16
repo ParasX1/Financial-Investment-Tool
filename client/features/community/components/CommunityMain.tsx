@@ -16,6 +16,7 @@ import {
   getCommunityCreateHref,
   getCommunityFeedHref,
 } from "../lib/communityRouting";
+import { getCommunityFeedInsights } from "../lib/communityFeedInsights";
 import { cn, communityUi } from "../design";
 import communityStyles from "../styles/community.module.css";
 import type { CommunityFeedView, CommunityTopTimeRange } from "../types";
@@ -24,6 +25,7 @@ import { useCommunityDraftNavigation } from "../hooks/useCommunityDraftNavigatio
 import { useCommunityRouteSync } from "../hooks/useCommunityRouteSync";
 import { useCommunitySidebarLayout } from "../hooks/useCommunitySidebarLayout";
 import { CommunityComposer } from "./CommunityComposer";
+import { CommunityFeedInsights } from "./CommunityFeedInsights";
 import { CommunityNotice, FeedbackStack, StatusMessage } from "./CommunityFeedback";
 import { CommunitySidebar } from "./CommunitySidebar";
 import { CommunityToolbar } from "./CommunityToolbar";
@@ -181,6 +183,15 @@ export function CommunityMain({
     ],
   );
 
+  const feedInsights = React.useMemo(
+    () =>
+      getCommunityFeedInsights(
+        community.filteredPosts,
+        community.commentsState.counts,
+      ),
+    [community.commentsState.counts, community.filteredPosts],
+  );
+
   return (
     <main
       id="community-main"
@@ -310,6 +321,10 @@ export function CommunityMain({
                   {community.loadError}
                 </StatusMessage>
               </div>
+            ) : null}
+
+            {mode === "feed" && !community.loadingCommunity ? (
+              <CommunityFeedInsights insights={feedInsights} />
             ) : null}
 
             {mode === "feed" ? (

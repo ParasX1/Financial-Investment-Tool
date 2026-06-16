@@ -7,13 +7,20 @@ import type {
   CommunityTopTimeRange,
   PostUI,
 } from "../types";
+import {
+  getCommunityPostSignals,
+  getCommunitySignalScore,
+} from "./communitySignals";
 
 function isCurrentUserPost(post: PostUI, currentUserId: string | null) {
   if (currentUserId && post.authorId === currentUserId) return true;
   return !post.fromDB && post.user === "You";
 }
 
-function isCurrentUserComment(comment: CommentUI, currentUserId: string | null) {
+function isCurrentUserComment(
+  comment: CommentUI,
+  currentUserId: string | null,
+) {
   if (currentUserId && comment.authorId === currentUserId) return true;
   return !comment.fromDB && comment.user === "You";
 }
@@ -31,8 +38,19 @@ function hasCurrentUserComment(
 function matchesCommunitySearch(post: PostUI, query: string) {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return true;
+  const signals = getCommunityPostSignals(post);
 
-  return [post.user, post.title, post.body, ...post.tags]
+  return [
+    post.user,
+    post.title,
+    post.body,
+    ...post.tags,
+    ...signals.tickers,
+    ...signals.topicLabels,
+    signals.primaryLabel,
+    signals.evidence.label,
+    signals.horizon.label,
+  ]
     .join(" ")
     .toLowerCase()
     .includes(normalizedQuery);
@@ -102,9 +120,8 @@ export function getCommunityFeedCounts({
   return {
     top: posts.length,
     new: posts.length,
-    "my-posts": posts.filter((post) =>
-      isCurrentUserPost(post, currentUserId),
-    ).length,
+    "my-posts": posts.filter((post) => isCurrentUserPost(post, currentUserId))
+      .length,
     liked: posts.filter((post) => likedPostIds.has(post.id)).length,
     commented: posts.filter((post) =>
       hasCurrentUserComment(post.id, commentsState, currentUserId),
@@ -157,8 +174,25 @@ export function getVisibleCommunityPosts({
       cutoff === null
         ? scopedPosts
         : scopedPosts.filter((post) => post.sortTime >= cutoff);
+    const scoreCache = new Map<string, number>();
+    const getScore = (post: PostUI) => {
+      const cached = scoreCache.get(post.id);
+      if (cached !== undefined) return cached;
 
-    return [...timeScopedPosts].sort((a, b) => b.votes - a.votes);
+      const score = getCommunitySignalScore(post, {
+        commentCount: commentsState.counts[post.id] ?? post.commentCount,
+        now,
+      });
+      scoreCache.set(post.id, score);
+      return score;
+    };
+
+    return [...timeScopedPosts].sort((a, b) => {
+      const scoreA = getScore(a);
+      const scoreB = getScore(b);
+
+      return scoreB - scoreA || b.votes - a.votes || b.sortTime - a.sortTime;
+    });
   }
 
   return [...scopedPosts].sort((a, b) => b.sortTime - a.sortTime);

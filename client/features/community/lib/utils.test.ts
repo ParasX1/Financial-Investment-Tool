@@ -1,8 +1,5 @@
 // File purpose: Tests Community helper behavior across mapping, validation, draft state, load status, and feed selectors.
-import {
-  createLocalPost,
-  postFromRow,
-} from "./communityMappers";
+import { createLocalPost, postFromRow } from "./communityMappers";
 import {
   getCommunityFeedCounts,
   getTopTimeRangeCutoff,
@@ -156,9 +153,13 @@ describe("Discussion draft dirty state", () => {
   it("detects meaningful unsaved draft content", () => {
     expect(isDiscussionDraftDirty(emptyDraft)).toBe(false);
     expect(isDiscussionDraftDirty({ ...emptyDraft, title: "  " })).toBe(false);
-    expect(isDiscussionDraftDirty({ ...emptyDraft, title: "Draft" })).toBe(true);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, title: "Draft" })).toBe(
+      true,
+    );
     expect(isDiscussionDraftDirty({ ...emptyDraft, body: "Body" })).toBe(true);
-    expect(isDiscussionDraftDirty({ ...emptyDraft, tags: ["Risk"] })).toBe(true);
+    expect(isDiscussionDraftDirty({ ...emptyDraft, tags: ["Risk"] })).toBe(
+      true,
+    );
   });
 });
 
@@ -257,6 +258,104 @@ describe("Community feed filtering", () => {
     ]);
   });
 
+  it("promotes stronger investment signals when top posts have similar engagement", () => {
+    const now = new Date("2026-05-20T12:00:00Z").getTime();
+    const visible = getVisibleCommunityPosts({
+      posts: [
+        {
+          ...posts[0],
+          id: "generic",
+          title: "General discussion",
+          body: "Open for broad community discussion.",
+          tags: [],
+          votes: 10,
+          sortTime: now,
+        },
+        {
+          ...posts[1],
+          id: "signal",
+          title: "TSLA delivery catalyst",
+          body: "Source: https://example.com/tsla Delivery data could move the stock this week.",
+          tags: ["News", "$TSLA"],
+          votes: 10,
+          sortTime: now,
+        },
+      ],
+      query: "",
+      view: "top",
+      now,
+      likedPostIds: new Set(),
+      commentsState,
+      currentUserId: "user-1",
+    });
+
+    expect(visible.map((post) => post.id)).toEqual(["signal", "generic"]);
+  });
+
+  it("keeps top ranking stable across viewer-specific liked state", () => {
+    const now = new Date("2026-05-20T12:00:00Z").getTime();
+    const topPosts: PostUI[] = [
+      {
+        ...posts[0],
+        id: "first",
+        title: "CBA earnings watch",
+        body: "CBA.AX margin setup before earnings.",
+        tags: ["Earnings", "$CBA.AX"],
+        votes: 10,
+        sortTime: now,
+      },
+      {
+        ...posts[1],
+        id: "second",
+        title: "BHP risk review",
+        body: "BHP.AX downside risk after iron ore weakness.",
+        tags: ["Risk", "$BHP.AX"],
+        votes: 9,
+        sortTime: now,
+      },
+    ];
+    const base = {
+      posts: topPosts,
+      query: "",
+      view: "top" as const,
+      now,
+      commentsState,
+      currentUserId: "user-1",
+    };
+
+    const unliked = getVisibleCommunityPosts({
+      ...base,
+      likedPostIds: new Set(),
+    }).map((post) => post.id);
+    const likedSecond = getVisibleCommunityPosts({
+      ...base,
+      likedPostIds: new Set(["second"]),
+    }).map((post) => post.id);
+
+    expect(likedSecond).toEqual(unliked);
+  });
+
+  it("matches search against derived investor signals", () => {
+    const visible = getVisibleCommunityPosts({
+      posts: [
+        {
+          ...posts[0],
+          id: "source-backed",
+          title: "Delivery catalyst",
+          body: "Source: https://example.com/tsla Tesla delivery data could move the stock.",
+          tags: [],
+        },
+      ],
+      query: "source-backed",
+      view: "new",
+      likedPostIds: new Set(),
+      commentsState,
+      currentUserId: "user-1",
+    });
+
+    expect(visible.map((post) => post.id)).toEqual(["source-backed"]);
+  });
+
   it("limits top discussions to the selected time range before sorting by votes", () => {
     const now = new Date("2026-05-20T12:00:00Z").getTime();
     const visible = getVisibleCommunityPosts({
@@ -289,7 +388,10 @@ describe("Community feed filtering", () => {
       currentUserId: "user-1",
     });
 
-    expect(visible.map((post) => post.id)).toEqual(["recent-top", "recent-mid"]);
+    expect(visible.map((post) => post.id)).toEqual([
+      "recent-top",
+      "recent-mid",
+    ]);
   });
 
   it("does not apply the top time range to non-top feeds", () => {

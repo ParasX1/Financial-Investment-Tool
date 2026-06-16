@@ -16,13 +16,13 @@ describe("Community smart tag suggestions", () => {
     });
 
     expect(suggestions.map((item) => item.label)).toEqual(
-      expect.arrayContaining(["Analysis", "Earnings", "Risk", "$NVDA"])
+      expect.arrayContaining(["Analysis", "Earnings", "Risk", "$NVDA"]),
     );
   });
 
   it("detects explicit tickers and common company names", () => {
     expect(
-      detectTickerTags("Watching $AAPL, Microsoft, and Nvidia after earnings")
+      detectTickerTags("Watching $AAPL, Microsoft, and Nvidia after earnings"),
     ).toEqual(["$AAPL", "$MSFT", "$NVDA"]);
   });
 
@@ -37,23 +37,44 @@ describe("Community smart tag suggestions", () => {
     ]);
   });
 
+  it("detects common ASX tickers with exchange suffixes", () => {
+    expect(
+      detectTickerTags("Watching $CBA.AX, BHP.AX, and NAB after the ASX open"),
+    ).toEqual(["$CBA.AX", "$BHP.AX", "$NAB.AX"]);
+  });
+
+  it("normalizes common bare ASX tickers to Yahoo-style symbols", () => {
+    expect(detectTickerTags("Comparing CBA and BHP momentum")).toEqual([
+      "$CBA.AX",
+      "$BHP.AX",
+    ]);
+    expect(normalizeSelectedTags(["$cba", "$BHP"])).toEqual([
+      "$CBA.AX",
+      "$BHP.AX",
+    ]);
+  });
+
   it("returns compact post tags for the feed", () => {
     expect(
-      inferTags("Can a momentum backtest beat SPY during CPI weeks?")
+      inferTags("Can a momentum backtest beat SPY during CPI weeks?"),
     ).toEqual(["Question", "Backtesting", "Momentum", "$SPY"]);
   });
 
   it("normalizes selected tags before persistence", () => {
     expect(
-      normalizeSelectedTags([" Risk ", "$nvda", "$FAKE", "Risk", "<script>"])
+      normalizeSelectedTags([" Risk ", "$nvda", "$FAKE", "Risk", "<script>"]),
     ).toEqual(["Risk", "$NVDA"]);
   });
 
   it("keeps selected tags visible even when suggestions change", () => {
-    const suggestions = getSmartTagSuggestions("Portfolio allocation for Microsoft");
+    const suggestions = getSmartTagSuggestions(
+      "Portfolio allocation for Microsoft",
+    );
 
     expect(
-      mergeSelectedTagSuggestions(["Risk"], suggestions).map((item) => item.label)
+      mergeSelectedTagSuggestions(["Risk"], suggestions).map(
+        (item) => item.label,
+      ),
     ).toEqual(expect.arrayContaining(["Risk", "Portfolio", "$MSFT"]));
   });
 
@@ -63,7 +84,7 @@ describe("Community smart tag suggestions", () => {
         title: "TSLA options risk before earnings",
         body: "Looking at implied volatility and downside hedges.",
         tags: [],
-      })
+      }),
     ).toEqual(expect.arrayContaining(["Earnings", "Risk", "$TSLA"]));
   });
 });

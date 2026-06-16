@@ -55,15 +55,21 @@ const KNOWN_TICKERS = new Set([
   "AAPL",
   "ABBV",
   "ABNB",
+  "ALL.AX",
+  "ANZ.AX",
   "AMD",
   "AMZN",
   "AVGO",
   "BAC",
+  "BHP.AX",
   "BRK.B",
+  "CBA.AX",
   "COIN",
   "COST",
   "CRM",
+  "CSL.AX",
   "DIS",
+  "FMG.AX",
   "GOOG",
   "GOOGL",
   "INTC",
@@ -71,7 +77,9 @@ const KNOWN_TICKERS = new Set([
   "KO",
   "LLY",
   "META",
+  "MQG.AX",
   "MSFT",
+  "NAB.AX",
   "NFLX",
   "NKE",
   "NVDA",
@@ -82,11 +90,31 @@ const KNOWN_TICKERS = new Set([
   "SHOP",
   "SPY",
   "TSLA",
+  "TLS.AX",
   "UNH",
   "V",
   "VOO",
+  "WBC.AX",
+  "WES.AX",
+  "WOW.AX",
   "WMT",
   "XOM",
+  "XRO.AX",
+]);
+
+const ASX_TICKER_ALIASES = new Map([
+  ["ANZ", "ANZ.AX"],
+  ["BHP", "BHP.AX"],
+  ["CBA", "CBA.AX"],
+  ["CSL", "CSL.AX"],
+  ["FMG", "FMG.AX"],
+  ["MQG", "MQG.AX"],
+  ["NAB", "NAB.AX"],
+  ["TLS", "TLS.AX"],
+  ["WBC", "WBC.AX"],
+  ["WES", "WES.AX"],
+  ["WOW", "WOW.AX"],
+  ["XRO", "XRO.AX"],
 ]);
 
 const COMPANY_TO_TICKER: Array<{ ticker: string; terms: string[] }> = [
@@ -113,7 +141,14 @@ const TYPE_RULES = [
   },
   {
     label: "Analysis",
-    terms: ["analysis", "analyze", "comparing", "valuation", "deep dive", "thesis"],
+    terms: [
+      "analysis",
+      "analyze",
+      "comparing",
+      "valuation",
+      "deep dive",
+      "thesis",
+    ],
     reason: "analysis language",
   },
   {
@@ -123,7 +158,14 @@ const TYPE_RULES = [
   },
   {
     label: "News",
-    terms: ["news", "announced", "reported", "breaking", "fed", "rate decision"],
+    terms: [
+      "news",
+      "announced",
+      "reported",
+      "breaking",
+      "fed",
+      "rate decision",
+    ],
     reason: "news or catalyst language",
   },
   {
@@ -216,9 +258,10 @@ function scoreTerms(text: string, terms: string[]) {
 function addTicker(
   items: Map<string, { ticker: string; index: number }>,
   ticker: string,
-  index: number
+  index: number,
 ) {
-  const normalized = ticker.toUpperCase();
+  const normalizedInput = ticker.toUpperCase();
+  const normalized = ASX_TICKER_ALIASES.get(normalizedInput) ?? normalizedInput;
   if (FINANCE_ACRONYM_BLOCKLIST.has(normalized)) return;
   if (!KNOWN_TICKERS.has(normalized)) return;
 
@@ -239,7 +282,8 @@ export function normalizeTagLabel(value: unknown) {
   if (!clean || clean.length > MAX_TAG_LABEL_CHARS) return null;
 
   if (clean.startsWith("$")) {
-    const ticker = clean.slice(1).toUpperCase();
+    const tickerInput = clean.slice(1).toUpperCase();
+    const ticker = ASX_TICKER_ALIASES.get(tickerInput) ?? tickerInput;
     return KNOWN_TICKERS.has(ticker) ? `$${ticker}` : null;
   }
 
@@ -247,7 +291,10 @@ export function normalizeTagLabel(value: unknown) {
   return clean;
 }
 
-export function normalizeSelectedTags(values: unknown, limit = MAX_DISCUSSION_TAGS) {
+export function normalizeSelectedTags(
+  values: unknown,
+  limit = MAX_DISCUSSION_TAGS,
+) {
   const rawTags = Array.isArray(values) ? values : [];
   const unique = new Set<string>();
 
@@ -262,13 +309,13 @@ export function normalizeSelectedTags(values: unknown, limit = MAX_DISCUSSION_TA
 
 export function getDefaultSelectedTags(input: string | DiscussionDraft) {
   return getSmartTagSuggestions(input, MAX_DISCUSSION_TAGS).map(
-    (suggestion) => suggestion.label
+    (suggestion) => suggestion.label,
   );
 }
 
 export function mergeSelectedTagSuggestions(
   selectedTags: string[],
-  suggestions: SmartTagSuggestion[]
+  suggestions: SmartTagSuggestion[],
 ) {
   const merged = new Map<string, SmartTagSuggestion>();
 
@@ -291,8 +338,8 @@ export function mergeSelectedTagSuggestions(
 export function detectTickerTags(input: string | DiscussionDraft) {
   const text = normalizeInput(input);
   const detected = new Map<string, { ticker: string; index: number }>();
-  const cashtagPattern = /\$([A-Za-z][A-Za-z.]{0,4})\b/g;
-  const uppercasePattern = /\b[A-Z]{1,5}(?:\.[A-Z])?\b/g;
+  const cashtagPattern = /\$([A-Za-z][A-Za-z.]{0,8})\b/g;
+  const uppercasePattern = /\b[A-Z]{1,5}(?:\.[A-Z]{1,3})?\b/g;
   let match: RegExpExecArray | null;
 
   while ((match = cashtagPattern.exec(text)) !== null) {
@@ -325,7 +372,7 @@ export function detectTickerTags(input: string | DiscussionDraft) {
 function buildScoredSuggestions(
   input: string | DiscussionDraft,
   rules: Array<{ label: string; terms: string[]; reason: string }>,
-  kind: SmartTagKind
+  kind: SmartTagKind,
 ) {
   return rules
     .map((rule) => ({
@@ -340,7 +387,7 @@ function buildScoredSuggestions(
 
 export function getSmartTagSuggestions(
   input: string | DiscussionDraft,
-  limit = MAX_SUGGESTED_TAGS
+  limit = MAX_SUGGESTED_TAGS,
 ): SmartTagSuggestion[] {
   const text = normalizeInput(input);
   if (text.length < 8) return [];
@@ -358,7 +405,8 @@ export function getSmartTagSuggestions(
   if (type) selected.push(type);
 
   for (const topic of topics) {
-    if (selected.length >= Math.max(2, limit - Math.min(tickers.length, 1))) break;
+    if (selected.length >= Math.max(2, limit - Math.min(tickers.length, 1)))
+      break;
     selected.push(topic);
   }
 
@@ -369,7 +417,8 @@ export function getSmartTagSuggestions(
 
   for (const topic of topics) {
     if (selected.length >= limit) break;
-    if (!selected.some((item) => item.label === topic.label)) selected.push(topic);
+    if (!selected.some((item) => item.label === topic.label))
+      selected.push(topic);
   }
 
   return selected.slice(0, limit);
