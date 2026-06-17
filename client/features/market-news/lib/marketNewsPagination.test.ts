@@ -4,22 +4,9 @@ import {
   clampMarketNewsPageIndex,
   getMarketNewsFetchLimit,
   getMarketNewsPageWindow,
-  isMarketNewsPagedTopic,
 } from "./marketNewsPagination";
 
 describe("marketNewsPagination", () => {
-  it("uses Yahoo-style paged topic mode for every configured category topic", () => {
-    expect(isMarketNewsPagedTopic("cost-of-living")).toBe(true);
-    expect(isMarketNewsPagedTopic("australian-markets")).toBe(true);
-    expect(isMarketNewsPagedTopic("international-markets")).toBe(true);
-    expect(isMarketNewsPagedTopic("commodities")).toBe(true);
-    expect(isMarketNewsPagedTopic("money-news")).toBe(true);
-    expect(isMarketNewsPagedTopic("personal-finance")).toBe(true);
-    expect(isMarketNewsPagedTopic("property-news")).toBe(true);
-    expect(isMarketNewsPagedTopic("work")).toBe(true);
-    expect(isMarketNewsPagedTopic("technology")).toBe(true);
-  });
-
   it("requests one extra story per page to detect whether the next page exists", () => {
     expect(MARKET_NEWS_TOPIC_PAGE_SIZE).toBe(12);
     expect(getMarketNewsFetchLimit(0)).toBe(13);

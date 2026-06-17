@@ -442,22 +442,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.storyGrid {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.secondaryGrid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.latestPanel {
-  border-left: 0;
-}
-
 .topicFeed {
   min-width: 0;
   overflow: hidden;
@@ -502,6 +486,10 @@
   background: rgba(255, 255, 255, 0.035);
   color: #dbe4ff;
   text-decoration: none;
+}
+
+.topicArticleLinkTextOnly {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .topicArticleImage {
@@ -582,14 +570,6 @@
 
 .rightRail {
   min-width: 0;
-}
-
-.articleImage {
-  aspect-ratio: 16 / 10;
-}
-
-.heroImage {
-  aspect-ratio: 16 / 9;
 }
 
 .marketVisual {
@@ -735,19 +715,14 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .storyGrid {
-    grid-template-columns: minmax(22rem, 1.05fr) minmax(17rem, 0.82fr);
-    align-items: start;
-  }
-
-  .secondaryGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .topicArticleLink {
     grid-template-columns: minmax(8.75rem, 12rem) minmax(0, 1fr);
     align-items: center;
     padding: 1rem;
+  }
+
+  .topicArticleLinkTextOnly {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -759,11 +734,6 @@
   .mainGrid {
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
     align-items: start;
-  }
-
-  .latestPanel {
-    border-left: 1px solid var(--market-news-line);
-    padding-left: 1.25rem;
   }
 
   .rightRail {

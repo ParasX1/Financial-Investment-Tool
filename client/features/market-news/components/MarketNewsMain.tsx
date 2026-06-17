@@ -26,7 +26,6 @@ import {
   clampMarketNewsPageIndex,
   getMarketNewsFetchLimit,
   getMarketNewsPageWindow,
-  isMarketNewsPagedTopic,
 } from "../lib/marketNewsPagination";
 import {
   getMarketNewsRouteHref,
@@ -37,6 +36,11 @@ import {
   MARKET_NEWS_SORT_OPTIONS,
   sortMarketNewsArticles,
 } from "../lib/marketNewsSort";
+import {
+  formatMarketNewsMatchStatus,
+  formatMarketNewsShownStatus,
+  formatMarketNewsSourceStatus,
+} from "../lib/marketNewsStatus";
 import {
   applyMarketNewsLensChange,
   applyMarketNewsMarketScopeChange,
@@ -68,8 +72,6 @@ import { MarketNewsScanOrderBar } from "./MarketNewsScanOrderBar";
 import { MarketNewsSearchBar } from "./MarketNewsSearchBar";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
 import styles from "../styles/marketNews.module.css";
-
-const ARTICLE_LIMIT = 18;
 
 export function MarketNewsMain({
   onQuoteLookup,
@@ -178,13 +180,7 @@ export function MarketNewsMain({
     applyViewState(deriveMarketNewsViewStateFromRoute(routeState));
   }, [applyViewState, router.asPath, router.isReady, router.query]);
 
-  const topicFeedMode =
-    isMarketNewsPagedTopic(activeTopic.id) ||
-    Boolean(searchQuery.trim()) ||
-    Boolean(tickerSymbol);
-  const articleLimit = topicFeedMode
-    ? getMarketNewsFetchLimit(storyPageIndex)
-    : ARTICLE_LIMIT;
+  const articleLimit = getMarketNewsFetchLimit(storyPageIndex);
   const watchlist = useMarketNewsWatchlist();
   const marketMovers = useMarketNewsTickerQuotes(activeMarketScope.tickers);
   const selectedScopeTicker = marketMovers.tickers.find(
@@ -282,16 +278,13 @@ export function MarketNewsMain({
     [activeSortId, visibleArticles, watchlist.symbols],
   );
   const pageWindow = React.useMemo(
-    () =>
-      topicFeedMode
-        ? getMarketNewsPageWindow(sortedArticles, storyPageIndex)
-        : null,
-    [sortedArticles, storyPageIndex, topicFeedMode],
+    () => getMarketNewsPageWindow(sortedArticles, storyPageIndex),
+    [sortedArticles, storyPageIndex],
   );
-  const displayedArticles = pageWindow?.items ?? sortedArticles;
+  const displayedArticles = pageWindow.items;
 
   React.useEffect(() => {
-    if (!topicFeedMode || loading || !sortedArticles.length) return;
+    if (loading || !sortedArticles.length) return;
 
     setStoryPageIndex((pageIndex) => {
       const clampedPageIndex = clampMarketNewsPageIndex(
@@ -305,7 +298,7 @@ export function MarketNewsMain({
 
       return clampedPageIndex;
     });
-  }, [loading, sortedArticles.length, syncRouteState, topicFeedMode]);
+  }, [loading, sortedArticles.length, syncRouteState]);
 
   const emptyState = React.useMemo(() => {
     if (articles.length && !visibleArticles.length) {
@@ -447,7 +440,7 @@ export function MarketNewsMain({
     });
   }, [syncRouteState]);
   const handleNextPage = React.useCallback(() => {
-    if (!pageWindow?.hasNextPage) return;
+    if (!pageWindow.hasNextPage) return;
 
     setStoryPageIndex((pageIndex) => {
       const nextPageIndex = pageIndex + 1;
@@ -456,17 +449,18 @@ export function MarketNewsMain({
 
       return nextPageIndex;
     });
-  }, [pageWindow?.hasNextPage, syncRouteState]);
-  const shownStatusValue =
-    topicFeedMode && pageWindow
-      ? displayedArticles.length
-        ? `${pageWindow.start + 1}-${pageWindow.start + displayedArticles.length} loaded`
-        : "0"
-      : `${displayedArticles.length}/${articles.length}`;
-  const sourceStatusValue =
-    loading && articles.length ? "Updating" : meta?.providerLabel ?? "Pending";
-  const coverageStatusValue =
-    meta?.strictCategory === false ? "Broad feed" : "Strict filter";
+  }, [pageWindow.hasNextPage, syncRouteState]);
+  const shownStatusValue = formatMarketNewsShownStatus({
+    displayedCount: displayedArticles.length,
+    pageStart: pageWindow.start,
+    topicFeedMode: true,
+  });
+  const sourceStatusValue = formatMarketNewsSourceStatus({
+    hasVisibleArticles: Boolean(articles.length),
+    loading,
+    providerLabel: meta?.providerLabel,
+  });
+  const matchStatusValue = formatMarketNewsMatchStatus(meta?.strictCategory);
   const articleProviderWarning =
     loading && articles.length
       ? "Updating this view while keeping the previous stories visible."
@@ -549,7 +543,7 @@ export function MarketNewsMain({
                 aria-live="polite"
               >
                 <div className={styles.statusCard}>
-                  <dt>Stories</dt>
+                  <dt>Shown</dt>
                   <dd>{shownStatusValue}</dd>
                 </div>
                 <div className={styles.statusCard}>
@@ -557,8 +551,8 @@ export function MarketNewsMain({
                   <dd>{sourceStatusValue}</dd>
                 </div>
                 <div className={styles.statusCard}>
-                  <dt>Coverage</dt>
-                  <dd>{coverageStatusValue}</dd>
+                  <dt>Match</dt>
+                  <dd>{matchStatusValue}</dd>
                 </div>
               </dl>
             </div>
@@ -586,21 +580,18 @@ export function MarketNewsMain({
                 articles={displayedArticles}
                 emptyState={emptyState}
                 error={error}
-                layout={topicFeedMode ? "topicFeed" : "featureGrid"}
                 loading={loading}
                 pagination={
-                  topicFeedMode && pageWindow
-                    ? {
-                        hasNextPage: pageWindow.hasNextPage,
-                        hasPreviousPage: pageWindow.hasPreviousPage,
-                        loading,
-                        pageIndex: pageWindow.pageIndex,
-                        pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
-                        totalLoaded: visibleArticles.length,
-                        onNextPage: handleNextPage,
-                        onPreviousPage: handlePreviousPage,
-                      }
-                    : undefined
+                  {
+                    hasNextPage: pageWindow.hasNextPage,
+                    hasPreviousPage: pageWindow.hasPreviousPage,
+                    loading,
+                    pageIndex: pageWindow.pageIndex,
+                    pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
+                    totalLoaded: visibleArticles.length,
+                    onNextPage: handleNextPage,
+                    onPreviousPage: handlePreviousPage,
+                  }
                 }
                 providerWarning={articleProviderWarning}
                 title={displayTitle}

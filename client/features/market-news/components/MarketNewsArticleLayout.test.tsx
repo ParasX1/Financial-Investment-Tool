@@ -17,6 +17,14 @@ function article(index: number): Article {
   };
 }
 
+function articleWithoutImage(index: number): Article {
+  return {
+    ...article(index),
+    image: "",
+    providerLabel: "Google News RSS",
+  };
+}
+
 describe("MarketNewsArticleLayout", () => {
   it("renders Yahoo-style topic feed rows with pagination controls", () => {
     const html = renderToStaticMarkup(
@@ -27,7 +35,6 @@ describe("MarketNewsArticleLayout", () => {
           title: "Empty",
         }}
         error={null}
-        layout="topicFeed"
         loading={false}
         pagination={{
           hasNextPage: true,
@@ -64,7 +71,6 @@ describe("MarketNewsArticleLayout", () => {
           title: "Empty",
         }}
         error={null}
-        layout="topicFeed"
         loading={false}
         providerWarning="Demo stories are synthetic placeholders."
         title="Cost of Living"
@@ -74,7 +80,26 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).toContain("Demo stories are synthetic placeholders.");
   });
 
-  it("keeps the existing feature layout as the default", () => {
+  it("keeps no-image topic rows text-first instead of repeating fallback art", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[articleWithoutImage(1)]}
+        emptyState={{
+          message: "No stories",
+          title: "Empty",
+        }}
+        error={null}
+        loading={false}
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Story 1");
+    expect(html).toContain("Google News RSS");
+    expect(html).not.toContain("Market News</span>");
+  });
+
+  it("uses the compact topic feed as the only Market News article layout", () => {
     const html = renderToStaticMarkup(
       <MarketNewsArticleLayout
         articles={Array.from({ length: 5 }, (_, index) => article(index + 1))}
@@ -88,7 +113,8 @@ describe("MarketNewsArticleLayout", () => {
       />,
     );
 
-    expect(html).toContain("Featured stories");
-    expect(html).toContain("Latest");
+    expect(html).toContain("Topic stories");
+    expect(html).not.toContain("Featured stories");
+    expect(html).not.toContain("Latest");
   });
 });

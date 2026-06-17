@@ -86,11 +86,9 @@ function articleLinkProps(article: Article) {
 function ArticleVisual({
   article,
   className,
-  variant,
 }: {
   article: Article;
   className?: string;
-  variant: "feature" | "hero";
 }) {
   const image = getArticleImage(article);
 
@@ -100,9 +98,9 @@ function ArticleVisual({
         src={image}
         alt=""
         className={className}
-        width={variant === "hero" ? 1280 : 320}
-        height={variant === "hero" ? 720 : 180}
-        loading={variant === "hero" ? "eager" : "lazy"}
+        width={320}
+        height={180}
+        loading="lazy"
       />
     );
   }
@@ -113,99 +111,11 @@ function ArticleVisual({
     <div
       aria-hidden="true"
       className={cn(styles.marketVisual, className)}
-      data-variant={variant}
+      data-variant="feature"
     >
       <span className={styles.marketVisualLabel}>Market News</span>
       <span className={styles.marketVisualSignal}>{signal}</span>
     </div>
-  );
-}
-
-export function HeroArticleCard({ article }: { article: Article }) {
-  return (
-    <article className="min-w-0 overflow-hidden rounded-xl border border-[var(--fit-color-border-panel)] bg-[var(--fit-color-surface)]">
-      <a
-        {...articleLinkProps(article)}
-        className="flex flex-col text-white no-underline hover:no-underline"
-      >
-        <ArticleVisual
-          article={article}
-          className={cn(
-            "order-2 w-full object-cover sm:order-1",
-            styles.heroImage,
-          )}
-          variant="hero"
-        />
-        <div className="order-1 p-4 sm:order-2 sm:p-5">
-          <h2 className="text-balance text-xl font-extrabold leading-tight text-white sm:text-3xl">
-            {article.title}
-          </h2>
-          {article.summary ? (
-            <p
-              className={cn(
-                "mt-3 line-clamp-2 text-pretty text-[15px] leading-6",
-                fitText.body,
-              )}
-            >
-              {article.summary}
-            </p>
-          ) : null}
-          <ArticleMeta article={article} />
-        </div>
-      </a>
-    </article>
-  );
-}
-
-export function FeatureArticleCard({ article }: { article: Article }) {
-  return (
-    <article className="min-w-0 rounded-xl border border-[var(--fit-color-border-panel)] bg-[var(--fit-color-surface)] transition-colors hover:border-[#5367ff]/45">
-      <a
-        {...articleLinkProps(article)}
-        className="grid min-w-0 grid-cols-[6.8rem_minmax(0,1fr)] gap-3 p-3 text-white no-underline hover:no-underline sm:grid-cols-[8.5rem_minmax(0,1fr)]"
-      >
-        <ArticleVisual
-          article={article}
-          className="h-full min-h-[92px] w-full rounded-md object-cover"
-          variant="feature"
-        />
-        <div className="min-w-0">
-          <h3 className="line-clamp-3 text-base font-extrabold leading-6 text-white">
-            {article.title}
-          </h3>
-          <ArticleMeta article={article} />
-        </div>
-      </a>
-    </article>
-  );
-}
-
-export function LatestArticleList({
-  articles,
-  title = "Latest",
-}: {
-  articles: readonly Article[];
-  title?: string;
-}) {
-  return (
-    <section className="min-w-0" aria-label={title}>
-      <h2 className="text-xl font-extrabold text-white">{title}</h2>
-      <div className="mt-3 divide-y divide-white/10">
-        {articles.map((article) => (
-          <article key={article.id} className="py-3 first:pt-0">
-            <a
-              {...articleLinkProps(article)}
-              className="group block text-white no-underline hover:no-underline"
-            >
-              <h3 className="text-balance text-base font-extrabold leading-6 text-white group-hover:text-[#dbe4ff]">
-                {article.title}
-              </h3>
-              <ArticleMeta article={article} />
-            </a>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -243,12 +153,19 @@ export function TopicArticleFeed({
       <div className={styles.topicFeedList}>
         {articles.map((article) => (
           <article key={article.id} className={styles.topicArticleRow}>
-            <a {...articleLinkProps(article)} className={styles.topicArticleLink}>
-              <ArticleVisual
-                article={article}
-                className={styles.topicArticleImage}
-                variant="feature"
-              />
+            <a
+              {...articleLinkProps(article)}
+              className={cn(
+                styles.topicArticleLink,
+                getArticleImage(article) ? "" : styles.topicArticleLinkTextOnly,
+              )}
+            >
+              {getArticleImage(article) ? (
+                <ArticleVisual
+                  article={article}
+                  className={styles.topicArticleImage}
+                />
+              ) : null}
               <div className={styles.topicArticleBody}>
                 <h3 className={styles.topicArticleTitle}>{article.title}</h3>
                 {article.summary ? (
