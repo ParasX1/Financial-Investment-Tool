@@ -28,6 +28,7 @@ describe("MarketNewsTickerStrip", () => {
     ].map(([markup]) => markup);
 
     expect(buttonMarkup).toHaveLength(1);
+    expect(buttonMarkup.join(" ")).toContain('aria-label="Australia"');
     expect(buttonMarkup.join(" ")).toContain("Australia");
     expect(buttonMarkup.join(" ")).toContain("AU");
     expect(buttonMarkup.join(" ")).not.toContain("ALL ORDS");

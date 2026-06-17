@@ -60,8 +60,8 @@ describe("marketNewsTickerQuotes", () => {
     const ticker = {
       symbol: "NVDA",
       label: "Lookup selected",
-      value: "Loading quote...",
-      change: "Pending",
+      value: "Quote unavailable",
+      change: "No live data",
       tone: "neutral" as const,
       sparkline: [],
     };

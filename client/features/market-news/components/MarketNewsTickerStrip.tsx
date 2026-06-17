@@ -155,6 +155,7 @@ export function MarketNewsTickerStrip({
           aria-controls={menuOpen ? menuId : undefined}
           aria-expanded={menuOpen}
           aria-haspopup="listbox"
+          aria-label={marketScope.label}
           onClick={() => setMenuOpen((open) => !open)}
           onKeyDown={handleScopeButtonKeyDown}
           className={cn(styles.scopeSelectButton, FIT_FOCUS_VISIBLE)}
@@ -194,6 +195,7 @@ export function MarketNewsTickerStrip({
                   }}
                   type="button"
                   role="option"
+                  aria-label={scope.label}
                   aria-selected={selected}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onClick={() => selectScope(scope.id)}
