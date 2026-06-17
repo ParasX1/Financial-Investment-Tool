@@ -2,15 +2,10 @@ import type { MarketNewsTopicId } from "../types";
 
 export const MARKET_NEWS_TOPIC_PAGE_SIZE = 12;
 const NEXT_PAGE_SENTINEL_COUNT = 1;
-
-const PAGED_TOPIC_IDS = new Set<MarketNewsTopicId>([
-  "cost-of-living",
-  "work",
-  "technology",
-]);
+const TOPIC_FEED_EXCLUDED_TOPIC_IDS: ReadonlySet<MarketNewsTopicId> = new Set();
 
 export function isMarketNewsPagedTopic(topicId: MarketNewsTopicId) {
-  return PAGED_TOPIC_IDS.has(topicId);
+  return !TOPIC_FEED_EXCLUDED_TOPIC_IDS.has(topicId);
 }
 
 export function getMarketNewsFetchLimit(pageIndex: number) {

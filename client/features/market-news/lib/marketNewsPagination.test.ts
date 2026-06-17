@@ -8,13 +8,16 @@ import {
 } from "./marketNewsPagination";
 
 describe("marketNewsPagination", () => {
-  it("limits Yahoo-style paged topic mode to Cost of Living, Work, and Technology", () => {
+  it("uses Yahoo-style paged topic mode for every configured category topic", () => {
     expect(isMarketNewsPagedTopic("cost-of-living")).toBe(true);
+    expect(isMarketNewsPagedTopic("australian-markets")).toBe(true);
+    expect(isMarketNewsPagedTopic("international-markets")).toBe(true);
+    expect(isMarketNewsPagedTopic("commodities")).toBe(true);
+    expect(isMarketNewsPagedTopic("money-news")).toBe(true);
+    expect(isMarketNewsPagedTopic("personal-finance")).toBe(true);
+    expect(isMarketNewsPagedTopic("property-news")).toBe(true);
     expect(isMarketNewsPagedTopic("work")).toBe(true);
     expect(isMarketNewsPagedTopic("technology")).toBe(true);
-
-    expect(isMarketNewsPagedTopic("australian-markets")).toBe(false);
-    expect(isMarketNewsPagedTopic("money-news")).toBe(false);
   });
 
   it("requests one extra story per page to detect whether the next page exists", () => {
