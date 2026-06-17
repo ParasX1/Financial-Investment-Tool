@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import type { SvgIconProps } from '@mui/material/SvgIcon'
@@ -28,11 +28,14 @@ const LABEL_DELAY_MS = 115
 const CLOSE_DELAY_MS = 120
 const COMPACT_MEDIA_QUERY = '(max-width: 767px)'
 const HOVER_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 let rememberedDesktopExpanded = false
 let rememberedCompactExpanded = false
 let lastPointerPosition: { x: number; y: number } | null = null
 let pointerTrackerStarted = false
+let sidebarHasMounted = false
 
 const focusRing = FIT_FOCUS_VISIBLE
 
@@ -83,6 +86,34 @@ function shouldKeepDesktopSidebarExpanded() {
     getInitialHoverExpandMode() &&
     isPointerWithinSidebarWidth(EXPANDED_WIDTH)
   )
+}
+
+function getInitialSidebarSnapshot() {
+  if (typeof window === 'undefined' || !sidebarHasMounted) {
+    return {
+      canHoverExpand: false,
+      compact: false,
+      expanded: false,
+      responsiveReady: false,
+      showLabel: false,
+    }
+  }
+
+  const compact = getInitialCompactMode()
+  const canHoverExpand = mediaMatches(HOVER_MEDIA_QUERY) && !compact
+  const expanded = compact
+    ? rememberedCompactExpanded
+    : canHoverExpand
+      ? shouldKeepDesktopSidebarExpanded()
+      : rememberedDesktopExpanded
+
+  return {
+    canHoverExpand,
+    compact,
+    expanded,
+    responsiveReady: true,
+    showLabel: expanded,
+  }
 }
 
 interface SidebarNavItem {
@@ -157,6 +188,7 @@ function SidebarItem({
   expanded,
   item,
   locked,
+  onNavigate,
   showLabel,
   onLockedSelect,
 }: {
@@ -164,6 +196,7 @@ function SidebarItem({
   expanded: boolean
   item: SidebarNavItem
   locked: boolean
+  onNavigate: () => void
   showLabel: boolean
   onLockedSelect: () => void
 }) {
@@ -234,6 +267,7 @@ function SidebarItem({
       title={item.label}
       aria-current={active ? 'page' : undefined}
       aria-label={item.label}
+      onClick={onNavigate}
     >
       {content}
     </Link>
@@ -252,18 +286,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   skipTargetId = 'main-content',
 }) => {
   const { user, signOut } = useAuth()
-  const [expanded, setExpanded] = useState(false)
-  const [showLabel, setShowLabel] = useState(false)
+  const [initialSidebarSnapshot] = useState(getInitialSidebarSnapshot)
+  const [expanded, setExpanded] = useState(initialSidebarSnapshot.expanded)
+  const [showLabel, setShowLabel] = useState(initialSidebarSnapshot.showLabel)
   const [showLogin, setShowLogin] = useState(false)
-  const [compact, setCompact] = useState(false)
-  const [canHoverExpand, setCanHoverExpand] = useState(false)
-  const [responsiveReady, setResponsiveReady] = useState(false)
+  const [compact, setCompact] = useState(initialSidebarSnapshot.compact)
+  const [canHoverExpand, setCanHoverExpand] = useState(
+    initialSidebarSnapshot.canHoverExpand,
+  )
+  const [responsiveReady, setResponsiveReady] = useState(
+    initialSidebarSnapshot.responsiveReady,
+  )
   const sidebarRef = useRef<HTMLElement | null>(null)
   const manualToggleRef = useRef<HTMLButtonElement | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const navigationInteractionTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousCompactDrawerOpenRef = useRef(false)
   const pointerInsideRef = useRef(false)
   const pointerInteractionRef = useRef(false)
+  const navigationInteractionRef = useRef(false)
   const router = useRouter()
 
   const collapsedWidth = compact ? COMPACT_COLLAPSED_WIDTH : DESKTOP_COLLAPSED_WIDTH
@@ -273,6 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const pathname = router.pathname
 
   useEffect(() => {
+    sidebarHasMounted = true
     ensureGlobalPointerTracker()
   }, [])
 
@@ -297,14 +340,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [canHoverExpand, compact, expanded])
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     document.documentElement.style.setProperty(
       '--app-sidebar-width',
       `${layoutWidth}px`,
     )
   }, [layoutWidth])
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const compactQuery = window.matchMedia(COMPACT_MEDIA_QUERY)
     const hoverQuery = window.matchMedia(HOVER_MEDIA_QUERY)
 
@@ -354,6 +397,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      if (navigationInteractionTimerRef.current) {
+        clearTimeout(navigationInteractionTimerRef.current)
+      }
     }
   }, [])
 
@@ -436,7 +482,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   }
 
   function handleBlur(event: React.FocusEvent<HTMLElement>) {
-    if (pointerInteractionRef.current) return
+    if (pointerInteractionRef.current || navigationInteractionRef.current) return
 
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
       if (!compact && pointerInsideRef.current) return
@@ -448,6 +494,29 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   function handleManualToggle() {
     setExpandedState(!expanded)
+  }
+
+  function rememberNavigationInteraction() {
+    clearCloseTimer()
+    navigationInteractionRef.current = true
+
+    if (compact) {
+      rememberedCompactExpanded = false
+      setExpanded(false)
+      setShowLabel(false)
+      onHoverChange?.(false)
+    } else {
+      rememberedDesktopExpanded = expanded
+    }
+
+    if (navigationInteractionTimerRef.current) {
+      clearTimeout(navigationInteractionTimerRef.current)
+    }
+
+    navigationInteractionTimerRef.current = setTimeout(() => {
+      navigationInteractionRef.current = false
+      navigationInteractionTimerRef.current = null
+    }, 500)
   }
 
   function trapCompactDrawerFocus(event: React.KeyboardEvent<HTMLElement>) {
@@ -503,6 +572,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           expanded={expanded}
           item={item}
           locked={locked}
+          onNavigate={rememberNavigationInteraction}
           showLabel={showLabel}
           onLockedSelect={openLogin}
         />
@@ -555,6 +625,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         onPointerLeave={(event) => {
           rememberPointerPosition(event.nativeEvent)
           pointerInsideRef.current = false
+          if (navigationInteractionRef.current) return
           if (
             canHoverExpand &&
             !event.currentTarget.contains(document.activeElement)
@@ -688,6 +759,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     icon: HomeRoundedIcon,
                   }}
                   locked={false}
+                  onNavigate={rememberNavigationInteraction}
                   showLabel={showLabel}
                   onLockedSelect={openLogin}
                 />

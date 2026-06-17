@@ -63,14 +63,7 @@ export function CommunityMain({
     compactSidebar,
     handleSidebarCollapsedChange,
     sidebarCollapsed,
-    sidebarPinnedRef,
-  } = useCommunitySidebarLayout({
-    contentCount: community.filteredPosts.length,
-    feedbackCount: community.feedback.length,
-    loadError: community.loadError,
-    loadingCommunity: community.loadingCommunity,
-    mode,
-  });
+  } = useCommunitySidebarLayout();
   const { navigateWithDraftGuard } = useCommunityDraftNavigation({
     draft: community.draft,
     mode,
@@ -231,7 +224,6 @@ export function CommunityMain({
         >
           <div className="min-w-0">
             <div
-              ref={sidebarPinnedRef}
               className={cn(
                 communityStyles.sidebarPinned,
                 sidebarCollapsed ? "lg:w-16" : "lg:w-56",
