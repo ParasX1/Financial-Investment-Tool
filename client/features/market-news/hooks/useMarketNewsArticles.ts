@@ -58,8 +58,6 @@ export function useMarketNewsArticles({
   React.useEffect(() => {
     let alive = true;
 
-    setArticles([]);
-    setMeta(null);
     setLoading(true);
     setError(null);
 

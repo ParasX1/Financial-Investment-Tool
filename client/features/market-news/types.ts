@@ -102,6 +102,7 @@ export interface MarketNewsLensOption {
   label: string;
   description: string;
   count: number;
+  selectable: boolean;
 }
 
 export interface MarketNewsRequest {

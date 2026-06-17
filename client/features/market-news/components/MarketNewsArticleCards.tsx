@@ -4,6 +4,7 @@ import {
   formatArticleTime,
   getArticleDomain,
   getArticleImage,
+  getArticleInvestorCues,
   getSafeArticleHref,
 } from "../lib/marketNewsArticles";
 import styles from "../styles/marketNews.module.css";
@@ -20,6 +21,7 @@ function ArticleMeta({ article }: { article: Article }) {
     typeof article.confidence === "number" && Number.isFinite(article.confidence)
       ? article.confidence.toFixed(1)
       : null;
+  const investorCues = getArticleInvestorCues(article);
 
   return (
     <div
@@ -53,11 +55,14 @@ function ArticleMeta({ article }: { article: Article }) {
           {symbol}
         </span>
       ))}
-      {article.sentiment && article.sentiment !== "neutral" ? (
-        <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 capitalize text-[#dce4ff]">
-          {article.sentiment}
+      {investorCues.map((cue) => (
+        <span
+          key={cue}
+          className="rounded-md border border-[#38d996]/25 bg-[#38d996]/10 px-1.5 py-0.5 text-[#dffbea]"
+        >
+          {cue}
         </span>
-      ) : null}
+      ))}
       {confidence ? (
         <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
           Match {confidence}
@@ -95,6 +100,8 @@ function ArticleVisual({
         src={image}
         alt=""
         className={className}
+        width={variant === "hero" ? 1280 : 320}
+        height={variant === "hero" ? 720 : 180}
         loading={variant === "hero" ? "eager" : "lazy"}
       />
     );

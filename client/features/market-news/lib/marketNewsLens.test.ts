@@ -82,14 +82,30 @@ describe("marketNewsLens", () => {
       buildMarketNewsLensOptions({
         articles,
         watchlistSymbols: ["CBA.AX"],
-      }).map((option) => [option.id, option.count]),
+      }).map((option) => [option.id, option.count, option.selectable]),
     ).toEqual([
-      ["all", 3],
-      ["watchlist", 1],
-      ["ticker-linked", 2],
-      ["high-relevance", 1],
-      ["negative", 1],
-      ["positive", 1],
+      ["all", 3, true],
+      ["watchlist", 1, true],
+      ["ticker-linked", 2, true],
+      ["high-relevance", 1, true],
+      ["negative", 1, true],
+      ["positive", 1, true],
+    ]);
+  });
+
+  it("keeps All selectable but disables empty signal filters", () => {
+    expect(
+      buildMarketNewsLensOptions({
+        articles: [articles[2]!],
+        watchlistSymbols: ["CBA.AX"],
+      }).map((option) => [option.id, option.count, option.selectable]),
+    ).toEqual([
+      ["all", 1, true],
+      ["watchlist", 0, false],
+      ["ticker-linked", 0, false],
+      ["high-relevance", 0, false],
+      ["negative", 0, false],
+      ["positive", 0, false],
     ]);
   });
 });

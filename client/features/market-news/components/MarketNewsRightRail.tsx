@@ -1,10 +1,10 @@
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import Link from "next/link";
 import { fitButton } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type {
   MarketNewsMarketScope,
   MarketNewsTicker,
-  MarketNewsTopic,
 } from "../types";
 
 const toneClass = {
@@ -17,48 +17,28 @@ const railSectionClass =
   "rounded-xl border border-[var(--fit-color-border-panel)] bg-[var(--fit-color-surface)] p-4";
 
 export function MarketNewsRightRail({
-  activeTopic,
-  articleCount,
   authenticated,
   lookupDraft,
   marketScope,
-  providerLabel,
-  providerWarning,
-  strictCategory,
-  selectedSymbol,
+  quoteLoading = false,
+  selectedTicker,
   tickers,
-  watchlistArticleCount,
   watchlistLoading,
   watchlistSymbols,
   onLookupDraftChange,
   onQuoteLookup,
 }: {
-  activeTopic: MarketNewsTopic;
-  articleCount: number;
   authenticated: boolean;
   lookupDraft: string;
   marketScope: MarketNewsMarketScope;
-  providerLabel: string;
-  providerWarning?: string;
-  strictCategory: boolean;
-  selectedSymbol: string;
+  quoteLoading?: boolean;
+  selectedTicker: MarketNewsTicker;
   tickers: readonly MarketNewsTicker[];
-  watchlistArticleCount: number;
   watchlistLoading: boolean;
   watchlistSymbols: readonly string[];
   onLookupDraftChange: (value: string) => void;
   onQuoteLookup: (symbol: string) => void;
 }) {
-  const selectedTicker =
-    tickers.find((ticker) => ticker.symbol === selectedSymbol) ?? {
-      symbol: selectedSymbol,
-      label: "Lookup selected",
-      value: "No live quote loaded",
-      change: "Pending",
-      tone: "neutral" as const,
-      sparkline: [],
-    };
-
   return (
     <aside className="space-y-4" aria-label="Market news side panel">
       <section className={railSectionClass}>
@@ -104,50 +84,8 @@ export function MarketNewsRightRail({
       </section>
 
       <section className={railSectionClass}>
-        <p className="text-sm font-extrabold uppercase tracking-[0.12em] text-[#687184]">
-          Focus
-        </p>
-        <h2 className="mt-2 text-xl font-extrabold text-white">
-          {activeTopic.label}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-[#b9c1d0]">
-          {activeTopic.description}
-        </p>
-      </section>
-
-      <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Source Check</h2>
-          <span className="rounded-md border border-[#5367ff]/30 bg-[#5367ff]/10 px-2 py-1 text-xs font-extrabold text-[#dbe4ff]">
-            {strictCategory ? "Exact category" : "Broad feed"}
-          </span>
-        </div>
-        <dl className="mt-3 grid gap-3 text-sm">
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-[#8f98aa]">Provider</dt>
-            <dd className="font-extrabold text-white">{providerLabel}</dd>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-[#8f98aa]">Stories</dt>
-            <dd className="font-extrabold text-white">{articleCount}</dd>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-[#8f98aa]">Watchlist hits</dt>
-            <dd className="font-extrabold text-white">
-              {watchlistArticleCount}
-            </dd>
-          </div>
-        </dl>
-        {providerWarning ? (
-          <p className="mt-3 rounded-lg border border-[#f6c85f]/30 bg-[#f6c85f]/10 px-3 py-2 text-xs font-semibold leading-5 text-[#ffe7a3]">
-            {providerWarning}
-          </p>
-        ) : null}
-      </section>
-
-      <section className={railSectionClass}>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Trending Tickers</h2>
+          <h2 className="text-lg font-extrabold text-white">Ticker shortcuts</h2>
           <span className="text-xs font-bold text-[#8f98aa]">
             {marketScope.shortLabel}
           </span>
@@ -188,11 +126,11 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Quote Snapshot</h2>
+          <h2 className="text-lg font-extrabold text-white">Quote reference</h2>
           <span
             className={`text-xs font-bold ${toneClass[selectedTicker.tone]}`}
           >
-            {selectedTicker.change}
+            {quoteLoading ? "Updating" : selectedTicker.change}
           </span>
         </div>
         <p className="mt-2 text-2xl font-extrabold text-white">
@@ -218,7 +156,7 @@ export function MarketNewsRightRail({
             { href: "/Community", label: "Community" },
             { href: "/Guide", label: "Guide" },
           ].map((item) => (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               className={cn(
@@ -227,7 +165,7 @@ export function MarketNewsRightRail({
               )}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </div>
       </section>

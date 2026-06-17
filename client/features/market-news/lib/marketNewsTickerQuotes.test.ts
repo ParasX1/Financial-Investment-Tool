@@ -55,4 +55,42 @@ describe("marketNewsTickerQuotes", () => {
       }),
     ).toEqual(ticker);
   });
+
+  it("uses sparkline endpoints as a price fallback for sparse quote responses", () => {
+    const ticker = {
+      symbol: "NVDA",
+      label: "Lookup selected",
+      value: "Loading quote...",
+      change: "Pending",
+      tone: "neutral" as const,
+      sparkline: [],
+    };
+
+    expect(
+      mergeMarketNewsTickerQuote(ticker, {
+        quote: {
+          symbol: "NVDA",
+          price: null,
+          prevClose: null,
+          change: null,
+          changePct: null,
+          shortName: "NVIDIA Corporation",
+        },
+        sparkline: {
+          symbol: "NVDA",
+          points: [
+            { t: 1, v: 200 },
+            { t: 2, v: 210 },
+          ],
+        },
+      }),
+    ).toEqual({
+      ...ticker,
+      change: "+10.00 +5.00%",
+      label: "NVIDIA Corporation",
+      sparkline: [200, 210],
+      tone: "positive",
+      value: "210.00",
+    });
+  });
 });

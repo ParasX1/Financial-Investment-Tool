@@ -32,7 +32,15 @@ export function MarketNewsTickerStrip({
   onMarketScopeChange: (scopeId: MarketNewsMarketScopeId) => void;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null);
+  const pickerRef = React.useRef<HTMLDivElement | null>(null);
+  const optionRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
   const menuId = React.useId();
+  const selectedIndex = Math.max(
+    0,
+    marketScopes.findIndex((scope) => scope.id === marketScope.id),
+  );
   const updatedLabel = updatedAt
     ? updatedAt.toLocaleTimeString("en-AU", {
         hour: "2-digit",
@@ -44,15 +52,111 @@ export function MarketNewsTickerStrip({
     setMenuOpen(false);
   }, [marketScope.id]);
 
+  React.useEffect(() => {
+    if (!menuOpen) return;
+
+    setActiveIndex(selectedIndex);
+    window.setTimeout(() => {
+      optionRefs.current[selectedIndex]?.focus();
+    });
+  }, [menuOpen, selectedIndex]);
+
+  React.useEffect(() => {
+    if (!menuOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+
+    return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [menuOpen]);
+
+  const selectScope = React.useCallback(
+    (scopeId: MarketNewsMarketScopeId) => {
+      setMenuOpen(false);
+      onMarketScopeChange(scopeId);
+      buttonRef.current?.focus();
+    },
+    [onMarketScopeChange],
+  );
+
+  const moveActiveOption = React.useCallback(
+    (nextIndex: number) => {
+      const clampedIndex = Math.min(
+        Math.max(nextIndex, 0),
+        marketScopes.length - 1,
+      );
+
+      setActiveIndex(clampedIndex);
+      optionRefs.current[clampedIndex]?.focus();
+    },
+    [marketScopes.length],
+  );
+
+  const handleScopeButtonKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (
+        event.key === "ArrowDown" ||
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+        setMenuOpen(true);
+      }
+    },
+    [],
+  );
+
+  const handleScopeMenuKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuOpen(false);
+        buttonRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        moveActiveOption(activeIndex + 1);
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        moveActiveOption(activeIndex - 1);
+        return;
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        moveActiveOption(0);
+        return;
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        moveActiveOption(marketScopes.length - 1);
+      }
+    },
+    [activeIndex, marketScopes.length, moveActiveOption],
+  );
+
   return (
     <section aria-label="Market movers" className={styles.marketMoverStrip}>
-      <div className={styles.scopePicker}>
+      <div className={styles.scopePicker} ref={pickerRef}>
         <button
+          ref={buttonRef}
           type="button"
           aria-controls={menuOpen ? menuId : undefined}
           aria-expanded={menuOpen}
           aria-haspopup="listbox"
           onClick={() => setMenuOpen((open) => !open)}
+          onKeyDown={handleScopeButtonKeyDown}
           className={cn(styles.scopeSelectButton, FIT_FOCUS_VISIBLE)}
         >
           <span className={styles.scopeIcon} aria-hidden="true">
@@ -76,18 +180,23 @@ export function MarketNewsTickerStrip({
             id={menuId}
             role="listbox"
             aria-label="Market mover groups"
+            onKeyDown={handleScopeMenuKeyDown}
             className={styles.scopeMenu}
           >
-            {marketScopes.map((scope) => {
+            {marketScopes.map((scope, index) => {
               const selected = scope.id === marketScope.id;
 
               return (
                 <button
                   key={scope.id}
+                  ref={(node) => {
+                    optionRefs.current[index] = node;
+                  }}
                   type="button"
                   role="option"
                   aria-selected={selected}
-                  onClick={() => onMarketScopeChange(scope.id)}
+                  tabIndex={index === activeIndex ? 0 : -1}
+                  onClick={() => selectScope(scope.id)}
                   className={cn(
                     styles.scopeMenuItem,
                     selected ? styles.scopeMenuItemActive : "",

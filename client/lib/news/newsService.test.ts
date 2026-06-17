@@ -241,6 +241,49 @@ describe("fetchMarketNewsWithProviders", () => {
     });
   });
 
+  it("keeps filling development topic feeds until the page sentinel is covered", async () => {
+    const firstProvider = provider({
+      articles: Array.from({ length: 8 }, (_, index) => ({
+        id: `cost-google-${index + 1}`,
+        image: null,
+        publishedAt: "2026-06-16T04:00:00Z",
+        source: "Market Desk",
+        summary: "Mortgage pressure remains high.",
+        title: `Cost of living pressure story ${index + 1}`,
+        url: `https://example.com/cost-google-${index + 1}`,
+      })),
+      id: "google-news-rss",
+      label: "Google News RSS",
+    });
+    const secondProvider = provider({
+      articles: Array.from({ length: 5 }, (_, index) => ({
+        id: `cost-gdelt-${index + 1}`,
+        image: null,
+        publishedAt: "2026-06-16T05:00:00Z",
+        source: "Market Desk",
+        summary: "Household bills and inflation remain visible.",
+        title: `Inflation keeps household budgets under pressure ${index + 1}`,
+        url: `https://example.com/cost-gdelt-${index + 1}`,
+      })),
+      id: "gdelt",
+      label: "GDELT",
+    });
+
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "13" },
+      {
+        env: {
+          NODE_ENV: "development",
+        },
+        providers: [firstProvider, secondProvider],
+      },
+    );
+
+    expect(result.articles).toHaveLength(13);
+    expect(secondProvider.fetchArticles).toHaveBeenCalled();
+    expect(result.meta.providerLabel).toBe("Google News RSS + GDELT");
+  });
+
   it("returns early in development after enough strict stories are available", async () => {
     const firstProvider = provider({
       articles: [

@@ -44,7 +44,7 @@ const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
   "marketaux",
   "newsapi",
 ];
-const DEVELOPMENT_MIN_STRICT_ARTICLES = 8;
+const DEVELOPMENT_MIN_STRICT_ARTICLES = 13;
 const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
 
 const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {

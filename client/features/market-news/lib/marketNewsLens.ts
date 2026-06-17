@@ -70,7 +70,7 @@ export function buildMarketNewsLensOptions({
   articles: readonly Article[];
   watchlistSymbols: readonly string[];
 }): MarketNewsLensOption[] {
-  const specs: Array<Omit<MarketNewsLensOption, "count">> = [
+  const specs: Array<Omit<MarketNewsLensOption, "count" | "selectable">> = [
     {
       id: "all",
       label: "All",
@@ -103,12 +103,17 @@ export function buildMarketNewsLensOptions({
     },
   ];
 
-  return specs.map((spec) => ({
-    ...spec,
-    count: filterArticlesByLens({
+  return specs.map((spec) => {
+    const count = filterArticlesByLens({
       articles,
       lensId: spec.id,
       watchlistSymbols,
-    }).length,
-  }));
+    }).length;
+
+    return {
+      ...spec,
+      count,
+      selectable: spec.id === "all" || count > 0,
+    };
+  });
 }

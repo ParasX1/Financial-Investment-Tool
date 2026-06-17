@@ -9,7 +9,34 @@ import {
 } from "./MarketNewsArticleCards";
 import styles from "../styles/marketNews.module.css";
 
-function LoadingSkeleton() {
+function LoadingSkeleton({
+  layout,
+}: {
+  layout: "featureGrid" | "topicFeed";
+}) {
+  if (layout === "topicFeed") {
+    return (
+      <section className={styles.topicFeed} aria-label="Loading topic stories">
+        <div className={styles.topicFeedList}>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className={styles.topicArticleRow}>
+              <div className={styles.topicArticleLink}>
+                <div
+                  className={`${styles.skeleton} ${styles.topicArticleImage}`}
+                />
+                <div className="min-w-0 space-y-3">
+                  <div className={`${styles.skeleton} h-5 w-4/5 rounded`} />
+                  <div className={`${styles.skeleton} h-4 w-11/12 rounded`} />
+                  <div className={`${styles.skeleton} h-4 w-2/3 rounded`} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.8fr)]">
@@ -48,7 +75,7 @@ export function MarketNewsArticleLayout({
   providerWarning?: string;
   title: string;
 }) {
-  if (loading && !articles.length) return <LoadingSkeleton />;
+  if (loading && !articles.length) return <LoadingSkeleton layout={layout} />;
 
   if (error) {
     return (

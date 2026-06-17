@@ -40,6 +40,12 @@ function signedNumber(value: number, digits: number): string {
   return `${value >= 0 ? "+" : "-"}${formatted}`;
 }
 
+function sparklineValues(sparkline: MarketNewsSparklineResponse | null) {
+  return (
+    sparkline?.points?.map((point) => point.v).filter(isFiniteNumber) ?? []
+  );
+}
+
 export function mergeMarketNewsTickerQuote(
   ticker: MarketNewsTicker,
   live: {
@@ -47,9 +53,20 @@ export function mergeMarketNewsTickerQuote(
     sparkline: MarketNewsSparklineResponse | null;
   },
 ): MarketNewsTicker {
-  const price = live.quote?.price;
+  const nextSparkline = sparklineValues(live.sparkline);
+  const firstSparklineValue = nextSparkline[0];
+  const lastSparklineValue = nextSparkline[nextSparkline.length - 1];
+  const price = isFiniteNumber(live.quote?.price)
+    ? live.quote.price
+    : lastSparklineValue;
   const change = live.quote?.change;
-  const changePct = live.quote?.changePct;
+  const changePct = isFiniteNumber(live.quote?.changePct)
+    ? live.quote.changePct
+    : isFiniteNumber(firstSparklineValue) &&
+        isFiniteNumber(lastSparklineValue) &&
+        firstSparklineValue !== 0
+      ? ((lastSparklineValue - firstSparklineValue) / firstSparklineValue) * 100
+      : null;
 
   if (!isFiniteNumber(price) || !isFiniteNumber(changePct)) return ticker;
 
@@ -57,14 +74,11 @@ export function mergeMarketNewsTickerQuote(
     ? change
     : isFiniteNumber(live.quote?.prevClose)
       ? price - live.quote.prevClose
+      : isFiniteNumber(firstSparklineValue)
+        ? price - firstSparklineValue
       : null;
 
   if (!isFiniteNumber(resolvedChange)) return ticker;
-
-  const nextSparkline =
-    live.sparkline?.points
-      ?.map((point) => point.v)
-      .filter(isFiniteNumber) ?? [];
 
   return {
     ...ticker,
@@ -83,5 +97,6 @@ export function mergeMarketNewsTickerQuote(
       maximumFractionDigits: priceFractionDigits(ticker.symbol, price),
       minimumFractionDigits: priceFractionDigits(ticker.symbol, price),
     }),
+    label: live.quote?.shortName ?? live.quote?.longName ?? ticker.label,
   };
 }

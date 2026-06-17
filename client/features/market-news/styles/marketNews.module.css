@@ -26,7 +26,7 @@
 
 .commandPanel,
 .marketPanel,
-.storyIntro {
+.viewConsole {
   min-width: 0;
   border: 1px solid var(--fit-color-border-panel, #27272a);
   border-radius: 0.75rem;
@@ -272,7 +272,7 @@
   color: #ffe7a3;
 }
 
-.storyIntro {
+.viewConsole {
   display: grid;
   gap: 1rem;
   margin: 1rem 0;
@@ -282,12 +282,9 @@
 .lensPanel {
   display: grid;
   min-width: 0;
-  gap: 0.85rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--fit-color-border-panel, #27272a);
-  border-radius: 0.75rem;
-  background: var(--market-news-panel);
-  padding: 1rem;
+  gap: 0.65rem;
+  border-top: 1px solid var(--market-news-line);
+  padding-top: 0.85rem;
 }
 
 .lensGrid {
@@ -325,6 +322,16 @@
   border-color: rgba(83, 103, 255, 0.62);
   background: rgba(83, 103, 255, 0.12);
   box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+}
+
+.lensButtonDisabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.lensButtonDisabled:hover {
+  border-color: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  background: var(--market-news-panel-soft);
 }
 
 .lensLabel {
@@ -656,9 +663,11 @@
 }
 
 @media (min-width: 900px) {
-  .storyIntro {
+  .viewConsoleHeader {
+    display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
     align-items: end;
+    gap: 1rem;
   }
 
   .lensPanel {
@@ -720,7 +729,7 @@
     padding: 1rem;
   }
 
-  .storyIntro {
+  .viewConsole {
     padding: 1.1rem;
   }
 }

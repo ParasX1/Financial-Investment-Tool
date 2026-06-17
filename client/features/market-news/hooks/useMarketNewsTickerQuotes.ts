@@ -71,3 +71,50 @@ export function useMarketNewsTickerQuotes(
 
   return { loading, tickers: liveTickers, updatedAt };
 }
+
+export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
+  const [liveTicker, setLiveTicker] = React.useState<MarketNewsTicker | null>(
+    ticker,
+  );
+  const [loading, setLoading] = React.useState(false);
+  const [updatedAt, setUpdatedAt] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setLiveTicker(ticker);
+    if (!ticker) {
+      setLoading(false);
+      setUpdatedAt(null);
+    }
+  }, [ticker]);
+
+  React.useEffect(() => {
+    if (!ticker) {
+      setLoading(false);
+      return;
+    }
+
+    let alive = true;
+    const activeTicker = ticker;
+
+    async function load() {
+      setLoading(true);
+      const nextTicker = await fetchTickerSnapshot(activeTicker);
+
+      if (!alive) return;
+
+      setLiveTicker(nextTicker);
+      setUpdatedAt(new Date());
+      setLoading(false);
+    }
+
+    void load();
+    const interval = window.setInterval(load, QUOTE_REFRESH_MS);
+
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+    };
+  }, [ticker]);
+
+  return { loading, ticker: liveTicker, updatedAt };
+}
