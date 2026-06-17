@@ -34,12 +34,14 @@ async function fetchMarketNewsRequest(
 }
 
 export function useMarketNewsArticles({
+  enabled = true,
   limit,
   refreshKey,
   searchQuery,
   tickerSymbol,
   topic,
 }: {
+  enabled?: boolean;
   limit: number;
   refreshKey: number;
   searchQuery: string;
@@ -56,6 +58,8 @@ export function useMarketNewsArticles({
   const [meta, setMeta] = React.useState<NewsResponseMeta | null>(null);
 
   React.useEffect(() => {
+    if (!enabled) return;
+
     let alive = true;
 
     setLoading(true);
@@ -99,12 +103,12 @@ export function useMarketNewsArticles({
     return () => {
       alive = false;
     };
-  }, [limit, refreshKey, request]);
+  }, [enabled, limit, refreshKey, request]);
 
   return {
     articles,
     error,
-    loading,
+    loading: !enabled || loading,
     meta,
     request,
   };

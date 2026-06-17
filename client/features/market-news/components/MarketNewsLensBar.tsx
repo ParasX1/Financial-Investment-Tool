@@ -23,6 +23,8 @@ export function MarketNewsLensBar({
       option.count > 0 ||
       option.id === activeLensId,
   );
+  const activeOption =
+    options.find((option) => option.id === activeLensId) ?? options[0];
 
   return (
     <section className={styles.lensPanel} aria-label="News signals">
@@ -57,12 +59,18 @@ export function MarketNewsLensBar({
               )}
               title={title}
             >
-              <span className={styles.lensLabel}>{option.label}</span>
+              <span className={styles.lensLabel}>
+                {option.label}
+                <span className="sr-only">: {option.description}</span>
+              </span>
               <span className={styles.lensCount}>{option.count}</span>
             </button>
           );
         })}
       </div>
+      {activeOption ? (
+        <p className={styles.modeDescription}>{activeOption.description}</p>
+      ) : null}
     </section>
   );
 }

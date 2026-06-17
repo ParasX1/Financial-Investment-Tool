@@ -10,7 +10,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     label: "Cost of Living",
     description:
       "Household budgets, inflation pressure, wages, and everyday costs.",
-    futureRoute: "/MarketNews?topic=cost-of-living",
     topics: [
       {
         id: "cost-of-living",
@@ -18,7 +17,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Household pressure",
         description:
           "Consumer prices, rates, wages, bills, and saving decisions that affect Australian households.",
-        futureRoute: "/MarketNews?topic=cost-of-living",
         source: {
           kind: "search",
           query:
@@ -33,7 +31,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     label: "Markets",
     description:
       "Australian shares, global markets, commodities, currencies, and macro signals.",
-    futureRoute: "/MarketNews?group=markets",
     topics: [
       {
         id: "australian-markets",
@@ -42,7 +39,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "ASX focus",
         description:
           "ASX headlines, Australian business news, market moves, and domestic macro signals.",
-        futureRoute: "/MarketNews?topic=australian-markets",
         source: {
           kind: "regional",
           country: "au",
@@ -56,7 +52,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Global market watch",
         description:
           "US, European, and Asian market headlines that can influence portfolio decisions.",
-        futureRoute: "/MarketNews?topic=international-markets",
         source: {
           kind: "search",
           query: "global markets US Europe Asia stocks bonds currencies",
@@ -69,7 +64,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Macro inputs",
         description:
           "Energy, metals, agriculture, and supply-chain stories that move inflation and earnings expectations.",
-        futureRoute: "/MarketNews?topic=commodities",
         source: {
           kind: "commodity",
           commodity: "commodities",
@@ -83,7 +77,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     label: "Money",
     description:
       "Personal finance, property, banking, superannuation, tax, and saving decisions.",
-    futureRoute: "/MarketNews?group=money",
     topics: [
       {
         id: "money-news",
@@ -91,7 +84,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Everyday finance",
         description:
           "Banking, superannuation, tax, saving, and consumer finance news for Australian investors.",
-        futureRoute: "/MarketNews?topic=money-news",
         source: {
           kind: "search",
           query: "Australia money news banking tax superannuation savings",
@@ -105,7 +97,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Household decisions",
         description:
           "Budgeting, mortgage costs, retirement planning, insurance, and practical financial choices.",
-        futureRoute: "/MarketNews?topic=personal-finance",
         source: {
           kind: "search",
           query:
@@ -120,7 +111,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Housing market",
         description:
           "Housing affordability, rents, mortgage pressure, property prices, and real-estate policy.",
-        futureRoute: "/MarketNews?topic=property-news",
         source: {
           kind: "search",
           query:
@@ -135,7 +125,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     label: "Work",
     description:
       "Labour market shifts, wages, career decisions, and workplace trends.",
-    futureRoute: "/MarketNews?topic=work",
     topics: [
       {
         id: "work",
@@ -143,7 +132,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Jobs and wages",
         description:
           "Employment, wages, workplace policy, and productivity stories that affect income and markets.",
-        futureRoute: "/MarketNews?topic=work",
         source: {
           kind: "search",
           query: "Australia work jobs wages workplace employment economy",
@@ -157,7 +145,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     label: "Technology",
     description:
       "Tech companies, AI, platforms, cybersecurity, and innovation-led market moves.",
-    futureRoute: "/MarketNews?topic=technology",
     topics: [
       {
         id: "technology",
@@ -166,7 +153,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
         eyebrow: "Innovation watch",
         description:
           "Technology sector headlines, AI, platform companies, and market-moving innovation stories.",
-        futureRoute: "/MarketNews?topic=technology",
         source: {
           kind: "industry",
           industry: "technology",
@@ -185,7 +171,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "+121.90 +1.35%",
     tone: "positive",
     sparkline: [28, 30, 31, 30, 33, 35, 36, 38, 37, 39],
-    futureQuoteRoute: "/MarketNews?quote=%5EAORD",
   },
   {
     symbol: "AUDUSD=X",
@@ -194,7 +179,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.0028 +0.39%",
     tone: "positive",
     sparkline: [20, 21, 22, 21, 24, 23, 25, 27, 26, 28],
-    futureQuoteRoute: "/MarketNews?quote=AUDUSD%3DX",
   },
   {
     symbol: "^AXJO",
@@ -203,7 +187,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "+110.00 +1.25%",
     tone: "positive",
     sparkline: [24, 26, 25, 27, 29, 31, 30, 32, 34, 35],
-    futureQuoteRoute: "/MarketNews?quote=%5EAXJO",
   },
   {
     symbol: "CL=F",
@@ -212,7 +195,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "-4.67 -5.50%",
     tone: "negative",
     sparkline: [36, 34, 32, 31, 29, 28, 27, 25, 24, 22],
-    futureQuoteRoute: "/MarketNews?quote=CL%3DF",
   },
   {
     symbol: "GC=F",
@@ -221,7 +203,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "+120.00 +2.83%",
     tone: "positive",
     sparkline: [19, 20, 22, 23, 25, 24, 27, 29, 31, 34],
-    futureQuoteRoute: "/MarketNews?quote=GC%3DF",
   },
   {
     symbol: "BTC-AUD",
@@ -230,7 +211,6 @@ const MARKET_NEWS_AU_TICKERS: readonly MarketNewsTicker[] = [
     change: "+1,646.10 +1.80%",
     tone: "positive",
     sparkline: [22, 21, 20, 23, 25, 27, 29, 30, 32, 33],
-    futureQuoteRoute: "/MarketNews?quote=BTC-AUD",
   },
 ];
 
@@ -242,7 +222,6 @@ const MARKET_NEWS_US_TICKERS: readonly MarketNewsTicker[] = [
     change: "+34.42 +0.58%",
     tone: "positive",
     sparkline: [24, 25, 27, 26, 29, 31, 30, 33, 35, 37],
-    futureQuoteRoute: "/MarketNews?quote=%5EGSPC",
   },
   {
     symbol: "^IXIC",
@@ -251,7 +230,6 @@ const MARKET_NEWS_US_TICKERS: readonly MarketNewsTicker[] = [
     change: "+126.18 +0.66%",
     tone: "positive",
     sparkline: [20, 23, 24, 23, 26, 29, 31, 33, 32, 35],
-    futureQuoteRoute: "/MarketNews?quote=%5EIXIC",
   },
   {
     symbol: "^DJI",
@@ -260,7 +238,6 @@ const MARKET_NEWS_US_TICKERS: readonly MarketNewsTicker[] = [
     change: "-41.03 -0.10%",
     tone: "negative",
     sparkline: [34, 33, 35, 32, 31, 30, 29, 30, 28, 27],
-    futureQuoteRoute: "/MarketNews?quote=%5EDJI",
   },
   {
     symbol: "^RUT",
@@ -269,7 +246,6 @@ const MARKET_NEWS_US_TICKERS: readonly MarketNewsTicker[] = [
     change: "+11.76 +0.55%",
     tone: "positive",
     sparkline: [21, 22, 24, 23, 25, 27, 29, 28, 31, 32],
-    futureQuoteRoute: "/MarketNews?quote=%5ERUT",
   },
   {
     symbol: "^VIX",
@@ -278,7 +254,6 @@ const MARKET_NEWS_US_TICKERS: readonly MarketNewsTicker[] = [
     change: "-0.84 -4.38%",
     tone: "negative",
     sparkline: [38, 36, 34, 35, 32, 30, 29, 27, 25, 23],
-    futureQuoteRoute: "/MarketNews?quote=%5EVIX",
   },
 ];
 
@@ -290,7 +265,6 @@ const MARKET_NEWS_EUROPE_TICKERS: readonly MarketNewsTicker[] = [
     change: "+28.91 +0.33%",
     tone: "positive",
     sparkline: [25, 26, 25, 28, 30, 29, 31, 34, 33, 35],
-    futureQuoteRoute: "/MarketNews?quote=%5EFTSE",
   },
   {
     symbol: "^GDAXI",
@@ -299,7 +273,6 @@ const MARKET_NEWS_EUROPE_TICKERS: readonly MarketNewsTicker[] = [
     change: "-54.44 -0.23%",
     tone: "negative",
     sparkline: [36, 35, 34, 33, 35, 32, 31, 29, 28, 27],
-    futureQuoteRoute: "/MarketNews?quote=%5EGDAXI",
   },
   {
     symbol: "^FCHI",
@@ -308,7 +281,6 @@ const MARKET_NEWS_EUROPE_TICKERS: readonly MarketNewsTicker[] = [
     change: "+17.22 +0.22%",
     tone: "positive",
     sparkline: [24, 23, 25, 27, 26, 29, 31, 30, 32, 34],
-    futureQuoteRoute: "/MarketNews?quote=%5EFCHI",
   },
   {
     symbol: "^STOXX50E",
@@ -317,7 +289,6 @@ const MARKET_NEWS_EUROPE_TICKERS: readonly MarketNewsTicker[] = [
     change: "+8.64 +0.16%",
     tone: "positive",
     sparkline: [26, 27, 28, 27, 29, 30, 31, 30, 33, 34],
-    futureQuoteRoute: "/MarketNews?quote=%5ESTOXX50E",
   },
 ];
 
@@ -329,7 +300,6 @@ const MARKET_NEWS_ASIA_TICKERS: readonly MarketNewsTicker[] = [
     change: "+164.55 +0.43%",
     tone: "positive",
     sparkline: [23, 25, 26, 25, 28, 30, 31, 33, 32, 35],
-    futureQuoteRoute: "/MarketNews?quote=%5EN225",
   },
   {
     symbol: "^HSI",
@@ -338,7 +308,6 @@ const MARKET_NEWS_ASIA_TICKERS: readonly MarketNewsTicker[] = [
     change: "-183.10 -0.76%",
     tone: "negative",
     sparkline: [35, 36, 33, 31, 29, 30, 28, 26, 25, 23],
-    futureQuoteRoute: "/MarketNews?quote=%5EHSI",
   },
   {
     symbol: "000001.SS",
@@ -347,7 +316,6 @@ const MARKET_NEWS_ASIA_TICKERS: readonly MarketNewsTicker[] = [
     change: "+14.12 +0.42%",
     tone: "positive",
     sparkline: [21, 22, 23, 25, 24, 27, 29, 28, 30, 32],
-    futureQuoteRoute: "/MarketNews?quote=000001.SS",
   },
   {
     symbol: "^STI",
@@ -356,7 +324,6 @@ const MARKET_NEWS_ASIA_TICKERS: readonly MarketNewsTicker[] = [
     change: "+9.03 +0.23%",
     tone: "positive",
     sparkline: [26, 27, 26, 28, 29, 31, 30, 32, 33, 34],
-    futureQuoteRoute: "/MarketNews?quote=%5ESTI",
   },
 ];
 
@@ -368,7 +335,6 @@ const MARKET_NEWS_CRYPTO_TICKERS: readonly MarketNewsTicker[] = [
     change: "+1,646.10 +1.80%",
     tone: "positive",
     sparkline: [22, 21, 20, 23, 25, 27, 29, 30, 32, 33],
-    futureQuoteRoute: "/MarketNews?quote=BTC-AUD",
   },
   {
     symbol: "ETH-AUD",
@@ -377,7 +343,6 @@ const MARKET_NEWS_CRYPTO_TICKERS: readonly MarketNewsTicker[] = [
     change: "+82.40 +1.54%",
     tone: "positive",
     sparkline: [20, 22, 21, 24, 26, 25, 28, 30, 31, 33],
-    futureQuoteRoute: "/MarketNews?quote=ETH-AUD",
   },
   {
     symbol: "SOL-AUD",
@@ -386,7 +351,6 @@ const MARKET_NEWS_CRYPTO_TICKERS: readonly MarketNewsTicker[] = [
     change: "-3.18 -1.46%",
     tone: "negative",
     sparkline: [33, 32, 30, 29, 31, 28, 27, 26, 24, 23],
-    futureQuoteRoute: "/MarketNews?quote=SOL-AUD",
   },
   {
     symbol: "XRP-AUD",
@@ -395,7 +359,6 @@ const MARKET_NEWS_CRYPTO_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.02 +2.44%",
     tone: "positive",
     sparkline: [19, 20, 22, 21, 23, 24, 26, 27, 29, 31],
-    futureQuoteRoute: "/MarketNews?quote=XRP-AUD",
   },
 ];
 
@@ -407,7 +370,6 @@ const MARKET_NEWS_RATES_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.03 +0.69%",
     tone: "positive",
     sparkline: [24, 25, 26, 25, 28, 29, 31, 30, 32, 34],
-    futureQuoteRoute: "/MarketNews?quote=%5ETNX",
   },
   {
     symbol: "^TYX",
@@ -416,7 +378,6 @@ const MARKET_NEWS_RATES_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.02 +0.41%",
     tone: "positive",
     sparkline: [23, 24, 26, 25, 27, 28, 30, 31, 30, 32],
-    futureQuoteRoute: "/MarketNews?quote=%5ETYX",
   },
   {
     symbol: "^FVX",
@@ -425,7 +386,6 @@ const MARKET_NEWS_RATES_TICKERS: readonly MarketNewsTicker[] = [
     change: "-0.01 -0.25%",
     tone: "negative",
     sparkline: [31, 30, 29, 30, 28, 27, 26, 25, 24, 23],
-    futureQuoteRoute: "/MarketNews?quote=%5EFVX",
   },
   {
     symbol: "IRX",
@@ -434,7 +394,6 @@ const MARKET_NEWS_RATES_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.01 +0.24%",
     tone: "positive",
     sparkline: [22, 22, 23, 24, 24, 25, 26, 25, 27, 28],
-    futureQuoteRoute: "/MarketNews?quote=IRX",
   },
 ];
 
@@ -446,7 +405,6 @@ const MARKET_NEWS_COMMODITY_TICKERS: readonly MarketNewsTicker[] = [
     change: "-4.67 -5.50%",
     tone: "negative",
     sparkline: [36, 34, 32, 31, 29, 28, 27, 25, 24, 22],
-    futureQuoteRoute: "/MarketNews?quote=CL%3DF",
   },
   {
     symbol: "GC=F",
@@ -455,7 +413,6 @@ const MARKET_NEWS_COMMODITY_TICKERS: readonly MarketNewsTicker[] = [
     change: "+120.00 +2.83%",
     tone: "positive",
     sparkline: [19, 20, 22, 23, 25, 24, 27, 29, 31, 34],
-    futureQuoteRoute: "/MarketNews?quote=GC%3DF",
   },
   {
     symbol: "SI=F",
@@ -464,7 +421,6 @@ const MARKET_NEWS_COMMODITY_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.54 +1.51%",
     tone: "positive",
     sparkline: [20, 21, 23, 22, 25, 26, 27, 29, 30, 32],
-    futureQuoteRoute: "/MarketNews?quote=SI%3DF",
   },
   {
     symbol: "HG=F",
@@ -473,7 +429,6 @@ const MARKET_NEWS_COMMODITY_TICKERS: readonly MarketNewsTicker[] = [
     change: "-0.04 -0.82%",
     tone: "negative",
     sparkline: [34, 33, 31, 32, 30, 28, 29, 27, 26, 24],
-    futureQuoteRoute: "/MarketNews?quote=HG%3DF",
   },
 ];
 
@@ -485,7 +440,6 @@ const MARKET_NEWS_CURRENCY_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.0028 +0.39%",
     tone: "positive",
     sparkline: [20, 21, 22, 21, 24, 23, 25, 27, 26, 28],
-    futureQuoteRoute: "/MarketNews?quote=AUDUSD%3DX",
   },
   {
     symbol: "EURUSD=X",
@@ -494,7 +448,6 @@ const MARKET_NEWS_CURRENCY_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.0031 +0.27%",
     tone: "positive",
     sparkline: [22, 23, 23, 25, 24, 26, 28, 27, 29, 31],
-    futureQuoteRoute: "/MarketNews?quote=EURUSD%3DX",
   },
   {
     symbol: "USDJPY=X",
@@ -503,7 +456,6 @@ const MARKET_NEWS_CURRENCY_TICKERS: readonly MarketNewsTicker[] = [
     change: "-0.48 -0.33%",
     tone: "negative",
     sparkline: [35, 34, 32, 33, 31, 30, 28, 27, 26, 24],
-    futureQuoteRoute: "/MarketNews?quote=USDJPY%3DX",
   },
   {
     symbol: "GBPUSD=X",
@@ -512,7 +464,6 @@ const MARKET_NEWS_CURRENCY_TICKERS: readonly MarketNewsTicker[] = [
     change: "+0.0020 +0.15%",
     tone: "positive",
     sparkline: [21, 22, 24, 23, 25, 26, 27, 29, 28, 30],
-    futureQuoteRoute: "/MarketNews?quote=GBPUSD%3DX",
   },
 ];
 
@@ -524,7 +475,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Australian indices, currency, commodities, and crypto watched by local investors.",
     tickers: MARKET_NEWS_AU_TICKERS,
-    futureRoute: "/MarketNews?market=australia",
   },
   {
     id: "us-markets",
@@ -532,7 +482,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     shortLabel: "US",
     description: "Major US equity benchmarks and volatility signals.",
     tickers: MARKET_NEWS_US_TICKERS,
-    futureRoute: "/MarketNews?market=us-markets",
   },
   {
     id: "europe-markets",
@@ -541,7 +490,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "European index snapshots across London, Frankfurt, Paris, and the euro area.",
     tickers: MARKET_NEWS_EUROPE_TICKERS,
-    futureRoute: "/MarketNews?market=europe-markets",
   },
   {
     id: "asia-markets",
@@ -550,7 +498,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Asian market benchmarks that shape the Australian trading day.",
     tickers: MARKET_NEWS_ASIA_TICKERS,
-    futureRoute: "/MarketNews?market=asia-markets",
   },
   {
     id: "cryptocurrencies",
@@ -559,7 +506,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Digital asset snapshots shown in Australian dollar pairs where available.",
     tickers: MARKET_NEWS_CRYPTO_TICKERS,
-    futureRoute: "/MarketNews?market=cryptocurrencies",
   },
   {
     id: "rates",
@@ -568,7 +514,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Yield and short-rate proxies for macro and equity valuation context.",
     tickers: MARKET_NEWS_RATES_TICKERS,
-    futureRoute: "/MarketNews?market=rates",
   },
   {
     id: "commodities",
@@ -577,7 +522,6 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Energy and metals futures that feed inflation, earnings, and currency moves.",
     tickers: MARKET_NEWS_COMMODITY_TICKERS,
-    futureRoute: "/MarketNews?market=commodities",
   },
   {
     id: "currencies",
@@ -585,17 +529,5 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     shortLabel: "FX",
     description: "Major foreign exchange pairs for cross-market context.",
     tickers: MARKET_NEWS_CURRENCY_TICKERS,
-    futureRoute: "/MarketNews?market=currencies",
   },
 ];
-
-export const MARKET_NEWS_TICKERS: readonly MarketNewsTicker[] =
-  MARKET_NEWS_AU_TICKERS;
-
-export const MARKET_NEWS_TRENDING_SYMBOLS = [
-  "SPCX",
-  "^AORD",
-  "TEAM",
-  "WOW.AX",
-  "CBA.AX",
-] as const;

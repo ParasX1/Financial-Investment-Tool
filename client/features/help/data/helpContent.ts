@@ -107,22 +107,22 @@ export const helpSections: HelpSection[] = [
       {
         question: "How is news categorized?",
         answer:
-          "News is organized into five tabs: General (all news), Watchlist (stocks you're tracking), Regional (by geography), Industry (by sector), and Commodity (energy, metals, agriculture).",
+          "Market News is organized around investor-facing topics: Cost of Living, Markets, Money, Work, and Technology. Markets and Money include secondary topics such as Australian Markets, International Markets, Commodities, Money News, Personal Finance, and Property News.",
       },
       {
         question: "How often is news updated?",
         answer:
-          "Market news is updated in real-time from multiple trusted financial sources including Bloomberg, Reuters, Financial Times, WSJ, and CNBC. New articles appear as soon as they're published.",
+          "The page requests fresh provider results when you change topic, search, look up a ticker, refresh, or open a deep link. In development it may use free providers such as Google News RSS, Yahoo Finance RSS, or GDELT; configured production providers such as MarketAux and NewsAPI can be swapped in through the provider layer.",
       },
       {
         question: "Can I filter news by specific criteria?",
         answer:
-          "Yes, use the filter controls at the top of the page. You can filter by region (North America, Europe, Asia, Middle East), industry sector, or commodity type depending on the active tab.",
+          "Yes. Use Signals to narrow the current story set by all stories, watchlist links, company-linked headlines, best matches, risks, or opportunities. Use Scan order to reorder the same story set by latest, best signal, or watchlist-first without changing the underlying category or search.",
       },
       {
         question: "How do I see news for my watchlist stocks?",
         answer:
-          "Click the 'Watchlist' tab to view news articles specifically related to stocks in your watchlist. Articles are tagged with related stock symbols for easy identification.",
+          "Use the My watchlist signal to show stories linked to saved tickers, or use the quote lookup panel to search a specific ticker. The market scope selector above the ticker strip changes the quote snapshots only; it does not change the news category query.",
       },
     ],
   },

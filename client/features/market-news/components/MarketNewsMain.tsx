@@ -33,9 +33,14 @@ import {
   parseMarketNewsRouteQuery,
   type MarketNewsRouteState,
 } from "../lib/marketNewsRouting";
+import {
+  MARKET_NEWS_SORT_OPTIONS,
+  sortMarketNewsArticles,
+} from "../lib/marketNewsSort";
 import type {
   MarketNewsLensId,
   MarketNewsMarketScopeId,
+  MarketNewsSortId,
   MarketNewsTopicId,
 } from "../types";
 import { useMarketNewsArticles } from "../hooks/useMarketNewsArticles";
@@ -48,6 +53,7 @@ import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
 import { MarketNewsCategoryNav } from "./MarketNewsCategoryNav";
 import { MarketNewsLensBar } from "./MarketNewsLensBar";
 import { MarketNewsRightRail } from "./MarketNewsRightRail";
+import { MarketNewsScanOrderBar } from "./MarketNewsScanOrderBar";
 import { MarketNewsSearchBar } from "./MarketNewsSearchBar";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
 import styles from "../styles/marketNews.module.css";
@@ -70,6 +76,8 @@ export function MarketNewsMain({
   const [tickerSymbol, setTickerSymbol] = React.useState("");
   const [activeLensId, setActiveLensId] =
     React.useState<MarketNewsLensId>("all");
+  const [activeSortId, setActiveSortId] =
+    React.useState<MarketNewsSortId>("latest");
   const [storyPageIndex, setStoryPageIndex] = React.useState(0);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [lookupDraft, setLookupDraft] = React.useState("");
@@ -89,6 +97,7 @@ export function MarketNewsMain({
         marketScopeId: activeMarketScopeId,
         pageIndex: storyPageIndex,
         searchQuery,
+        sortId: activeSortId,
         tickerSymbol,
         topicId: activeTopicId,
         ...nextState,
@@ -104,6 +113,7 @@ export function MarketNewsMain({
     [
       activeLensId,
       activeMarketScopeId,
+      activeSortId,
       activeTopicId,
       router,
       searchQuery,
@@ -129,6 +139,7 @@ export function MarketNewsMain({
     setTickerSymbol(routeState.tickerSymbol);
     setLookupDraft(routeState.tickerSymbol);
     setActiveLensId(routeState.lensId);
+    setActiveSortId(routeState.sortId);
     setStoryPageIndex(routeState.pageIndex);
     setSelectedSymbol(routeSelectedSymbol);
   }, [router.asPath, router.isReady, router.query]);
@@ -164,6 +175,7 @@ export function MarketNewsMain({
     selectedLookupSeed ??
     activeMarketScope.tickers[0]!;
   const { articles, error, loading, meta, request } = useMarketNewsArticles({
+    enabled: router.isReady,
     limit: articleLimit,
     refreshKey,
     searchQuery,
@@ -226,22 +238,31 @@ export function MarketNewsMain({
       }),
     [activeLens.id, articles, watchlist.symbols],
   );
+  const sortedArticles = React.useMemo(
+    () =>
+      sortMarketNewsArticles({
+        articles: visibleArticles,
+        sortId: activeSortId,
+        watchlistSymbols: watchlist.symbols,
+      }),
+    [activeSortId, visibleArticles, watchlist.symbols],
+  );
   const pageWindow = React.useMemo(
     () =>
       topicFeedMode
-        ? getMarketNewsPageWindow(visibleArticles, storyPageIndex)
+        ? getMarketNewsPageWindow(sortedArticles, storyPageIndex)
         : null,
-    [storyPageIndex, topicFeedMode, visibleArticles],
+    [sortedArticles, storyPageIndex, topicFeedMode],
   );
-  const displayedArticles = pageWindow?.items ?? visibleArticles;
+  const displayedArticles = pageWindow?.items ?? sortedArticles;
 
   React.useEffect(() => {
-    if (!topicFeedMode || loading || !visibleArticles.length) return;
+    if (!topicFeedMode || loading || !sortedArticles.length) return;
 
     setStoryPageIndex((pageIndex) => {
       const clampedPageIndex = clampMarketNewsPageIndex(
         pageIndex,
-        visibleArticles.length,
+        sortedArticles.length,
       );
 
       if (clampedPageIndex !== pageIndex) {
@@ -250,7 +271,7 @@ export function MarketNewsMain({
 
       return clampedPageIndex;
     });
-  }, [loading, syncRouteState, topicFeedMode, visibleArticles.length]);
+  }, [loading, sortedArticles.length, syncRouteState, topicFeedMode]);
 
   const emptyState = React.useMemo(() => {
     if (articles.length && !visibleArticles.length) {
@@ -382,6 +403,11 @@ export function MarketNewsMain({
     setStoryPageIndex(0);
     syncRouteState({ lensId, pageIndex: 0 });
   }, [syncRouteState]);
+  const handleSortChange = React.useCallback((sortId: MarketNewsSortId) => {
+    setActiveSortId(sortId);
+    setStoryPageIndex(0);
+    syncRouteState({ pageIndex: 0, sortId });
+  }, [syncRouteState]);
   const handlePreviousPage = React.useCallback(() => {
     setStoryPageIndex((pageIndex) => {
       const nextPageIndex = Math.max(0, pageIndex - 1);
@@ -416,7 +442,7 @@ export function MarketNewsMain({
     loading && articles.length
       ? "Updating this view while keeping the previous stories visible."
       : meta?.provider === "demo"
-        ? undefined
+        ? "Demo stories are synthetic placeholders for local development. Do not treat them as live market news."
         : meta?.warnings[0];
 
   return (
@@ -507,6 +533,12 @@ export function MarketNewsMain({
                 </div>
               </dl>
             </div>
+
+            <MarketNewsScanOrderBar
+              activeSortId={activeSortId}
+              options={MARKET_NEWS_SORT_OPTIONS}
+              onSortChange={handleSortChange}
+            />
 
             <MarketNewsLensBar
               activeLensId={activeLens.id}

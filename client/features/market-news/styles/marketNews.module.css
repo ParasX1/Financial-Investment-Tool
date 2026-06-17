@@ -287,6 +287,53 @@
   padding-top: 0.85rem;
 }
 
+.scanPanel {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  border-top: 1px solid var(--market-news-line);
+  padding-top: 0.85rem;
+}
+
+.scanGrid {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scanButton {
+  min-height: 2.35rem;
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-radius: 0.6rem;
+  background: var(--market-news-panel-soft);
+  padding: 0.5rem 0.7rem;
+  color: #dce4ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.scanButton:hover {
+  border-color: rgba(83, 103, 255, 0.45);
+  background: #171820;
+}
+
+.scanButtonActive {
+  border-color: rgba(83, 103, 255, 0.62);
+  background: rgba(83, 103, 255, 0.12);
+}
+
+.modeDescription {
+  margin-top: -0.15rem;
+  color: var(--fit-color-text-muted, #8f98aa);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .lensGrid {
   display: grid;
   min-width: 0;
@@ -673,6 +720,15 @@
   .lensPanel {
     grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
     align-items: center;
+  }
+
+  .scanPanel {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .modeDescription {
+    grid-column: 2;
   }
 
   .lensGrid {

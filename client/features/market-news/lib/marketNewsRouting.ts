@@ -6,6 +6,7 @@ import {
 import type {
   MarketNewsLensId,
   MarketNewsMarketScopeId,
+  MarketNewsSortId,
   MarketNewsTopicId,
 } from "../types";
 import {
@@ -20,6 +21,12 @@ const MARKET_NEWS_LENS_IDS: readonly MarketNewsLensId[] = [
   "high-relevance",
   "positive",
   "negative",
+];
+
+const MARKET_NEWS_SORT_IDS: readonly MarketNewsSortId[] = [
+  "latest",
+  "relevance",
+  "watchlist-first",
 ];
 
 function firstQueryValue(value: ParsedUrlQuery[string] | undefined) {
@@ -49,11 +56,18 @@ function validLensId(value: string | undefined): MarketNewsLensId {
   );
 }
 
+function validSortId(value: string | undefined): MarketNewsSortId {
+  return (
+    MARKET_NEWS_SORT_IDS.find((sortId) => sortId === value) ?? "latest"
+  );
+}
+
 export interface MarketNewsRouteState {
   lensId: MarketNewsLensId;
   marketScopeId: MarketNewsMarketScopeId;
   pageIndex: number;
   searchQuery: string;
+  sortId: MarketNewsSortId;
   tickerSymbol: string;
   topicId: MarketNewsTopicId;
 }
@@ -79,6 +93,7 @@ export function parseMarketNewsRouteQuery(
     marketScopeId: validMarketScopeId(firstQueryValue(query.market)),
     pageIndex: parsePageIndex(firstQueryValue(query.page)),
     searchQuery,
+    sortId: validSortId(firstQueryValue(query.sort)),
     tickerSymbol,
     topicId: validTopicId(firstQueryValue(query.topic)),
   };
@@ -89,6 +104,7 @@ export function getMarketNewsRouteHref({
   marketScopeId,
   pageIndex,
   searchQuery,
+  sortId,
   tickerSymbol,
   topicId,
 }: Partial<MarketNewsRouteState>) {
@@ -116,6 +132,10 @@ export function getMarketNewsRouteHref({
 
   if (lensId && lensId !== "all") {
     params.set("lens", lensId);
+  }
+
+  if (sortId && sortId !== "latest") {
+    params.set("sort", sortId);
   }
 
   if (typeof pageIndex === "number" && pageIndex > 0) {

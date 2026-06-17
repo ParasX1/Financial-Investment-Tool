@@ -29,6 +29,7 @@ describe("MarketNewsLensBar", () => {
 
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("disabled");
+    expect(html).toContain("Every headline.");
     expect(html).toContain("No My watchlist stories in this view");
   });
 

@@ -49,7 +49,6 @@ export interface MarketNewsTopic {
   eyebrow: string;
   description: string;
   source: MarketNewsSource;
-  futureRoute?: string;
 }
 
 export interface MarketNewsNavGroup {
@@ -57,7 +56,6 @@ export interface MarketNewsNavGroup {
   label: string;
   description: string;
   topics: readonly MarketNewsTopic[];
-  futureRoute?: string;
 }
 
 export interface MarketNewsTicker {
@@ -67,7 +65,6 @@ export interface MarketNewsTicker {
   change: string;
   tone: "positive" | "negative" | "neutral";
   sparkline: readonly number[];
-  futureQuoteRoute?: string;
 }
 
 export type MarketNewsMarketScopeId =
@@ -86,7 +83,6 @@ export interface MarketNewsMarketScope {
   shortLabel: string;
   description: string;
   tickers: readonly MarketNewsTicker[];
-  futureRoute?: string;
 }
 
 export type MarketNewsLensId =
@@ -97,12 +93,20 @@ export type MarketNewsLensId =
   | "positive"
   | "negative";
 
+export type MarketNewsSortId = "latest" | "relevance" | "watchlist-first";
+
 export interface MarketNewsLensOption {
   id: MarketNewsLensId;
   label: string;
   description: string;
   count: number;
   selectable: boolean;
+}
+
+export interface MarketNewsSortOption {
+  id: MarketNewsSortId;
+  label: string;
+  description: string;
 }
 
 export interface MarketNewsRequest {

@@ -36,5 +36,6 @@ describe("MarketNewsTickerStrip", () => {
     expect(articleMarkup).toHaveLength(2);
     expect(articleMarkup.join(" ")).toContain("ALL ORDS");
     expect(articleMarkup.join(" ")).toContain("AUD/USD");
+    expect(html).toContain("Fallback data");
   });
 });

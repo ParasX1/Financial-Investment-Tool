@@ -246,7 +246,11 @@ export function MarketNewsTickerStrip({
         </div>
 
         <span className={styles.marketMoverMeta} aria-live="polite">
-          {loading ? "Updating" : updatedLabel ? `Updated ${updatedLabel}` : "Live"}
+          {loading
+            ? "Updating"
+            : updatedLabel
+              ? `Updated ${updatedLabel}`
+              : "Fallback data"}
         </span>
       </div>
     </section>

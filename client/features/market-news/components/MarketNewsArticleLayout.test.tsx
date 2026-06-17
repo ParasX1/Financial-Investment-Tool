@@ -55,6 +55,25 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).not.toContain("Latest");
   });
 
+  it("surfaces provider warnings above the topic feed", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(1)]}
+        emptyState={{
+          message: "No stories",
+          title: "Empty",
+        }}
+        error={null}
+        layout="topicFeed"
+        loading={false}
+        providerWarning="Demo stories are synthetic placeholders."
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Demo stories are synthetic placeholders.");
+  });
+
   it("keeps the existing feature layout as the default", () => {
     const html = renderToStaticMarkup(
       <MarketNewsArticleLayout

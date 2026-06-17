@@ -11,6 +11,7 @@ describe("marketNewsRouting", () => {
         lens: "ticker-linked",
         market: "us-markets",
         quote: " cba.ax ",
+        sort: "relevance",
         topic: "technology",
       }),
     ).toEqual({
@@ -18,6 +19,7 @@ describe("marketNewsRouting", () => {
       marketScopeId: "us-markets",
       pageIndex: 0,
       searchQuery: "",
+      sortId: "relevance",
       tickerSymbol: "CBA.AX",
       topicId: "technology",
     });
@@ -33,6 +35,7 @@ describe("marketNewsRouting", () => {
     ).toMatchObject({
       pageIndex: 0,
       searchQuery: "asx 200",
+      sortId: "latest",
       tickerSymbol: "",
       topicId: "cost-of-living",
     });
@@ -50,6 +53,7 @@ describe("marketNewsRouting", () => {
       marketScopeId: "australia",
       pageIndex: 0,
       searchQuery: "",
+      sortId: "latest",
       tickerSymbol: "",
       topicId: "cost-of-living",
     });
@@ -62,11 +66,12 @@ describe("marketNewsRouting", () => {
         marketScopeId: "europe-markets",
         pageIndex: 2,
         searchQuery: "RBA rates",
+        sortId: "watchlist-first",
         tickerSymbol: "NVDA",
         topicId: "money-news",
       }),
     ).toBe(
-      "/MarketNews?topic=money-news&market=europe-markets&q=RBA+rates&lens=watchlist&page=3",
+      "/MarketNews?topic=money-news&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
     );
 
     expect(getMarketNewsRouteHref({})).toBe("/MarketNews");

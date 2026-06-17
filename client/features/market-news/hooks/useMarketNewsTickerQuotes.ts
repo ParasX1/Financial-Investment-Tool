@@ -29,7 +29,16 @@ async function fetchTickerSnapshot(ticker: MarketNewsTicker) {
     ),
   ]);
 
-  return mergeMarketNewsTickerQuote(ticker, { quote, sparkline });
+  const hasLiveQuote =
+    typeof quote?.price === "number" ||
+    typeof quote?.change === "number" ||
+    typeof quote?.changePct === "number";
+  const hasLiveSparkline = Boolean(sparkline?.points?.length);
+
+  return {
+    recoveredLiveData: hasLiveQuote || hasLiveSparkline,
+    ticker: mergeMarketNewsTickerQuote(ticker, { quote, sparkline }),
+  };
 }
 
 export function useMarketNewsTickerQuotes(
@@ -49,14 +58,18 @@ export function useMarketNewsTickerQuotes(
 
     async function load() {
       setLoading(true);
-      const nextTickers = await Promise.all(
+      const snapshots = await Promise.all(
         tickers.map((ticker) => fetchTickerSnapshot(ticker)),
       );
 
       if (!alive) return;
 
-      setLiveTickers(nextTickers);
-      setUpdatedAt(new Date());
+      setLiveTickers(snapshots.map((snapshot) => snapshot.ticker));
+      setUpdatedAt(
+        snapshots.some((snapshot) => snapshot.recoveredLiveData)
+          ? new Date()
+          : null,
+      );
       setLoading(false);
     }
 
@@ -98,12 +111,12 @@ export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
 
     async function load() {
       setLoading(true);
-      const nextTicker = await fetchTickerSnapshot(activeTicker);
+      const snapshot = await fetchTickerSnapshot(activeTicker);
 
       if (!alive) return;
 
-      setLiveTicker(nextTicker);
-      setUpdatedAt(new Date());
+      setLiveTicker(snapshot.ticker);
+      setUpdatedAt(snapshot.recoveredLiveData ? new Date() : null);
       setLoading(false);
     }
 
