@@ -19,6 +19,7 @@ export function MarketNewsSparkline({
   const path = data
     .map((value, index) => `${index ? "L" : "M"} ${index * step} ${y(value)}`)
     .join(" ");
+  const referenceY = y(data[0]!);
 
   return (
     <svg
@@ -28,9 +29,16 @@ export function MarketNewsSparkline({
       aria-hidden="true"
       focusable="false"
     >
+      <line
+        className={styles.sparklineReferenceLine}
+        x1="0"
+        x2={width}
+        y1={referenceY}
+        y2={referenceY}
+        strokeDasharray="2 3"
+      />
       <path className={styles.sparklinePath} d={path} />
       <circle cx={width} cy={y(data[data.length - 1]!)} r="2.3" fill="currentColor" />
     </svg>
   );
 }
-

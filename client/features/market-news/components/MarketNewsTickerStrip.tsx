@@ -1,4 +1,6 @@
 import * as React from "react";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
@@ -42,8 +44,11 @@ export function MarketNewsTickerStrip({
   const [activeIndex, setActiveIndex] = React.useState(0);
   const buttonRef = React.useRef<HTMLButtonElement | null>(null);
   const pickerRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
   const optionRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
   const menuId = React.useId();
+  const [canScrollBackward, setCanScrollBackward] = React.useState(false);
+  const [canScrollForward, setCanScrollForward] = React.useState(false);
   const selectedIndex = Math.max(
     0,
     marketScopes.findIndex((scope) => scope.id === marketScope.id),
@@ -62,9 +67,94 @@ export function MarketNewsTickerStrip({
         : `${providerLabel} live ${updatedLabel}`
       : `${providerLabel} fallback quote mix`;
 
+  const updateScrollControls = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) {
+      setCanScrollBackward(false);
+      setCanScrollForward(false);
+      return;
+    }
+
+    const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
+    const scrollLeft = Math.max(0, scroller.scrollLeft);
+
+    setCanScrollBackward(scrollLeft > 2);
+    setCanScrollForward(scrollLeft < maxScrollLeft - 2);
+  }, []);
+
+  const scrollTickerStrip = React.useCallback(
+    (direction: "backward" | "forward") => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      scroller.scrollBy({
+        behavior: "smooth",
+        left:
+          (direction === "forward" ? 1 : -1) *
+          Math.max(280, scroller.clientWidth * 0.72),
+      });
+      window.setTimeout(updateScrollControls, 220);
+    },
+    [updateScrollControls],
+  );
+  const handleScrollerKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        scrollTickerStrip("forward");
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        scrollTickerStrip("backward");
+        return;
+      }
+
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        scroller.scrollTo({ behavior: "smooth", left: 0 });
+        window.setTimeout(updateScrollControls, 220);
+        return;
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        scroller.scrollTo({
+          behavior: "smooth",
+          left: scroller.scrollWidth,
+        });
+        window.setTimeout(updateScrollControls, 220);
+      }
+    },
+    [scrollTickerStrip, updateScrollControls],
+  );
+
   React.useEffect(() => {
     setMenuOpen(false);
   }, [marketScope.id]);
+
+  React.useEffect(() => {
+    updateScrollControls();
+  }, [tickers, updateScrollControls]);
+
+  React.useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    scroller.addEventListener("scroll", updateScrollControls, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateScrollControls);
+
+    return () => {
+      scroller.removeEventListener("scroll", updateScrollControls);
+      window.removeEventListener("resize", updateScrollControls);
+    };
+  }, [updateScrollControls]);
 
   React.useEffect(() => {
     if (!menuOpen) return;
@@ -232,43 +322,76 @@ export function MarketNewsTickerStrip({
       </div>
 
       <div className={styles.marketMoverQuotes}>
-        <div
-          className={styles.tickerScroller}
-          aria-label={`${marketScope.label} quote snapshots`}
-        >
-          {tickers.map((ticker) => (
-            <article
-              key={ticker.symbol}
-              aria-label={`${ticker.label} quote snapshot${
-                ticker.signal ? `, ${ticker.signal}` : ""
-              }`}
-              className={styles.tickerCard}
-            >
-              <span className={styles.tickerText}>
-                <span className={styles.tickerLabelRow}>
-                  <span className={styles.tickerLabel}>{ticker.label}</span>
-                  {ticker.signal && ticker.signal !== "Core" ? (
-                    <span className={styles.tickerSignalBadge}>
-                      {ticker.signal}
+        <div className={styles.tickerViewport}>
+          <button
+            type="button"
+            aria-label="Scroll quote snapshots left"
+            className={cn(styles.tickerScrollButton, FIT_FOCUS_VISIBLE)}
+            disabled={!canScrollBackward}
+            onClick={() => scrollTickerStrip("backward")}
+          >
+            <ChevronLeftRoundedIcon sx={{ fontSize: 20 }} aria-hidden="true" />
+          </button>
+
+          <div
+            ref={scrollerRef}
+            className={styles.tickerScroller}
+            aria-label={`${marketScope.label} quote snapshots`}
+            tabIndex={0}
+            onKeyDown={handleScrollerKeyDown}
+          >
+            {tickers.map((ticker) => (
+              <article
+                key={ticker.symbol}
+                aria-label={`${ticker.symbol} ${ticker.label} quote snapshot${
+                  ticker.signal ? `, ${ticker.signal}` : ""
+                }`}
+                className={styles.tickerCard}
+              >
+                <span className={styles.tickerText}>
+                  <span className={styles.tickerLabelRow}>
+                    <span className={styles.tickerSymbol}>
+                      {ticker.symbol}
                     </span>
-                  ) : null}
+                    {ticker.signal && ticker.signal !== "Core" ? (
+                      <span className={styles.tickerSignalBadge}>
+                        {ticker.signal}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className={styles.tickerLabel}>{ticker.label}</span>
+                  <span className={styles.tickerValue}>{ticker.value}</span>
+                  <span
+                    className={`${styles.tickerChange} ${toneClass[ticker.tone]}`}
+                  >
+                    {ticker.change}
+                  </span>
                 </span>
-                <span className={styles.tickerValue}>{ticker.value}</span>
                 <span
-                  className={`${styles.tickerChange} ${toneClass[ticker.tone]}`}
+                  className={`${styles.tickerSpark} ${toneClass[ticker.tone]}`}
                 >
-                  {ticker.change}
+                  <MarketNewsSparkline
+                    data={ticker.sparkline}
+                    height={30}
+                    width={88}
+                  />
                 </span>
-              </span>
-              <span className={`${styles.tickerSpark} ${toneClass[ticker.tone]}`}>
-                <MarketNewsSparkline
-                  data={ticker.sparkline}
-                  height={22}
-                  width={68}
-                />
-              </span>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Scroll quote snapshots right"
+            className={cn(styles.tickerScrollButton, FIT_FOCUS_VISIBLE)}
+            disabled={!canScrollForward}
+            onClick={() => scrollTickerStrip("forward")}
+          >
+            <ChevronRightRoundedIcon
+              sx={{ fontSize: 20 }}
+              aria-hidden="true"
+            />
+          </button>
         </div>
 
         <span

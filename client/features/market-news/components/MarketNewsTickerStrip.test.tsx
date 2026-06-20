@@ -27,9 +27,15 @@ describe("MarketNewsTickerStrip", () => {
       ...html.matchAll(/<article[\s\S]*?<\/article>/g),
     ].map(([markup]) => markup);
 
-    expect(buttonMarkup).toHaveLength(1);
+    expect(buttonMarkup).toHaveLength(3);
     expect(buttonMarkup.join(" ")).toContain(
       'aria-label="Quote snapshot scope: Australia"',
+    );
+    expect(buttonMarkup.join(" ")).toContain(
+      'aria-label="Scroll quote snapshots left"',
+    );
+    expect(buttonMarkup.join(" ")).toContain(
+      'aria-label="Scroll quote snapshots right"',
     );
     expect(buttonMarkup.join(" ")).toContain("Australia");
     expect(buttonMarkup.join(" ")).toContain("AU");
@@ -37,8 +43,11 @@ describe("MarketNewsTickerStrip", () => {
     expect(buttonMarkup.join(" ")).not.toContain("AUD/USD");
 
     expect(articleMarkup).toHaveLength(2);
+    expect(articleMarkup.join(" ")).toContain("^AORD");
     expect(articleMarkup.join(" ")).toContain("ALL ORDS");
+    expect(articleMarkup.join(" ")).toContain("AUDUSD=X");
     expect(articleMarkup.join(" ")).toContain("AUD/USD");
+    expect(html).toContain('tabindex="0"');
     expect(html).toContain("Yahoo Finance fallback quote mix");
   });
 
@@ -68,6 +77,6 @@ describe("MarketNewsTickerStrip", () => {
 
     expect(html).toContain("Mover");
     expect(html).toContain("Yahoo Finance live");
-    expect([...html.matchAll(/<button[\s\S]*?<\/button>/g)]).toHaveLength(1);
+    expect([...html.matchAll(/<button[\s\S]*?<\/button>/g)]).toHaveLength(3);
   });
 });

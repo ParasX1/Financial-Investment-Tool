@@ -2,11 +2,7 @@ import * as React from "react";
 import { useRouter } from "next/router";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
-import {
-  FIT_CONTENT_MAX_WIDTH_PX,
-  cn,
-  fitText,
-} from "@/components/shared/uiPrimitives";
+import { cn, fitText } from "@/components/shared/uiPrimitives";
 import {
   MARKET_NEWS_MARKET_SCOPES,
   MARKET_NEWS_NAV_GROUPS,
@@ -72,6 +68,8 @@ import { MarketNewsScanOrderBar } from "./MarketNewsScanOrderBar";
 import { MarketNewsSearchBar } from "./MarketNewsSearchBar";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
 import styles from "../styles/marketNews.module.css";
+
+const MARKET_NEWS_CONTENT_MAX_WIDTH_PX = 1920;
 
 export function MarketNewsMain({
   onQuoteLookup,
@@ -487,7 +485,7 @@ export function MarketNewsMain({
       <main id="market-news-main" tabIndex={-1} className={styles.page}>
         <div
           className={styles.pageInner}
-          style={{ maxWidth: FIT_CONTENT_MAX_WIDTH_PX }}
+          style={{ maxWidth: MARKET_NEWS_CONTENT_MAX_WIDTH_PX }}
         >
           <FitPageHeader
             title="Market News"
