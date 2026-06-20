@@ -15,7 +15,7 @@ describe("MarketNewsScanOrderBar", () => {
 
     expect(html).toContain("Scan order");
     expect(html).toContain("Latest");
-    expect(html).toContain("Best signal");
+    expect(html).toContain("Most relevant");
     expect(html).toContain("Watchlist first");
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("Provider match, ticker links, then newest stories.");

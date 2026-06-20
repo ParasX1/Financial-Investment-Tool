@@ -56,14 +56,14 @@ describe("MarketNewsLensBar", () => {
             count: 0,
             description: "Headlines with explicit market symbols attached.",
             id: "ticker-linked",
-            label: "Company-linked",
+            label: "Ticker stories",
             selectable: false,
           },
           {
             count: 0,
             description: "Provider stories with a strong match score.",
             id: "high-relevance",
-            label: "Best matches",
+            label: "High relevance",
             selectable: false,
           },
           {
@@ -80,8 +80,9 @@ describe("MarketNewsLensBar", () => {
 
     expect(html).toContain("All");
     expect(html).toContain("My watchlist");
-    expect(html).toContain("Company-linked");
+    expect(html).toContain("Ticker stories");
     expect(html).toContain("Opportunities");
-    expect(html).not.toContain("Best matches");
+    expect(html).not.toContain("Ticker stories stories");
+    expect(html).not.toContain("High relevance");
   });
 });

@@ -10,7 +10,7 @@ export const MARKET_NEWS_SORT_OPTIONS: readonly MarketNewsSortOption[] = [
   },
   {
     id: "relevance",
-    label: "Best signal",
+    label: "Most relevant",
     description: "Provider match, ticker links, then newest stories.",
   },
   {

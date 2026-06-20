@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Article } from "@/services/news";
 import { cn, fitText } from "@/components/shared/uiPrimitives";
 import {
@@ -9,14 +10,47 @@ import {
 } from "../lib/marketNewsArticles";
 import styles from "../styles/marketNews.module.css";
 
+const CUE_DESCRIPTIONS: Record<string, string> = {
+  Commodities: "Mentions energy, metals, or commodity-market inputs.",
+  Fresh: "Published within the recent market-news window.",
+  Macro: "Mentions economy, jobs, wages, consumers, or GDP.",
+  Opportunity: "Provider sentiment is positive.",
+  Property: "Mentions housing, mortgages, rent, or real estate.",
+  "Rate-sensitive": "Mentions rates, inflation, bonds, yields, CPI, or RBA.",
+  Risk: "Provider sentiment is negative.",
+  Technology: "Mentions AI, technology, software, semiconductors, or cybersecurity.",
+  "Ticker-linked": "The story is linked to at least one market symbol.",
+};
+
+function chipLabel(value: string) {
+  return value === "Ticker-linked" ? "Ticker linked" : value;
+}
+
+function ArticleChip({
+  children,
+  tone = "neutral",
+  title,
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "signal" | "ticker";
+  title: string;
+}) {
+  return (
+    <span
+      className={cn(styles.articleChip, styles[`articleChip_${tone}`])}
+      title={title}
+    >
+      {children}
+    </span>
+  );
+}
+
 function ArticleMeta({ article }: { article: Article }) {
   const relatedSymbols = article.relatedSymbols?.slice(0, 3) ?? [];
   const domain =
     article.provider === "demo"
       ? "category demo"
       : getArticleDomain(article.url);
-  const href = getSafeArticleHref(article.url);
-  const external = /^https?:\/\//i.test(href);
   const confidence =
     typeof article.confidence === "number" && Number.isFinite(article.confidence)
       ? article.confidence.toFixed(1)
@@ -38,35 +72,32 @@ function ArticleMeta({ article }: { article: Article }) {
         {formatArticleTime(article.publishedAt)}
       </time>
       {article.providerLabel ? (
-        <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
+        <ArticleChip title={`Fetched from ${article.providerLabel}`}>
           {article.providerLabel}
-        </span>
-      ) : null}
-      {external ? (
-        <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
-          Open original
-        </span>
+        </ArticleChip>
       ) : null}
       {relatedSymbols.map((symbol) => (
-        <span
+        <ArticleChip
           key={symbol}
-          className="rounded-md border border-[#5367ff]/30 bg-[#5367ff]/10 px-1.5 py-0.5 text-[#dbe4ff]"
+          tone="ticker"
+          title={`Related market symbol: ${symbol}`}
         >
           {symbol}
-        </span>
+        </ArticleChip>
       ))}
       {investorCues.map((cue) => (
-        <span
+        <ArticleChip
           key={cue}
-          className="rounded-md border border-[#38d996]/25 bg-[#38d996]/10 px-1.5 py-0.5 text-[#dffbea]"
+          tone="signal"
+          title={CUE_DESCRIPTIONS[cue] ?? "Investor scanning signal."}
         >
-          {cue}
-        </span>
+          {chipLabel(cue)}
+        </ArticleChip>
       ))}
       {confidence ? (
-        <span className="rounded-md border border-[var(--fit-color-border-subtle)] bg-white/[0.04] px-1.5 py-0.5 text-[#dce4ff]">
-          Match {confidence}
-        </span>
+        <ArticleChip title="Approximate relevance score from the provider or local matching rules.">
+          Relevance {confidence}
+        </ArticleChip>
       ) : null}
     </div>
   );
@@ -159,6 +190,7 @@ export function TopicArticleFeed({
                 styles.topicArticleLink,
                 getArticleImage(article) ? "" : styles.topicArticleLinkTextOnly,
               )}
+              aria-label={`Read source article: ${article.title}`}
             >
               {getArticleImage(article) ? (
                 <ArticleVisual

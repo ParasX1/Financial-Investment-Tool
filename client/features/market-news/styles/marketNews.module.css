@@ -520,6 +520,32 @@
   line-height: 1.45;
 }
 
+.articleChip {
+  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.12rem 0.38rem;
+  color: #dce4ff;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.articleChip_ticker {
+  border-color: rgba(83, 103, 255, 0.3);
+  background: rgba(83, 103, 255, 0.1);
+  color: #dbe4ff;
+}
+
+.articleChip_signal {
+  border-color: rgba(56, 217, 150, 0.25);
+  background: rgba(56, 217, 150, 0.1);
+  color: #dffbea;
+}
+
+.articleChip_neutral {
+  border-color: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+}
+
 .topicPager {
   display: flex;
   min-width: 0;

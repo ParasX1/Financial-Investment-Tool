@@ -59,7 +59,7 @@ describe("marketNewsStatus", () => {
       }),
     ).toBe("GDELT");
 
-    expect(formatMarketNewsMatchStatus(false)).toBe("Broad feed");
-    expect(formatMarketNewsMatchStatus(true)).toBe("Strict match");
+    expect(formatMarketNewsMatchStatus(false)).toBe("Broad headlines");
+    expect(formatMarketNewsMatchStatus(true)).toBe("Topic matched");
   });
 });

@@ -31,5 +31,5 @@ export function formatMarketNewsSourceStatus({
 }
 
 export function formatMarketNewsMatchStatus(strictCategory?: boolean | null) {
-  return strictCategory === false ? "Broad feed" : "Strict match";
+  return strictCategory === false ? "Broad headlines" : "Topic matched";
 }

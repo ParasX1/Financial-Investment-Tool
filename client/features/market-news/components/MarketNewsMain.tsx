@@ -215,7 +215,7 @@ export function MarketNewsMain({
 
   const activeSummary = React.useMemo(() => {
     if (meta?.strictCategory === false) {
-      return "Showing broad finance headlines from a free external RSS feed while exact category coverage is unavailable.";
+      return "Showing broader finance headlines because the current free feed could not match this topic precisely.";
     }
 
     if (searchQuery.trim()) {
@@ -312,9 +312,9 @@ export function MarketNewsMain({
 
     if (meta?.provider === "none") {
       return {
-        title: "Connect a market news provider",
+        title: "Live market news is not connected",
         message:
-          "Enable GDELT_NEWS_ENABLED for no-key development news, or set MARKETAUX_API_KEY for finance-specific production coverage.",
+          "This environment could not reach a configured news source. Refresh, or connect a provider before relying on this page.",
         detail: meta.warnings[0],
       };
     }
@@ -322,7 +322,7 @@ export function MarketNewsMain({
     return {
       title: `No ${displayTitle} stories found`,
       message:
-        "This view uses a strict category query, so it will stay empty instead of filling with unrelated business headlines.",
+        "No current stories matched this topic or search. The page stays empty here instead of filling the feed with unrelated headlines.",
       detail: meta?.query ? `Query checked: ${meta.query}` : undefined,
     };
   }, [
@@ -393,7 +393,14 @@ export function MarketNewsMain({
     [applyViewState, currentViewState, syncRouteState],
   );
 
-  const handleQuoteLookup = React.useCallback(
+  const handleQuoteReferenceChange = React.useCallback((value: string) => {
+    const symbol = value.trim().toUpperCase();
+    if (!symbol) return;
+
+    setLookupDraft(symbol);
+    setSelectedSymbol(symbol);
+  }, []);
+  const handleTickerNewsRequest = React.useCallback(
     (value: string) => {
       const nextState = applyMarketNewsQuoteLookup(currentViewState, value);
       if (nextState === currentViewState) return;
@@ -547,11 +554,11 @@ export function MarketNewsMain({
                   <dd>{shownStatusValue}</dd>
                 </div>
                 <div className={styles.statusCard}>
-                  <dt>Source</dt>
+                  <dt>Provider</dt>
                   <dd>{sourceStatusValue}</dd>
                 </div>
                 <div className={styles.statusCard}>
-                  <dt>Match</dt>
+                  <dt>Coverage</dt>
                   <dd>{matchStatusValue}</dd>
                 </div>
               </dl>
@@ -613,7 +620,8 @@ export function MarketNewsMain({
                 watchlistLoading={watchlist.loading}
                 watchlistSymbols={watchlist.symbols}
                 onLookupDraftChange={setLookupDraft}
-                onQuoteLookup={handleQuoteLookup}
+                onQuoteReferenceChange={handleQuoteReferenceChange}
+                onTickerNewsRequest={handleTickerNewsRequest}
               />
             </div>
           </div>

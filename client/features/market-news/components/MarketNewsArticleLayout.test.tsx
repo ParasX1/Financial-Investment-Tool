@@ -99,6 +99,39 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).not.toContain("Market News</span>");
   });
 
+  it("labels article signals in beginner-readable language", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[
+          {
+            ...article(1),
+            confidence: 0.62,
+            image: "",
+            relatedSymbols: ["NVDA"],
+            sentiment: "neutral",
+            summary: "AI and semiconductor demand lifted technology stocks.",
+            title: "NVIDIA data-center revenue jumps",
+          },
+        ]}
+        emptyState={{
+          message: "No stories",
+          title: "Empty",
+        }}
+        error={null}
+        loading={false}
+        title="Technology"
+      />,
+    );
+
+    expect(html).toContain("Google News RSS");
+    expect(html).toContain("NVDA");
+    expect(html).toContain("Ticker linked");
+    expect(html).toContain("Technology");
+    expect(html).toContain("Relevance 0.6");
+    expect(html).not.toContain("Open original");
+    expect(html).not.toContain("Match 0.6");
+  });
+
   it("uses the compact topic feed as the only Market News article layout", () => {
     const html = renderToStaticMarkup(
       <MarketNewsArticleLayout

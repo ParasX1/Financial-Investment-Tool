@@ -74,22 +74,22 @@ export function buildMarketNewsLensOptions({
     {
       id: "all",
       label: "All",
-      description: "Every strict-match headline in this view.",
+      description: "Every headline that matched this topic or search.",
     },
     {
       id: "watchlist",
       label: "My watchlist",
-      description: "Stories linked to symbols you already follow.",
+      description: "Stories linked to symbols you follow.",
     },
     {
       id: "ticker-linked",
-      label: "Company-linked",
-      description: "Headlines with explicit market symbols attached.",
+      label: "Ticker stories",
+      description: "Stories with market symbols attached.",
     },
     {
       id: "high-relevance",
-      label: "Best matches",
-      description: "Provider or demo stories with a strong match score.",
+      label: "High relevance",
+      description: "Stories with a stronger relevance score.",
     },
     {
       id: "negative",

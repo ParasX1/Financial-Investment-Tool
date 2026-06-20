@@ -155,7 +155,8 @@ export function MarketNewsTickerStrip({
           aria-controls={menuOpen ? menuId : undefined}
           aria-expanded={menuOpen}
           aria-haspopup="listbox"
-          aria-label={marketScope.label}
+          aria-label={`Quote snapshot scope: ${marketScope.label}`}
+          title="Changes the quote snapshots only. Search and categories control the news feed."
           onClick={() => setMenuOpen((open) => !open)}
           onKeyDown={handleScopeButtonKeyDown}
           className={cn(styles.scopeSelectButton, FIT_FOCUS_VISIBLE)}
@@ -249,10 +250,10 @@ export function MarketNewsTickerStrip({
 
         <span className={styles.marketMoverMeta} aria-live="polite">
           {loading
-            ? "Updating"
+            ? "Updating quotes"
             : updatedLabel
-              ? `Updated ${updatedLabel}`
-              : "Fallback data"}
+              ? `Quotes updated ${updatedLabel}`
+              : "Fallback quote data"}
         </span>
       </div>
     </section>

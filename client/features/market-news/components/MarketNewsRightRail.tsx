@@ -1,5 +1,4 @@
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import Link from "next/link";
 import { fitButton } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type {
@@ -26,7 +25,8 @@ export function MarketNewsRightRail({
   watchlistLoading,
   watchlistSymbols,
   onLookupDraftChange,
-  onQuoteLookup,
+  onQuoteReferenceChange,
+  onTickerNewsRequest,
 }: {
   authenticated: boolean;
   lookupDraft: string;
@@ -37,7 +37,8 @@ export function MarketNewsRightRail({
   watchlistLoading: boolean;
   watchlistSymbols: readonly string[];
   onLookupDraftChange: (value: string) => void;
-  onQuoteLookup: (symbol: string) => void;
+  onQuoteReferenceChange: (symbol: string) => void;
+  onTickerNewsRequest: (symbol: string) => void;
 }) {
   return (
     <aside className="space-y-4" aria-label="Market news side panel">
@@ -46,7 +47,7 @@ export function MarketNewsRightRail({
           role="search"
           onSubmit={(event) => {
             event.preventDefault();
-            onQuoteLookup(lookupDraft);
+            onQuoteReferenceChange(lookupDraft);
           }}
         >
           <label htmlFor="market-news-quote" className="sr-only">
@@ -85,7 +86,7 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-white">Ticker shortcuts</h2>
+          <h2 className="text-lg font-extrabold text-white">Quote snapshots</h2>
           <span className="text-xs font-bold text-[#8f98aa]">
             {marketScope.shortLabel}
           </span>
@@ -95,11 +96,12 @@ export function MarketNewsRightRail({
             <button
               key={ticker.symbol}
               type="button"
-              onClick={() => onQuoteLookup(ticker.symbol)}
+              onClick={() => onQuoteReferenceChange(ticker.symbol)}
               className={cn(
                 "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-left transition-colors hover:text-white",
                 FIT_FOCUS_VISIBLE,
               )}
+              title={`Select quote snapshot for ${ticker.label}`}
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-extrabold text-[#8fc7ff]">
@@ -119,6 +121,7 @@ export function MarketNewsRightRail({
                   {ticker.change}
                 </span>
               </span>
+              <span className="sr-only">Select quote</span>
             </button>
           ))}
         </div>
@@ -143,31 +146,19 @@ export function MarketNewsRightRail({
           {selectedTicker.value}
         </p>
         <p className="mt-2 text-xs font-semibold leading-5 text-[#8f98aa]">
-          Snapshot context. Open a quote page before making time-sensitive
-          decisions.
+          Snapshot context. This does not change the news feed unless you ask
+          for ticker news.
         </p>
-      </section>
-
-      <section className={railSectionClass}>
-        <h2 className="text-lg font-extrabold text-white">Continue In FIT</h2>
-        <div className="mt-3 grid gap-2">
-          {[
-            { href: "/Watchlist", label: "Watchlist" },
-            { href: "/Community", label: "Community" },
-            { href: "/Guide", label: "Guide" },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-sm font-extrabold text-[#dbe4ff] no-underline transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white hover:no-underline",
-                FIT_FOCUS_VISIBLE,
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={() => onTickerNewsRequest(selectedTicker.symbol)}
+          className={cn(
+            "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-sm font-extrabold text-[#dbe4ff] transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white",
+            FIT_FOCUS_VISIBLE,
+          )}
+        >
+          Show ticker news
+        </button>
       </section>
 
       <section className={railSectionClass}>
@@ -187,7 +178,7 @@ export function MarketNewsRightRail({
               <button
                 key={symbol}
                 type="button"
-                onClick={() => onQuoteLookup(symbol)}
+                onClick={() => onQuoteReferenceChange(symbol)}
                 className={cn(
                   "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-xs font-extrabold",
                   fitButton.secondary,

@@ -8,6 +8,12 @@ const PRIMARY_LENS_IDS = new Set<MarketNewsLensId>([
   "ticker-linked",
 ]);
 
+function emptyLensTitle(label: string) {
+  return label.toLowerCase().includes("stories")
+    ? `No ${label} in this view`
+    : `No ${label} stories in this view`;
+}
+
 export function MarketNewsLensBar({
   activeLensId,
   options,
@@ -30,10 +36,10 @@ export function MarketNewsLensBar({
     <section className={styles.lensPanel} aria-label="News signals">
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase text-[var(--fit-color-text-label)]">
-          Signals
+          News filters
         </p>
         <p className="mt-1 text-sm leading-6 text-[var(--fit-color-text-body)]">
-          Watchlist, ticker links, match strength, and market tone.
+          Narrow the current story set by watchlist, tickers, relevance, or tone.
         </p>
       </div>
       <div className={styles.lensGrid} role="list">
@@ -41,7 +47,7 @@ export function MarketNewsLensBar({
           const active = option.id === activeLensId;
           const disabled = !active && !option.selectable;
           const title = disabled
-            ? `No ${option.label} stories in this view`
+            ? emptyLensTitle(option.label)
             : option.description;
 
           return (

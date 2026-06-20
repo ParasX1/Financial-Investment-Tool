@@ -28,7 +28,9 @@ describe("MarketNewsTickerStrip", () => {
     ].map(([markup]) => markup);
 
     expect(buttonMarkup).toHaveLength(1);
-    expect(buttonMarkup.join(" ")).toContain('aria-label="Australia"');
+    expect(buttonMarkup.join(" ")).toContain(
+      'aria-label="Quote snapshot scope: Australia"',
+    );
     expect(buttonMarkup.join(" ")).toContain("Australia");
     expect(buttonMarkup.join(" ")).toContain("AU");
     expect(buttonMarkup.join(" ")).not.toContain("ALL ORDS");
@@ -37,6 +39,6 @@ describe("MarketNewsTickerStrip", () => {
     expect(articleMarkup).toHaveLength(2);
     expect(articleMarkup.join(" ")).toContain("ALL ORDS");
     expect(articleMarkup.join(" ")).toContain("AUD/USD");
-    expect(html).toContain("Fallback data");
+    expect(html).toContain("Fallback quote data");
   });
 });
