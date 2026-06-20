@@ -39,6 +39,35 @@ describe("MarketNewsTickerStrip", () => {
     expect(articleMarkup).toHaveLength(2);
     expect(articleMarkup.join(" ")).toContain("ALL ORDS");
     expect(articleMarkup.join(" ")).toContain("AUD/USD");
-    expect(html).toContain("Fallback quote data");
+    expect(html).toContain("Yahoo Finance fallback quote mix");
+  });
+
+  it("renders lightweight labels for non-core dynamic ticker signals", () => {
+    const australia = resolveMarketNewsMarketScope("australia");
+    const html = renderToStaticMarkup(
+      <MarketNewsTickerStrip
+        dataSource="live"
+        marketScope={australia}
+        marketScopes={MARKET_NEWS_MARKET_SCOPES.slice(0, 2)}
+        providerLabel="Yahoo Finance"
+        tickers={[
+          {
+            symbol: "BHP.AX",
+            label: "BHP",
+            value: "42.00",
+            change: "+1.00 +2.44%",
+            tone: "positive",
+            sparkline: [1, 2, 3],
+            signal: "Mover",
+          },
+        ]}
+        updatedAt={new Date("2026-06-21T01:02:03.000Z")}
+        onMarketScopeChange={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Mover");
+    expect(html).toContain("Yahoo Finance live");
+    expect([...html.matchAll(/<button[\s\S]*?<\/button>/g)]).toHaveLength(1);
   });
 });

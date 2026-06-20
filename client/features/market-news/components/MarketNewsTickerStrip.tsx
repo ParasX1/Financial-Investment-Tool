@@ -7,6 +7,7 @@ import type {
   MarketNewsMarketScopeId,
   MarketNewsTicker,
 } from "../types";
+import type { MarketNewsTickerStripSource } from "../lib/marketNewsTickerStripService";
 import { MarketNewsSparkline } from "./MarketNewsSparkline";
 import styles from "../styles/marketNews.module.css";
 
@@ -19,16 +20,22 @@ const toneClass = {
 export function MarketNewsTickerStrip({
   marketScope,
   marketScopes,
+  dataSource = "fallback",
   tickers,
   loading = false,
+  providerLabel = "Yahoo Finance",
   updatedAt,
+  warning,
   onMarketScopeChange,
 }: {
+  dataSource?: MarketNewsTickerStripSource;
   marketScope: MarketNewsMarketScope;
   marketScopes: readonly MarketNewsMarketScope[];
   tickers: readonly MarketNewsTicker[];
   loading?: boolean;
+  providerLabel?: string;
   updatedAt?: Date | null;
+  warning?: string;
   onMarketScopeChange: (scopeId: MarketNewsMarketScopeId) => void;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -47,6 +54,13 @@ export function MarketNewsTickerStrip({
         minute: "2-digit",
       })
     : null;
+  const sourceStatusLabel = loading
+    ? "Updating quotes"
+    : updatedLabel
+      ? dataSource === "mixed"
+        ? `Mixed live/fallback ${updatedLabel}`
+        : `${providerLabel} live ${updatedLabel}`
+      : `${providerLabel} fallback quote mix`;
 
   React.useEffect(() => {
     setMenuOpen(false);
@@ -225,11 +239,20 @@ export function MarketNewsTickerStrip({
           {tickers.map((ticker) => (
             <article
               key={ticker.symbol}
-              aria-label={`${ticker.label} quote snapshot`}
+              aria-label={`${ticker.label} quote snapshot${
+                ticker.signal ? `, ${ticker.signal}` : ""
+              }`}
               className={styles.tickerCard}
             >
               <span className={styles.tickerText}>
-                <span className={styles.tickerLabel}>{ticker.label}</span>
+                <span className={styles.tickerLabelRow}>
+                  <span className={styles.tickerLabel}>{ticker.label}</span>
+                  {ticker.signal && ticker.signal !== "Core" ? (
+                    <span className={styles.tickerSignalBadge}>
+                      {ticker.signal}
+                    </span>
+                  ) : null}
+                </span>
                 <span className={styles.tickerValue}>{ticker.value}</span>
                 <span
                   className={`${styles.tickerChange} ${toneClass[ticker.tone]}`}
@@ -248,12 +271,12 @@ export function MarketNewsTickerStrip({
           ))}
         </div>
 
-        <span className={styles.marketMoverMeta} aria-live="polite">
-          {loading
-            ? "Updating quotes"
-            : updatedLabel
-              ? `Quotes updated ${updatedLabel}`
-              : "Fallback quote data"}
+        <span
+          className={styles.marketMoverMeta}
+          aria-live="polite"
+          title={warning}
+        >
+          {sourceStatusLabel}
         </span>
       </div>
     </section>

@@ -182,7 +182,10 @@ export function MarketNewsMain({
 
   const articleLimit = getMarketNewsFetchLimit(storyPageIndex);
   const watchlist = useMarketNewsWatchlist();
-  const marketMovers = useMarketNewsTickerQuotes(activeMarketScope.tickers);
+  const marketMovers = useMarketNewsTickerQuotes(
+    activeMarketScope,
+    watchlist.symbols,
+  );
   const selectedScopeTicker = marketMovers.tickers.find(
     (ticker) => ticker.symbol === selectedSymbol,
   );
@@ -514,11 +517,14 @@ export function MarketNewsMain({
 
           <section className={styles.marketPanel} aria-label="Market movers">
             <MarketNewsTickerStrip
+              dataSource={marketMovers.source}
               loading={marketMovers.loading}
               marketScope={activeMarketScope}
               marketScopes={MARKET_NEWS_MARKET_SCOPES}
+              providerLabel={marketMovers.providerLabel}
               tickers={marketMovers.tickers}
               updatedAt={marketMovers.updatedAt}
+              warning={marketMovers.warnings[0]}
               onMarketScopeChange={handleMarketScopeChange}
             />
           </section>

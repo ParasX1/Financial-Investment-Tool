@@ -65,6 +65,7 @@ export interface MarketNewsTicker {
   change: string;
   tone: "positive" | "negative" | "neutral";
   sparkline: readonly number[];
+  signal?: "Core" | "Macro" | "Mover" | "Watchlist";
 }
 
 export type MarketNewsMarketScopeId =
@@ -83,6 +84,13 @@ export interface MarketNewsMarketScope {
   shortLabel: string;
   description: string;
   tickers: readonly MarketNewsTicker[];
+  tickerSelection?: {
+    coreSymbols: readonly string[];
+    dynamicSymbols: readonly string[];
+    macroSymbols: readonly string[];
+    maxTickers: number;
+    trendingRegion: string;
+  };
 }
 
 export type MarketNewsLensId =

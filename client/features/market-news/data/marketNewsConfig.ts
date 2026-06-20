@@ -475,6 +475,24 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Australian indices, currency, commodities, and crypto watched by local investors.",
     tickers: MARKET_NEWS_AU_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["^AORD", "^AXJO", "AUDUSD=X"],
+      dynamicSymbols: [
+        "BHP.AX",
+        "CBA.AX",
+        "CSL.AX",
+        "NAB.AX",
+        "WBC.AX",
+        "ANZ.AX",
+        "WES.AX",
+        "WOW.AX",
+        "MQG.AX",
+        "RIO.AX",
+      ],
+      macroSymbols: ["CL=F", "GC=F", "BTC-AUD"],
+      maxTickers: 8,
+      trendingRegion: "AU",
+    },
   },
   {
     id: "us-markets",
@@ -482,6 +500,23 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     shortLabel: "US",
     description: "Major US equity benchmarks and volatility signals.",
     tickers: MARKET_NEWS_US_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["^GSPC", "^DJI", "^IXIC", "^RUT"],
+      dynamicSymbols: [
+        "NVDA",
+        "AAPL",
+        "MSFT",
+        "AMZN",
+        "META",
+        "TSLA",
+        "GOOGL",
+        "AMD",
+        "NFLX",
+      ],
+      macroSymbols: ["^VIX", "GC=F", "BTC-USD", "CL=F"],
+      maxTickers: 9,
+      trendingRegion: "US",
+    },
   },
   {
     id: "europe-markets",
@@ -490,6 +525,20 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "European index snapshots across London, Frankfurt, Paris, and the euro area.",
     tickers: MARKET_NEWS_EUROPE_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["^FTSE", "^FCHI", "^GDAXI", "^STOXX50E"],
+      dynamicSymbols: [
+        "ASML.AS",
+        "SHEL.L",
+        "AZN.L",
+        "HSBA.L",
+        "SAP.DE",
+        "MC.PA",
+      ],
+      macroSymbols: ["EURUSD=X", "GBPUSD=X", "GC=F"],
+      maxTickers: 8,
+      trendingRegion: "GB",
+    },
   },
   {
     id: "asia-markets",
@@ -498,6 +547,19 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Asian market benchmarks that shape the Australian trading day.",
     tickers: MARKET_NEWS_ASIA_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["000001.SS", "^N225", "^HSI", "^KS11"],
+      dynamicSymbols: [
+        "9988.HK",
+        "0700.HK",
+        "7203.T",
+        "6758.T",
+        "005930.KS",
+      ],
+      macroSymbols: ["USDJPY=X", "AUDJPY=X", "GC=F"],
+      maxTickers: 8,
+      trendingRegion: "SG",
+    },
   },
   {
     id: "cryptocurrencies",
@@ -506,6 +568,13 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Digital asset snapshots shown in Australian dollar pairs where available.",
     tickers: MARKET_NEWS_CRYPTO_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["BTC-AUD", "ETH-AUD"],
+      dynamicSymbols: ["SOL-AUD", "XRP-AUD", "ADA-AUD", "DOGE-AUD"],
+      macroSymbols: [],
+      maxTickers: 6,
+      trendingRegion: "AU",
+    },
   },
   {
     id: "rates",
@@ -514,6 +583,13 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Yield and short-rate proxies for macro and equity valuation context.",
     tickers: MARKET_NEWS_RATES_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["^TNX", "^TYX", "^FVX", "IRX"],
+      dynamicSymbols: [],
+      macroSymbols: ["AUDUSD=X", "GC=F"],
+      maxTickers: 6,
+      trendingRegion: "US",
+    },
   },
   {
     id: "commodities",
@@ -522,6 +598,13 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     description:
       "Energy and metals futures that feed inflation, earnings, and currency moves.",
     tickers: MARKET_NEWS_COMMODITY_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["CL=F", "GC=F", "SI=F", "HG=F"],
+      dynamicSymbols: ["NG=F", "BZ=F", "ZC=F", "ZS=F"],
+      macroSymbols: ["AUDUSD=X", "BTC-USD"],
+      maxTickers: 7,
+      trendingRegion: "US",
+    },
   },
   {
     id: "currencies",
@@ -529,5 +612,12 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     shortLabel: "FX",
     description: "Major foreign exchange pairs for cross-market context.",
     tickers: MARKET_NEWS_CURRENCY_TICKERS,
+    tickerSelection: {
+      coreSymbols: ["AUDUSD=X", "EURUSD=X", "USDJPY=X", "GBPUSD=X"],
+      dynamicSymbols: ["AUDJPY=X", "AUDNZD=X", "USDCAD=X"],
+      macroSymbols: ["GC=F"],
+      maxTickers: 7,
+      trendingRegion: "AU",
+    },
   },
 ];

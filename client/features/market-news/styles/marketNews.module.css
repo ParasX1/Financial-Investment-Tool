@@ -212,6 +212,13 @@
   min-width: 0;
 }
 
+.tickerLabelRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .tickerLabel,
 .tickerValue,
 .tickerChange {
@@ -222,9 +229,24 @@
 }
 
 .tickerLabel {
+  min-width: 0;
+  flex: 1;
   color: #8fc7ff;
   font-size: 0.7rem;
   font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tickerSignalBadge {
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 217, 150, 0.28);
+  border-radius: 0.35rem;
+  background: rgba(56, 217, 150, 0.1);
+  padding: 0.04rem 0.28rem;
+  color: #dffbea;
+  font-size: 0.55rem;
+  font-weight: 900;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
