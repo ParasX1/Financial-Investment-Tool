@@ -1,7 +1,4 @@
-import {
-  getPrimarySymbolName,
-  getSymbolAliases,
-} from "./symbolAliases";
+import { getPrimarySymbolName, getSymbolAliases } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";
 
 type GoogleLocale = {
@@ -15,6 +12,7 @@ type QueryPack = {
   terms: readonly string[];
   exclude?: readonly string[];
   googleAlternates?: readonly (readonly string[])[];
+  googleRawQueries?: readonly string[];
   sourceCountry?: string;
 };
 
@@ -48,6 +46,10 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
   "australian-markets": {
     phrases: ["ASX", "Australian shares"],
     terms: ["Australia", "stocks", "earnings", "RBA", "banks", "miners"],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news (ASX OR "Australian shares" OR "ASX Preview" OR "stock market") when:7d',
+      'site:marketindex.com.au/news (ASX OR "ASX 200" OR "Australian shares") when:7d',
+    ],
     sourceCountry: "AS",
   },
   commodities: {
@@ -56,6 +58,10 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     googleAlternates: [
       ["oil prices", "gold prices", "copper supply", "energy markets"],
       ["commodity prices", "metals", "crude oil", "supply disruption"],
+    ],
+    googleRawQueries: [
+      "site:finance.yahoo.com/news (oil OR gold OR copper OR commodities OR crude) when:7d",
+      "site:au.finance.yahoo.com/news (oil OR gold OR commodities OR energy) when:7d",
     ],
   },
   "cost-of-living": {
@@ -77,6 +83,11 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["RBA", "cash rate", "fuel prices", "electricity prices"],
       ["consumer prices", "rent increases", "mortgage repayments"],
     ],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news ("cost of living" OR inflation OR mortgage OR rent OR "cash rate") Australia when:7d',
+      '("RBA rate hike" OR "cash rate" OR "rate hike" OR "interest rates" OR mortgage OR rent OR homeowners) Australia when:3d',
+      '("oil prices" OR "fuel prices" OR "milk prices" OR groceries OR "food prices") inflation Australia when:3d',
+    ],
     sourceCountry: "AS",
   },
   "international-markets": {
@@ -86,6 +97,9 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["global markets", "stocks", "bonds", "Wall Street"],
       ["Europe markets", "Asia markets", "earnings", "central banks"],
     ],
+    googleRawQueries: [
+      'site:finance.yahoo.com/news ("Wall Street" OR "S&P 500" OR Nasdaq OR "global markets") when:7d',
+    ],
   },
   "money-news": {
     phrases: ["personal finance", "money news"],
@@ -93,8 +107,11 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       "Australia",
       "ATO",
       "banking",
+      "capital gains tax",
+      "CGT",
       "consumer finance",
       "mortgage rates",
+      "negative gearing",
       "savings",
       "superannuation",
       "tax",
@@ -102,10 +119,14 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     ],
     googleAlternates: [
       ["Australia money news", "consumer finance", "banking", "savings"],
-      ["ATO", "tax return", "tax liability", "superannuation"],
+      ["ATO", "tax return", "tax liability", "superannuation", "CGT"],
+      ["capital gains tax", "negative gearing", "tax changes", "Australia"],
       ["mortgage rates", "home loans", "bank fees", "credit cards"],
       ["superannuation", "retirement", "pension", "insurance"],
       ["interest rates", "household savings", "financial stress", "Australia"],
+    ],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news (superannuation OR ATO OR tax OR CGT OR savings OR "credit cards" OR banking OR "negative gearing") Australia when:7d',
     ],
     sourceCountry: "AS",
   },
@@ -118,6 +139,9 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["ATO", "tax return", "home loans", "credit cards"],
       ["consumer finance", "bank fees", "mortgage rates", "Australia"],
     ],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news ("personal finance" OR superannuation OR mortgage OR insurance OR savings) Australia when:7d',
+    ],
     sourceCountry: "AS",
   },
   "property-news": {
@@ -126,6 +150,9 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     googleAlternates: [
       ["property market", "house prices", "housing", "mortgage"],
       ["rent", "housing affordability", "real estate", "home buyers"],
+    ],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news (property OR housing OR rent OR mortgage OR "house prices") Australia when:7d',
     ],
     sourceCountry: "AS",
   },
@@ -136,6 +163,10 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["technology stocks", "AI", "semiconductors", "earnings"],
       ["Nvidia", "software", "chip stocks", "cloud"],
     ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (AI OR Nvidia OR semiconductors OR software OR technology) when:7d",
+      'site:finance.yahoo.com/news (AI OR Nvidia OR semiconductors OR software OR "technology stocks") when:7d',
+    ],
   },
   work: {
     phrases: ["labour market"],
@@ -143,6 +174,9 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     googleAlternates: [
       ["labour market", "jobs", "wages", "employment"],
       ["workplace", "unemployment", "productivity", "pay growth"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (jobs OR wages OR employment OR workplace OR salary) Australia when:7d",
     ],
     sourceCountry: "AS",
   },
@@ -165,26 +199,25 @@ const SCOPE_LOCAL_CONTEXT_TERMS: Record<string, readonly string[]> = {
   "us-markets": ["United States", "Federal Reserve"],
 };
 
-const SCOPE_GOOGLE_ALTERNATES: Record<string, readonly (readonly string[])[]> = {
-  "asia-markets": [
-    ["Asia stocks", "Nikkei", "Hang Seng", "China markets"],
-    ["Japan stocks", "China stocks", "Asian markets", "central banks"],
-  ],
-  commodities: [
-    ["oil prices", "gold prices", "copper", "commodity markets"],
-  ],
-  "europe-markets": [
-    ["European stocks", "FTSE", "DAX", "STOXX Europe"],
-    ["eurozone markets", "European shares", "ECB", "bond yields"],
-  ],
-  rates: [
-    ["Federal Reserve", "bond yields", "interest rates", "Treasury yields"],
-  ],
-  "us-markets": [
-    ["US stocks", "Wall Street", "S&P 500", "Nasdaq", "Dow Jones"],
-    ["Federal Reserve", "bond yields", "earnings", "US markets"],
-  ],
-};
+const SCOPE_GOOGLE_ALTERNATES: Record<string, readonly (readonly string[])[]> =
+  {
+    "asia-markets": [
+      ["Asia stocks", "Nikkei", "Hang Seng", "China markets"],
+      ["Japan stocks", "China stocks", "Asian markets", "central banks"],
+    ],
+    commodities: [["oil prices", "gold prices", "copper", "commodity markets"]],
+    "europe-markets": [
+      ["European stocks", "FTSE", "DAX", "STOXX Europe"],
+      ["eurozone markets", "European shares", "ECB", "bond yields"],
+    ],
+    rates: [
+      ["Federal Reserve", "bond yields", "interest rates", "Treasury yields"],
+    ],
+    "us-markets": [
+      ["US stocks", "Wall Street", "S&P 500", "Nasdaq", "Dow Jones"],
+      ["Federal Reserve", "bond yields", "earnings", "US markets"],
+    ],
+  };
 
 const GDELT_SOURCE_COUNTRY_BY_SCOPE: Record<string, string> = {
   australia: "AS",
@@ -238,6 +271,14 @@ function uniqueQueries(values: readonly string[]): string[] {
       seen.add(key);
       return true;
     });
+}
+
+function appendGoogleRecency(query: string, recency: string) {
+  const cleaned = compact(query);
+  if (!cleaned) return "";
+  if (/\bwhen:\d+[hdmy]\b/i.test(cleaned)) return cleaned;
+
+  return compact([cleaned, recency].join(" "));
 }
 
 function quoteGdelt(value: string) {
@@ -355,6 +396,7 @@ function profileFromTerms({
   exclude = [],
   googleAlternates = [],
   googleContextTerms = [],
+  googleRawQueries = [],
   locale,
   phrases,
   sourceCountry,
@@ -364,6 +406,7 @@ function profileFromTerms({
   exclude?: readonly string[];
   googleAlternates?: readonly (readonly string[])[];
   googleContextTerms?: readonly string[];
+  googleRawQueries?: readonly string[];
   locale: GoogleLocale;
   phrases: readonly string[];
   sourceCountry?: string;
@@ -384,24 +427,34 @@ function profileFromTerms({
     .map((value) => `-${quoteGdelt(value)}`)
     .join(" ");
   const gdeltCountry = sourceCountry ? `sourcecountry:${sourceCountry}` : "";
-  const recency = "when:30d";
+  const freshRecency = "when:3d";
+  const recentRecency = "when:7d";
+  const fallbackRecency = "when:30d";
+  const primaryGoogleQuery = compact(
+    [googleOrBlock(googleCore.slice(0, 10)), googleContext].join(" "),
+  );
+  const alternateGoogleQueries = googleAlternates.map((alternate) =>
+    compact([googleOrBlock(alternate), googleContext].join(" ")),
+  );
   const googleQueries = uniqueQueries([
-    compact(
-      [googleOrBlock(googleCore.slice(0, 10)), googleContext, recency].join(
-        " ",
-      ),
+    appendGoogleRecency(primaryGoogleQuery, freshRecency),
+    ...googleRawQueries.map((query) => appendGoogleRecency(query, freshRecency)),
+    ...alternateGoogleQueries.map((query) =>
+      appendGoogleRecency(query, freshRecency),
     ),
-    ...googleAlternates.map((alternate) =>
-      compact([googleOrBlock(alternate), googleContext, recency].join(" ")),
+    appendGoogleRecency(primaryGoogleQuery, fallbackRecency),
+    appendGoogleRecency(primaryGoogleQuery, recentRecency),
+    ...alternateGoogleQueries.map((query) =>
+      appendGoogleRecency(query, recentRecency),
     ),
-  ]).slice(0, 6);
+  ]).slice(0, 10);
 
   return {
     displayText: compact(displayText),
     gdeltQuery: compact([gdeltCore, gdeltCountry, gdeltExclude].join(" ")),
     googleLocale: locale,
-    googleNewsQuery: googleQueries[0] ?? recency,
-    googleNewsQueries: googleQueries.length ? googleQueries : [recency],
+    googleNewsQuery: googleQueries[0] ?? freshRecency,
+    googleNewsQueries: googleQueries.length ? googleQueries : [freshRecency],
     searchText: compact(core.join(" ")),
   };
 }
@@ -463,6 +516,7 @@ export function buildNewsSearchProfile(
       ...(pack.googleAlternates ?? []),
       ...(SCOPE_GOOGLE_ALTERNATES[request.marketScopeId ?? ""] ?? []),
     ],
+    googleRawQueries: pack.googleRawQueries,
     googleContextTerms,
     locale,
     phrases: pack.phrases,

@@ -14,7 +14,8 @@ const costOfLivingRequest: ServerNewsRequest = {
   kind: "search",
   marketScopeId: "us-markets",
   pageSize: "18",
-  query: "US Markets Australia cost of living inflation wages bills interest rates",
+  query:
+    "US Markets Australia cost of living inflation wages bills interest rates",
   topicId: "cost-of-living",
 };
 
@@ -45,7 +46,7 @@ describe("news query packs", () => {
     const query = buildGoogleNewsSearchQuery(costOfLivingRequest);
 
     expect(query).toContain(" OR ");
-    expect(query).toContain("when:30d");
+    expect(query).toContain("when:3d");
     expect(query).toContain("United States");
     expect(getGoogleNewsLocale(costOfLivingRequest)).toEqual({
       ceid: "US:en",
@@ -63,7 +64,7 @@ describe("news query packs", () => {
     expect(queries.length).toBeGreaterThan(1);
     expect(queries.join(" ")).toContain("Europe");
     expect(queries.join(" ")).toContain("ECB");
-    expect(queries.every((query) => query.includes("when:30d"))).toBe(true);
+    expect(queries.every((query) => query.includes("when:"))).toBe(true);
   });
 
   it("builds practical Money News variants for Australian consumer finance coverage", () => {
@@ -79,9 +80,43 @@ describe("news query packs", () => {
     expect(queries.length).toBeGreaterThanOrEqual(5);
     expect(joinedQueries).toContain("ATO");
     expect(joinedQueries).toContain("tax return");
+    expect(joinedQueries).toContain("CGT");
+    expect(joinedQueries).toContain("negative gearing");
     expect(joinedQueries).toContain("consumer finance");
     expect(joinedQueries).toContain("mortgage rates");
-    expect(queries.every((query) => query.includes("when:30d"))).toBe(true);
+    expect(joinedQueries).toContain("site:au.finance.yahoo.com/news");
+    expect(queries.every((query) => query.includes("when:"))).toBe(true);
+  });
+
+  it("orders Google RSS query variants fresh-first with a broader fallback later", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    });
+    const firstBroadFallbackIndex = queries.findIndex((query) =>
+      query.includes("when:30d"),
+    );
+
+    expect(queries[0]).toContain("when:3d");
+    expect(firstBroadFallbackIndex).toBeGreaterThan(0);
+  });
+
+  it("adds Yahoo Finance AU indexed queries for local lifestyle finance topics", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    });
+
+    expect(queries.join(" ")).toContain("site:au.finance.yahoo.com/news");
+    expect(queries.join(" ")).toContain("when:7d");
+    expect(queries.join(" ")).toContain("rate hike");
+    expect(queries.join(" ")).toContain("when:3d");
   });
 
   it("adds market-scope Google News variants for regional market views", () => {

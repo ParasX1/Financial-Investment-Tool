@@ -6,22 +6,37 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
   "australian-markets": [
     "all ords",
     "asx",
+    "asx 200",
     "australia",
     "australian",
+    "australian shares",
     "bank",
     "bhp",
     "cba",
+    "cash rate",
+    "equities",
+    "equity",
+    "market index",
     "miners",
+    "monetary policy",
+    "rba",
+    "sector",
+    "share market",
+    "shares",
   ],
   commodities: [
     "commodity",
     "commodities",
     "copper",
     "crude",
+    "crude oil",
     "energy",
+    "energy markets",
     "gold",
+    "gold prices",
     "metals",
     "oil",
+    "oil prices",
   ],
   "cost-of-living": [
     "bill",
@@ -36,6 +51,8 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "energy bills",
     "food price",
     "food prices",
+    "fuel price",
+    "fuel prices",
     "grocery",
     "grocery price",
     "grocery prices",
@@ -43,16 +60,24 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "household budget",
     "household budgets",
     "household debt",
+    "homeowner",
+    "homeowners",
     "housing affordability",
     "inflation",
     "interest rate",
     "interest rates",
     "living cost",
     "living costs",
+    "milk price",
+    "milk prices",
     "mortgage",
     "mortgage rate",
     "mortgage rates",
     "mortgage stress",
+    "oil price",
+    "oil prices",
+    "rate hike",
+    "rate hikes",
     "rent",
     "rents",
     "rba",
@@ -95,6 +120,8 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "banking",
     "borrower",
     "borrowers",
+    "capital gains tax",
+    "cgt",
     "consumer finance",
     "credit card",
     "credit cards",
@@ -109,6 +136,7 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "mortgage",
     "mortgage rate",
     "mortgage rates",
+    "negative gearing",
     "pension",
     "retirement",
     "saving",
@@ -160,9 +188,107 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
 };
 
 const TOPIC_MINIMUM_MATCHES: Record<string, number> = {
+  "australian-markets": 2,
+  commodities: 2,
   "cost-of-living": 2,
   "money-news": 2,
 };
+
+const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
+  "australian-markets": [
+    "all ords",
+    "asx",
+    "asx 200",
+    "australian shares",
+    "market index",
+    "rba",
+    "share market",
+  ],
+  commodities: [
+    "commodities",
+    "commodity",
+    "crude oil",
+    "energy markets",
+    "gold prices",
+    "oil prices",
+  ],
+  "cost-of-living": [
+    "cash rate",
+    "cost of living",
+    "fuel prices",
+    "grocery prices",
+    "homeowners",
+    "housing affordability",
+    "interest rates",
+    "milk prices",
+    "mortgage rates",
+    "mortgage stress",
+    "oil prices",
+    "rate hike",
+    "rate hikes",
+  ],
+  "money-news": [
+    "ato",
+    "capital gains tax",
+    "cgt",
+    "credit card",
+    "credit cards",
+    "home loan",
+    "home loans",
+    "mortgage",
+    "mortgage rates",
+    "negative gearing",
+    "pension",
+    "retirement",
+    "savings",
+    "super",
+    "superannuation",
+    "tax return",
+    "tax returns",
+  ],
+};
+
+const AUSTRALIAN_CONTEXT_TOPIC_IDS = new Set([
+  "australian-markets",
+  "cost-of-living",
+  "money-news",
+  "personal-finance",
+  "property-news",
+  "work",
+]);
+
+const AUSTRALIAN_CONTEXT_KEYWORDS = [
+  "australia",
+  "australian",
+  "aussie",
+  "aussies",
+  "asx",
+  "ato",
+  "cba",
+  "commbank",
+  "rba",
+  "reserve bank of australia",
+];
+
+const AUSTRALIAN_SOURCE_HINTS = [
+  "abc",
+  "afr",
+  "capital brief",
+  "courier mail",
+  "livewire markets",
+  "market index",
+  "michael west media",
+  "nab news",
+  "news.com.au",
+  "perthnow",
+  "rask media",
+  "smh",
+  "the age",
+  "the australian",
+  "the nightly",
+  "the west australian",
+  "yahoo finance australia",
+];
 
 function normalize(value: string | undefined): string {
   return (value ?? "")
@@ -199,6 +325,24 @@ function containsBoundedPhrase(text: string, phrase: string): boolean {
   );
 }
 
+function requestNeedsAustralianContext(request: ServerNewsRequest): boolean {
+  if (request.userSearch) return false;
+  if (normalize(request.country) === "au") return true;
+  if (!request.topicId || !AUSTRALIAN_CONTEXT_TOPIC_IDS.has(request.topicId)) {
+    return false;
+  }
+
+  return !request.marketScopeId || request.marketScopeId === "australia";
+}
+
+function articleMatchesAustralianContext(article: Article): boolean {
+  const text = articleText(article, { includeSource: true });
+
+  return [...AUSTRALIAN_CONTEXT_KEYWORDS, ...AUSTRALIAN_SOURCE_HINTS].some(
+    (keyword) => containsBoundedPhrase(text, keyword),
+  );
+}
+
 function compactSymbol(symbol: string | undefined): string {
   return (symbol ?? "").trim().toUpperCase();
 }
@@ -228,14 +372,25 @@ function tokeniseQuery(query: string | undefined): string[] {
 function articleMatchesKeywords(
   article: Article,
   keywords: readonly string[],
-  { minimumMatches = 1 }: { minimumMatches?: number } = {},
+  {
+    highSignalKeywords = [],
+    minimumMatches = 1,
+  }: { highSignalKeywords?: readonly string[]; minimumMatches?: number } = {},
 ): boolean {
   const text = articleText(article);
+  const highSignalSet = new Set(
+    highSignalKeywords.map((keyword) => normalize(keyword)),
+  );
   let matches = 0;
 
   for (const keyword of keywords) {
-    if (containsBoundedPhrase(text, keyword)) {
-      matches += normalize(keyword).includes(" ") ? 2 : 1;
+    const normalizedKeyword = normalize(keyword);
+
+    if (containsBoundedPhrase(text, normalizedKeyword)) {
+      matches +=
+        normalizedKeyword.includes(" ") || highSignalSet.has(normalizedKeyword)
+          ? 2
+          : 1;
     }
 
     if (matches >= minimumMatches) {
@@ -297,8 +452,27 @@ export function filterRelevantNewsArticles(
   const minimumMatches = request.topicId
     ? (TOPIC_MINIMUM_MATCHES[request.topicId] ?? 1)
     : 1;
+  const highSignalKeywords = request.topicId
+    ? (TOPIC_HIGH_SIGNAL_KEYWORDS[request.topicId] ?? [])
+    : [];
 
-  return articles.filter((article) =>
-    articleMatchesKeywords(article, keywords, { minimumMatches }),
-  );
+  return articles.filter((article) => {
+    if (
+      !articleMatchesKeywords(article, keywords, {
+        highSignalKeywords,
+        minimumMatches,
+      })
+    ) {
+      return false;
+    }
+
+    if (
+      requestNeedsAustralianContext(request) &&
+      !articleMatchesAustralianContext(article)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 }

@@ -39,6 +39,7 @@ describe("newsApiProvider", () => {
     expect(candidates[1]).toMatchObject({
       endpoint: "everything",
       params: {
+        from: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         language: "en",
         sortBy: "publishedAt",
       },
@@ -106,7 +107,10 @@ describe("newsApiProvider", () => {
 
     expect(fetcher).toHaveBeenCalledTimes(1);
     const [url, init] = (fetcher as unknown as jest.Mock).mock.calls[0]!;
-    expect(new URL(String(url)).searchParams.get("pageSize")).toBe("2");
+    expect(new URL(String(url)).searchParams.get("from")).toMatch(
+      /^\d{4}-\d{2}-\d{2}$/,
+    );
+    expect(new URL(String(url)).searchParams.get("pageSize")).toBe("8");
     expect(init).toMatchObject({
       headers: { "X-Api-Key": "test-key" },
     });

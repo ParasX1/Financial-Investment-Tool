@@ -8,7 +8,7 @@ const baseArticle = {
   provider: "marketaux",
   providerLabel: "MarketAux",
   publishedAt: "2026-06-16T04:00:00Z",
-  source: "Market Desk",
+  source: "Yahoo Finance Australia",
   summary: "",
   url: "https://example.com/story",
 };
@@ -96,7 +96,8 @@ describe("filterRelevantNewsArticles", () => {
           {
             ...baseArticle,
             id: "sector",
-            title: "Healthcare stocks position for sector rotation amid inflation",
+            title:
+              "Healthcare stocks position for sector rotation amid inflation",
           },
         ],
         request,
@@ -139,6 +140,71 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["rates", "rents"]);
   });
 
+  it("keeps fresh Cost of Living headlines written in rate-hike shorthand", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "rate-hike",
+            provider: "yahoo-finance-rss",
+            title: "Key group smashed by RBA rate hike",
+          },
+          {
+            ...baseArticle,
+            id: "food-inflation",
+            title: "Oil and milk prices to spill the tea on inflation story",
+          },
+          {
+            ...baseArticle,
+            id: "broad-rba",
+            title: "RBA governor speaks at financial industry dinner",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["rate-hike", "food-inflation"]);
+  });
+
+  it("keeps local Cost of Living coverage while filtering unrelated offshore inflation stories", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia cost of living inflation wages bills interest rates",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "local-source",
+            source: "Yahoo Finance Australia",
+            title: "Oil and milk prices to spill the tea on inflation story",
+          },
+          {
+            ...baseArticle,
+            id: "offshore-cpi",
+            source: "TradingView",
+            title:
+              "Japan CPI stays muted as subsidies mask building inflation pressure",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["local-source"]);
+  });
+
   it("does not treat source names as category evidence", () => {
     const request: ServerNewsRequest = {
       context: "money banking tax superannuation savings",
@@ -161,7 +227,7 @@ describe("filterRelevantNewsArticles", () => {
             ...baseArticle,
             id: "money",
             summary: "Tax changes affect superannuation savings.",
-            source: "Market Desk",
+            source: "Yahoo Finance Australia",
             title: "Investors review retirement settings",
           },
         ],
@@ -203,6 +269,105 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["ato-tax", "bank-rates"]);
   });
 
+  it("keeps Money News headlines with a single high-signal personal finance term", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian personal finance money news",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia money news banking tax superannuation savings",
+      topicId: "money-news",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "super",
+            title:
+              "Superannuation secret at the heart of Aussie economy as boomers keep spending",
+          },
+          {
+            ...baseArticle,
+            id: "credit-cards",
+            title: "June's best rewards credit cards revealed",
+          },
+          {
+            ...baseArticle,
+            id: "broad-finance",
+            title: "Finance leaders prepare for technology earnings season",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["super", "credit-cards"]);
+  });
+
+  it("keeps Money News headlines using Australian tax and property-policy shorthand", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian personal finance money news",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia money news banking tax superannuation savings",
+      topicId: "money-news",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "cgt",
+            title:
+              "Albanese announces capital gains tax exemptions after budget backlash",
+          },
+          {
+            ...baseArticle,
+            id: "negative-gearing",
+            title: "Australia may regret its war on negative gearing",
+          },
+          {
+            ...baseArticle,
+            id: "broad-policy",
+            title: "Government policy agenda dominates Question Time",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["cgt", "negative-gearing"]);
+  });
+
+  it("filters offshore personal finance stories out of Australian Money News", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian personal finance money news",
+      kind: "search",
+      pageSize: "18",
+      query: "Australia money news banking tax superannuation savings",
+      topicId: "money-news",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "local-super",
+            source: "The Australian",
+            title: "Super's valley of pain meets Labor's CGT trap",
+          },
+          {
+            ...baseArticle,
+            id: "offshore-mortgage",
+            source: "Novinite.com",
+            title:
+              "Bulgaria ranks second in Eurozone for lowest mortgage rates",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["local-super"]);
+  });
+
   it("keeps international market stories using common US market language", () => {
     const request: ServerNewsRequest = {
       context: "global markets Wall Street stocks bonds",
@@ -219,8 +384,7 @@ describe("filterRelevantNewsArticles", () => {
           {
             ...baseArticle,
             id: "us-indexes",
-            title:
-              "S&P 500 and Nasdaq hit record highs as Wall Street rallies",
+            title: "S&P 500 and Nasdaq hit record highs as Wall Street rallies",
           },
           {
             ...baseArticle,
@@ -236,6 +400,39 @@ describe("filterRelevantNewsArticles", () => {
         request,
       ).map((article) => article.id),
     ).toEqual(["us-indexes", "yields"]);
+  });
+
+  it("keeps Australian Markets focused on market-moving stories", () => {
+    const request: ServerNewsRequest = {
+      context: "Australia ASX market business economy",
+      country: "au",
+      kind: "regional",
+      pageSize: "18",
+      topicId: "australian-markets",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "asx",
+            title: "ASX 200 falls as BHP drags Australian shares lower",
+          },
+          {
+            ...baseArticle,
+            id: "weather",
+            title: "El Niño: what it means for Australia's climate",
+          },
+          {
+            ...baseArticle,
+            id: "diplomacy",
+            title: "Strengthening Australia-Japan ties on treaty anniversary",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["asx"]);
   });
 
   it("keeps ticker results scoped to the requested symbol", () => {
@@ -319,5 +516,33 @@ describe("filterRelevantNewsArticles", () => {
         request,
       ).map((article) => article.id),
     ).toEqual(["gold"]);
+  });
+
+  it("does not treat non-market copper or energy wording as commodities news", () => {
+    const request: ServerNewsRequest = {
+      commodity: "commodities",
+      context: "commodity markets energy metals agriculture",
+      kind: "commodity",
+      pageSize: "18",
+      topicId: "commodities",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "medicine",
+            title: "Copper drug restores memory in early research",
+          },
+          {
+            ...baseArticle,
+            id: "energy",
+            title: "Energy markets jump as oil prices rise",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["energy"]);
   });
 });

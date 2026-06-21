@@ -3,6 +3,7 @@ import {
   buildStrictSearchText,
   compact,
   dedupeArticles,
+  newsCandidateLimit,
 } from "../providerUtils";
 import {
   getPrimarySymbolName,
@@ -21,8 +22,21 @@ interface NewsApiCandidate {
   params: Record<string, string | undefined>;
 }
 
+const DEFAULT_RECENT_WINDOW_DAYS = 7;
+const LOW_VOLUME_RECENT_WINDOW_DAYS = 14;
+
 function getNewsApiKey(env: Record<string, string | undefined>) {
   return compact(env.NEWSAPI_KEY);
+}
+
+function recentFromDate(request: ServerNewsRequest) {
+  const windowDays =
+    request.kind === "ticker" || request.kind === "industry"
+      ? LOW_VOLUME_RECENT_WINDOW_DAYS
+      : DEFAULT_RECENT_WINDOW_DAYS;
+  const from = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+  return from.toISOString().slice(0, 10);
 }
 
 function tickerQuery(ticker: string | undefined) {
@@ -47,6 +61,7 @@ export function buildNewsApiCandidates(
       {
         endpoint: "everything",
         params: {
+          from: recentFromDate(request),
           language: "en",
           q: buildStrictSearchText(request),
           sortBy: "publishedAt",
@@ -59,6 +74,7 @@ export function buildNewsApiCandidates(
     {
       endpoint: "everything",
       params: {
+        from: recentFromDate(request),
         language: "en",
         q:
           request.kind === "ticker"
@@ -112,7 +128,7 @@ export const newsApiProvider: NewsProvider = {
     const apiKey = getNewsApiKey(context.env);
     if (!apiKey) return [];
 
-    const targetCount = Number(request.pageSize) || 10;
+    const targetCount = newsCandidateLimit(request.pageSize);
     const articles: Article[] = [];
     const seenUrls = new Set<string>();
 
@@ -123,7 +139,7 @@ export const newsApiProvider: NewsProvider = {
         const cleaned = compact(value);
         if (cleaned) url.searchParams.set(key, cleaned);
       });
-      url.searchParams.set("pageSize", request.pageSize);
+      url.searchParams.set("pageSize", String(targetCount));
 
       const response = await context.fetcher(url.toString(), {
         headers: { "X-Api-Key": apiKey },

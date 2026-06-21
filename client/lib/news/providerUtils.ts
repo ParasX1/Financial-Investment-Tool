@@ -25,14 +25,33 @@ export function newsCandidateLimit(
   return Math.min(MAX_PAGE_SIZE, Math.max(pageSize, pageSize * multiplier));
 }
 
+function canonicalTitle(value: string, source: string) {
+  const suffix = source ? ` - ${source}` : "";
+  const title = suffix && value.endsWith(suffix)
+    ? value.slice(0, -suffix.length)
+    : value;
+
+  return title
+    .toLowerCase()
+    .replace(/&amp;/g, "&")
+    .replace(/[^\w\s$%.]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function dedupeArticles(articles: readonly Article[]): Article[] {
   const seen = new Set<string>();
+  const seenTitles = new Set<string>();
 
   return articles.filter((article) => {
     const key = article.url || article.id;
     if (!key || seen.has(key)) return false;
 
+    const titleKey = canonicalTitle(article.title, article.source);
+    if (titleKey.length >= 24 && seenTitles.has(titleKey)) return false;
+
     seen.add(key);
+    if (titleKey.length >= 24) seenTitles.add(titleKey);
     return true;
   });
 }

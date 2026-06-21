@@ -45,20 +45,21 @@ describe("fetchMarketNewsWithProviders", () => {
   it("resolves provider order from env without leaking provider details into callers", () => {
     expect(
       resolveNewsProviders({
-        NEWS_PROVIDER_ORDER: "google-rss, gdelt, marketaux, google-rss, unknown",
+        NEWS_PROVIDER_ORDER:
+          "google-rss, gdelt, marketaux, google-rss, unknown",
       }).map((resolvedProvider) => resolvedProvider.id),
     ).toEqual(["google-news-rss", "gdelt", "marketaux"]);
   });
 
-  it("uses free RSS-first provider order in development when no order is configured", () => {
+  it("uses fresh category-friendly provider order in development when no order is configured", () => {
     expect(
       resolveNewsProviders({ NODE_ENV: "development" }).map(
         (resolvedProvider) => resolvedProvider.id,
       ),
     ).toEqual([
       "google-news-rss",
-      "yahoo-finance-rss",
       "gdelt",
+      "yahoo-finance-rss",
       "marketaux",
       "newsapi",
     ]);
@@ -71,8 +72,8 @@ describe("fetchMarketNewsWithProviders", () => {
       ),
     ).toEqual([
       "marketaux",
-      "gdelt",
       "newsapi",
+      "gdelt",
       "google-news-rss",
       "yahoo-finance-rss",
     ]);
@@ -167,8 +168,8 @@ describe("fetchMarketNewsWithProviders", () => {
     );
 
     expect(result.articles.map((article) => article.id)).toEqual([
-      "marketaux-cost",
       "gdelt-cost",
+      "marketaux-cost",
     ]);
     expect(result.meta).toMatchObject({
       attemptedProviders: ["marketaux", "gdelt"],
@@ -230,9 +231,9 @@ describe("fetchMarketNewsWithProviders", () => {
     );
 
     expect(result.articles.map((article) => article.id)).toEqual([
-      "cost-1",
-      "cost-2",
       "cost-3",
+      "cost-2",
+      "cost-1",
     ]);
     expect(secondProvider.fetchArticles).toHaveBeenCalled();
     expect(result.meta).toMatchObject({
@@ -337,10 +338,72 @@ describe("fetchMarketNewsWithProviders", () => {
     );
 
     expect(result.articles.map((article) => article.id)).toEqual([
-      "cost-1",
       "cost-2",
+      "cost-1",
     ]);
     expect(secondProvider.fetchArticles).not.toHaveBeenCalled();
+  });
+
+  it("keeps the freshest strict stories before trimming a provider candidate set", async () => {
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "2", topicId: "cost-of-living" },
+      {
+        env: {
+          NEWS_MIN_STRICT_ARTICLES: "2",
+          NODE_ENV: "development",
+        },
+        providers: [
+          provider({
+            articles: [
+              {
+                id: "old-1",
+                image: null,
+                publishedAt: "2026-06-16T04:00:00Z",
+                source: "Market Desk",
+                summary: "Mortgage pressure remains high.",
+                title: "Cost of living pressure story from last week",
+                url: "https://example.com/old-1",
+              },
+              {
+                id: "old-2",
+                image: null,
+                publishedAt: "2026-06-18T04:00:00Z",
+                source: "Market Desk",
+                summary: "Household bills and inflation remain visible.",
+                title: "Inflation keeps household budgets under pressure",
+                url: "https://example.com/old-2",
+              },
+              {
+                id: "fresh-1",
+                image: null,
+                publishedAt: "2026-06-21T08:26:50Z",
+                source: "Yahoo Finance Australia",
+                summary: "",
+                title: "Key group smashed by RBA rate hike",
+                url: "https://example.com/fresh-1",
+              },
+              {
+                id: "fresh-2",
+                image: null,
+                publishedAt: "2026-06-21T02:09:28Z",
+                source: "Michael West Media",
+                summary: "",
+                title:
+                  "Oil and milk prices to spill the tea on inflation story",
+                url: "https://example.com/fresh-2",
+              },
+            ],
+            id: "google-news-rss",
+            label: "Google News RSS",
+          }),
+        ],
+      },
+    );
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "fresh-1",
+      "fresh-2",
+    ]);
   });
 
   it("filters provider articles before accepting them for a strict category", async () => {
@@ -413,7 +476,9 @@ describe("fetchMarketNewsWithProviders", () => {
       ],
     });
 
-    expect(result.articles.map((article) => article.id)).toEqual(["google-cost"]);
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "google-cost",
+    ]);
     expect(result.meta).toMatchObject({
       provider: "google-news-rss",
       providerLabel: "Google News RSS",

@@ -3,6 +3,7 @@ import {
   dedupeArticles,
   normaliseNewsPageSize,
   describeNewsRequest,
+  newsCandidateLimit,
 } from "./providerUtils";
 import { getDemoMarketNewsArticles } from "./providers/demoMarketNewsProvider";
 import { gdeltProvider } from "./providers/gdeltProvider";
@@ -31,20 +32,20 @@ const PROVIDER_REGISTRY: Record<
 
 const DEFAULT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
   "marketaux",
-  "gdelt",
   "newsapi",
+  "gdelt",
   "google-news-rss",
   "yahoo-finance-rss",
 ];
 
 const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
   "google-news-rss",
-  "yahoo-finance-rss",
   "gdelt",
+  "yahoo-finance-rss",
   "marketaux",
   "newsapi",
 ];
-const DEVELOPMENT_MIN_STRICT_ARTICLES = 13;
+const DEVELOPMENT_MIN_STRICT_ARTICLES = 10;
 const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
 
 const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
@@ -166,6 +167,27 @@ function withTimeout(
   }) as typeof fetch;
 }
 
+function publishedAtMs(article: Article) {
+  const time = new Date(article.publishedAt).getTime();
+
+  return Number.isFinite(time) ? time : 0;
+}
+
+function selectFreshStrictArticles(
+  articles: readonly Article[],
+  limit: number,
+): Article[] {
+  return dedupeArticles(articles)
+    .map((article, index) => ({ article, index }))
+    .sort(
+      (left, right) =>
+        publishedAtMs(right.article) - publishedAtMs(left.article) ||
+        left.index - right.index,
+    )
+    .slice(0, limit)
+    .map(({ article }) => article);
+}
+
 export async function fetchMarketNewsWithProviders(
   request: ServerNewsRequest,
   {
@@ -180,6 +202,7 @@ export async function fetchMarketNewsWithProviders(
 ): Promise<ServerNewsResponse> {
   const pageSize = normaliseNewsPageSize(request.pageSize);
   const pageSizeNumber = Number(pageSize);
+  const strictCandidateLimit = newsCandidateLimit(pageSize);
   const minimumArticleCount = minimumStrictArticles(env, pageSizeNumber);
   const normalizedRequest = { ...request, pageSize };
   const providerList = providers ?? resolveNewsProviders(env);
@@ -232,14 +255,14 @@ export async function fetchMarketNewsWithProviders(
 
       if (articles.length) {
         strictProviders.push(provider);
-        strictArticles = dedupeArticles([...strictArticles, ...articles]).slice(
-          0,
-          pageSizeNumber,
+        strictArticles = selectFreshStrictArticles(
+          [...strictArticles, ...articles],
+          strictCandidateLimit,
         );
 
         if (strictArticles.length >= minimumArticleCount) {
           return {
-            articles: strictArticles,
+            articles: selectFreshStrictArticles(strictArticles, pageSizeNumber),
             meta: {
               attemptedProviders,
               provider: strictProviders[0]!.id,
@@ -278,7 +301,7 @@ export async function fetchMarketNewsWithProviders(
 
   if (strictArticles.length) {
     return {
-      articles: strictArticles,
+      articles: selectFreshStrictArticles(strictArticles, pageSizeNumber),
       meta: {
         attemptedProviders,
         provider: strictProviders[0]!.id,

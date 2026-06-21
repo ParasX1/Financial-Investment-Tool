@@ -28,6 +28,7 @@ describe("marketAuxProvider", () => {
     );
     expect(url.searchParams.get("api_token")).toBe("test-key");
     expect(url.searchParams.get("countries")).toBe("au");
+    expect(url.searchParams.get("limit")).toBe("72");
     expect(url.searchParams.get("search")).toContain("ASX");
     expect(url.searchParams.get("search")).toContain("Australian shares");
     expect(url.searchParams.get("must_have_entities")).toBe("true");

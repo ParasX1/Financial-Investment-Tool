@@ -10,6 +10,8 @@ import type {
 } from "../types";
 import { buildMarketNewsRequest } from "../lib/marketNewsNavigation";
 
+const NEWS_REFRESH_MS = 3 * 60 * 1000;
+
 async function fetchMarketNewsRequest(
   request: MarketNewsRequest,
   limit: number,
@@ -56,6 +58,25 @@ export function useMarketNewsArticles({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [meta, setMeta] = React.useState<NewsResponseMeta | null>(null);
+  const [autoRefreshKey, setAutoRefreshKey] = React.useState(0);
+  const effectiveRefreshKey = refreshKey + autoRefreshKey;
+
+  React.useEffect(() => {
+    if (!enabled || typeof window === "undefined") return;
+
+    const refreshWhenVisible = () => {
+      if (document.hidden) return;
+      setAutoRefreshKey((key) => key + 1);
+    };
+    const interval = window.setInterval(refreshWhenVisible, NEWS_REFRESH_MS);
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [enabled]);
 
   React.useEffect(() => {
     if (!enabled) return;
@@ -65,7 +86,7 @@ export function useMarketNewsArticles({
     setLoading(true);
     setError(null);
 
-    fetchMarketNewsRequest(request, limit, refreshKey)
+    fetchMarketNewsRequest(request, limit, effectiveRefreshKey)
       .then((result) => {
         if (!alive) return;
 
@@ -103,7 +124,7 @@ export function useMarketNewsArticles({
     return () => {
       alive = false;
     };
-  }, [enabled, limit, refreshKey, request]);
+  }, [enabled, effectiveRefreshKey, limit, request]);
 
   return {
     articles,

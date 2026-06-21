@@ -3,6 +3,7 @@ import {
   buildStrictSearchText,
   compact,
   dedupeArticles,
+  newsCandidateLimit,
 } from "../providerUtils";
 import type {
   NewsProvider,
@@ -11,7 +12,8 @@ import type {
 } from "../types";
 
 const MARKETAUX_ENDPOINT = "https://api.marketaux.com/v1/news/all";
-const RECENT_WINDOW_DAYS = 45;
+const DEFAULT_RECENT_WINDOW_DAYS = 14;
+const LOW_VOLUME_RECENT_WINDOW_DAYS = 30;
 
 type MarketAuxEntity = {
   industry?: string | null;
@@ -39,9 +41,17 @@ function getMarketAuxApiKey(env: Record<string, string | undefined>) {
   return compact(env.MARKETAUX_API_KEY);
 }
 
-function recentPublishedAfter() {
+function recentWindowDays(request: ServerNewsRequest) {
+  if (request.kind === "ticker" || request.kind === "industry") {
+    return LOW_VOLUME_RECENT_WINDOW_DAYS;
+  }
+
+  return DEFAULT_RECENT_WINDOW_DAYS;
+}
+
+function recentPublishedAfter(request: ServerNewsRequest) {
   const recent = new Date(
-    Date.now() - RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    Date.now() - recentWindowDays(request) * 24 * 60 * 60 * 1000,
   );
   return recent.toISOString().slice(0, 10);
 }
@@ -89,11 +99,11 @@ export function buildMarketAuxUrl({
 
   url.searchParams.set("api_token", apiKey);
   url.searchParams.set("language", "en");
-  url.searchParams.set("limit", request.pageSize);
+  url.searchParams.set("limit", String(newsCandidateLimit(request.pageSize)));
   url.searchParams.set("group_similar", "true");
   url.searchParams.set("filter_entities", "true");
   url.searchParams.set("sort", "published_at");
-  url.searchParams.set("published_after", recentPublishedAfter());
+  url.searchParams.set("published_after", recentPublishedAfter(request));
 
   if (request.kind === "ticker" && request.ticker) {
     url.searchParams.set("symbols", request.ticker);

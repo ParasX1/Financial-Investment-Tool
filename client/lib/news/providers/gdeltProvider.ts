@@ -9,7 +9,7 @@ import type {
 } from "../types";
 
 const GDELT_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc";
-const DEFAULT_GDELT_TIMESPAN = "1month";
+const DEFAULT_GDELT_TIMESPAN = "7d";
 const MAX_GDELT_RECORDS = 75;
 
 type GdeltArticle = {

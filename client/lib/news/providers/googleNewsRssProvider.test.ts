@@ -98,7 +98,7 @@ describe("googleNewsRssProvider", () => {
     );
     expect(url.searchParams.get("q")).toContain('"cost of living"');
     expect(url.searchParams.get("q")).toContain(" OR ");
-    expect(url.searchParams.get("q")).toContain("when:30d");
+    expect(url.searchParams.get("q")).toContain("when:3d");
     expect(url.searchParams.get("hl")).toBe("en-AU");
     expect(url.searchParams.get("gl")).toBe("AU");
     expect(url.searchParams.get("ceid")).toBe("AU:en");
