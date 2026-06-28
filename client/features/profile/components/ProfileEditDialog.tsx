@@ -15,7 +15,7 @@ export function ProfileEditDialog({
   title,
 }: {
   children: React.ReactNode;
-  description: string;
+  description?: string;
   disabled?: boolean;
   onClose: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -35,7 +35,7 @@ export function ProfileEditDialog({
       backdropClassName={styles.editDialogBackdrop}
       contentClassName={styles.editDialogContent}
       aria-labelledby={titleId}
-      aria-describedby={descriptionId}
+      aria-describedby={description ? descriptionId : undefined}
     >
       <form className={styles.editDialogForm} onSubmit={onSubmit}>
         <div className={styles.editDialogHeader}>
@@ -43,9 +43,11 @@ export function ProfileEditDialog({
             <h2 id={titleId} className={styles.editDialogTitle}>
               {title}
             </h2>
-            <p id={descriptionId} className={styles.editDialogDescription}>
-              {description}
-            </p>
+            {description ? (
+              <p id={descriptionId} className={styles.editDialogDescription}>
+                {description}
+              </p>
+            ) : null}
           </div>
           <button
             type="button"

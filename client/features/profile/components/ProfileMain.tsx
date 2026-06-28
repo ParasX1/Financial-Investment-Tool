@@ -227,7 +227,7 @@ export function ProfileMain() {
                   <div className={styles.authGateRail}>
                     <p className={styles.authGateRailTitle}>What stays with you</p>
                     <ul>
-                      <li>Public name and handle</li>
+                      <li>Public name and username</li>
                       <li>Verified email for recovery</li>
                       <li>Profile photo and contact details</li>
                     </ul>
@@ -289,7 +289,6 @@ export function ProfileMain() {
       <ProfileEditDialog
         show={activeDialog === "identity"}
         title="Edit profile"
-        description="Your name appears first. Your handle keeps account identity precise."
         submitLabel={profile.savingDetails ? "Saving..." : "Save identity"}
         disabled={profile.savingDetails}
         onClose={closeDialog}
@@ -302,7 +301,7 @@ export function ProfileMain() {
             error={profile.errors.handle}
             helperText="3-30 lowercase letters, numbers, or underscores."
             id="profile-dialog-handle"
-            label="Handle"
+            label="Username"
             placeholder="nathan_li"
             value={identityDraft.handle}
             onChange={(value) => {
