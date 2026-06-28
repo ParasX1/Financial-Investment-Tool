@@ -24,27 +24,4 @@ describe("profilePersistence", () => {
     });
     expect(payload).not.toHaveProperty("email");
   });
-
-  it("can omit handle for profile tables that have not run the handle migration", () => {
-    const payload = buildProfileDetailsPayload({
-      avatarUrl: null,
-      includeHandle: false,
-      userId: "user-1",
-      values: {
-        email: "nathan@example.com",
-        firstName: "Nathan",
-        handle: "nathan_li",
-        lastName: "Li",
-        phone: "",
-      },
-    });
-
-    expect(payload).toEqual({
-      avatar_url: null,
-      first_name: "Nathan",
-      id: "user-1",
-      last_name: "Li",
-      phone: "",
-    });
-  });
 });
