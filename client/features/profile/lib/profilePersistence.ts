@@ -12,6 +12,7 @@ export function buildProfileDetailsPayload({
   return {
     avatar_url: avatarUrl,
     first_name: values.firstName,
+    handle: values.handle,
     id: userId,
     last_name: values.lastName,
     phone: values.phone,

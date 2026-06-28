@@ -152,6 +152,17 @@
   gap: 1rem;
 }
 
+.formStack {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.formStack:last-child {
+  margin-bottom: 0;
+}
+
 .field {
   min-width: 0;
 }
@@ -536,13 +547,20 @@
   max-width: min(35rem, calc(100vw - 1rem));
 }
 
+.editDialogBackdrop {
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(5px);
+}
+
 .editDialogContent {
   overflow: hidden;
   border: 1px solid rgba(132, 146, 176, 0.22);
-  border-radius: 0.5rem;
-  background: #09090b;
+  border-radius: 0.72rem;
+  background:
+    linear-gradient(145deg, rgba(83, 103, 255, 0.08), transparent 36%),
+    #09090b;
   color: #ffffff;
-  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1.8rem 5rem rgba(0, 0, 0, 0.62);
 }
 
 .editDialogForm {
@@ -557,7 +575,7 @@
   gap: 1rem;
   align-items: start;
   border-bottom: 1px solid var(--profile-line);
-  padding: 1.05rem 1.1rem;
+  padding: 1.2rem 1.25rem 1.05rem;
 }
 
 .editDialogTitle {
@@ -576,7 +594,7 @@
 
 .editDialogBody {
   min-width: 0;
-  padding: 1.1rem;
+  padding: 1.15rem 1.25rem;
 }
 
 .editDialogFooter {
@@ -585,7 +603,8 @@
   justify-content: flex-end;
   gap: 0.6rem;
   border-top: 1px solid var(--profile-line);
-  padding: 0.9rem 1.1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.018);
+  padding: 0.9rem 1.25rem 1.15rem;
 }
 
 .iconButton {

@@ -5,7 +5,7 @@ describe("profileSections", () => {
     expect(PROFILE_SETTINGS_GROUPS.map((item) => item.id)).toEqual([
       "profile",
       "contact",
-      "sign-in",
+      "security",
     ]);
   });
 
@@ -23,6 +23,7 @@ describe("profileSections", () => {
     ).join(" ");
 
     expect(joinedCopy).not.toMatch(/overview|sidebar|global edit|edit mode/i);
-    expect(joinedCopy).toMatch(/sign-in/i);
+    expect(joinedCopy).toMatch(/password/i);
+    expect(joinedCopy).not.toMatch(/signed-out login/i);
   });
 });

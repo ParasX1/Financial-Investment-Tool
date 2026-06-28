@@ -8,6 +8,7 @@ describe("profilePersistence", () => {
       values: {
         email: "unsaved@example.com",
         firstName: "Nathan",
+        handle: "nathan_li",
         lastName: "Li",
         phone: "+61 2 5555 1234",
       },
@@ -16,6 +17,7 @@ describe("profilePersistence", () => {
     expect(payload).toEqual({
       avatar_url: "https://cdn.example.com/avatar.png",
       first_name: "Nathan",
+      handle: "nathan_li",
       id: "user-1",
       last_name: "Li",
       phone: "+61 2 5555 1234",

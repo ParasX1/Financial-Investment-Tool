@@ -32,6 +32,7 @@ export function ProfileEditDialog({
       onHide={onClose}
       centered
       dialogClassName={styles.editDialog}
+      backdropClassName={styles.editDialogBackdrop}
       contentClassName={styles.editDialogContent}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}

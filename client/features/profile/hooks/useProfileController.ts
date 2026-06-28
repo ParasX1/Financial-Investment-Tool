@@ -5,24 +5,28 @@ import {
   MAX_AVATAR_SIZE,
   isValidEmail,
   sanitizeEmail,
+  sanitizeHandle,
   sanitizeName,
   sanitizeNameInput,
   sanitizePhone,
+  validateHandle,
   validateName,
   validatePhone,
 } from "../lib/profileValidation";
 import {
   buildAvatarDisplayUrl,
   buildDisplayName,
+  buildProfileHandle,
   buildInitials,
   formatUserIdPreview,
 } from "../lib/profileView";
 import { buildProfileDetailsPayload } from "../lib/profilePersistence";
 import type {
-  ProfileContactValues,
+  ProfileEmailValues,
   ProfileErrors,
   ProfileFieldKey,
   ProfileFormValues,
+  ProfilePhoneValues,
   ProfileIdentityValues,
   ProfileMessage,
   ProfileSnapshot,
@@ -46,19 +50,32 @@ function sanitizeProfileField(field: ProfileFieldKey, value: string) {
   }
 
   if (field === "email") return sanitizeEmail(value);
+  if (field === "handle") return sanitizeHandle(value);
   return sanitizePhone(value);
+}
+
+function buildFallbackHandle(email: string, userId: string) {
+  const fromEmail = sanitizeHandle(email.split("@")[0] || "");
+  if (!validateHandle(fromEmail)) return fromEmail;
+  return `u${userId
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase()
+    .slice(0, 12)}`;
 }
 
 function validateIdentity(values: ProfileIdentityValues) {
   const nextValues: ProfileIdentityValues = {
     firstName: sanitizeName(values.firstName),
+    handle: sanitizeHandle(values.handle),
     lastName: sanitizeName(values.lastName),
   };
   const errors: ProfileErrors = {};
   const firstNameError = validateName("First name", nextValues.firstName);
+  const handleError = validateHandle(nextValues.handle);
   const lastNameError = validateName("Last name", nextValues.lastName);
 
   if (firstNameError) errors.firstName = firstNameError;
+  if (handleError) errors.handle = handleError;
   if (lastNameError) errors.lastName = lastNameError;
 
   return {
@@ -68,18 +85,31 @@ function validateIdentity(values: ProfileIdentityValues) {
   };
 }
 
-function validateContact(values: ProfileContactValues) {
-  const nextValues: ProfileContactValues = {
+function validateEmail(values: ProfileEmailValues) {
+  const nextValues: ProfileEmailValues = {
     email: sanitizeEmail(values.email),
-    phone: sanitizePhone(values.phone),
   };
   const errors: ProfileErrors = {};
-  const phoneError = validatePhone(nextValues.phone);
 
   if (!nextValues.email) errors.email = "Email is required";
   else if (!isValidEmail(nextValues.email)) {
     errors.email = "Enter a valid email address";
   }
+
+  return {
+    errors,
+    valid: Object.keys(errors).length === 0,
+    values: nextValues,
+  };
+}
+
+function validatePhoneDetails(values: ProfilePhoneValues) {
+  const nextValues: ProfilePhoneValues = {
+    phone: sanitizePhone(values.phone),
+  };
+  const errors: ProfileErrors = {};
+  const phoneError = validatePhone(nextValues.phone);
+
   if (phoneError) errors.phone = phoneError;
 
   return {
@@ -94,6 +124,7 @@ export function useProfileController() {
 
   const [email, setEmail] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
+  const [handle, setHandle] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
@@ -119,6 +150,7 @@ export function useProfileController() {
     if (!user) {
       setEmail("");
       setFirstName("");
+      setHandle("");
       setLastName("");
       setPhone("");
       setAvatarUrl(null);
@@ -140,7 +172,7 @@ export function useProfileController() {
     const loadProfile = async () => {
       const { data, error } = await supabase
         .from(PROFILE_TABLE)
-        .select("first_name,last_name,phone,avatar_url")
+        .select("first_name,last_name,handle,phone,avatar_url")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -159,11 +191,13 @@ export function useProfileController() {
         avatarUrl: data?.avatar_url || null,
         email: authEmail,
         firstName: data?.first_name || "",
+        handle: data?.handle || buildFallbackHandle(authEmail, user.id),
         lastName: data?.last_name || "",
         phone: data?.phone || "",
       };
 
       setFirstName(nextProfile.firstName);
+      setHandle(nextProfile.handle);
       setLastName(nextProfile.lastName);
       setPhone(nextProfile.phone);
       setAvatarUrl(nextProfile.avatarUrl);
@@ -193,14 +227,18 @@ export function useProfileController() {
   }, [avatarPreviewUrl]);
 
   const values = React.useMemo(
-    () => ({ email, firstName, lastName, phone }),
-    [email, firstName, lastName, phone],
+    () => ({ email, firstName, handle, lastName, phone }),
+    [email, firstName, handle, lastName, phone],
   );
   const currentProfile = React.useMemo<ProfileSnapshot>(
     () => ({ ...values, avatarUrl }),
     [avatarUrl, values],
   );
   const displayName = React.useMemo(() => buildDisplayName(values), [values]);
+  const profileHandle = React.useMemo(
+    () => buildProfileHandle(values),
+    [values],
+  );
   const initials = React.useMemo(() => buildInitials(values), [values]);
   const userIdPreview = React.useMemo(
     () => formatUserIdPreview(user?.id),
@@ -222,6 +260,7 @@ export function useProfileController() {
       const sanitizedValue = sanitizeProfileField(field, value);
 
       if (field === "firstName") setFirstName(sanitizedValue);
+      if (field === "handle") setHandle(sanitizedValue);
       if (field === "lastName") setLastName(sanitizedValue);
       if (field === "email") setEmail(sanitizedValue);
       if (field === "phone") setPhone(sanitizedValue);
@@ -280,88 +319,118 @@ export function useProfileController() {
       }
 
       setFirstName(result.values.firstName);
+      setHandle(result.values.handle);
       setLastName(result.values.lastName);
       setProfileSnapshot({ ...nextValues, avatarUrl });
-      setMessage({ tone: "success", text: "Profile name updated." });
+      setMessage({ tone: "success", text: "Profile identity updated." });
       return true;
     },
     [avatarUrl, saveUsersRow, user, values],
   );
 
-  const saveContact = React.useCallback(
-    async (nextContact: ProfileContactValues) => {
+  const saveEmail = React.useCallback(
+    async (nextEmail: ProfileEmailValues) => {
       if (!user) return false;
 
-      const result = validateContact(nextContact);
+      const result = validateEmail(nextEmail);
       setErrors(result.errors);
 
       if (!result.valid) {
         setMessage({
           tone: "error",
-          text: "Fix the highlighted fields before saving contact details.",
+          text: "Enter a valid email address before saving.",
         });
         return false;
       }
 
       const previousEmail = profileSnapshot?.email || user.email || "";
       const emailChanged = result.values.email !== previousEmail;
-      const nextValues = { ...values, ...result.values };
 
       setSavingContact(true);
       setMessage(null);
 
-      const { error } = await saveUsersRow(nextValues, avatarUrl);
-
-      if (error) {
+      if (!emailChanged) {
         setSavingContact(false);
-        setMessage({ tone: "error", text: "Contact save failed. Try again." });
+        setMessage({ tone: "info", text: "Email is already up to date." });
         return false;
       }
 
-      if (emailChanged) {
-        const { data: emailData, error: emailError } =
-          await supabase.auth.updateUser(
-            { email: result.values.email },
-            { emailRedirectTo: `${window.location.origin}/Profile` },
-          );
-
-        if (emailError) {
-          setSavingContact(false);
-          setPhone(result.values.phone);
-          setEmail(previousEmail);
-          setProfileSnapshot({
-            ...nextValues,
-            avatarUrl,
-            email: previousEmail,
-          });
-          setMessage({
-            tone: "error",
-            text: "Phone saved, but the email update failed. Please try again.",
-          });
-          return false;
-        }
-
-        const nextPendingEmail = sanitizeEmail(emailData.user?.new_email || "");
-        setPendingEmailOverride(
-          emailData.user?.email_change_sent_at || nextPendingEmail
-            ? nextPendingEmail || result.values.email
-            : "",
+      const { data: emailData, error: emailError } =
+        await supabase.auth.updateUser(
+          { email: result.values.email },
+          { emailRedirectTo: `${window.location.origin}/Profile` },
         );
-      }
 
       setSavingContact(false);
-      setPhone(result.values.phone);
-      setEmail(result.values.email);
-      setProfileSnapshot({ ...nextValues, avatarUrl });
+
+      if (emailError) {
+        setEmail(previousEmail);
+        setProfileSnapshot({
+          ...values,
+          avatarUrl,
+          email: previousEmail,
+        });
+        setMessage({
+          tone: "error",
+          text: "Email change could not be started. Please try again.",
+        });
+        return false;
+      }
+
+      setEmail(previousEmail);
+      setProfileSnapshot({
+        ...values,
+        avatarUrl,
+        email: previousEmail,
+      });
+      const nextPendingEmail = sanitizeEmail(emailData.user?.new_email || "");
+      setPendingEmailOverride(
+        emailData.user?.email_change_sent_at || nextPendingEmail
+          ? nextPendingEmail || result.values.email
+          : "",
+      );
       setMessage({
         tone: "success",
-        text: emailChanged
-          ? "Contact details saved. Check the confirmation email to verify the new sign-in email."
-          : "Contact details updated.",
+        text: "Email change started. Check your inbox to confirm it.",
       });
       return true;
     },
-    [avatarUrl, profileSnapshot?.email, saveUsersRow, user, values],
+    [avatarUrl, profileSnapshot?.email, user, values],
+  );
+
+  const savePhone = React.useCallback(
+    async (nextPhone: ProfilePhoneValues) => {
+      if (!user) return false;
+
+      const result = validatePhoneDetails(nextPhone);
+      setErrors(result.errors);
+
+      if (!result.valid) {
+        setMessage({
+          tone: "error",
+          text: "Fix the highlighted phone number before saving.",
+        });
+        return false;
+      }
+
+      const nextValues = { ...values, ...result.values };
+      setSavingContact(true);
+      setMessage(null);
+
+      const { error } = await saveUsersRow(nextValues, avatarUrl);
+      setSavingContact(false);
+
+      if (error) {
+        setMessage({ tone: "error", text: "Phone save failed. Try again." });
+        return false;
+      }
+
+      setPhone(result.values.phone);
+      setProfileSnapshot({ ...nextValues, avatarUrl });
+      setMessage({ tone: "success", text: "Phone updated." });
+      return true;
+    },
+    [avatarUrl, saveUsersRow, user, values],
   );
 
   const changeAvatar = React.useCallback(
@@ -539,17 +608,20 @@ export function useProfileController() {
     emailVerified,
     errors,
     firstName,
+    handle,
     hasPendingEmailChange,
     initials,
     lastName,
     message,
     phone,
     pendingEmail,
+    profileHandle,
     profileLoading,
     profileSnapshot,
     resendVerification,
-    saveContact,
+    saveEmail,
     saveIdentity,
+    savePhone,
     savingAvatar,
     savingContact,
     savingDetails,

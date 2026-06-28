@@ -14,6 +14,15 @@ export function sanitizeEmail(value: string) {
   return value.trim().toLowerCase().slice(0, 254);
 }
 
+export function sanitizeHandle(value: string) {
+  return value
+    .trim()
+    .replace(/^@+/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 30);
+}
+
 export function sanitizePhone(value: string) {
   return value
     .replace(/[^\d+\-().\s]/g, "")
@@ -42,6 +51,17 @@ export function validateName(label: string, value: string) {
   return "";
 }
 
+export function validateHandle(value: string) {
+  if (!value) return "Handle is required";
+  if (value.length < 3) return "Handle must be at least 3 characters";
+  if (!/^[a-z]/.test(value)) return "Handle must start with a letter";
+  if (!/^[a-z][a-z0-9_]{2,29}$/.test(value)) {
+    return "Use 3 to 30 lowercase letters, numbers, or underscores";
+  }
+
+  return "";
+}
+
 export function validatePhone(value: string) {
   if (!value) return "";
 
@@ -61,16 +81,19 @@ export function validateProfileForm(values: ProfileFormValues) {
   const nextValues: ProfileFormValues = {
     email: sanitizeEmail(values.email),
     firstName: sanitizeName(values.firstName),
+    handle: sanitizeHandle(values.handle),
     lastName: sanitizeName(values.lastName),
     phone: sanitizePhone(values.phone),
   };
   const errors: ProfileErrors = {};
 
   const firstNameError = validateName("First name", nextValues.firstName);
+  const handleError = validateHandle(nextValues.handle);
   const lastNameError = validateName("Last name", nextValues.lastName);
   const phoneError = validatePhone(nextValues.phone);
 
   if (firstNameError) errors.firstName = firstNameError;
+  if (handleError) errors.handle = handleError;
   if (lastNameError) errors.lastName = lastNameError;
   if (!nextValues.email) errors.email = "Email is required";
   else if (!isValidEmail(nextValues.email)) {

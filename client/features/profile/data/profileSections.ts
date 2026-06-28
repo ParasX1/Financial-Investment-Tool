@@ -1,5 +1,5 @@
 export type ProfileSettingsGroup = {
-  id: "profile" | "contact" | "sign-in";
+  id: "profile" | "contact" | "security";
   label: string;
   description: string;
 };
@@ -12,12 +12,12 @@ export const PROFILE_SETTINGS_GROUPS: readonly ProfileSettingsGroup[] = [
   },
   {
     id: "contact",
-    label: "Contact",
-    description: "Email and phone",
+    label: "Contact methods",
+    description: "Email and phone managed separately",
   },
   {
-    id: "sign-in",
-    label: "Security & sign-in",
-    description: "Password and login",
+    id: "security",
+    label: "Security",
+    description: "Password",
   },
 ] as const;

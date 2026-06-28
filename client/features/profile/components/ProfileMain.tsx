@@ -9,13 +9,17 @@ import {
   cn,
 } from "@/components/shared/uiPrimitives";
 import { useProfileController } from "../hooks/useProfileController";
-import type { ProfileContactValues, ProfileIdentityValues } from "../types";
+import type {
+  ProfileEmailValues,
+  ProfileIdentityValues,
+  ProfilePhoneValues,
+} from "../types";
 import { ProfileSettingsPanel } from "./ProfileAccountSections";
 import { ProfileEditDialog } from "./ProfileEditDialog";
 import { ProfileField } from "./ProfileField";
 import styles from "../styles/profile.module.css";
 
-type ActiveDialog = "identity" | "contact" | "password" | null;
+type ActiveDialog = "email" | "identity" | "password" | "phone" | null;
 
 const messageToneClass = {
   error: fitFeedback.error,
@@ -30,10 +34,13 @@ export function ProfileMain() {
   const [identityDraft, setIdentityDraft] =
     React.useState<ProfileIdentityValues>({
       firstName: "",
+      handle: "",
       lastName: "",
     });
-  const [contactDraft, setContactDraft] = React.useState<ProfileContactValues>({
+  const [emailDraft, setEmailDraft] = React.useState<ProfileEmailValues>({
     email: "",
+  });
+  const [phoneDraft, setPhoneDraft] = React.useState<ProfilePhoneValues>({
     phone: "",
   });
   const [passwordDraft, setPasswordDraft] = React.useState({
@@ -60,18 +67,26 @@ export function ProfileMain() {
     profile.clearFeedback();
     setIdentityDraft({
       firstName: profile.firstName,
+      handle: profile.handle,
       lastName: profile.lastName,
     });
     setActiveDialog("identity");
   }, [profile]);
 
-  const openContactDialog = React.useCallback(() => {
+  const openEmailDialog = React.useCallback(() => {
     profile.clearFeedback();
-    setContactDraft({
+    setEmailDraft({
       email: profile.email,
+    });
+    setActiveDialog("email");
+  }, [profile]);
+
+  const openPhoneDialog = React.useCallback(() => {
+    profile.clearFeedback();
+    setPhoneDraft({
       phone: profile.phone,
     });
-    setActiveDialog("contact");
+    setActiveDialog("phone");
   }, [profile]);
 
   const openPasswordDialog = React.useCallback(() => {
@@ -90,13 +105,22 @@ export function ProfileMain() {
     [identityDraft, profile],
   );
 
-  const saveContact = React.useCallback(
+  const saveEmail = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      const saved = await profile.saveContact(contactDraft);
+      const saved = await profile.saveEmail(emailDraft);
       if (saved) setActiveDialog(null);
     },
-    [contactDraft, profile],
+    [emailDraft, profile],
+  );
+
+  const savePhone = React.useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const saved = await profile.savePhone(phoneDraft);
+      if (saved) setActiveDialog(null);
+    },
+    [phoneDraft, profile],
   );
 
   const savePassword = React.useCallback(
@@ -138,7 +162,7 @@ export function ProfileMain() {
           <FitPageHeader
             className={styles.header}
             title="Profile"
-            subtitle="Profile, contact, and sign-in."
+            subtitle="Identity, contact, and security."
             subtitleClassName="max-w-[48rem]"
           />
 
@@ -219,12 +243,14 @@ export function ProfileMain() {
                     initials={profile.initials}
                     pendingEmail={profile.pendingEmail}
                     phone={profile.phone}
+                    profileHandle={profile.profileHandle}
                     savingAvatar={profile.savingAvatar}
                     sendingVerification={profile.sendingVerification}
                     onAvatarChange={profile.changeAvatar}
-                    onEditContact={openContactDialog}
+                    onEditEmail={openEmailDialog}
                     onEditIdentity={openIdentityDialog}
                     onEditPassword={openPasswordDialog}
+                    onEditPhone={openPhoneDialog}
                     onResendVerification={profile.resendVerification}
                   />
                 </div>
@@ -236,19 +262,35 @@ export function ProfileMain() {
 
       <ProfileEditDialog
         show={activeDialog === "identity"}
-        title="Update display name"
-        description="Use first and last name."
-        submitLabel={profile.savingDetails ? "Saving..." : "Save name"}
+        title="Edit public identity"
+        description="Your handle is what FIT shows first across shared spaces."
+        submitLabel={profile.savingDetails ? "Saving..." : "Save identity"}
         disabled={profile.savingDetails}
         onClose={closeDialog}
         onSubmit={saveIdentity}
       >
+        <div className={styles.formStack}>
+          <ProfileField
+            autoComplete="username"
+            disabled={profile.savingDetails}
+            error={profile.errors.handle}
+            helperText="3-30 lowercase letters, numbers, or underscores."
+            id="profile-dialog-handle"
+            label="Handle"
+            placeholder="nathan_li"
+            value={identityDraft.handle}
+            onChange={(value) => {
+              profile.clearFeedback();
+              setIdentityDraft((current) => ({ ...current, handle: value }));
+            }}
+          />
+        </div>
         <div className={styles.formGrid}>
           <ProfileField
             autoComplete="given-name"
             disabled={profile.savingDetails}
             error={profile.errors.firstName}
-            helperText="Shown in FIT."
+            helperText="Kept with account details."
             id="profile-dialog-first-name"
             label="First name"
             placeholder="Nathan"
@@ -262,7 +304,7 @@ export function ProfileMain() {
             autoComplete="family-name"
             disabled={profile.savingDetails}
             error={profile.errors.lastName}
-            helperText="Shown with first name."
+            helperText="Kept with account details."
             id="profile-dialog-last-name"
             label="Last name"
             placeholder="Li"
@@ -276,20 +318,20 @@ export function ProfileMain() {
       </ProfileEditDialog>
 
       <ProfileEditDialog
-        show={activeDialog === "contact"}
-        title="Update contact details"
-        description="Email changes need inbox confirmation."
-        submitLabel={profile.savingContact ? "Saving..." : "Save contact"}
+        show={activeDialog === "email"}
+        title="Change email"
+        description="Email changes are confirmed from your inbox before becoming active."
+        submitLabel={profile.savingContact ? "Saving..." : "Save email"}
         disabled={profile.savingContact}
         onClose={closeDialog}
-        onSubmit={saveContact}
+        onSubmit={saveEmail}
       >
         {profile.hasPendingEmailChange ? (
           <div className={styles.pendingNotice} role="status">
             Email change pending for <strong>{profile.pendingEmail}</strong>.
           </div>
         ) : null}
-        <div className={styles.formGrid}>
+        <div className={styles.formStack}>
           <ProfileField
             autoComplete="email"
             disabled={profile.savingContact}
@@ -299,12 +341,25 @@ export function ProfileMain() {
             label="Email address"
             placeholder="name@example.com"
             type="email"
-            value={contactDraft.email}
+            value={emailDraft.email}
             onChange={(value) => {
               profile.clearFeedback();
-              setContactDraft((current) => ({ ...current, email: value }));
+              setEmailDraft((current) => ({ ...current, email: value }));
             }}
           />
+        </div>
+      </ProfileEditDialog>
+
+      <ProfileEditDialog
+        show={activeDialog === "phone"}
+        title="Update phone"
+        description="This is a contact number for account support. It is not used as a sign-in method."
+        submitLabel={profile.savingContact ? "Saving..." : "Save phone"}
+        disabled={profile.savingContact}
+        onClose={closeDialog}
+        onSubmit={savePhone}
+      >
+        <div className={styles.formStack}>
           <ProfileField
             autoComplete="tel"
             disabled={profile.savingContact}
@@ -314,10 +369,10 @@ export function ProfileMain() {
             label="Phone"
             placeholder="+61 2 5555 1234"
             type="tel"
-            value={contactDraft.phone}
+            value={phoneDraft.phone}
             onChange={(value) => {
               profile.clearFeedback();
-              setContactDraft((current) => ({ ...current, phone: value }));
+              setPhoneDraft((current) => ({ ...current, phone: value }));
             }}
           />
         </div>

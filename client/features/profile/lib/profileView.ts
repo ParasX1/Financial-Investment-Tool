@@ -9,6 +9,20 @@ export function buildDisplayName({
   return name || email.split("@")[0] || "Profile";
 }
 
+export function buildProfileHandle({
+  email,
+  handle,
+}: Pick<ProfileFormValues, "email" | "handle">) {
+  const normalized = handle.trim().replace(/^@+/, "").toLowerCase();
+  const fallback = email
+    .split("@")[0]
+    ?.toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 30);
+
+  return `@${normalized || fallback || "profile"}`;
+}
+
 export function buildInitials({
   email,
   firstName,
@@ -49,6 +63,7 @@ export function hasProfileChanges(
 
   return (
     current.firstName !== snapshot.firstName ||
+    current.handle !== snapshot.handle ||
     current.lastName !== snapshot.lastName ||
     current.email !== snapshot.email ||
     current.phone !== snapshot.phone ||

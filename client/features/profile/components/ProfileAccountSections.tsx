@@ -1,6 +1,5 @@
 import * as React from "react";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import PhoneIphoneRoundedIcon from "@mui/icons-material/PhoneIphoneRounded";
@@ -22,7 +21,7 @@ const settingGroupLabelById = PROFILE_SETTINGS_GROUPS.reduce<
   {
     contact: "Contact",
     profile: "Profile",
-    "sign-in": "Security & sign-in",
+    security: "Security",
   },
 );
 
@@ -35,12 +34,14 @@ export function ProfileSettingsPanel({
   initials,
   pendingEmail,
   phone,
+  profileHandle,
   savingAvatar,
   sendingVerification,
   onAvatarChange,
-  onEditContact,
+  onEditEmail,
   onEditIdentity,
   onEditPassword,
+  onEditPhone,
   onResendVerification,
 }: {
   avatarDisplayUrl: string | null;
@@ -51,12 +52,14 @@ export function ProfileSettingsPanel({
   initials: string;
   pendingEmail: string;
   phone: string;
+  profileHandle: string;
   savingAvatar: boolean;
   sendingVerification: boolean;
   onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onEditContact: () => void;
+  onEditEmail: () => void;
   onEditIdentity: () => void;
   onEditPassword: () => void;
+  onEditPhone: () => void;
   onResendVerification: () => void;
 }) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -91,8 +94,10 @@ export function ProfileSettingsPanel({
 
         <div className={styles.accountSummaryCopy}>
           <p className={styles.eyebrow}>Identity</p>
-          <h2 className={styles.accountName}>{displayName}</h2>
+          <h2 className={styles.accountName}>{profileHandle}</h2>
           <div className={styles.accountMetaLine}>
+            <span>{displayName}</span>
+            <span aria-hidden="true">/</span>
             <span>{accountEmail}</span>
           </div>
         </div>
@@ -160,7 +165,7 @@ export function ProfileSettingsPanel({
               hasPendingEmailChange ? "Confirm from inbox." : undefined
             }
             actionLabel="Change"
-            onAction={onEditContact}
+            onAction={onEditEmail}
             secondaryActionDisabled={sendingVerification}
             secondaryActionLabel={emailVerificationActionLabel}
             onSecondaryAction={
@@ -172,25 +177,20 @@ export function ProfileSettingsPanel({
             label="Phone"
             value={phone || "No phone added"}
             actionLabel={phone ? "Change" : "Add"}
-            onAction={onEditContact}
+            onAction={onEditPhone}
           />
         </SettingsCard>
 
         <SettingsCard
           id="profile-security-settings-title"
-          title={settingGroupLabelById["sign-in"]}
+          title={settingGroupLabelById.security}
         >
           <ProfileSettingRow
             icon={LockRoundedIcon}
             label="Password"
-            value="Password set"
+            value="Sign-in password"
             actionLabel="Change"
             onAction={onEditPassword}
-          />
-          <ProfileSettingRow
-            icon={CheckCircleRoundedIcon}
-            label="Signed-out login"
-            value="Email and password"
           />
         </SettingsCard>
       </div>

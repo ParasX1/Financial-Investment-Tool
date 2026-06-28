@@ -1,5 +1,6 @@
 import {
   buildDisplayName,
+  buildProfileHandle,
   buildInitials,
   formatUserIdPreview,
   hasProfileChanges,
@@ -14,6 +15,13 @@ describe("profileView", () => {
         lastName: "Li",
       }),
     ).toBe("Nathan Li");
+
+    expect(
+      buildProfileHandle({
+        email: "nathan@example.com",
+        handle: "nathan_li",
+      }),
+    ).toBe("@nathan_li");
 
     expect(
       buildInitials({
@@ -32,6 +40,10 @@ describe("profileView", () => {
         lastName: "",
       }),
     ).toBe("nathan");
+
+    expect(
+      buildProfileHandle({ email: "nathan@example.com", handle: "" }),
+    ).toBe("@nathan");
 
     expect(
       buildInitials({
@@ -54,13 +66,14 @@ describe("profileView", () => {
       avatarUrl: "https://cdn.example.com/avatar.png",
       email: "nathan@example.com",
       firstName: "Nathan",
+      handle: "nathan_li",
       lastName: "Li",
       phone: "+61 2 5555 1234",
     };
 
     expect(hasProfileChanges(current, current)).toBe(false);
     expect(
-      hasProfileChanges({ ...current, phone: "+61 2 5555 9999" }, current),
+      hasProfileChanges({ ...current, handle: "nathan_fit" }, current),
     ).toBe(true);
   });
 });

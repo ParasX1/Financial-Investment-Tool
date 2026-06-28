@@ -1,9 +1,15 @@
-export type ProfileFieldKey = "firstName" | "lastName" | "email" | "phone";
+export type ProfileFieldKey =
+  | "email"
+  | "firstName"
+  | "handle"
+  | "lastName"
+  | "phone";
 
 export type ProfileErrors = Partial<Record<ProfileFieldKey, string>>;
 
 export type ProfileFormValues = {
   firstName: string;
+  handle: string;
   lastName: string;
   email: string;
   phone: string;
@@ -15,10 +21,12 @@ export type ProfileSnapshot = ProfileFormValues & {
 
 export type ProfileIdentityValues = Pick<
   ProfileFormValues,
-  "firstName" | "lastName"
+  "firstName" | "handle" | "lastName"
 >;
 
-export type ProfileContactValues = Pick<ProfileFormValues, "email" | "phone">;
+export type ProfileEmailValues = Pick<ProfileFormValues, "email">;
+
+export type ProfilePhoneValues = Pick<ProfileFormValues, "phone">;
 
 export type ProfileMessageTone = "info" | "success" | "error";
 
