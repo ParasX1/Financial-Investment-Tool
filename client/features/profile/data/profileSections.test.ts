@@ -7,6 +7,7 @@ import {
 describe("profileSections", () => {
   it("keeps Profile navigation scoped to existing account features", () => {
     expect(PROFILE_PRIMARY_TABS.map((tab) => tab.id)).toEqual([
+      "overview",
       "personal-settings",
       "security",
     ]);
@@ -25,6 +26,19 @@ describe("profileSections", () => {
     ].join(" ");
 
     expect(joinedLabels).not.toMatch(/wallet|subscription|passkey/i);
+  });
+
+  it("uses account-settings rows instead of a global edit mode", () => {
+    const joinedCopy = [
+      ...PROFILE_PRIMARY_TABS.map((tab) => tab.label),
+      ...PROFILE_SECTION_NAV_ITEMS.map((item) => item.label),
+      ...PROFILE_SECTION_NAV_ITEMS.map((item) => item.description),
+      ...PROFILE_SUPPORT_CARDS.map((card) => card.title),
+      ...PROFILE_SUPPORT_CARDS.map((card) => card.body),
+    ].join(" ");
+
+    expect(joinedCopy).not.toMatch(/unlock|global edit|edit mode/i);
+    expect(joinedCopy).toMatch(/sign-in security/i);
   });
 
   it("keeps support guidance scoped to behavior Profile actually owns", () => {

@@ -11,6 +11,7 @@ import type { ProfileSectionId } from "../types";
 import styles from "../styles/profile.module.css";
 
 const navIcons: Record<ProfileSectionId, typeof AccountCircleRoundedIcon> = {
+  overview: ManageAccountsRoundedIcon,
   "personal-details": BadgeRoundedIcon,
   "profile-card": AccountCircleRoundedIcon,
   security: SecurityRoundedIcon,

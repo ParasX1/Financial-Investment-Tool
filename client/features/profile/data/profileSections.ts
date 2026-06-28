@@ -20,13 +20,18 @@ export type ProfileSupportCard = {
 
 export const PROFILE_PRIMARY_TABS: readonly ProfilePrimaryTab[] = [
   {
+    id: "overview",
+    label: "Overview",
+    targetSectionId: "overview",
+  },
+  {
     id: "personal-settings",
-    label: "Personal settings",
+    label: "Profile",
     targetSectionId: "profile-card",
   },
   {
     id: "security",
-    label: "Security",
+    label: "Sign-in security",
     targetSectionId: "security",
   },
 ] as const;
@@ -34,7 +39,7 @@ export const PROFILE_PRIMARY_TABS: readonly ProfilePrimaryTab[] = [
 export const PROFILE_SECTION_NAV_ITEMS: readonly ProfileSectionNavItem[] = [
   {
     id: "profile-card",
-    label: "What people see",
+    label: "Profile",
     description: "Avatar and display name",
   },
   {
@@ -44,20 +49,20 @@ export const PROFILE_SECTION_NAV_ITEMS: readonly ProfileSectionNavItem[] = [
   },
   {
     id: "security",
-    label: "Security",
-    description: "Password settings",
+    label: "Sign-in security",
+    description: "Email and password",
   },
 ] as const;
 
 export const PROFILE_SUPPORT_CARDS: readonly ProfileSupportCard[] = [
   {
     id: "privacy",
-    title: "Public vs account details",
-    body: "Your avatar and display name are the public identity fields shown on this page. Email and phone stay with account details.",
+    title: "Profile vs account details",
+    body: "Your avatar and display name identify this FIT account. Email and phone stay with account details.",
   },
   {
     id: "security",
-    title: "Security changes",
-    body: "Password updates are handled separately from profile saves so sensitive changes stay explicit.",
+    title: "Sign-in security",
+    body: "Email verification and password updates use their own actions so sensitive changes stay explicit.",
   },
 ] as const;

@@ -13,6 +13,13 @@ export type ProfileSnapshot = ProfileFormValues & {
   avatarUrl: string | null;
 };
 
+export type ProfileIdentityValues = Pick<
+  ProfileFormValues,
+  "firstName" | "lastName"
+>;
+
+export type ProfileContactValues = Pick<ProfileFormValues, "email" | "phone">;
+
 export type ProfileMessageTone = "info" | "success" | "error";
 
 export type ProfileMessage = {
@@ -20,6 +27,10 @@ export type ProfileMessage = {
   text: string;
 };
 
-export type ProfileSectionId = "profile-card" | "personal-details" | "security";
+export type ProfileSectionId =
+  | "overview"
+  | "profile-card"
+  | "personal-details"
+  | "security";
 
-export type ProfilePrimaryTabId = "personal-settings" | "security";
+export type ProfilePrimaryTabId = "overview" | "personal-settings" | "security";

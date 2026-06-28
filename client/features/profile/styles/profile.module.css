@@ -74,10 +74,11 @@
 
 .sectionNavPanel,
 .panel,
+.overviewPanel,
 .supportCard {
   min-width: 0;
   border: 1px solid var(--profile-border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: var(--profile-panel);
 }
 
@@ -164,7 +165,7 @@
 }
 
 .contentStack,
-.rail {
+.settingsStack {
   display: grid;
   min-width: 0;
   align-content: start;
@@ -176,7 +177,8 @@
   overflow: hidden;
 }
 
-.panel:focus {
+.panel:focus,
+.overviewPanel:focus {
   outline: 2px solid rgba(123, 140, 255, 0.72);
   outline-offset: 3px;
 }
@@ -229,6 +231,100 @@
   padding: 1rem;
 }
 
+.overviewPanel {
+  scroll-margin-top: 1rem;
+  display: grid;
+  overflow: hidden;
+  gap: 1rem;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  background:
+    linear-gradient(145deg, rgba(83, 103, 255, 0.14), transparent 52%),
+    var(--profile-panel);
+}
+
+.overviewCopy {
+  min-width: 0;
+}
+
+.overviewTitle {
+  max-width: 49rem;
+  margin-top: 0.4rem;
+  color: #ffffff;
+  font-size: clamp(1.8rem, 4vw, 3.25rem);
+  font-weight: 950;
+  line-height: 1.03;
+}
+
+.overviewTitle span {
+  color: #dce4ff;
+}
+
+.overviewText {
+  max-width: 45rem;
+  margin-top: 0.8rem;
+  color: var(--profile-copy);
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+.overviewCards {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.overviewCard {
+  display: grid;
+  min-width: 0;
+  min-height: 5rem;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid rgba(132, 146, 176, 0.18);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.85rem;
+  color: #dce4ff;
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.overviewCard:hover {
+  border-color: rgba(83, 103, 255, 0.45);
+  background: rgba(83, 103, 255, 0.12);
+  color: #ffffff;
+}
+
+.overviewCard:active {
+  transform: translateY(1px);
+}
+
+.overviewCard strong,
+.overviewCard small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overviewCard strong {
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.overviewCard small {
+  margin-top: 0.16rem;
+  color: var(--profile-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
 .pendingNotice {
   margin-bottom: 1rem;
   border: 1px solid rgba(246, 200, 95, 0.35);
@@ -246,6 +342,20 @@
   min-width: 0;
   gap: 1rem;
   align-items: center;
+}
+
+.profileIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+}
+
+.profileIdentityCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.8rem;
 }
 
 .avatarCluster {
@@ -458,6 +568,11 @@
   gap: 0.6rem;
 }
 
+.inlineActionRow {
+  border-top: 1px solid var(--profile-line);
+  padding: 0.85rem 1rem;
+}
+
 .button {
   display: inline-flex;
   min-height: 2.5rem;
@@ -528,6 +643,196 @@
   cursor: not-allowed;
   opacity: 0.48;
   transform: none;
+}
+
+.settingsList {
+  display: grid;
+  min-width: 0;
+}
+
+.settingRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  border-top: 1px solid var(--profile-line);
+  padding: 1rem;
+}
+
+.settingRow:first-child {
+  border-top: 0;
+}
+
+.settingIcon {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: rgba(83, 103, 255, 0.1);
+  color: #dbe4ff;
+}
+
+.settingCopy {
+  min-width: 0;
+}
+
+.settingHeading {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.settingLabel {
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 950;
+}
+
+.settingValue {
+  min-width: 0;
+  margin-top: 0.18rem;
+  overflow-wrap: anywhere;
+  color: #dce4ff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.settingDescription {
+  margin-top: 0.28rem;
+  color: var(--profile-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.rowAction {
+  display: inline-flex;
+  grid-column: 2;
+  min-height: 2.5rem;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.15rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.5rem 0;
+  color: var(--profile-accent);
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-align: right;
+}
+
+.rowAction:hover {
+  color: #dce4ff;
+}
+
+.rowAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.statusBadge {
+  display: inline-flex;
+  min-height: 1.45rem;
+  align-items: center;
+  border: 1px solid rgba(132, 146, 176, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.12rem 0.48rem;
+  color: var(--profile-copy);
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.statusBadgeSuccess {
+  border-color: rgba(102, 224, 162, 0.34);
+  background: rgba(102, 224, 162, 0.09);
+  color: #99f6c8;
+}
+
+.statusBadgeWarning {
+  border-color: rgba(246, 200, 95, 0.4);
+  background: rgba(246, 200, 95, 0.1);
+  color: #ffe7a3;
+}
+
+.editDialog {
+  max-width: min(35rem, calc(100vw - 1rem));
+}
+
+.editDialogContent {
+  overflow: hidden;
+  border: 1px solid rgba(132, 146, 176, 0.22);
+  border-radius: 0.5rem;
+  background: #09090b;
+  color: #ffffff;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.55);
+}
+
+.editDialogForm {
+  display: grid;
+  min-width: 0;
+}
+
+.editDialogHeader {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  border-bottom: 1px solid var(--profile-line);
+  padding: 1.05rem 1.1rem;
+}
+
+.editDialogTitle {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.editDialogDescription {
+  margin-top: 0.45rem;
+  color: var(--profile-copy);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.editDialogBody {
+  min-width: 0;
+  padding: 1.1rem;
+}
+
+.editDialogFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid var(--profile-line);
+  padding: 0.9rem 1.1rem 1.1rem;
+}
+
+.iconButton {
+  display: inline-grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid rgba(132, 146, 176, 0.22);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: #dce4ff;
+}
+
+.iconButton:hover {
+  border-color: rgba(83, 103, 255, 0.48);
+  background: rgba(83, 103, 255, 0.12);
+  color: #ffffff;
 }
 
 .message {
@@ -603,6 +908,18 @@
 }
 
 @media (min-width: 760px) {
+  .overviewPanel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overviewCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .profileIdentity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
   .profileHero {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -619,6 +936,15 @@
 
   .formGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settingRow {
+    grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+  }
+
+  .rowAction {
+    grid-column: auto;
+    justify-content: flex-end;
   }
 }
 
@@ -643,13 +969,7 @@
   .layout {
     grid-template-columns:
       minmax(13.5rem, 15rem)
-      minmax(0, 1fr)
-      minmax(17rem, 19rem);
-  }
-
-  .rail {
-    position: sticky;
-    top: 1rem;
+      minmax(0, 1fr);
   }
 }
 
@@ -663,6 +983,10 @@
   }
 
   .button {
+    width: 100%;
+  }
+
+  .editDialogFooter .button {
     width: 100%;
   }
 }
