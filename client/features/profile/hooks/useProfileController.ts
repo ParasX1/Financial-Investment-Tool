@@ -21,6 +21,11 @@ import {
   formatUserIdPreview,
 } from "../lib/profileView";
 import { buildProfileDetailsPayload } from "../lib/profilePersistence";
+import {
+  fetchProfileDetails,
+  PROFILE_TABLE,
+  type ProfileSupabaseClient,
+} from "../lib/profileSupabase";
 import type {
   ProfileEmailValues,
   ProfileErrors,
@@ -42,7 +47,6 @@ const ALLOWED_AVATAR_TYPES = new Set([
   "image/png",
   "image/webp",
 ]);
-const PROFILE_TABLE = "Users";
 
 function sanitizeProfileField(field: ProfileFieldKey, value: string) {
   if (field === "firstName" || field === "lastName") {
@@ -138,6 +142,8 @@ export function useProfileController() {
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [message, setMessage] = React.useState<ProfileMessage | null>(null);
   const [pendingEmailOverride, setPendingEmailOverride] = React.useState("");
+  const [profileSupportsHandle, setProfileSupportsHandle] =
+    React.useState(true);
 
   const [savingDetails, setSavingDetails] = React.useState(false);
   const [savingContact, setSavingContact] = React.useState(false);
@@ -157,6 +163,7 @@ export function useProfileController() {
       setAvatarPreviewUrl(null);
       setProfileSnapshot(null);
       setPendingEmailOverride("");
+      setProfileSupportsHandle(true);
       setErrors({});
       setMessage(null);
       setProfileLoading(false);
@@ -170,13 +177,13 @@ export function useProfileController() {
     setProfileLoading(true);
 
     const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from(PROFILE_TABLE)
-        .select("first_name,last_name,handle,phone,avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data, error, supportsHandle } = await fetchProfileDetails(
+        supabase as unknown as ProfileSupabaseClient,
+        user.id,
+      );
 
       if (!active) return;
+      setProfileSupportsHandle(supportsHandle);
 
       if (error) {
         setMessage({
@@ -282,13 +289,14 @@ export function useProfileController() {
       return supabase.from(PROFILE_TABLE).upsert(
         buildProfileDetailsPayload({
           avatarUrl: nextAvatarUrl,
+          includeHandle: profileSupportsHandle,
           userId: user.id,
           values: nextValues,
         }),
         { onConflict: "id" },
       );
     },
-    [user],
+    [profileSupportsHandle, user],
   );
 
   const saveIdentity = React.useCallback(
@@ -306,7 +314,12 @@ export function useProfileController() {
         return false;
       }
 
-      const nextValues = { ...values, ...result.values };
+      const nextValues = {
+        ...values,
+        firstName: result.values.firstName,
+        handle: profileSupportsHandle ? result.values.handle : values.handle,
+        lastName: result.values.lastName,
+      };
       setSavingDetails(true);
       setMessage(null);
 
@@ -319,13 +332,20 @@ export function useProfileController() {
       }
 
       setFirstName(result.values.firstName);
-      setHandle(result.values.handle);
+      if (profileSupportsHandle) setHandle(result.values.handle);
       setLastName(result.values.lastName);
       setProfileSnapshot({ ...nextValues, avatarUrl });
-      setMessage({ tone: "success", text: "Profile identity updated." });
+      setMessage(
+        profileSupportsHandle
+          ? { tone: "success", text: "Profile identity updated." }
+          : {
+              tone: "info",
+              text: "Name updated. Apply the profile handle migration to persist handle changes.",
+            },
+      );
       return true;
     },
-    [avatarUrl, saveUsersRow, user, values],
+    [avatarUrl, profileSupportsHandle, saveUsersRow, user, values],
   );
 
   const saveEmail = React.useCallback(
