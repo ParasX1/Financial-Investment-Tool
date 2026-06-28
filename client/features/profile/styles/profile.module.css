@@ -27,41 +27,14 @@
   margin: 0 auto;
 }
 
-.primaryTabs {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--profile-line);
-  padding-bottom: 0.65rem;
+.header :global(h1) {
+  font-size: 1.55rem;
+  font-weight: 600;
 }
 
-.primaryTab {
-  min-height: 2.5rem;
-  border: 1px solid transparent;
-  border-radius: 0.6rem;
-  background: transparent;
-  padding: 0.55rem 0.8rem;
-  color: var(--profile-muted);
-  font-size: 0.84rem;
-  font-weight: 850;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease;
-}
-
-.primaryTab:hover {
-  border-color: rgba(83, 103, 255, 0.35);
-  background: rgba(83, 103, 255, 0.1);
-  color: #ffffff;
-}
-
-.primaryTabActive {
-  border-color: var(--fit-nav-active-border, #203773);
-  background: var(--fit-nav-active-bg, #101939);
-  color: #ffffff;
+.header :global(p) {
+  max-width: 34rem;
+  font-size: 0.92rem;
 }
 
 .layout,
@@ -74,7 +47,6 @@
 
 .sectionNavPanel,
 .panel,
-.overviewPanel,
 .supportCard {
   min-width: 0;
   border: 1px solid var(--profile-border);
@@ -93,7 +65,7 @@
   padding: 0.45rem 0.5rem 0.65rem;
   color: #dce4ff;
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .sectionNavList {
@@ -153,7 +125,7 @@
 .sectionButtonLabel {
   color: #ffffff;
   font-size: 0.84rem;
-  font-weight: 900;
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -161,7 +133,7 @@
   margin-top: 0.12rem;
   color: var(--profile-muted);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .contentStack,
@@ -177,8 +149,7 @@
   overflow: hidden;
 }
 
-.panel:focus,
-.overviewPanel:focus {
+.panel:focus {
   outline: 2px solid rgba(123, 140, 255, 0.72);
   outline-offset: 3px;
 }
@@ -205,8 +176,8 @@
 .eyebrow {
   color: var(--fit-color-text-label, #687184);
   font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -214,8 +185,8 @@
 .panelTitle {
   margin-top: 0.35rem;
   color: #ffffff;
-  font-size: 1.2rem;
-  font-weight: 950;
+  font-size: 1.08rem;
+  font-weight: 600;
   line-height: 1.18;
 }
 
@@ -231,100 +202,6 @@
   padding: 1rem;
 }
 
-.overviewPanel {
-  scroll-margin-top: 1rem;
-  display: grid;
-  overflow: hidden;
-  gap: 1rem;
-  padding: clamp(1rem, 2vw, 1.35rem);
-  background:
-    linear-gradient(145deg, rgba(83, 103, 255, 0.14), transparent 52%),
-    var(--profile-panel);
-}
-
-.overviewCopy {
-  min-width: 0;
-}
-
-.overviewTitle {
-  max-width: 49rem;
-  margin-top: 0.4rem;
-  color: #ffffff;
-  font-size: clamp(1.8rem, 4vw, 3.25rem);
-  font-weight: 950;
-  line-height: 1.03;
-}
-
-.overviewTitle span {
-  color: #dce4ff;
-}
-
-.overviewText {
-  max-width: 45rem;
-  margin-top: 0.8rem;
-  color: var(--profile-copy);
-  font-size: 0.96rem;
-  line-height: 1.6;
-}
-
-.overviewCards {
-  display: grid;
-  min-width: 0;
-  gap: 0.75rem;
-}
-
-.overviewCard {
-  display: grid;
-  min-width: 0;
-  min-height: 5rem;
-  grid-template-columns: 2.35rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.8rem;
-  border: 1px solid rgba(132, 146, 176, 0.18);
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.035);
-  padding: 0.85rem;
-  color: #dce4ff;
-  text-align: left;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease,
-    transform 150ms ease;
-}
-
-.overviewCard:hover {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: rgba(83, 103, 255, 0.12);
-  color: #ffffff;
-}
-
-.overviewCard:active {
-  transform: translateY(1px);
-}
-
-.overviewCard strong,
-.overviewCard small {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.overviewCard strong {
-  color: #ffffff;
-  font-size: 0.92rem;
-  font-weight: 950;
-}
-
-.overviewCard small {
-  margin-top: 0.16rem;
-  color: var(--profile-muted);
-  font-size: 0.76rem;
-  font-weight: 750;
-}
-
 .pendingNotice {
   margin-bottom: 1rem;
   border: 1px solid rgba(246, 200, 95, 0.35);
@@ -333,7 +210,7 @@
   padding: 0.75rem 0.85rem;
   color: #ffe7a3;
   font-size: 0.84rem;
-  font-weight: 750;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -393,7 +270,7 @@
 .avatarInitials {
   color: #050506;
   font-size: 2rem;
-  font-weight: 950;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -410,7 +287,7 @@
   padding: 0.55rem 0.8rem;
   color: #ffffff;
   font-size: 0.83rem;
-  font-weight: 850;
+  font-weight: 600;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -446,7 +323,7 @@
   overflow-wrap: anywhere;
   color: #ffffff;
   font-size: 1.5rem;
-  font-weight: 950;
+  font-weight: 600;
   line-height: 1.12;
 }
 
@@ -478,7 +355,7 @@
   display: block;
   color: var(--fit-color-text-label, #687184);
   font-size: 0.68rem;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
@@ -488,7 +365,7 @@
   overflow-wrap: anywhere;
   color: #ffffff;
   font-size: 0.9rem;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .form {
@@ -510,7 +387,7 @@
   display: block;
   color: #dce4ff;
   font-size: 0.84rem;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .fieldInput {
@@ -549,7 +426,7 @@
 .fieldError {
   margin-top: 0.35rem;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.45;
 }
 
@@ -583,7 +460,7 @@
   border-radius: 0.62rem;
   padding: 0.55rem 0.85rem;
   font-size: 0.84rem;
-  font-weight: 900;
+  font-weight: 600;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -689,7 +566,7 @@
 .settingLabel {
   color: #ffffff;
   font-size: 0.88rem;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .settingValue {
@@ -698,7 +575,7 @@
   overflow-wrap: anywhere;
   color: #dce4ff;
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -706,7 +583,7 @@
   margin-top: 0.28rem;
   color: var(--profile-muted);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.45;
 }
 
@@ -724,7 +601,7 @@
   padding: 0.5rem 0;
   color: var(--profile-accent);
   font-size: 0.82rem;
-  font-weight: 950;
+  font-weight: 600;
   text-align: right;
 }
 
@@ -747,7 +624,7 @@
   padding: 0.12rem 0.48rem;
   color: var(--profile-copy);
   font-size: 0.68rem;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .statusBadgeSuccess {
@@ -793,7 +670,7 @@
 .editDialogTitle {
   color: #ffffff;
   font-size: 1.25rem;
-  font-weight: 950;
+  font-weight: 600;
   line-height: 1.15;
 }
 
@@ -841,7 +718,7 @@
   border-style: solid;
   padding: 0.8rem 0.9rem;
   font-size: 0.88rem;
-  font-weight: 750;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -879,7 +756,7 @@
 .supportTitle {
   color: #ffffff;
   font-size: 0.96rem;
-  font-weight: 950;
+  font-weight: 600;
   line-height: 1.25;
 }
 
@@ -908,14 +785,6 @@
 }
 
 @media (min-width: 760px) {
-  .overviewPanel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .overviewCards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .profileIdentity {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -992,7 +861,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .primaryTab,
   .sectionButton,
   .avatarButton,
   .button,

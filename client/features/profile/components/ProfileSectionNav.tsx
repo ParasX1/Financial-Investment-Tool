@@ -11,7 +11,6 @@ import type { ProfileSectionId } from "../types";
 import styles from "../styles/profile.module.css";
 
 const navIcons: Record<ProfileSectionId, typeof AccountCircleRoundedIcon> = {
-  overview: ManageAccountsRoundedIcon,
   "personal-details": BadgeRoundedIcon,
   "profile-card": AccountCircleRoundedIcon,
   security: SecurityRoundedIcon,
@@ -28,7 +27,7 @@ export function ProfileSectionNav({
     <aside className={styles.sectionNavPanel} aria-label="Profile sections">
       <div className={styles.sectionNavTitle}>
         <ManageAccountsRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
-        <span>Account sections</span>
+        <span>Sections</span>
       </div>
       <nav aria-label="Profile settings sections">
         <div className={styles.sectionNavList}>

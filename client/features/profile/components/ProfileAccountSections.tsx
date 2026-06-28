@@ -1,100 +1,13 @@
 import * as React from "react";
-import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import PhoneIphoneRoundedIcon from "@mui/icons-material/PhoneIphoneRounded";
-import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import { ProfileSettingRow } from "./ProfileSettingRow";
 import styles from "../styles/profile.module.css";
-
-export function ProfileOverviewSection({
-  displayName,
-  email,
-  emailVerified,
-  hasPendingEmailChange,
-  pendingEmail,
-  phone,
-  userIdPreview,
-  onSelectSecurity,
-  onSelectProfile,
-}: {
-  displayName: string;
-  email: string;
-  emailVerified: boolean;
-  hasPendingEmailChange: boolean;
-  pendingEmail: string;
-  phone: string;
-  userIdPreview: string;
-  onSelectSecurity: () => void;
-  onSelectProfile: () => void;
-}) {
-  return (
-    <section
-      id="overview"
-      tabIndex={-1}
-      className={styles.overviewPanel}
-      aria-labelledby="profile-overview-title"
-    >
-      <div className={styles.overviewCopy}>
-        <p className={styles.eyebrow}>Account overview</p>
-        <h2 id="profile-overview-title" className={styles.overviewTitle}>
-          Hi {displayName},
-          <span> your FIT account is ready to manage.</span>
-        </h2>
-        <p className={styles.overviewText}>
-          Review the identity, contact, and sign-in details that keep your
-          investing workspace connected to the right account.
-        </p>
-      </div>
-
-      <div className={styles.overviewCards} aria-label="Account summary">
-        <button
-          type="button"
-          className={cn(styles.overviewCard, FIT_FOCUS_VISIBLE)}
-          onClick={onSelectProfile}
-        >
-          <AccountCircleRoundedIcon sx={{ fontSize: 22 }} aria-hidden="true" />
-          <span>
-            <strong>{displayName}</strong>
-            <small>{userIdPreview}</small>
-          </span>
-        </button>
-        <button
-          type="button"
-          className={cn(styles.overviewCard, FIT_FOCUS_VISIBLE)}
-          onClick={onSelectSecurity}
-        >
-          <VerifiedUserRoundedIcon sx={{ fontSize: 22 }} aria-hidden="true" />
-          <span>
-            <strong>
-              {emailVerified
-                ? "Email verified"
-                : hasPendingEmailChange
-                  ? "Email change pending"
-                  : "Email not verified"}
-            </strong>
-            <small>{hasPendingEmailChange ? pendingEmail : email}</small>
-          </span>
-        </button>
-        <button
-          type="button"
-          className={cn(styles.overviewCard, FIT_FOCUS_VISIBLE)}
-          onClick={onSelectProfile}
-        >
-          <PhoneIphoneRoundedIcon sx={{ fontSize: 22 }} aria-hidden="true" />
-          <span>
-            <strong>{phone ? "Phone saved" : "Phone optional"}</strong>
-            <small>{phone || "Add a recovery phone when you need one"}</small>
-          </span>
-        </button>
-      </div>
-    </section>
-  );
-}
 
 export function ProfileIdentitySection({
   avatarDisplayUrl,
@@ -123,12 +36,9 @@ export function ProfileIdentitySection({
       <div className={styles.panelHeader}>
         <p className={styles.eyebrow}>Profile</p>
         <h2 id="profile-card-title" className={styles.panelTitle}>
-          How FIT identifies you
+          Profile
         </h2>
-        <p className={styles.panelSubtitle}>
-          Keep your avatar and display name recognizable inside your account
-          workspace.
-        </p>
+        <p className={styles.panelSubtitle}>Avatar and display name.</p>
       </div>
 
       <div className={styles.profileIdentity}>
@@ -146,9 +56,7 @@ export function ProfileIdentitySection({
         </div>
         <div className={styles.profileIdentityCopy}>
           <h3 className={styles.identityName}>{displayName}</h3>
-          <p className={styles.identityHint}>
-            Display name is generated from your saved first and last name.
-          </p>
+          <p className={styles.identityHint}>From first and last name.</p>
           <div className={styles.actionRow}>
             <button
               type="button"
@@ -223,8 +131,7 @@ export function ProfileDetailsSection({
           Personal details
         </h2>
         <p className={styles.panelSubtitle}>
-          These details support account access, alerts, and recovery. Each
-          change has its own confirmation step.
+          Name, email, and phone.
         </p>
       </div>
       <div className={styles.settingsList}>
@@ -234,7 +141,7 @@ export function ProfileDetailsSection({
           value={`${firstName || "First name missing"} ${
             lastName || "Last name missing"
           }`}
-          description="Used to form your FIT display name."
+          description="Used for display name."
           actionLabel="Edit"
           onAction={onEditIdentity}
         />
@@ -254,8 +161,8 @@ export function ProfileDetailsSection({
           }
           description={
             hasPendingEmailChange
-              ? "Verify the new address from the confirmation email before it becomes your sign-in email."
-              : "This is your primary sign-in and account recovery address."
+              ? "Confirm this from your inbox."
+              : "Used for sign-in and recovery."
           }
           actionLabel="Change"
           onAction={onEditContact}
@@ -284,7 +191,7 @@ export function ProfileDetailsSection({
           icon={PhoneIphoneRoundedIcon}
           label="Phone"
           value={phone || "No phone added"}
-          description="Optional contact detail for account support."
+          description="Optional support contact."
           actionLabel={phone ? "Change" : "Add"}
           onAction={onEditContact}
         />
@@ -320,12 +227,9 @@ export function ProfileSecuritySection({
       <div className={styles.panelHeader}>
         <p className={styles.eyebrow}>Sign-in security</p>
         <h2 id="profile-security-title" className={styles.panelTitle}>
-          Ways of signing in
+          Sign-in
         </h2>
-        <p className={styles.panelSubtitle}>
-          Keep sign-in details separate from profile edits so security changes
-          stay deliberate.
-        </p>
+        <p className={styles.panelSubtitle}>Email verification and password.</p>
       </div>
       <div className={styles.settingsList}>
         <ProfileSettingRow
@@ -342,7 +246,7 @@ export function ProfileSecuritySection({
           statusTone={
             emailVerified ? "success" : hasPendingEmailChange ? "warning" : "neutral"
           }
-          description="Email changes require confirmation before they become your sign-in address."
+          description="Confirm changes from your inbox."
           actionLabel={!emailVerified ? "Verify" : undefined}
           actionDisabled={sendingVerification}
           onAction={!emailVerified ? onResendVerification : undefined}
@@ -351,7 +255,7 @@ export function ProfileSecuritySection({
           icon={LockRoundedIcon}
           label="Password"
           value="Set for this account"
-          description="Use a focused password flow instead of editing it with profile details."
+          description="Change password separately."
           actionLabel="Change"
           onAction={onEditPassword}
         />
@@ -359,7 +263,7 @@ export function ProfileSecuritySection({
           icon={CheckCircleRoundedIcon}
           label="Signed-out login"
           value="Use your verified email and password"
-          description="FIT will ask you to sign in before showing account settings."
+          description="Required before account settings."
         />
       </div>
     </section>

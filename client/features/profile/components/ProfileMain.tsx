@@ -8,7 +8,6 @@ import {
   FIT_FOCUS_VISIBLE,
   cn,
 } from "@/components/shared/uiPrimitives";
-import { PROFILE_PRIMARY_TABS } from "../data/profileSections";
 import { useProfileController } from "../hooks/useProfileController";
 import type {
   ProfileContactValues,
@@ -18,7 +17,6 @@ import type {
 import {
   ProfileDetailsSection,
   ProfileIdentitySection,
-  ProfileOverviewSection,
   ProfileSecuritySection,
 } from "./ProfileAccountSections";
 import { ProfileEditDialog } from "./ProfileEditDialog";
@@ -37,7 +35,7 @@ const messageToneClass = {
 export function ProfileMain() {
   const profile = useProfileController();
   const [activeSectionId, setActiveSectionId] =
-    React.useState<ProfileSectionId>("overview");
+    React.useState<ProfileSectionId>("profile-card");
   const [showLogin, setShowLogin] = React.useState(false);
   const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>(null);
   const [identityDraft, setIdentityDraft] =
@@ -71,13 +69,6 @@ export function ProfileMain() {
       target?.focus?.({ preventScroll: true });
     });
   }, []);
-
-  const activeTabId =
-    activeSectionId === "overview"
-      ? "overview"
-      : activeSectionId === "security"
-        ? "security"
-        : "personal-settings";
 
   const closeDialog = React.useCallback(() => {
     setActiveDialog(null);
@@ -165,30 +156,11 @@ export function ProfileMain() {
           style={{ maxWidth: FIT_CONTENT_MAX_WIDTH_PX }}
         >
           <FitPageHeader
-            title="Profile Settings"
-            subtitle="Manage your FIT identity, contact details, verification, and sign-in security from one account workspace."
+            className={styles.header}
+            title="Profile"
+            subtitle="Manage profile, contact, and sign-in settings."
             subtitleClassName="max-w-[48rem]"
           />
-
-          {hasAccount ? (
-            <nav className={styles.primaryTabs} aria-label="Account settings">
-              {PROFILE_PRIMARY_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  aria-current={activeTabId === tab.id ? "page" : undefined}
-                  className={cn(
-                    styles.primaryTab,
-                    activeTabId === tab.id ? styles.primaryTabActive : null,
-                    FIT_FOCUS_VISIBLE,
-                  )}
-                  onClick={() => selectSection(tab.targetSectionId)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          ) : null}
 
           <div className={hasAccount ? styles.layout : styles.signedOutLayout}>
             {hasAccount ? (
@@ -220,8 +192,8 @@ export function ProfileMain() {
                       Sign in to manage your profile
                     </h2>
                     <p className={styles.panelSubtitle}>
-                      Profile details, avatar uploads, verification, and
-                      password changes are available after sign-in.
+                      Sign in to update profile, contact, and password
+                      settings.
                     </p>
                     <div className={styles.actionRow}>
                       <button
@@ -244,8 +216,7 @@ export function ProfileMain() {
                     <p className={styles.eyebrow}>Loading</p>
                     <h2 className={styles.panelTitle}>Loading your profile</h2>
                     <p className={styles.panelSubtitle}>
-                      Checking your account session before showing profile
-                      settings.
+                      Checking your account session.
                     </p>
                   </div>
                 </section>
@@ -257,8 +228,7 @@ export function ProfileMain() {
                       Loading your profile details
                     </h2>
                     <p className={styles.panelSubtitle}>
-                      Fetching saved account details before enabling profile
-                      actions.
+                      Fetching saved account details.
                     </p>
                   </div>
                 </section>
@@ -267,17 +237,6 @@ export function ProfileMain() {
                   aria-busy={profile.profileLoading || profile.authLoading}
                   className={styles.settingsStack}
                 >
-                  <ProfileOverviewSection
-                    displayName={profile.displayName}
-                    email={profile.email}
-                    emailVerified={profile.emailVerified}
-                    hasPendingEmailChange={profile.hasPendingEmailChange}
-                    pendingEmail={profile.pendingEmail}
-                    phone={profile.phone}
-                    userIdPreview={profile.userIdPreview}
-                    onSelectProfile={() => selectSection("profile-card")}
-                    onSelectSecurity={() => selectSection("security")}
-                  />
                   <ProfileIdentitySection
                     avatarDisplayUrl={profile.avatarDisplayUrl}
                     displayName={profile.displayName}
@@ -318,7 +277,7 @@ export function ProfileMain() {
       <ProfileEditDialog
         show={activeDialog === "identity"}
         title="Update display name"
-        description="Your display name is generated from first and last name."
+        description="Use first and last name."
         submitLabel={profile.savingDetails ? "Saving..." : "Save name"}
         disabled={profile.savingDetails}
         onClose={closeDialog}
@@ -329,7 +288,7 @@ export function ProfileMain() {
             autoComplete="given-name"
             disabled={profile.savingDetails}
             error={profile.errors.firstName}
-            helperText="Use the first name you want associated with your FIT account."
+            helperText="Shown in FIT."
             id="profile-dialog-first-name"
             label="First name"
             placeholder="Nathan"
@@ -343,7 +302,7 @@ export function ProfileMain() {
             autoComplete="family-name"
             disabled={profile.savingDetails}
             error={profile.errors.lastName}
-            helperText="This combines with first name to form your display name."
+            helperText="Shown with first name."
             id="profile-dialog-last-name"
             label="Last name"
             placeholder="Li"
@@ -359,7 +318,7 @@ export function ProfileMain() {
       <ProfileEditDialog
         show={activeDialog === "contact"}
         title="Update contact details"
-        description="Email changes require confirmation from the new inbox before sign-in changes."
+        description="Email changes need inbox confirmation."
         submitLabel={profile.savingContact ? "Saving..." : "Save contact"}
         disabled={profile.savingContact}
         onClose={closeDialog}
@@ -375,7 +334,7 @@ export function ProfileMain() {
             autoComplete="email"
             disabled={profile.savingContact}
             error={profile.errors.email}
-            helperText="Use the address you want for sign-in and account recovery."
+            helperText="Used for sign-in and recovery."
             id="profile-dialog-email"
             label="Email address"
             placeholder="name@example.com"
@@ -390,7 +349,7 @@ export function ProfileMain() {
             autoComplete="tel"
             disabled={profile.savingContact}
             error={profile.errors.phone}
-            helperText="Optional. Use 7 to 15 digits, with spaces or punctuation if helpful."
+            helperText="Optional. Use 7 to 15 digits."
             id="profile-dialog-phone"
             label="Phone"
             placeholder="+61 2 5555 1234"
@@ -407,7 +366,7 @@ export function ProfileMain() {
       <ProfileEditDialog
         show={activeDialog === "password"}
         title="Change password"
-        description="Choose a new password for the currently signed-in FIT account."
+        description="Update this account password."
         submitLabel={
           profile.updatingPassword ? "Updating..." : "Update password"
         }
@@ -420,7 +379,7 @@ export function ProfileMain() {
             autoComplete="new-password"
             disabled={profile.updatingPassword}
             error={passwordErrors.newPassword}
-            helperText="Use at least 6 characters."
+            helperText="6+ characters."
             id="profile-dialog-new-password"
             label="New password"
             type="password"
@@ -441,7 +400,7 @@ export function ProfileMain() {
             autoComplete="new-password"
             disabled={profile.updatingPassword}
             error={passwordErrors.confirmPassword}
-            helperText="Repeat the new password exactly."
+            helperText="Repeat password."
             id="profile-dialog-confirm-password"
             label="Confirm new password"
             type="password"

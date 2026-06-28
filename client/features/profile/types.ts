@@ -27,10 +27,4 @@ export type ProfileMessage = {
   text: string;
 };
 
-export type ProfileSectionId =
-  | "overview"
-  | "profile-card"
-  | "personal-details"
-  | "security";
-
-export type ProfilePrimaryTabId = "overview" | "personal-settings" | "security";
+export type ProfileSectionId = "profile-card" | "personal-details" | "security";
