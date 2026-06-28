@@ -9,19 +9,10 @@ import {
   cn,
 } from "@/components/shared/uiPrimitives";
 import { useProfileController } from "../hooks/useProfileController";
-import type {
-  ProfileContactValues,
-  ProfileIdentityValues,
-  ProfileSectionId,
-} from "../types";
-import {
-  ProfileDetailsSection,
-  ProfileIdentitySection,
-  ProfileSecuritySection,
-} from "./ProfileAccountSections";
+import type { ProfileContactValues, ProfileIdentityValues } from "../types";
+import { ProfileSettingsPanel } from "./ProfileAccountSections";
 import { ProfileEditDialog } from "./ProfileEditDialog";
 import { ProfileField } from "./ProfileField";
-import { ProfileSectionNav } from "./ProfileSectionNav";
 import styles from "../styles/profile.module.css";
 
 type ActiveDialog = "identity" | "contact" | "password" | null;
@@ -34,8 +25,6 @@ const messageToneClass = {
 
 export function ProfileMain() {
   const profile = useProfileController();
-  const [activeSectionId, setActiveSectionId] =
-    React.useState<ProfileSectionId>("profile-card");
   const [showLogin, setShowLogin] = React.useState(false);
   const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>(null);
   const [identityDraft, setIdentityDraft] =
@@ -60,15 +49,6 @@ export function ProfileMain() {
   const showAccountRequired = !profile.authLoading && !hasAccount;
   const showInitialProfileLoading =
     hasAccount && profile.profileLoading && !profile.profileSnapshot;
-
-  const selectSection = React.useCallback((sectionId: ProfileSectionId) => {
-    setActiveSectionId(sectionId);
-    window.requestAnimationFrame(() => {
-      const target = document.getElementById(sectionId);
-      target?.scrollIntoView({ block: "start", behavior: "smooth" });
-      target?.focus?.({ preventScroll: true });
-    });
-  }, []);
 
   const closeDialog = React.useCallback(() => {
     setActiveDialog(null);
@@ -158,18 +138,11 @@ export function ProfileMain() {
           <FitPageHeader
             className={styles.header}
             title="Profile"
-            subtitle="Manage profile, contact, and sign-in settings."
+            subtitle="Profile, contact, and sign-in."
             subtitleClassName="max-w-[48rem]"
           />
 
-          <div className={hasAccount ? styles.layout : styles.signedOutLayout}>
-            {hasAccount ? (
-              <ProfileSectionNav
-                activeSectionId={activeSectionId}
-                onSelect={selectSection}
-              />
-            ) : null}
-
+          <div className={styles.signedOutLayout}>
             <div className={styles.contentStack}>
               {profile.message ? (
                 <div
@@ -237,33 +210,20 @@ export function ProfileMain() {
                   aria-busy={profile.profileLoading || profile.authLoading}
                   className={styles.settingsStack}
                 >
-                  <ProfileIdentitySection
+                  <ProfileSettingsPanel
                     avatarDisplayUrl={profile.avatarDisplayUrl}
                     displayName={profile.displayName}
-                    initials={profile.initials}
-                    savingAvatar={profile.savingAvatar}
-                    onAvatarChange={profile.changeAvatar}
-                    onEditIdentity={openIdentityDialog}
-                  />
-                  <ProfileDetailsSection
                     email={profile.email}
                     emailVerified={profile.emailVerified}
-                    firstName={profile.firstName}
                     hasPendingEmailChange={profile.hasPendingEmailChange}
-                    lastName={profile.lastName}
+                    initials={profile.initials}
                     pendingEmail={profile.pendingEmail}
                     phone={profile.phone}
+                    savingAvatar={profile.savingAvatar}
                     sendingVerification={profile.sendingVerification}
+                    onAvatarChange={profile.changeAvatar}
                     onEditContact={openContactDialog}
                     onEditIdentity={openIdentityDialog}
-                    onResendVerification={profile.resendVerification}
-                  />
-                  <ProfileSecuritySection
-                    email={profile.email}
-                    emailVerified={profile.emailVerified}
-                    hasPendingEmailChange={profile.hasPendingEmailChange}
-                    pendingEmail={profile.pendingEmail}
-                    sendingVerification={profile.sendingVerification}
                     onEditPassword={openPasswordDialog}
                     onResendVerification={profile.resendVerification}
                   />

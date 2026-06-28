@@ -26,5 +26,3 @@ export type ProfileMessage = {
   tone: ProfileMessageTone;
   text: string;
 };
-
-export type ProfileSectionId = "profile-card" | "personal-details" | "security";

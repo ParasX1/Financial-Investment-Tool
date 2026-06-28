@@ -1,5 +1,4 @@
 import * as React from "react";
-import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
@@ -7,42 +6,77 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import PhoneIphoneRoundedIcon from "@mui/icons-material/PhoneIphoneRounded";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import { ProfileSettingRow } from "./ProfileSettingRow";
+import {
+  PROFILE_SETTINGS_GROUPS,
+  type ProfileSettingsGroup,
+} from "../data/profileSections";
 import styles from "../styles/profile.module.css";
 
-export function ProfileIdentitySection({
+const settingGroupLabelById = PROFILE_SETTINGS_GROUPS.reduce<
+  Record<ProfileSettingsGroup["id"], string>
+>(
+  (labels, group) => ({
+    ...labels,
+    [group.id]: group.label,
+  }),
+  {
+    contact: "Contact",
+    profile: "Profile",
+    "sign-in": "Security & sign-in",
+  },
+);
+
+export function ProfileSettingsPanel({
   avatarDisplayUrl,
   displayName,
+  email,
+  emailVerified,
+  hasPendingEmailChange,
   initials,
+  pendingEmail,
+  phone,
   savingAvatar,
+  sendingVerification,
   onAvatarChange,
+  onEditContact,
   onEditIdentity,
+  onEditPassword,
+  onResendVerification,
 }: {
   avatarDisplayUrl: string | null;
   displayName: string;
+  email: string;
+  emailVerified: boolean;
+  hasPendingEmailChange: boolean;
   initials: string;
+  pendingEmail: string;
+  phone: string;
   savingAvatar: boolean;
+  sendingVerification: boolean;
   onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onEditContact: () => void;
   onEditIdentity: () => void;
+  onEditPassword: () => void;
+  onResendVerification: () => void;
 }) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const accountEmail = hasPendingEmailChange ? pendingEmail : email;
+  const emailVerificationActionLabel = emailVerified
+    ? undefined
+    : hasPendingEmailChange
+      ? "Resend"
+      : "Verify";
 
   return (
     <section
-      id="profile-card"
-      tabIndex={-1}
-      className={styles.panel}
-      aria-labelledby="profile-card-title"
+      className={styles.settingsPanel}
+      aria-labelledby="profile-settings-title"
     >
-      <div className={styles.panelHeader}>
-        <p className={styles.eyebrow}>Profile</p>
-        <h2 id="profile-card-title" className={styles.panelTitle}>
-          Profile
-        </h2>
-        <p className={styles.panelSubtitle}>Avatar and display name.</p>
-      </div>
-
-      <div className={styles.profileIdentity}>
-        <div className={styles.avatarFrame}>
+      <h2 id="profile-settings-title" className={styles.visuallyHidden}>
+        Profile settings
+      </h2>
+      <div className={styles.accountSummaryCard}>
+        <div className={styles.avatarFrameSmall}>
           {avatarDisplayUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -51,221 +85,136 @@ export function ProfileIdentitySection({
               alt="Profile avatar"
             />
           ) : (
-            <span className={styles.avatarInitials}>{initials}</span>
+            <span className={styles.avatarInitialsSmall}>{initials}</span>
           )}
         </div>
-        <div className={styles.profileIdentityCopy}>
-          <h3 className={styles.identityName}>{displayName}</h3>
-          <p className={styles.identityHint}>From first and last name.</p>
-          <div className={styles.actionRow}>
-            <button
-              type="button"
-              className={cn(
-                styles.button,
-                styles.buttonSecondary,
-                FIT_FOCUS_VISIBLE,
-              )}
-              onClick={onEditIdentity}
-            >
-              Change display name
-            </button>
-            <button
-              type="button"
-              className={cn(styles.button, styles.buttonGhost, FIT_FOCUS_VISIBLE)}
-              disabled={savingAvatar}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <CameraAltRoundedIcon sx={{ fontSize: 17 }} aria-hidden="true" />
-              {savingAvatar ? "Uploading..." : "Change photo"}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className={styles.visuallyHidden}
-              tabIndex={-1}
-              onChange={onAvatarChange}
-            />
+
+        <div className={styles.accountSummaryCopy}>
+          <p className={styles.eyebrow}>Identity</p>
+          <h2 className={styles.accountName}>{displayName}</h2>
+          <div className={styles.accountMetaLine}>
+            <span>{accountEmail}</span>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
 
-export function ProfileDetailsSection({
-  email,
-  emailVerified,
-  firstName,
-  hasPendingEmailChange,
-  lastName,
-  pendingEmail,
-  phone,
-  sendingVerification,
-  onEditContact,
-  onEditIdentity,
-  onResendVerification,
-}: {
-  email: string;
-  emailVerified: boolean;
-  firstName: string;
-  hasPendingEmailChange: boolean;
-  lastName: string;
-  pendingEmail: string;
-  phone: string;
-  sendingVerification: boolean;
-  onEditContact: () => void;
-  onEditIdentity: () => void;
-  onResendVerification: () => void;
-}) {
-  return (
-    <section
-      id="personal-details"
-      tabIndex={-1}
-      className={styles.panel}
-      aria-labelledby="profile-details-title"
-    >
-      <div className={styles.panelHeader}>
-        <p className={styles.eyebrow}>Account details</p>
-        <h2 id="profile-details-title" className={styles.panelTitle}>
-          Personal details
-        </h2>
-        <p className={styles.panelSubtitle}>
-          Name, email, and phone.
-        </p>
+        <div className={styles.accountSummaryActions}>
+          <button
+            type="button"
+            className={cn(
+              styles.rowAction,
+              styles.summaryAction,
+              FIT_FOCUS_VISIBLE,
+            )}
+            disabled={savingAvatar}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <CameraAltRoundedIcon sx={{ fontSize: 16 }} aria-hidden="true" />
+            {savingAvatar ? "Uploading" : "Photo"}
+          </button>
+          <button
+            type="button"
+            className={cn(
+              styles.rowAction,
+              styles.summaryAction,
+              FIT_FOCUS_VISIBLE,
+            )}
+            onClick={onEditIdentity}
+          >
+            Edit name
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className={styles.visuallyHidden}
+            tabIndex={-1}
+            onChange={onAvatarChange}
+          />
+        </div>
       </div>
-      <div className={styles.settingsList}>
-        <ProfileSettingRow
-          icon={BadgeRoundedIcon}
-          label="Legal name"
-          value={`${firstName || "First name missing"} ${
-            lastName || "Last name missing"
-          }`}
-          description="Used for display name."
-          actionLabel="Edit"
-          onAction={onEditIdentity}
-        />
-        <ProfileSettingRow
-          icon={EmailRoundedIcon}
-          label="Email address"
-          value={hasPendingEmailChange ? pendingEmail : email}
-          status={
-            emailVerified
-              ? "Verified"
-              : hasPendingEmailChange
-                ? "Pending"
-                : "Not verified"
-          }
-          statusTone={
-            emailVerified ? "success" : hasPendingEmailChange ? "warning" : "neutral"
-          }
-          description={
-            hasPendingEmailChange
-              ? "Confirm this from your inbox."
-              : "Used for sign-in and recovery."
-          }
-          actionLabel="Change"
-          onAction={onEditContact}
-        />
-        {!emailVerified ? (
-          <div className={styles.inlineActionRow}>
-            <button
-              type="button"
-              className={cn(
-                styles.button,
-                styles.buttonWarning,
-                FIT_FOCUS_VISIBLE,
-              )}
-              disabled={sendingVerification}
-              onClick={onResendVerification}
-            >
-              {sendingVerification
-                ? "Sending..."
+
+      <div className={styles.settingsGrid}>
+        <SettingsCard
+          id="profile-contact-settings-title"
+          title={settingGroupLabelById.contact}
+        >
+          <ProfileSettingRow
+            icon={EmailRoundedIcon}
+            label="Email"
+            value={accountEmail}
+            status={
+              emailVerified
+                ? "Verified"
                 : hasPendingEmailChange
-                  ? "Resend email change"
-                  : "Send verification email"}
-            </button>
-          </div>
-        ) : null}
-        <ProfileSettingRow
-          icon={PhoneIphoneRoundedIcon}
-          label="Phone"
-          value={phone || "No phone added"}
-          description="Optional support contact."
-          actionLabel={phone ? "Change" : "Add"}
-          onAction={onEditContact}
-        />
+                  ? "Pending"
+                  : "Not verified"
+            }
+            statusTone={
+              emailVerified
+                ? "success"
+                : hasPendingEmailChange
+                  ? "warning"
+                  : "neutral"
+            }
+            description={
+              hasPendingEmailChange ? "Confirm from inbox." : undefined
+            }
+            actionLabel="Change"
+            onAction={onEditContact}
+            secondaryActionDisabled={sendingVerification}
+            secondaryActionLabel={emailVerificationActionLabel}
+            onSecondaryAction={
+              emailVerificationActionLabel ? onResendVerification : undefined
+            }
+          />
+          <ProfileSettingRow
+            icon={PhoneIphoneRoundedIcon}
+            label="Phone"
+            value={phone || "No phone added"}
+            actionLabel={phone ? "Change" : "Add"}
+            onAction={onEditContact}
+          />
+        </SettingsCard>
+
+        <SettingsCard
+          id="profile-security-settings-title"
+          title={settingGroupLabelById["sign-in"]}
+        >
+          <ProfileSettingRow
+            icon={LockRoundedIcon}
+            label="Password"
+            value="Password set"
+            actionLabel="Change"
+            onAction={onEditPassword}
+          />
+          <ProfileSettingRow
+            icon={CheckCircleRoundedIcon}
+            label="Signed-out login"
+            value="Email and password"
+          />
+        </SettingsCard>
       </div>
     </section>
   );
 }
 
-export function ProfileSecuritySection({
-  email,
-  emailVerified,
-  hasPendingEmailChange,
-  pendingEmail,
-  sendingVerification,
-  onEditPassword,
-  onResendVerification,
+function SettingsCard({
+  children,
+  id,
+  title,
 }: {
-  email: string;
-  emailVerified: boolean;
-  hasPendingEmailChange: boolean;
-  pendingEmail: string;
-  sendingVerification: boolean;
-  onEditPassword: () => void;
-  onResendVerification: () => void;
+  children: React.ReactNode;
+  id: string;
+  title: string;
 }) {
   return (
-    <section
-      id="security"
-      tabIndex={-1}
-      className={styles.panel}
-      aria-labelledby="profile-security-title"
-    >
-      <div className={styles.panelHeader}>
-        <p className={styles.eyebrow}>Sign-in security</p>
-        <h2 id="profile-security-title" className={styles.panelTitle}>
-          Sign-in
-        </h2>
-        <p className={styles.panelSubtitle}>Email verification and password.</p>
+    <section className={styles.settingCard} aria-labelledby={id}>
+      <div className={styles.settingCardHeader}>
+        <h3 id={id} className={styles.settingCardTitle}>
+          {title}
+        </h3>
       </div>
-      <div className={styles.settingsList}>
-        <ProfileSettingRow
-          icon={EmailRoundedIcon}
-          label="Sign-in email"
-          value={hasPendingEmailChange ? pendingEmail : email}
-          status={
-            emailVerified
-              ? "Verified"
-              : hasPendingEmailChange
-                ? "Pending"
-                : "Needs verification"
-          }
-          statusTone={
-            emailVerified ? "success" : hasPendingEmailChange ? "warning" : "neutral"
-          }
-          description="Confirm changes from your inbox."
-          actionLabel={!emailVerified ? "Verify" : undefined}
-          actionDisabled={sendingVerification}
-          onAction={!emailVerified ? onResendVerification : undefined}
-        />
-        <ProfileSettingRow
-          icon={LockRoundedIcon}
-          label="Password"
-          value="Set for this account"
-          description="Change password separately."
-          actionLabel="Change"
-          onAction={onEditPassword}
-        />
-        <ProfileSettingRow
-          icon={CheckCircleRoundedIcon}
-          label="Signed-out login"
-          value="Use your verified email and password"
-          description="Required before account settings."
-        />
-      </div>
+      <div className={styles.settingsList}>{children}</div>
     </section>
   );
 }

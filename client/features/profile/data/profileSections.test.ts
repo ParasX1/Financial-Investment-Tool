@@ -1,45 +1,28 @@
-import {
-  PROFILE_SECTION_NAV_ITEMS,
-  PROFILE_SUPPORT_CARDS,
-} from "./profileSections";
+import { PROFILE_SETTINGS_GROUPS } from "./profileSections";
 
 describe("profileSections", () => {
-  it("keeps Profile navigation scoped to existing account features", () => {
-    expect(PROFILE_SECTION_NAV_ITEMS.map((item) => item.id)).toEqual([
-      "profile-card",
-      "personal-details",
-      "security",
+  it("keeps Profile settings scoped to existing account features", () => {
+    expect(PROFILE_SETTINGS_GROUPS.map((item) => item.id)).toEqual([
+      "profile",
+      "contact",
+      "sign-in",
     ]);
   });
 
   it("does not introduce Yahoo-only settings surfaces", () => {
-    const joinedLabels = [
-      ...PROFILE_SECTION_NAV_ITEMS.map((item) => item.label),
-      ...PROFILE_SUPPORT_CARDS.map((card) => card.title),
-    ].join(" ");
+    const joinedLabels = PROFILE_SETTINGS_GROUPS.map(
+      (item) => `${item.label} ${item.description}`,
+    ).join(" ");
 
     expect(joinedLabels).not.toMatch(/wallet|subscription|passkey/i);
   });
 
-  it("uses account-settings rows instead of a global edit mode", () => {
-    const joinedCopy = [
-      ...PROFILE_SECTION_NAV_ITEMS.map((item) => item.label),
-      ...PROFILE_SECTION_NAV_ITEMS.map((item) => item.description),
-      ...PROFILE_SUPPORT_CARDS.map((card) => card.title),
-      ...PROFILE_SUPPORT_CARDS.map((card) => card.body),
-    ].join(" ");
+  it("keeps settings compact instead of navigation-heavy", () => {
+    const joinedCopy = PROFILE_SETTINGS_GROUPS.map(
+      (item) => `${item.label} ${item.description}`,
+    ).join(" ");
 
-    expect(joinedCopy).not.toMatch(/unlock|global edit|edit mode/i);
-    expect(joinedCopy).toMatch(/sign-in security/i);
-  });
-
-  it("keeps support guidance scoped to behavior Profile actually owns", () => {
-    const supportCopy = PROFILE_SUPPORT_CARDS.map((card) => card.body).join(
-      " ",
-    );
-
-    expect(supportCopy).not.toMatch(/community|posts|comments/i);
-    expect(supportCopy).toMatch(/account details/i);
-    expect(supportCopy).not.toMatch(/private/i);
+    expect(joinedCopy).not.toMatch(/overview|sidebar|global edit|edit mode/i);
+    expect(joinedCopy).toMatch(/sign-in/i);
   });
 });

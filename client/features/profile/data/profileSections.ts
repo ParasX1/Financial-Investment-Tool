@@ -1,44 +1,23 @@
-import type { ProfileSectionId } from "../types";
-
-export type ProfileSectionNavItem = {
-  id: ProfileSectionId;
+export type ProfileSettingsGroup = {
+  id: "profile" | "contact" | "sign-in";
   label: string;
   description: string;
 };
 
-export type ProfileSupportCard = {
-  id: "privacy" | "security";
-  title: string;
-  body: string;
-};
-
-export const PROFILE_SECTION_NAV_ITEMS: readonly ProfileSectionNavItem[] = [
+export const PROFILE_SETTINGS_GROUPS: readonly ProfileSettingsGroup[] = [
   {
-    id: "profile-card",
+    id: "profile",
     label: "Profile",
-    description: "Avatar and display name",
+    description: "Name and photo",
   },
   {
-    id: "personal-details",
-    label: "Personal details",
-    description: "Name, email, and phone",
+    id: "contact",
+    label: "Contact",
+    description: "Email and phone",
   },
   {
-    id: "security",
-    label: "Sign-in security",
-    description: "Email and password",
-  },
-] as const;
-
-export const PROFILE_SUPPORT_CARDS: readonly ProfileSupportCard[] = [
-  {
-    id: "privacy",
-    title: "Profile vs account details",
-    body: "Avatar and display name identify this account. Email and phone stay with account details.",
-  },
-  {
-    id: "security",
-    title: "Sign-in security",
-    body: "Email verification and password updates use their own actions.",
+    id: "sign-in",
+    label: "Security & sign-in",
+    description: "Password and login",
   },
 ] as const;

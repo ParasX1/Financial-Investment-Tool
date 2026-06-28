@@ -12,6 +12,9 @@ export function ProfileSettingRow({
   icon: Icon,
   label,
   onAction,
+  onSecondaryAction,
+  secondaryActionDisabled = false,
+  secondaryActionLabel,
   status,
   statusTone = "neutral",
   value,
@@ -22,17 +25,23 @@ export function ProfileSettingRow({
   icon: React.ElementType;
   label: string;
   onAction?: () => void;
+  onSecondaryAction?: () => void;
+  secondaryActionDisabled?: boolean;
+  secondaryActionLabel?: string;
   status?: string;
   statusTone?: StatusTone;
   value: React.ReactNode;
 }) {
+  const hasPrimaryAction = Boolean(actionLabel && onAction);
+  const hasSecondaryAction = Boolean(secondaryActionLabel && onSecondaryAction);
+
   return (
     <div className={styles.settingRow}>
       <div className={styles.settingIcon} aria-hidden="true">
         <Icon sx={{ fontSize: 20 }} />
       </div>
 
-      <div className={styles.settingCopy}>
+      <div className={styles.settingMeta}>
         <div className={styles.settingHeading}>
           <span className={styles.settingLabel}>{label}</span>
           {status ? (
@@ -47,22 +56,39 @@ export function ProfileSettingRow({
             </span>
           ) : null}
         </div>
-        <div className={styles.settingValue}>{value}</div>
         {description ? (
           <p className={styles.settingDescription}>{description}</p>
         ) : null}
       </div>
+      <div className={styles.settingValue}>{value}</div>
 
-      {actionLabel && onAction ? (
-        <button
-          type="button"
-          className={cn(styles.rowAction, FIT_FOCUS_VISIBLE)}
-          disabled={actionDisabled}
-          onClick={onAction}
-        >
-          <span>{actionLabel}</span>
-          <ChevronRightRoundedIcon sx={{ fontSize: 19 }} aria-hidden="true" />
-        </button>
+      {hasPrimaryAction || hasSecondaryAction ? (
+        <div className={styles.settingActions}>
+          {hasSecondaryAction ? (
+            <button
+              type="button"
+              className={cn(styles.rowAction, FIT_FOCUS_VISIBLE)}
+              disabled={secondaryActionDisabled}
+              onClick={onSecondaryAction}
+            >
+              <span>{secondaryActionLabel}</span>
+            </button>
+          ) : null}
+          {hasPrimaryAction ? (
+            <button
+              type="button"
+              className={cn(styles.rowAction, FIT_FOCUS_VISIBLE)}
+              disabled={actionDisabled}
+              onClick={onAction}
+            >
+              <span>{actionLabel}</span>
+              <ChevronRightRoundedIcon
+                sx={{ fontSize: 19 }}
+                aria-hidden="true"
+              />
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
