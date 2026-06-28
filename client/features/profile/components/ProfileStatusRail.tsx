@@ -1,5 +1,4 @@
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import FingerprintRoundedIcon from "@mui/icons-material/FingerprintRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
@@ -11,12 +10,12 @@ import styles from "../styles/profile.module.css";
 
 export function ProfileStatusRail({
   emailVerified,
+  hasPendingEmailChange,
   isEditing,
-  userIdPreview,
 }: {
   emailVerified: boolean;
+  hasPendingEmailChange: boolean;
   isEditing: boolean;
-  userIdPreview: string;
 }) {
   return (
     <aside className={styles.rail} aria-label="Profile guidance">
@@ -40,36 +39,35 @@ export function ProfileStatusRail({
                 : MarkEmailUnreadRoundedIcon
             }
             label="Verification"
-            value={emailVerified ? "Email verified" : "Email pending"}
-          />
-          <StatusItem
-            icon={FingerprintRoundedIcon}
-            label="User ID"
-            value={userIdPreview}
+            value={
+              emailVerified
+                ? "Email verified"
+                : hasPendingEmailChange
+                  ? "Email change pending"
+                  : "Email pending"
+            }
           />
         </div>
       </section>
 
-      {PROFILE_SUPPORT_CARDS.filter((card) => card.id !== "status").map(
-        (card) => {
-          const Icon =
-            card.id === "privacy" ? InfoOutlinedIcon : ShieldRoundedIcon;
+      {PROFILE_SUPPORT_CARDS.map((card) => {
+        const Icon =
+          card.id === "privacy" ? InfoOutlinedIcon : ShieldRoundedIcon;
 
-          return (
-            <section key={card.id} className={styles.supportCard}>
-              <div className="flex min-w-0 items-start gap-3">
-                <span className={styles.statusIcon} aria-hidden="true">
-                  <Icon sx={{ fontSize: 18 }} />
-                </span>
-                <div className="min-w-0">
-                  <h2 className={styles.supportTitle}>{card.title}</h2>
-                  <p className={styles.supportBody}>{card.body}</p>
-                </div>
+        return (
+          <section key={card.id} className={styles.supportCard}>
+            <div className="flex min-w-0 items-start gap-3">
+              <span className={styles.statusIcon} aria-hidden="true">
+                <Icon sx={{ fontSize: 18 }} />
+              </span>
+              <div className="min-w-0">
+                <h2 className={styles.supportTitle}>{card.title}</h2>
+                <p className={styles.supportBody}>{card.body}</p>
               </div>
-            </section>
-          );
-        },
-      )}
+            </div>
+          </section>
+        );
+      })}
 
       {!emailVerified ? (
         <section className={styles.supportCard}>
@@ -80,8 +78,9 @@ export function ProfileStatusRail({
             <div className="min-w-0">
               <h2 className={styles.supportTitle}>Verification needed</h2>
               <p className={styles.supportBody}>
-                Verify your email before relying on account recovery or email
-                change confirmations.
+                {hasPendingEmailChange
+                  ? "Verify the new inbox before FIT switches your sign-in email."
+                  : "Verify your email before relying on account recovery or email change confirmations."}
               </p>
             </div>
           </div>

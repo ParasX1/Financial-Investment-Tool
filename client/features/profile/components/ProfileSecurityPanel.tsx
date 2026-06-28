@@ -23,6 +23,7 @@ export function ProfileSecurityPanel({
   return (
     <section
       id="security"
+      tabIndex={-1}
       className={styles.panel}
       aria-labelledby="profile-security-title"
     >

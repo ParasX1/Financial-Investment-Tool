@@ -13,7 +13,7 @@ export type ProfileSectionNavItem = {
 };
 
 export type ProfileSupportCard = {
-  id: "status" | "privacy" | "security";
+  id: "privacy" | "security";
   title: string;
   body: string;
 };
@@ -45,20 +45,15 @@ export const PROFILE_SECTION_NAV_ITEMS: readonly ProfileSectionNavItem[] = [
   {
     id: "security",
     label: "Security",
-    description: "Password and sign-in status",
+    description: "Password settings",
   },
 ] as const;
 
 export const PROFILE_SUPPORT_CARDS: readonly ProfileSupportCard[] = [
   {
-    id: "status",
-    title: "Account status",
-    body: "Check your edit lock, email verification, and account identifier before making changes.",
-  },
-  {
     id: "privacy",
-    title: "Public vs private",
-    body: "Your avatar and display name are used across FIT surfaces. Email and phone stay in account details.",
+    title: "Public vs account details",
+    body: "Your avatar and display name are the public identity fields shown on this page. Email and phone stay with account details.",
   },
   {
     id: "security",

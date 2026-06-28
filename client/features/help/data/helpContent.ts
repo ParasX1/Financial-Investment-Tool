@@ -185,23 +185,23 @@ export const helpSections: HelpSection[] = [
   {
     id: "profile",
     label: "Profile",
-    subtitle: "Manage your personal account settings and activity",
+    subtitle: "Manage your profile details and sign-in security",
     icon: PersonOutlineRoundedIcon,
     faqs: [
       {
         question: "How do I change my profile picture?",
         answer:
-          "Go to your Profile page and click on your current avatar. You can upload a new image from your device. Supported formats: JPG, PNG, GIF.",
+          "Go to Profile, choose Edit profile, then use Change avatar. The new image is previewed first; click Save profile to apply it.",
       },
       {
-        question: "How do I update my name or password?",
+        question: "How do I update my name, email, or phone?",
         answer:
-          "On the Profile page, edit your First Name, Last Name, or Password fields and click 'Save Profile' to apply the changes.",
+          "Choose Edit profile, update your personal details, and click Save profile. Email changes may require confirmation from the new inbox.",
       },
       {
-        question: "Where can I see my posts and comments?",
+        question: "How do I change my password?",
         answer:
-          "Scroll to the bottom of the Profile page to find your Posts and Comments sections, which list everything you've contributed to the Community.",
+          "Choose Edit profile, enter and confirm a new password in the Security section, then click Update password. Password changes are separate from profile saves.",
       },
     ],
   },

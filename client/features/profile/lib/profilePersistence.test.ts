@@ -1,7 +1,4 @@
-import {
-  buildAvatarPayload,
-  buildProfileDetailsPayload,
-} from "./profilePersistence";
+import { buildProfileDetailsPayload } from "./profilePersistence";
 
 describe("profilePersistence", () => {
   it("keeps profile detail persistence separate from auth email changes", () => {
@@ -24,17 +21,5 @@ describe("profilePersistence", () => {
       phone: "+61 2 5555 1234",
     });
     expect(payload).not.toHaveProperty("email");
-  });
-
-  it("keeps avatar persistence scoped to the avatar column", () => {
-    expect(
-      buildAvatarPayload({
-        avatarUrl: "https://cdn.example.com/avatar.png",
-        userId: "user-1",
-      }),
-    ).toEqual({
-      avatar_url: "https://cdn.example.com/avatar.png",
-      id: "user-1",
-    });
   });
 });

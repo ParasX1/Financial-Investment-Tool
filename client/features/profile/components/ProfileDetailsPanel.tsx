@@ -10,11 +10,13 @@ export function ProfileDetailsPanel({
   emailVerified,
   errors,
   firstName,
+  hasPendingEmailChange,
   isEditing,
   lastName,
   onFieldChange,
   onResendVerification,
   onSave,
+  pendingEmail,
   phone,
   saving,
   sendingVerification,
@@ -23,11 +25,13 @@ export function ProfileDetailsPanel({
   emailVerified: boolean;
   errors: ProfileErrors;
   firstName: string;
+  hasPendingEmailChange: boolean;
   isEditing: boolean;
   lastName: string;
   onFieldChange: (field: ProfileFieldKey, value: string) => void;
   onResendVerification: () => void;
   onSave: () => void;
+  pendingEmail: string;
   phone: string;
   saving: boolean;
   sendingVerification: boolean;
@@ -35,19 +39,20 @@ export function ProfileDetailsPanel({
   return (
     <section
       id="personal-details"
+      tabIndex={-1}
       className={styles.panel}
       aria-labelledby="personal-details-title"
     >
       <div className={styles.panelHeader}>
         <div className={styles.panelTitleRow}>
           <div className="min-w-0">
-            <p className={styles.eyebrow}>Private account details</p>
+            <p className={styles.eyebrow}>Account details</p>
             <h2 id="personal-details-title" className={styles.panelTitle}>
               Your personal details
             </h2>
             <p className={styles.panelSubtitle}>
-              These details are used for account access and recovery. Unlock
-              editing before changing sensitive fields.
+              These details support account access and recovery. Choose Edit
+              profile before changing them.
             </p>
           </div>
 
@@ -67,7 +72,11 @@ export function ProfileDetailsPanel({
                   sx={{ fontSize: 17 }}
                   aria-hidden="true"
                 />
-                {sendingVerification ? "Sending..." : "Verify email"}
+                {sendingVerification
+                  ? "Sending..."
+                  : hasPendingEmailChange
+                    ? "Resend email change"
+                    : "Send verification email"}
               </button>
             ) : null}
             <button
@@ -88,6 +97,12 @@ export function ProfileDetailsPanel({
       </div>
 
       <div className={styles.panelBody}>
+        {hasPendingEmailChange ? (
+          <div className={styles.pendingNotice} role="status">
+            Email change pending for <strong>{pendingEmail}</strong>. Verify it
+            from the confirmation email before it becomes your sign-in email.
+          </div>
+        ) : null}
         <div className={styles.formGrid}>
           <ProfileField
             autoComplete="given-name"
@@ -115,7 +130,7 @@ export function ProfileDetailsPanel({
             autoComplete="email"
             disabled={!isEditing}
             error={errors.email}
-            helperText="Changing email may require confirmation from the new inbox."
+            helperText="Changing email may require confirmation from the new inbox. Save the email before sending verification to a new address."
             id="profile-email"
             label="Email address"
             placeholder="name@example.com"

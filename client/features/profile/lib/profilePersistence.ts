@@ -17,16 +17,3 @@ export function buildProfileDetailsPayload({
     phone: values.phone,
   };
 }
-
-export function buildAvatarPayload({
-  avatarUrl,
-  userId,
-}: {
-  avatarUrl: string;
-  userId: string;
-}) {
-  return {
-    avatar_url: avatarUrl,
-    id: userId,
-  };
-}

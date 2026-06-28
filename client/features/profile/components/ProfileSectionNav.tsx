@@ -59,7 +59,7 @@ function ProfileSectionButton({
   return (
     <button
       type="button"
-      aria-pressed={active}
+      aria-current={active ? "location" : undefined}
       className={cn(
         styles.sectionButton,
         active ? styles.sectionButtonActive : null,

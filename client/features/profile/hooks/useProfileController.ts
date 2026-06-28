@@ -15,10 +15,7 @@ import {
   buildInitials,
   formatUserIdPreview,
 } from "../lib/profileView";
-import {
-  buildAvatarPayload,
-  buildProfileDetailsPayload,
-} from "../lib/profilePersistence";
+import { buildProfileDetailsPayload } from "../lib/profilePersistence";
 import type {
   ProfileErrors,
   ProfileFieldKey,
@@ -30,6 +27,12 @@ const AVATAR_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET ||
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET ||
   "avatars";
+const ALLOWED_AVATAR_TYPES = new Set([
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 const PROFILE_TABLE = "Users";
 
 function sanitizeProfileField(field: ProfileFieldKey, value: string) {
@@ -53,12 +56,16 @@ export function useProfileController() {
   const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState<string | null>(
     null,
   );
+  const [pendingAvatarFile, setPendingAvatarFile] = React.useState<File | null>(
+    null,
+  );
   const [profileSnapshot, setProfileSnapshot] =
     React.useState<ProfileSnapshot | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [message, setMessage] = React.useState<ProfileMessage | null>(null);
+  const [pendingEmailOverride, setPendingEmailOverride] = React.useState("");
 
   const [saving, setSaving] = React.useState(false);
   const [sendingVerification, setSendingVerification] = React.useState(false);
@@ -69,12 +76,26 @@ export function useProfileController() {
   React.useEffect(() => {
     if (authLoading) return;
     if (!user) {
+      setEmail("");
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setAvatarUrl(null);
+      setAvatarPreviewUrl(null);
+      setPendingAvatarFile(null);
+      setProfileSnapshot(null);
+      setPendingEmailOverride("");
+      setErrors({});
+      setMessage(null);
+      setIsEditing(false);
+      setNewPassword("");
+      setConfirmPassword("");
       setProfileLoading(false);
       return;
     }
 
     let active = true;
-    const authEmail = user.email || "";
+    const authEmail = sanitizeEmail(user.new_email || user.email || "");
 
     setEmail(authEmail);
     setProfileLoading(true);
@@ -90,8 +111,8 @@ export function useProfileController() {
 
       if (error) {
         setMessage({
-          tone: "info",
-          text: "Profile details are ready to edit.",
+          tone: "error",
+          text: "Profile details could not be loaded. Refresh the page or sign in again.",
         });
         setProfileLoading(false);
         return;
@@ -110,6 +131,8 @@ export function useProfileController() {
       setPhone(nextProfile.phone);
       setAvatarUrl(nextProfile.avatarUrl);
       setAvatarVersion(Date.now());
+      setAvatarPreviewUrl(null);
+      setPendingAvatarFile(null);
       setProfileSnapshot(nextProfile);
       setProfileLoading(false);
     };
@@ -120,6 +143,12 @@ export function useProfileController() {
       active = false;
     };
   }, [authLoading, user]);
+
+  React.useEffect(() => {
+    if (!user?.new_email && !user?.email_change_sent_at) {
+      setPendingEmailOverride("");
+    }
+  }, [user?.email_change_sent_at, user?.new_email]);
 
   React.useEffect(() => {
     return () => {
@@ -145,7 +174,12 @@ export function useProfileController() {
     () => avatarPreviewUrl || buildAvatarDisplayUrl(avatarUrl, avatarVersion),
     [avatarPreviewUrl, avatarUrl, avatarVersion],
   );
-  const emailVerified = Boolean(user?.email_confirmed_at);
+  const pendingEmail = sanitizeEmail(user?.new_email || pendingEmailOverride);
+  const hasPendingEmailChange = Boolean(
+    pendingEmail && (user?.email_change_sent_at || pendingEmailOverride),
+  );
+  const emailVerified =
+    Boolean(user?.email_confirmed_at) && !hasPendingEmailChange;
 
   const updateProfileField = React.useCallback(
     (field: ProfileFieldKey, value: string) => {
@@ -177,6 +211,10 @@ export function useProfileController() {
       setAvatarVersion(Date.now());
     }
 
+    setAvatarPreviewUrl(null);
+    setPendingAvatarFile(null);
+    setNewPassword("");
+    setConfirmPassword("");
     setErrors({});
     setMessage(null);
     setIsEditing(false);
@@ -206,9 +244,42 @@ export function useProfileController() {
     const emailChanged =
       result.values.email !== (profileSnapshot?.email || user.email || "");
 
+    let nextAvatarUrl = avatarUrl;
+    let uploadedAvatarPath: string | null = null;
+
+    if (pendingAvatarFile) {
+      const ext = pendingAvatarFile.name.split(".").pop() || "png";
+      uploadedAvatarPath = `${user.id}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .upload(uploadedAvatarPath, pendingAvatarFile, {
+          contentType: pendingAvatarFile.type,
+        });
+
+      if (uploadError) {
+        const bucketMissing = uploadError.message
+          .toLowerCase()
+          .includes("bucket not found");
+        setSaving(false);
+        setMessage({
+          tone: bucketMissing ? "info" : "error",
+          text: bucketMissing
+            ? `Avatar preview is selected, but it cannot be saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
+            : "Avatar upload failed. Please try another supported image.",
+        });
+        return;
+      }
+
+      const { data } = supabase.storage
+        .from(AVATAR_BUCKET)
+        .getPublicUrl(uploadedAvatarPath);
+      nextAvatarUrl = data.publicUrl;
+    }
+
     const { error } = await supabase.from(PROFILE_TABLE).upsert(
       buildProfileDetailsPayload({
-        avatarUrl,
+        avatarUrl: nextAvatarUrl,
         userId: user.id,
         values: result.values,
       }),
@@ -216,43 +287,73 @@ export function useProfileController() {
     );
 
     if (error) {
+      if (uploadedAvatarPath) {
+        await supabase.storage.from(AVATAR_BUCKET).remove([uploadedAvatarPath]);
+      }
       setSaving(false);
-      setMessage({ tone: "error", text: `Save failed: ${error.message}` });
+      setMessage({ tone: "error", text: "Save failed. Please try again." });
       return;
     }
 
     if (emailChanged) {
       const previousEmail = profileSnapshot?.email || user.email || "";
-      const { error: emailError } = await supabase.auth.updateUser(
-        { email: result.values.email },
-        { emailRedirectTo: `${window.location.origin}/Profile` },
-      );
+      const { data: emailData, error: emailError } =
+        await supabase.auth.updateUser(
+          { email: result.values.email },
+          { emailRedirectTo: `${window.location.origin}/Profile` },
+        );
 
       if (emailError) {
         setSaving(false);
+        setEmail(previousEmail);
+        setAvatarUrl(nextAvatarUrl);
+        setAvatarVersion(Date.now());
+        setAvatarPreviewUrl(null);
+        setPendingAvatarFile(null);
         setProfileSnapshot({
           ...result.values,
-          avatarUrl,
+          avatarUrl: nextAvatarUrl,
           email: previousEmail,
         });
         setMessage({
           tone: "error",
-          text: `Profile details saved, but email update failed: ${emailError.message}`,
+          text: "Profile details saved, but the email update failed. Please try again.",
         });
         return;
       }
+
+      const nextPendingEmail = sanitizeEmail(emailData.user?.new_email || "");
+      setPendingEmailOverride(
+        emailData.user?.email_change_sent_at || nextPendingEmail
+          ? nextPendingEmail || result.values.email
+          : "",
+      );
+      setEmail(result.values.email);
     }
 
     setSaving(false);
-    setProfileSnapshot({ ...result.values, avatarUrl });
+    setAvatarUrl(nextAvatarUrl);
+    setAvatarVersion(Date.now());
+    setAvatarPreviewUrl(null);
+    setPendingAvatarFile(null);
+    setProfileSnapshot({ ...result.values, avatarUrl: nextAvatarUrl });
     setIsEditing(false);
+    setNewPassword("");
+    setConfirmPassword("");
     setMessage({
       tone: "success",
       text: emailChanged
-        ? "Profile saved. Check your new inbox to verify the email change."
+        ? "Profile saved. Check the confirmation email to verify the email change."
         : "Profile saved successfully.",
     });
-  }, [avatarUrl, isEditing, profileSnapshot?.email, user, values]);
+  }, [
+    avatarUrl,
+    isEditing,
+    pendingAvatarFile,
+    profileSnapshot?.email,
+    user,
+    values,
+  ]);
 
   const changeAvatar = React.useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,8 +364,11 @@ export function useProfileController() {
 
       setMessage(null);
 
-      if (!file.type.startsWith("image/")) {
-        setMessage({ tone: "error", text: "Please choose an image file." });
+      if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+        setMessage({
+          tone: "error",
+          text: "Please choose a JPG, PNG, WebP, or GIF image.",
+        });
         event.target.value = "";
         return;
       }
@@ -278,74 +382,15 @@ export function useProfileController() {
         return;
       }
 
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreviewUrl((previousUrl) => {
-        if (previousUrl) URL.revokeObjectURL(previousUrl);
-        return previewUrl;
+      setPendingAvatarFile(file);
+      setAvatarPreviewUrl(URL.createObjectURL(file));
+      setMessage({
+        tone: "info",
+        text: "Avatar preview selected. Save profile to apply it.",
       });
-
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${user.id}/${Date.now()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(path, file, { contentType: file.type, upsert: true });
-
-      if (uploadError) {
-        const bucketMissing = uploadError.message
-          .toLowerCase()
-          .includes("bucket not found");
-        setMessage({
-          tone: bucketMissing ? "info" : "error",
-          text: bucketMissing
-            ? `Avatar preview updated, but it was not saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
-            : `Upload failed: ${uploadError.message}`,
-        });
-        event.target.value = "";
-        return;
-      }
-
-      const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-      const publicUrl = data.publicUrl;
-
-      setAvatarUrl(publicUrl);
-      setAvatarVersion(Date.now());
-      setAvatarPreviewUrl((previousUrl) => {
-        if (previousUrl) URL.revokeObjectURL(previousUrl);
-        return null;
-      });
-
-      const { error: profileError } = await supabase
-        .from(PROFILE_TABLE)
-        .upsert(buildAvatarPayload({ avatarUrl: publicUrl, userId: user.id }), {
-          onConflict: "id",
-        });
-
-      if (!profileError) {
-        setProfileSnapshot((current) =>
-          current
-            ? { ...current, avatarUrl: publicUrl }
-            : {
-                avatarUrl: publicUrl,
-                email: user.email || email,
-                firstName,
-                lastName,
-                phone,
-              },
-        );
-      }
-
-      setMessage(
-        profileError
-          ? {
-              tone: "error",
-              text: `Avatar uploaded, but profile save failed: ${profileError.message}`,
-            }
-          : { tone: "success", text: "Avatar updated successfully." },
-      );
       event.target.value = "";
     },
-    [email, firstName, isEditing, lastName, phone, user],
+    [isEditing, user],
   );
 
   const changePassword = React.useCallback(
@@ -355,7 +400,7 @@ export function useProfileController() {
       if (!isEditing) {
         setMessage({
           tone: "info",
-          text: "Unlock editing before changing your password.",
+          text: "Edit profile before changing your password.",
         });
         return;
       }
@@ -383,7 +428,10 @@ export function useProfileController() {
       setUpdatingPassword(false);
       setMessage(
         error
-          ? { tone: "error", text: `Password update failed: ${error.message}` }
+          ? {
+              tone: "error",
+              text: "Password update failed. Please sign in again and retry.",
+            }
           : { tone: "success", text: "Password updated successfully." },
       );
 
@@ -396,11 +444,26 @@ export function useProfileController() {
   );
 
   const resendVerification = React.useCallback(async () => {
-    const targetEmail = sanitizeEmail(email || user?.email || "");
+    if (!user) return;
+
+    const targetEmail = sanitizeEmail(
+      pendingEmail || profileSnapshot?.email || user.email || "",
+    );
+    const draftEmail = sanitizeEmail(email);
+    const resendType = pendingEmail ? "email_change" : "signup";
+
+    if (draftEmail && draftEmail !== targetEmail) {
+      setMessage({
+        tone: "info",
+        text: "Save the email change before sending verification to a new address.",
+      });
+      return;
+    }
+
     if (!targetEmail || !isValidEmail(targetEmail)) {
       setErrors((current) => ({
         ...current,
-        email: "Enter a valid email address before sending verification.",
+        email: "Save a valid email address before sending verification.",
       }));
       return;
     }
@@ -411,19 +474,24 @@ export function useProfileController() {
     const { error } = await supabase.auth.resend({
       email: targetEmail,
       options: { emailRedirectTo: `${window.location.origin}/Profile` },
-      type: "signup",
+      type: resendType,
     });
 
     setSendingVerification(false);
     setMessage(
       error
-        ? { tone: "error", text: `Verification email failed: ${error.message}` }
+        ? {
+            tone: "error",
+            text: "Verification email could not be sent. Please try again.",
+          }
         : {
             tone: "success",
-            text: "Verification email sent. Check your inbox.",
+            text: pendingEmail
+              ? "Email change verification sent. Check the confirmation email."
+              : "Verification email sent. Check your inbox.",
           },
     );
-  }, [email, user?.email]);
+  }, [email, pendingEmail, profileSnapshot?.email, user]);
 
   return {
     authLoading,
@@ -439,12 +507,14 @@ export function useProfileController() {
     emailVerified,
     errors,
     firstName,
+    hasPendingEmailChange,
     initials,
     isEditing,
     lastName,
     message,
     newPassword,
     phone,
+    pendingEmail,
     profileLoading,
     profileSnapshot,
     resendVerification,

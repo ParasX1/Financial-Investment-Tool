@@ -1,3 +1,4 @@
+import * as React from "react";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import styles from "../styles/profile.module.css";
@@ -5,21 +6,22 @@ import styles from "../styles/profile.module.css";
 export function ProfileAvatarPanel({
   avatarDisplayUrl,
   displayName,
-  email,
   initials,
   isEditing,
   onAvatarChange,
 }: {
   avatarDisplayUrl: string | null;
   displayName: string;
-  email: string;
   initials: string;
   isEditing: boolean;
   onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   return (
     <section
       id="profile-card"
+      tabIndex={-1}
       className={styles.panel}
       aria-labelledby="profile-card-title"
     >
@@ -29,8 +31,8 @@ export function ProfileAvatarPanel({
           What people see
         </h2>
         <p className={styles.panelSubtitle}>
-          Manage the avatar and display identity shown across FIT surfaces such
-          as Community. Private sign-in details stay in personal details.
+          Manage the avatar and display identity that represent your FIT
+          account. Sign-in details stay with your personal details.
         </p>
       </div>
 
@@ -50,23 +52,28 @@ export function ProfileAvatarPanel({
               )}
             </div>
 
-            <label
+            <button
+              type="button"
               className={cn(
                 styles.avatarButton,
                 !isEditing ? styles.avatarButtonDisabled : null,
                 FIT_FOCUS_VISIBLE,
               )}
+              disabled={!isEditing}
+              onClick={() => fileInputRef.current?.click()}
             >
               <CameraAltRoundedIcon sx={{ fontSize: 17 }} aria-hidden="true" />
               Change avatar
-              <input
-                type="file"
-                accept="image/*"
-                className={styles.visuallyHidden}
-                disabled={!isEditing}
-                onChange={onAvatarChange}
-              />
-            </label>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className={styles.visuallyHidden}
+              disabled={!isEditing}
+              tabIndex={-1}
+              onChange={onAvatarChange}
+            />
           </div>
 
           <div className={styles.identityBlock}>
@@ -78,10 +85,6 @@ export function ProfileAvatarPanel({
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Display name</span>
                 <span className={styles.detailValue}>{displayName}</span>
-              </div>
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Sign-in email</span>
-                <span className={styles.detailValue}>{email || "Not set"}</span>
               </div>
             </div>
           </div>

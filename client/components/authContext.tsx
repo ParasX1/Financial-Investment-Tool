@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import supabase from '@/components/supabase'
+import { buildAuthRedirectTo } from '@/components/authRedirect'
 
 type AuthContextType = {
   user: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, meta?: Record<string, any>) => Promise<'confirmed'|'verify-email'>
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: (redirectTo?: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -49,10 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.session ? 'confirmed' : 'verify-email'
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectTo = '/dashboardView') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboardView` }
+      options: { redirectTo: buildAuthRedirectTo(window.location.origin, redirectTo) }
     })
     if (error) throw error
   }

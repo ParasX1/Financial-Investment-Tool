@@ -1,6 +1,7 @@
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import ModalLogin from "@/components/Modal/ModalLogin";
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
@@ -29,8 +30,11 @@ export function ProfileMain() {
   const profile = useProfileController();
   const [activeSectionId, setActiveSectionId] =
     React.useState<ProfileSectionId>("profile-card");
+  const [showLogin, setShowLogin] = React.useState(false);
   const hasAccount = Boolean(profile.user);
   const showAccountRequired = !profile.authLoading && !hasAccount;
+  const showInitialProfileLoading =
+    hasAccount && profile.profileLoading && !profile.profileSnapshot;
 
   const selectSection = React.useCallback((sectionId: ProfileSectionId) => {
     setActiveSectionId(sectionId);
@@ -57,7 +61,7 @@ export function ProfileMain() {
         >
           <FitPageHeader
             title="Profile Settings"
-            subtitle="Manage your FIT account identity, private details, verification, and password from one settings workspace."
+            subtitle="Manage your FIT account identity, details, verification, and password from one settings workspace."
             subtitleClassName="max-w-[48rem]"
           />
 
@@ -67,7 +71,7 @@ export function ProfileMain() {
                 <button
                   key={tab.id}
                   type="button"
-                  aria-pressed={activeTabId === tab.id}
+                  aria-current={activeTabId === tab.id ? "page" : undefined}
                   className={cn(
                     styles.primaryTab,
                     activeTabId === tab.id ? styles.primaryTabActive : null,
@@ -114,6 +118,19 @@ export function ProfileMain() {
                       Profile details, avatar uploads, verification, and
                       password changes are available after sign-in.
                     </p>
+                    <div className={styles.actionRow}>
+                      <button
+                        type="button"
+                        className={cn(
+                          styles.button,
+                          styles.buttonPrimary,
+                          FIT_FOCUS_VISIBLE,
+                        )}
+                        onClick={() => setShowLogin(true)}
+                      >
+                        Sign in
+                      </button>
+                    </div>
                   </div>
                 </section>
               ) : !hasAccount ? (
@@ -124,6 +141,19 @@ export function ProfileMain() {
                     <p className={styles.panelSubtitle}>
                       Checking your account session before showing editable
                       profile settings.
+                    </p>
+                  </div>
+                </section>
+              ) : showInitialProfileLoading ? (
+                <section className={styles.panel}>
+                  <div className={styles.signedOutPanel}>
+                    <p className={styles.eyebrow}>Loading</p>
+                    <h2 className={styles.panelTitle}>
+                      Loading your profile details
+                    </h2>
+                    <p className={styles.panelSubtitle}>
+                      Fetching saved account details before enabling profile
+                      edits.
                     </p>
                   </div>
                 </section>
@@ -164,7 +194,7 @@ export function ProfileMain() {
                             sx={{ fontSize: 17 }}
                             aria-hidden="true"
                           />
-                          Unlock editing
+                          Edit profile
                         </button>
                       )}
                     </div>
@@ -172,7 +202,6 @@ export function ProfileMain() {
                     <ProfileAvatarPanel
                       avatarDisplayUrl={profile.avatarDisplayUrl}
                       displayName={profile.displayName}
-                      email={profile.email}
                       initials={profile.initials}
                       isEditing={profile.isEditing}
                       onAvatarChange={profile.changeAvatar}
@@ -182,8 +211,10 @@ export function ProfileMain() {
                       emailVerified={profile.emailVerified}
                       errors={profile.errors}
                       firstName={profile.firstName}
+                      hasPendingEmailChange={profile.hasPendingEmailChange}
                       isEditing={profile.isEditing}
                       lastName={profile.lastName}
+                      pendingEmail={profile.pendingEmail}
                       phone={profile.phone}
                       saving={profile.saving}
                       sendingVerification={profile.sendingVerification}
@@ -205,14 +236,21 @@ export function ProfileMain() {
               )}
             </div>
 
-            <ProfileStatusRail
-              emailVerified={profile.emailVerified}
-              isEditing={profile.isEditing}
-              userIdPreview={profile.userIdPreview}
-            />
+            {hasAccount ? (
+              <ProfileStatusRail
+                emailVerified={profile.emailVerified}
+                hasPendingEmailChange={profile.hasPendingEmailChange}
+                isEditing={profile.isEditing}
+              />
+            ) : null}
           </div>
         </div>
       </main>
+      <ModalLogin
+        redirectTo="/Profile"
+        show={showLogin}
+        onHide={() => setShowLogin(false)}
+      />
     </FitPageShell>
   );
 }

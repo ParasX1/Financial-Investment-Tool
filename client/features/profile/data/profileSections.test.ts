@@ -26,4 +26,14 @@ describe("profileSections", () => {
 
     expect(joinedLabels).not.toMatch(/wallet|subscription|passkey/i);
   });
+
+  it("keeps support guidance scoped to behavior Profile actually owns", () => {
+    const supportCopy = PROFILE_SUPPORT_CARDS.map((card) => card.body).join(
+      " ",
+    );
+
+    expect(supportCopy).not.toMatch(/community|posts|comments/i);
+    expect(supportCopy).toMatch(/account details/i);
+    expect(supportCopy).not.toMatch(/private/i);
+  });
 });

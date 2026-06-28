@@ -176,6 +176,11 @@
   overflow: hidden;
 }
 
+.panel:focus {
+  outline: 2px solid rgba(123, 140, 255, 0.72);
+  outline-offset: 3px;
+}
+
 .panelHeader,
 .panelBody {
   min-width: 0;
@@ -222,6 +227,18 @@
 
 .panelBody {
   padding: 1rem;
+}
+
+.pendingNotice {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(246, 200, 95, 0.35);
+  border-radius: 0.65rem;
+  background: rgba(246, 200, 95, 0.08);
+  padding: 0.75rem 0.85rem;
+  color: #ffe7a3;
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.5;
 }
 
 .profileHero {
@@ -301,6 +318,11 @@
 }
 
 .avatarButtonDisabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.avatarButton:disabled {
   cursor: not-allowed;
   opacity: 0.46;
 }
@@ -567,6 +589,10 @@
   padding: 1.25rem;
 }
 
+.signedOutPanel .actionRow {
+  margin-top: 1rem;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
@@ -603,7 +629,7 @@
   }
 
   .signedOutLayout {
-    grid-template-columns: minmax(0, 1fr) minmax(17rem, 19rem);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
   }
 

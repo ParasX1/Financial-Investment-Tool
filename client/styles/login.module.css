@@ -1,16 +1,35 @@
 .loginModal {
-    background-color: rgb(69, 69, 69);
-    min-height: 50vh;
-    width: 600px;
+    position: relative;
+    background: #090b12;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    min-height: auto;
+    width: min(600px, calc(100vw - 32px));
     margin: 0 auto;
     padding: 2rem;
     border-radius: 0.5rem;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.closeButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, 0.78);
+    color: white;
+    font-size: 1.35rem;
+    line-height: 1;
 }
 
 .loginHeader {
-    font-size: 7rem;
+    font-size: 3.5rem;
     font-weight: 700;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
     text-align: left;
     color: white;
 }
@@ -22,18 +41,33 @@
 
 .inputRow {
     margin-bottom: 1rem;
+    text-align: left;
+}
+
+.inputGroup {
+    flex: 1;
+    text-align: left;
+}
+
+.inputLabel {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .inputFull {
     width: 100%;
     padding: 0.75rem;
-    border-radius: 0.75rem;
-    border: 1px solid rgb(173, 173, 173);
-    background-color: rgb(173, 173, 173);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background-color: #171922;
+    color: #f8fafc;
 }
 
 .inputFull::placeholder {
-    color: black;
+    color: #9aa4b2;
     font-weight: 500;
 }
 
@@ -47,7 +81,7 @@
     background-color: #3b82f6;
     color: white;
     padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     width: 100%;
     border: none;
     font-weight: 500;
@@ -55,10 +89,10 @@
 }
 
 .buttonOutline {
-    background-color: white;
-    color: black;
+    background-color: #f8fafc;
+    color: #0f172a;
     padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     width: 100%;
     border: 1px solid #e5e7eb;
     flex: 1;
@@ -84,4 +118,27 @@
     justify-content: space-between;
     margin: 2rem 0;
     gap: 1rem;
+}
+
+.errorText {
+    margin-top: 0.5rem;
+    color: #ff6b6b;
+    text-align: left;
+}
+
+.successText {
+    margin-top: 0.5rem;
+    color: #3ad29f;
+    text-align: left;
+}
+
+@media (max-width: 640px) {
+    .loginHeader {
+        font-size: 3rem;
+    }
+
+    .buttonRowTwo,
+    .inputTwo {
+        flex-direction: column;
+    }
 }
