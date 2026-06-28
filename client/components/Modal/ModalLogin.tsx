@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Button } from '@nextui-org/react'
 import Modal from 'react-bootstrap/Modal'
+import ModalBody from 'react-bootstrap/ModalBody'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/components/authContext'
@@ -9,9 +9,11 @@ import styles from '@/styles/login.module.css'
 function ModalLogin({
   redirectTo = '/dashboardView',
   show,
+  onShowSignUp,
   onHide,
 }: {
   redirectTo?: string
+  onShowSignUp?: () => void
   show: boolean
   onHide: () => void
 }) {
@@ -50,18 +52,47 @@ function ModalLogin({
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setErr(null)
+    setPending(true)
+    try {
+      await signInWithGoogle(redirectTo)
+    } catch (e: any) {
+      setErr(e.message ?? 'Google sign-in failed')
+      setPending(false)
+    }
+  }
+
   return (
-    <Modal show={show} onHide={onHide} centered className="text-center">
-      <Modal.Body className={styles.loginModal}>
+    <Modal
+      show={show}
+      onHide={onHide}
+      centered
+      dialogClassName={styles.authDialog}
+      contentClassName={styles.authContent}
+      backdropClassName={styles.authBackdrop}
+      animation={false}
+    >
+      <ModalBody className={styles.loginModal}>
         <button
           type="button"
           className={styles.closeButton}
           aria-label="Close login dialog"
           onClick={onHide}
         >
-          ×
+          X
         </button>
-        <h2 className={styles.loginHeader}>FIT.</h2>
+        <div className={styles.authBrandRow}>
+          <span className={styles.authMark}>F</span>
+          <span>Financial Investment Tool</span>
+        </div>
+        <div className={styles.authIntro}>
+          <p className={styles.authEyebrow}>Welcome back</p>
+          <h2 className={styles.loginHeader}>Sign in to FIT</h2>
+          <p className={styles.authSubtitle}>
+            Access your profile, watchlist, and account settings.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className={styles.inputRow}>
@@ -102,20 +133,38 @@ function ModalLogin({
             </p>
           )}
 
-          <div className={styles.buttonRowTwo}>
-            <Button type="submit" className={styles.buttonSubmit} isDisabled={pending} isLoading={pending}>
-              Log in
-            </Button>
-            <Button
+          <div className={styles.buttonStack}>
+            <button
+              type="submit"
+              className={styles.buttonSubmit}
+              disabled={pending}
+            >
+              {pending ? 'Signing in...' : 'Sign in'}
+            </button>
+            <button
+              type="button"
               className={styles.buttonOutline}
-              onPress={() => signInWithGoogle(redirectTo)}
-              isDisabled={pending}
+              disabled={pending}
+              onClick={handleGoogleSignIn}
             >
               Log in with Google
-            </Button>
+            </button>
           </div>
+
+          {onShowSignUp ? (
+            <p className={styles.switchText}>
+              New to FIT?{' '}
+              <button
+                type="button"
+                className={styles.switchButton}
+                onClick={onShowSignUp}
+              >
+                Create an account
+              </button>
+            </p>
+          ) : null}
         </form>
-      </Modal.Body>
+      </ModalBody>
     </Modal>
   )
 }

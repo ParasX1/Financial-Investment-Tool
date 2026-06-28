@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react'
-import { Button } from '@nextui-org/react'
 import Modal from 'react-bootstrap/Modal'
+import ModalBody from 'react-bootstrap/ModalBody'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/components/authContext'
 import styles from '@/styles/login.module.css'
 
 type ModalSignUpProps = {
+  redirectTo?: string
   show: boolean
   onHide: () => void
   setLogin?: (v: boolean) => void
 }
 
-function ModalSignUp({ show, onHide }: ModalSignUpProps) {
+function ModalSignUp({
+  redirectTo = '/dashboardView',
+  show,
+  onHide,
+  setLogin,
+}: ModalSignUpProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fname, setFname] = useState('')
@@ -37,7 +43,8 @@ function ModalSignUp({ show, onHide }: ModalSignUpProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErr(null); setInfo(null)
+    setErr(null)
+    setInfo(null)
     if (!email || !password || !fname || !lname) {
       setErr('Please fill in all fields')
       return
@@ -48,14 +55,19 @@ function ModalSignUp({ show, onHide }: ModalSignUpProps) {
     }
     setPending(true)
     try {
-      const status = await signUp(email, password, { first_name: fname, last_name: lname })
+      const status = await signUp(email, password, {
+        first_name: fname,
+        last_name: lname,
+      })
       if (status === 'verify-email') {
-        setInfo('We sent you a confirmation email. Please verify to complete sign-in.')
+        setInfo(
+          'We sent you a confirmation email. Please verify to complete sign-in.',
+        )
         setPassword('')
         return
       } else {
         onHide?.()
-        router.push('/dashboardView')
+        router.push(redirectTo)
       }
     } catch (e: any) {
       setErr(e.message ?? 'Sign up failed')
@@ -64,19 +76,54 @@ function ModalSignUp({ show, onHide }: ModalSignUpProps) {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setErr(null)
+    setInfo(null)
+    setPending(true)
+    try {
+      await signInWithGoogle(redirectTo)
+    } catch (e: any) {
+      setErr(e.message ?? 'Google sign-up failed')
+      setPending(false)
+    }
+  }
+
+  const handleShowLogin = () => {
+    onHide()
+    setLogin?.(true)
+  }
+
   return (
-    <Modal show={show} onHide={onHide} centered className="text-center">
-      <Modal.Body className={styles.loginModal}>
+    <Modal
+      show={show}
+      onHide={onHide}
+      centered
+      dialogClassName={styles.authDialog}
+      contentClassName={styles.authContent}
+      backdropClassName={styles.authBackdrop}
+      animation={false}
+    >
+      <ModalBody className={styles.loginModal}>
         <button
           type="button"
           className={styles.closeButton}
           aria-label="Close sign up dialog"
           onClick={onHide}
         >
-          ×
+          X
         </button>
-        <h2 className={styles.loginHeader}>FIT.</h2>
-        <h3 className={styles.loginSubheader}>Create new account</h3>
+        <div className={styles.authBrandRow}>
+          <span className={styles.authMark}>F</span>
+          <span>Financial Investment Tool</span>
+        </div>
+        <div className={styles.authIntro}>
+          <p className={styles.authEyebrow}>Start with FIT</p>
+          <h2 className={styles.loginHeader}>Create your account</h2>
+          <p className={styles.authSubtitle}>
+            Set up a profile for saved watchlists, community activity, and
+            account recovery.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className={styles.inputTwo}>
@@ -84,26 +131,60 @@ function ModalSignUp({ show, onHide }: ModalSignUpProps) {
               <label className={styles.inputLabel} htmlFor="signup-first-name">
                 First name
               </label>
-              <input id="signup-first-name" className={styles.inputFull} placeholder="First Name" value={fname} onChange={(e) => setFname(e.target.value)} autoComplete="given-name" required />
+              <input
+                id="signup-first-name"
+                className={styles.inputFull}
+                placeholder="First Name"
+                value={fname}
+                onChange={(e) => setFname(e.target.value)}
+                autoComplete="given-name"
+                required
+              />
             </div>
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel} htmlFor="signup-last-name">
                 Last name
               </label>
-              <input id="signup-last-name" className={styles.inputFull} placeholder="Last Name" value={lname} onChange={(e) => setLname(e.target.value)} autoComplete="family-name" required />
+              <input
+                id="signup-last-name"
+                className={styles.inputFull}
+                placeholder="Last Name"
+                value={lname}
+                onChange={(e) => setLname(e.target.value)}
+                autoComplete="family-name"
+                required
+              />
             </div>
           </div>
           <div className={styles.inputRow}>
             <label className={styles.inputLabel} htmlFor="signup-email">
               Email address
             </label>
-            <input id="signup-email" type="email" className={styles.inputFull} placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <input
+              id="signup-email"
+              type="email"
+              className={styles.inputFull}
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
           </div>
           <div className={styles.inputRow}>
             <label className={styles.inputLabel} htmlFor="signup-password">
               Password
             </label>
-            <input id="signup-password" type="password" className={styles.inputFull} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
+            <input
+              id="signup-password"
+              type="password"
+              className={styles.inputFull}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+            />
           </div>
 
           {err && (
@@ -117,20 +198,38 @@ function ModalSignUp({ show, onHide }: ModalSignUpProps) {
             </p>
           )}
 
-          <div className={styles.buttonRowTwo}>
-            <Button type="submit" className={styles.buttonSubmit} isDisabled={pending} isLoading={pending}>
-              Sign up
-            </Button>
-            <Button
+          <div className={styles.buttonStack}>
+            <button
+              type="submit"
+              className={styles.buttonSubmit}
+              disabled={pending}
+            >
+              {pending ? 'Creating account...' : 'Create account'}
+            </button>
+            <button
+              type="button"
               className={styles.buttonOutline}
-              onPress={() => signInWithGoogle()}
-              isDisabled={pending}
+              disabled={pending}
+              onClick={handleGoogleSignIn}
             >
               Sign up with Google
-            </Button>
+            </button>
           </div>
+
+          {setLogin ? (
+            <p className={styles.switchText}>
+              Already have an account?{' '}
+              <button
+                type="button"
+                className={styles.switchButton}
+                onClick={handleShowLogin}
+              >
+                Sign in
+              </button>
+            </p>
+          ) : null}
         </form>
-      </Modal.Body>
+      </ModalBody>
     </Modal>
   )
 }

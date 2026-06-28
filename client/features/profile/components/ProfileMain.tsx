@@ -1,5 +1,6 @@
 import * as React from "react";
 import ModalLogin from "@/components/Modal/ModalLogin";
+import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
@@ -30,6 +31,7 @@ const messageToneClass = {
 export function ProfileMain() {
   const profile = useProfileController();
   const [showLogin, setShowLogin] = React.useState(false);
+  const [showSignUp, setShowSignUp] = React.useState(false);
   const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>(null);
   const [identityDraft, setIdentityDraft] =
     React.useState<ProfileIdentityValues>({
@@ -162,7 +164,7 @@ export function ProfileMain() {
           <FitPageHeader
             className={styles.header}
             title="Profile"
-            subtitle="Identity, contact, and security."
+            subtitle="Your public identity and private account settings."
             subtitleClassName="max-w-[48rem]"
           />
 
@@ -182,17 +184,21 @@ export function ProfileMain() {
               ) : null}
 
               {showAccountRequired ? (
-                <section className={styles.panel}>
-                  <div className={styles.signedOutPanel}>
+                <section className={styles.authGate}>
+                  <div className={styles.authGateVisual} aria-hidden="true">
+                    <div className={styles.authGateAvatar}>F</div>
+                    <div className={styles.authGateOrbit} />
+                  </div>
+                  <div className={styles.authGateCopy}>
                     <p className={styles.eyebrow}>Account required</p>
-                    <h2 className={styles.panelTitle}>
-                      Sign in to manage your profile
+                    <h2 className={styles.authGateTitle}>
+                      Sign in to your FIT profile
                     </h2>
-                    <p className={styles.panelSubtitle}>
-                      Sign in to update profile, contact, and password
-                      settings.
+                    <p className={styles.authGateSubtitle}>
+                      Keep your profile, contact details, and security settings
+                      synced across your investing workspace.
                     </p>
-                    <div className={styles.actionRow}>
+                    <div className={styles.authGateActions}>
                       <button
                         type="button"
                         className={cn(
@@ -204,7 +210,27 @@ export function ProfileMain() {
                       >
                         Sign in
                       </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          styles.button,
+                          styles.buttonSecondary,
+                          FIT_FOCUS_VISIBLE,
+                        )}
+                        onClick={() => setShowSignUp(true)}
+                      >
+                        Create account
+                      </button>
                     </div>
+                  </div>
+
+                  <div className={styles.authGateRail}>
+                    <p className={styles.authGateRailTitle}>What stays with you</p>
+                    <ul>
+                      <li>Public name and handle</li>
+                      <li>Verified email for recovery</li>
+                      <li>Profile photo and contact details</li>
+                    </ul>
                   </div>
                 </section>
               ) : !hasAccount ? (
@@ -262,8 +288,8 @@ export function ProfileMain() {
 
       <ProfileEditDialog
         show={activeDialog === "identity"}
-        title="Edit public identity"
-        description="Your handle is what FIT shows first across shared spaces."
+        title="Edit profile"
+        description="Your name appears first. Your handle keeps account identity precise."
         submitLabel={profile.savingDetails ? "Saving..." : "Save identity"}
         disabled={profile.savingDetails}
         onClose={closeDialog}
@@ -438,7 +464,20 @@ export function ProfileMain() {
       <ModalLogin
         redirectTo="/Profile"
         show={showLogin}
+        onShowSignUp={() => {
+          setShowLogin(false);
+          setShowSignUp(true);
+        }}
         onHide={() => setShowLogin(false)}
+      />
+      <ModalSignUp
+        redirectTo="/Profile"
+        show={showSignUp}
+        setLogin={(nextShowLogin) => {
+          setShowSignUp(false);
+          setShowLogin(nextShowLogin);
+        }}
+        onHide={() => setShowSignUp(false)}
       />
     </FitPageShell>
   );
