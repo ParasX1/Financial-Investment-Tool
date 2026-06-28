@@ -1,33 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { fetchMarketNewsWithProviders } from "@/lib/news/newsService";
-import { normaliseNewsPageSize } from "@/lib/news/providerUtils";
-import type { Article } from "@/services/news";
-
-function firstQueryValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
+import {
+  firstQueryValue,
+  handleMarketNewsRoute,
+  readNewsPageSize,
+} from "@/lib/news/newsApiRoute";
+import type { ServerNewsResponse } from "@/lib/news/types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ articles?: Article[]; error?: string }>,
+  res: NextApiResponse<ServerNewsResponse | { error: string }>,
 ) {
-  try {
-    const commodity = firstQueryValue(req.query.commodity) || "gold";
-    const result = await fetchMarketNewsWithProviders({
-      commodity,
-      context: `${commodity} commodities futures market supply demand`,
-      kind: "commodity",
-      pageSize: normaliseNewsPageSize(firstQueryValue(req.query.pageSize)),
-    });
+  return handleMarketNewsRoute(req, res, {
+    buildRequest: (req) => {
+      const commodity = firstQueryValue(req.query.commodity)?.trim() || "gold";
 
-    return res.status(200).json({ articles: result.articles });
-  } catch (cause) {
-    console.error("Market news commodity error", cause);
-    return res.status(502).json({
-      error:
-        cause instanceof Error
-          ? cause.message
-          : "Market news provider unavailable",
-    });
-  }
+      return {
+        commodity,
+        context:
+          firstQueryValue(req.query.context)?.trim() ||
+          `${commodity} commodities futures market supply demand`,
+        kind: "commodity",
+        marketScopeId: firstQueryValue(req.query.marketScopeId),
+        pageSize: readNewsPageSize(req),
+        topicId: firstQueryValue(req.query.topicId),
+      };
+    },
+    errorLogLabel: "Market news commodity error",
+  });
 }

@@ -76,6 +76,48 @@ describe("marketAuxProvider", () => {
     ]);
   });
 
+  it("keeps missing MarketAux timestamps visibly unknown", () => {
+    expect(
+      mapMarketAuxArticles([
+        {
+          source: "finance.example",
+          title: "ASX banks lead local market higher",
+          url: "https://example.com/undated-asx-banks",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        publishedAt: "",
+        title: "ASX banks lead local market higher",
+      }),
+    ]);
+  });
+
+  it("drops unsafe MarketAux story URLs and strips unsafe image URLs", () => {
+    expect(
+      mapMarketAuxArticles([
+        {
+          image_url: "https://example.com/safe.jpg",
+          source: "finance.example",
+          title: "Unsafe story should be ignored",
+          url: "javascript:alert(1)",
+        },
+        {
+          image_url: "data:text/html,hello",
+          source: "finance.example",
+          title: "Safe story keeps no unsafe image",
+          url: "https://example.com/safe-story",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        image: null,
+        title: "Safe story keeps no unsafe image",
+        url: "https://example.com/safe-story",
+      }),
+    ]);
+  });
+
   it("uses MARKETAUX_API_KEY from server env and returns normalized articles", async () => {
     const fetcher = jest.fn<typeof fetch>().mockResolvedValue({
       ok: true,

@@ -31,6 +31,7 @@ export function MarketNewsArticleLayout({
   articles,
   emptyState,
   error,
+  feedStatus,
   loading,
   pagination,
   providerWarning,
@@ -43,12 +44,24 @@ export function MarketNewsArticleLayout({
     title: string;
   };
   error: string | null;
+  feedStatus?: string;
   loading: boolean;
   pagination?: TopicFeedPagination;
   providerWarning?: string;
   title: string;
 }) {
   if (loading && !articles.length) return <LoadingSkeleton />;
+
+  if (articles.length) {
+    return (
+      <TopicArticleFeed
+        articles={articles}
+        feedStatus={feedStatus}
+        pagination={pagination}
+        providerWarning={providerWarning}
+      />
+    );
+  }
 
   if (error) {
     return (
@@ -70,11 +83,5 @@ export function MarketNewsArticleLayout({
     );
   }
 
-  return (
-    <TopicArticleFeed
-      articles={articles}
-      pagination={pagination}
-      providerWarning={providerWarning}
-    />
-  );
+  return null;
 }

@@ -63,8 +63,11 @@ export interface MarketNewsTicker {
   label: string;
   value: string;
   change: string;
+  previousClose?: number;
   tone: "positive" | "negative" | "neutral";
   sparkline: readonly number[];
+  sparklineSource?: "live" | "unavailable" | "fallback";
+  marketState?: string;
   signal?: "Core" | "Macro" | "Mover" | "Watchlist";
 }
 

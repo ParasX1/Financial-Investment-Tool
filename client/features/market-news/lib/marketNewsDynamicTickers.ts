@@ -2,6 +2,9 @@ import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
 
 export type MarketNewsTickerSignal = NonNullable<MarketNewsTicker["signal"]>;
 
+export const MARKET_NEWS_QUOTE_UNAVAILABLE_VALUE = "Quote unavailable";
+export const MARKET_NEWS_QUOTE_UNAVAILABLE_CHANGE = "No live data";
+
 export interface SelectedMarketNewsTicker {
   symbol: string;
   signal: MarketNewsTickerSignal;
@@ -39,6 +42,26 @@ function fallbackSelection(marketScope: MarketNewsMarketScope) {
     dynamicSymbols: symbols.slice(coreSymbols.length),
     macroSymbols: [],
     maxTickers: Math.max(1, symbols.length),
+  };
+}
+
+export function redactMarketNewsTickerFallback(
+  ticker: MarketNewsTicker,
+): MarketNewsTicker {
+  const {
+    marketState: _marketState,
+    previousClose: _previousClose,
+    sparklineSource: _sparklineSource,
+    ...identityTicker
+  } = ticker;
+
+  return {
+    ...identityTicker,
+    value: MARKET_NEWS_QUOTE_UNAVAILABLE_VALUE,
+    change: MARKET_NEWS_QUOTE_UNAVAILABLE_CHANGE,
+    tone: "neutral",
+    sparkline: [],
+    sparklineSource: "fallback",
   };
 }
 
@@ -134,16 +157,16 @@ export function buildMarketNewsTickerFallback({
   );
 
   if (configuredTicker) {
-    return { ...configuredTicker, signal };
+    return redactMarketNewsTickerFallback({ ...configuredTicker, signal });
   }
 
-  return {
+  return redactMarketNewsTickerFallback({
     symbol: normalized,
     label: normalized,
-    value: "Quote unavailable",
-    change: "No live data",
+    value: MARKET_NEWS_QUOTE_UNAVAILABLE_VALUE,
+    change: MARKET_NEWS_QUOTE_UNAVAILABLE_CHANGE,
     tone: "neutral",
     sparkline: [],
     signal,
-  };
+  });
 }

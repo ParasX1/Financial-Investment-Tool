@@ -4,6 +4,7 @@ import {
   compact,
   dedupeArticles,
   newsCandidateLimit,
+  safeExternalUrl,
 } from "../providerUtils";
 import type {
   NewsProvider,
@@ -139,7 +140,7 @@ export function mapMarketAuxArticles(
   const mapped = articles
     .map((article) => {
       const title = compact(article.title ?? undefined);
-      const url = compact(article.url ?? undefined);
+      const url = safeExternalUrl(article.url ?? undefined);
 
       if (!title || !url) return null;
 
@@ -158,10 +159,8 @@ export function mapMarketAuxArticles(
           compact(article.description ?? undefined) ||
           compact(article.snippet ?? undefined),
         url,
-        image: compact(article.image_url ?? undefined) || null,
-        publishedAt:
-          compact(article.published_at ?? undefined) ||
-          new Date().toISOString(),
+        image: safeExternalUrl(article.image_url ?? undefined) || null,
+        publishedAt: compact(article.published_at ?? undefined),
         source: compact(article.source ?? undefined) || "MarketAux source",
         provider: "marketaux",
         providerLabel: "MarketAux",

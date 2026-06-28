@@ -15,21 +15,3 @@ export function formatMarketNewsShownStatus({
 
   return `${displayedCount} shown`;
 }
-
-export function formatMarketNewsSourceStatus({
-  hasVisibleArticles,
-  loading,
-  providerLabel,
-}: {
-  hasVisibleArticles: boolean;
-  loading: boolean;
-  providerLabel?: string | null;
-}) {
-  if (loading && hasVisibleArticles) return "Updating";
-
-  return providerLabel ?? "Pending";
-}
-
-export function formatMarketNewsMatchStatus(strictCategory?: boolean | null) {
-  return strictCategory === false ? "Broad headlines" : "Topic matched";
-}

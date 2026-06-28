@@ -1,6 +1,11 @@
 import type { Article } from "@/services/news";
 import { buildGdeltSearchQuery } from "../queryPacks";
-import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
+import {
+  compact,
+  dedupeArticles,
+  newsCandidateLimit,
+  safeExternalUrl,
+} from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -74,15 +79,6 @@ export function buildGdeltUrl({
   return url.toString();
 }
 
-function isSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 export function parseGdeltSeenDate(value: string | null | undefined) {
   const cleaned = compact(value ?? undefined);
   const match = cleaned.match(
@@ -101,9 +97,9 @@ export function mapGdeltArticles(
   const mapped = articles
     .map((article) => {
       const title = compact(article.title ?? undefined);
-      const url = compact(article.url ?? undefined);
+      const url = safeExternalUrl(article.url ?? undefined);
 
-      if (!title || !url || !isSafeExternalUrl(url)) return null;
+      if (!title || !url) return null;
 
       const domain = compact(article.domain ?? undefined);
       const sourceCountry = compact(article.sourcecountry ?? undefined);
@@ -115,11 +111,10 @@ export function mapGdeltArticles(
       return {
         confidence: relatedSymbols.length ? 0.58 : null,
         id: url,
-        image: compact(article.socialimage ?? undefined) || null,
+        image: safeExternalUrl(article.socialimage ?? undefined) || null,
         provider: "gdelt",
         providerLabel: "GDELT",
-        publishedAt:
-          parseGdeltSeenDate(article.seendate) || new Date().toISOString(),
+        publishedAt: parseGdeltSeenDate(article.seendate),
         relatedSymbols,
         sentiment: "neutral",
         source,

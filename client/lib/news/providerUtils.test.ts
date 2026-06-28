@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { dedupeArticles } from "./providerUtils";
+import { dedupeArticles, safeExternalUrl } from "./providerUtils";
 import type { Article } from "@/services/news";
 
 const baseArticle: Article = {
@@ -13,6 +13,18 @@ const baseArticle: Article = {
 };
 
 describe("providerUtils", () => {
+  it("keeps only http and https external URLs", () => {
+    expect(safeExternalUrl("https://example.com/story")).toBe(
+      "https://example.com/story",
+    );
+    expect(safeExternalUrl("http://example.com/story")).toBe(
+      "http://example.com/story",
+    );
+    expect(safeExternalUrl(" javascript:alert(1) ")).toBe("");
+    expect(safeExternalUrl("data:text/html,hello")).toBe("");
+    expect(safeExternalUrl("not a url")).toBe("");
+  });
+
   it("dedupes syndicated stories by canonical title as well as URL", () => {
     expect(
       dedupeArticles([

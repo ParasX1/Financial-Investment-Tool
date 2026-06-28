@@ -4,6 +4,7 @@ import {
   compact,
   dedupeArticles,
   newsCandidateLimit,
+  safeExternalUrl,
 } from "../providerUtils";
 import {
   getPrimarySymbolName,
@@ -90,7 +91,7 @@ function mapNewsApiArticles(articles: readonly any[] = []): Article[] {
   const mapped = articles
     .map((article) => {
       const title = compact(article?.title);
-      const url = compact(article?.url);
+      const url = safeExternalUrl(article?.url);
 
       if (!title || !url || title === "[Removed]") return null;
       const description = compact(article?.description);
@@ -101,8 +102,8 @@ function mapNewsApiArticles(articles: readonly any[] = []): Article[] {
         title,
         summary: description,
         url,
-        image: compact(article?.urlToImage) || null,
-        publishedAt: compact(article?.publishedAt) || new Date().toISOString(),
+        image: safeExternalUrl(article?.urlToImage) || null,
+        publishedAt: compact(article?.publishedAt),
         source,
         provider: "newsapi",
         providerLabel: "NewsAPI",
@@ -131,6 +132,8 @@ export const newsApiProvider: NewsProvider = {
     const targetCount = newsCandidateLimit(request.pageSize);
     const articles: Article[] = [];
     const seenUrls = new Set<string>();
+    let lastError: Error | null = null;
+    let successfulCandidate = false;
 
     for (const candidate of buildNewsApiCandidates(request)) {
       const url = new URL(`https://newsapi.org/v2/${candidate.endpoint}`);
@@ -146,10 +149,12 @@ export const newsApiProvider: NewsProvider = {
       });
 
       if (!response.ok) {
-        throw new Error(`NewsAPI ${response.status}`);
+        lastError = new Error(`NewsAPI ${response.status}`);
+        continue;
       }
 
       const data = await response.json();
+      successfulCandidate = true;
       mapNewsApiArticles(data.articles || []).forEach((article) => {
         if (articles.length >= targetCount || seenUrls.has(article.url)) return;
 
@@ -159,6 +164,8 @@ export const newsApiProvider: NewsProvider = {
 
       if (articles.length >= targetCount) return articles;
     }
+
+    if (!successfulCandidate && lastError) throw lastError;
 
     return articles;
   },

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import {
-  formatMarketNewsMatchStatus,
-  formatMarketNewsShownStatus,
-  formatMarketNewsSourceStatus,
-} from "./marketNewsStatus";
+import { formatMarketNewsShownStatus } from "./marketNewsStatus";
 
 describe("marketNewsStatus", () => {
   it("formats paged topic ranges as shown stories instead of total counts", () => {
@@ -40,26 +36,5 @@ describe("marketNewsStatus", () => {
         topicFeedMode: false,
       }),
     ).toBe("5 shown");
-  });
-
-  it("keeps source and match labels trader-readable", () => {
-    expect(
-      formatMarketNewsSourceStatus({
-        hasVisibleArticles: true,
-        loading: true,
-        providerLabel: "Google News RSS",
-      }),
-    ).toBe("Updating");
-
-    expect(
-      formatMarketNewsSourceStatus({
-        hasVisibleArticles: false,
-        loading: false,
-        providerLabel: "GDELT",
-      }),
-    ).toBe("GDELT");
-
-    expect(formatMarketNewsMatchStatus(false)).toBe("Broad headlines");
-    expect(formatMarketNewsMatchStatus(true)).toBe("Topic matched");
   });
 });

@@ -62,7 +62,27 @@ describe("marketNewsDynamicTickers", () => {
       change: "No live data",
       tone: "neutral",
       sparkline: [],
+      sparklineSource: "fallback",
       signal: "Mover",
+    });
+  });
+
+  it("does not expose configured demo prices when a static ticker falls back", () => {
+    expect(
+      buildMarketNewsTickerFallback({
+        marketScope: australia,
+        signal: "Core",
+        symbol: "^AORD",
+      }),
+    ).toEqual({
+      symbol: "^AORD",
+      label: "ALL ORDS",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral",
+      sparkline: [],
+      sparklineSource: "fallback",
+      signal: "Core",
     });
   });
 });

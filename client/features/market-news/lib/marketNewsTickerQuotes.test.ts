@@ -1,5 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
-import { mergeMarketNewsTickerQuote } from "./marketNewsTickerQuotes";
+import {
+  MARKET_NEWS_TICKER_STRIP_REFRESH_WARNING,
+  mergeMarketNewsTickerQuote,
+  resolveMarketNewsTickerQuoteRefreshState,
+  resolveMarketNewsTickerQuoteState,
+  resolveMarketNewsTickerStripState,
+} from "./marketNewsTickerQuotes";
 
 describe("marketNewsTickerQuotes", () => {
   it("merges live Yahoo-style quote data into a market news ticker", () => {
@@ -20,6 +26,7 @@ describe("marketNewsTickerQuotes", () => {
           prevClose: 6100,
           change: 23.456,
           changePct: 0.3845,
+          marketState: "REGULAR",
         },
         sparkline: {
           symbol: "^GSPC",
@@ -35,10 +42,13 @@ describe("marketNewsTickerQuotes", () => {
       change: "+23.46 +0.38%",
       tone: "positive",
       sparkline: [6110, 6120],
+      sparklineSource: "live",
+      previousClose: 6100,
+      marketState: "REGULAR",
     });
   });
 
-  it("keeps configured fallback data when live quote fields are missing", () => {
+  it("redacts configured fallback prices when live quote fields are missing", () => {
     const ticker = {
       symbol: "AUDUSD=X",
       label: "AUD/USD",
@@ -53,10 +63,18 @@ describe("marketNewsTickerQuotes", () => {
         quote: null,
         sparkline: { symbol: "AUDUSD=X", points: [] },
       }),
-    ).toEqual(ticker);
+    ).toEqual({
+      symbol: "AUDUSD=X",
+      label: "AUD/USD",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral",
+      sparkline: [],
+      sparklineSource: "fallback",
+    });
   });
 
-  it("uses sparkline endpoints as a price fallback for sparse quote responses", () => {
+  it("uses Yahoo chart previous close for sparse quote responses", () => {
     const ticker = {
       symbol: "NVDA",
       label: "Lookup selected",
@@ -64,6 +82,81 @@ describe("marketNewsTickerQuotes", () => {
       change: "No live data",
       tone: "neutral" as const,
       sparkline: [],
+      sparklineSource: "fallback" as const,
+    };
+
+    expect(
+      mergeMarketNewsTickerQuote(ticker, {
+        quote: {
+          symbol: "NVDA",
+          price: null,
+          prevClose: null,
+          change: null,
+          changePct: null,
+          shortName: "NVIDIA Corporation",
+        },
+        sparkline: {
+          symbol: "NVDA",
+          points: [
+            { t: 1, v: 200 },
+            { t: 2, v: 210 },
+          ],
+          previousClose: 205,
+        },
+      }),
+    ).toEqual({
+      ...ticker,
+      change: "+5.00 +2.44%",
+      label: "NVIDIA Corporation",
+      previousClose: 205,
+      sparkline: [200, 210],
+      sparklineSource: "live",
+      tone: "positive",
+      value: "210.00",
+    });
+  });
+
+  it("uses Yahoo chart metadata when intraday chart points are unavailable", () => {
+    const ticker = {
+      symbol: "CL=F",
+      label: "Oil",
+      value: "80.21",
+      change: "-4.67 -5.50%",
+      tone: "negative" as const,
+      sparkline: [36, 34, 32, 31, 29, 28, 27, 25, 24, 22],
+    };
+
+    const merged = mergeMarketNewsTickerQuote(ticker, {
+      quote: null,
+      sparkline: {
+        symbol: "CL=F",
+        points: [],
+        previousClose: 75.85,
+        regularMarketPrice: 76.54,
+      },
+    });
+
+    expect(merged).toMatchObject({
+      ...ticker,
+      change: "+0.69 +0.91%",
+      previousClose: 75.85,
+      sparkline: [],
+      sparklineSource: "unavailable",
+      tone: "positive",
+      value: "76.54",
+    });
+    expect(merged.sparkline).toHaveLength(0);
+  });
+
+  it("does not infer Yahoo-style daily change from sparkline movement alone", () => {
+    const ticker = {
+      symbol: "NVDA",
+      label: "Lookup selected",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral" as const,
+      sparkline: [],
+      sparklineSource: "fallback" as const,
     };
 
     expect(
@@ -84,13 +177,220 @@ describe("marketNewsTickerQuotes", () => {
           ],
         },
       }),
+    ).toEqual(ticker);
+  });
+
+  it("does not treat chart points as recovered live quote data without a daily baseline", () => {
+    const ticker = {
+      symbol: "NVDA",
+      label: "Lookup selected",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral" as const,
+      sparkline: [],
+      sparklineSource: "fallback" as const,
+    };
+
+    expect(
+      resolveMarketNewsTickerQuoteState(ticker, {
+        quote: null,
+        sparkline: {
+          symbol: "NVDA",
+          points: [
+            { t: 1, v: 200 },
+            { t: 2, v: 210 },
+          ],
+        },
+      }),
     ).toEqual({
-      ...ticker,
-      change: "+10.00 +5.00%",
+      recoveredLiveData: false,
+      retainedPrevious: false,
+      ticker,
+    });
+  });
+
+  it("keeps the last good selected ticker quote when a refresh has no displayable live data", () => {
+    const fallbackTicker = {
+      symbol: "NVDA",
+      label: "Lookup selected",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral" as const,
+      sparkline: [],
+    };
+    const previousTicker = {
+      ...fallbackTicker,
+      change: "+5.00 +2.44%",
       label: "NVIDIA Corporation",
+      previousClose: 205,
       sparkline: [200, 210],
-      tone: "positive",
+      sparklineSource: "live" as const,
+      tone: "positive" as const,
       value: "210.00",
+    };
+
+    expect(
+      resolveMarketNewsTickerQuoteRefreshState({
+        fallbackTicker,
+        live: {
+          quote: null,
+          sparkline: { symbol: "NVDA", points: [] },
+        },
+        previousTicker,
+      }),
+    ).toEqual({
+      recoveredLiveData: false,
+      retainedPrevious: true,
+      ticker: previousTicker,
+    });
+  });
+
+  it("resets ticker strip state to fallback tickers when a later snapshot is invalid", () => {
+    const fallbackTickers = [
+      {
+        change: "-1.00 -1.00%",
+        label: "ALL ORDS",
+        sparkline: [3, 2, 1],
+        symbol: "^AORD",
+        tone: "negative" as const,
+        value: "9,000.00",
+      },
+    ];
+
+    expect(
+      resolveMarketNewsTickerStripState({
+        fallbackTickers,
+        payload: { bad: "payload" },
+      }),
+    ).toEqual({
+      providerLabel: "Yahoo Finance",
+      source: "fallback",
+      tickers: [
+        {
+          change: "No live data",
+          label: "ALL ORDS",
+          sparkline: [],
+          sparklineSource: "fallback",
+          symbol: "^AORD",
+          tone: "neutral",
+          value: "Quote unavailable",
+        },
+      ],
+      updatedAt: null,
+      warnings: ["Live quote snapshots are temporarily unavailable."],
+    });
+  });
+
+  it("treats partial ticker strip snapshots as invalid instead of leaking undefined UI state", () => {
+    const fallbackTickers = [
+      {
+        change: "+1.00 +1.00%",
+        label: "Fallback index",
+        sparkline: [1, 2, 3],
+        symbol: "^TEST",
+        tone: "positive" as const,
+        value: "100.00",
+      },
+    ];
+
+    expect(
+      resolveMarketNewsTickerStripState({
+        fallbackTickers,
+        payload: {
+          tickers: [
+            {
+              change: "+2.00 +2.00%",
+              label: "Half valid",
+              sparkline: [2, 3, 4],
+              symbol: "^HALF",
+              tone: "positive",
+              value: "200.00",
+            },
+          ],
+        },
+      }),
+    ).toEqual({
+      providerLabel: "Yahoo Finance",
+      source: "fallback",
+      tickers: [
+        {
+          change: "No live data",
+          label: "Fallback index",
+          sparkline: [],
+          sparklineSource: "fallback",
+          symbol: "^TEST",
+          tone: "neutral",
+          value: "Quote unavailable",
+        },
+      ],
+      updatedAt: null,
+      warnings: ["Live quote snapshots are temporarily unavailable."],
+    });
+  });
+
+  it("keeps service-provided ticker strip refresh cadence with valid snapshots", () => {
+    const state = resolveMarketNewsTickerStripState({
+      fallbackTickers: [],
+      payload: {
+        providerLabel: "Yahoo Finance",
+        refreshMs: 120_000,
+        source: "live",
+        strategy: "core-plus-dynamic-movers",
+        tickers: [],
+        updatedAt: "2026-06-21T01:02:03.000Z",
+        warnings: [],
+      },
+    });
+
+    expect(state.refreshMs).toBe(120_000);
+    expect(state.updatedAt?.toISOString()).toBe("2026-06-21T01:02:03.000Z");
+  });
+
+  it("keeps the previous live ticker strip visible when a refresh payload is invalid", () => {
+    const fallbackTickers = [
+      {
+        change: "-1.00 -1.00%",
+        label: "ALL ORDS",
+        sparkline: [3, 2, 1],
+        symbol: "^AORD",
+        tone: "negative" as const,
+        value: "9,000.00",
+      },
+    ];
+    const previousState = resolveMarketNewsTickerStripState({
+      fallbackTickers,
+      payload: {
+        providerLabel: "Yahoo Finance",
+        refreshMs: 60_000,
+        source: "live",
+        strategy: "core-plus-dynamic-movers",
+        tickers: [
+          {
+            change: "+2.00 +2.00%",
+            label: "Live index",
+            sparkline: [1, 2, 3],
+            symbol: "^LIVE",
+            tone: "positive",
+            value: "200.00",
+          },
+        ],
+        updatedAt: "2026-06-21T01:02:03.000Z",
+        warnings: [],
+      },
+    });
+
+    expect(
+      resolveMarketNewsTickerStripState({
+        fallbackTickers,
+        payload: { bad: "payload" },
+        previousState,
+      }),
+    ).toMatchObject({
+      providerLabel: "Yahoo Finance",
+      source: "live",
+      tickers: previousState.tickers,
+      updatedAt: previousState.updatedAt,
+      warnings: [MARKET_NEWS_TICKER_STRIP_REFRESH_WARNING],
     });
   });
 });

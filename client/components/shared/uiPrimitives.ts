@@ -5,7 +5,7 @@ export function cn(...xs: Array<string | false | null | undefined>) {
 export const FIT_FOCUS_VISIBLE =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b8cff]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
-export const FIT_CONTENT_MAX_WIDTH_PX = 1180;
+export const FIT_CONTENT_MAX_WIDTH_PX = 1680;
 
 export const fitSurface = {
   page: "bg-[var(--fit-color-page-bg)] text-white",

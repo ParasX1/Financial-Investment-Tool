@@ -9,6 +9,20 @@ export function compact(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
+export function safeExternalUrl(value: string | undefined): string {
+  const cleaned = compact(value);
+  if (!cleaned) return "";
+
+  try {
+    const parsed = new URL(cleaned);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? cleaned
+      : "";
+  } catch {
+    return "";
+  }
+}
+
 export function normaliseNewsPageSize(value: string | undefined): string {
   const parsed = Number(value);
 

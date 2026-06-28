@@ -1,39 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { fetchMarketNewsWithProviders } from "@/lib/news/newsService";
-import { normaliseNewsPageSize } from "@/lib/news/providerUtils";
-import type { Article } from "@/services/news";
-
-function firstQueryValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
+import {
+  firstQueryValue,
+  handleMarketNewsRoute,
+  readNewsPageSize,
+} from "@/lib/news/newsApiRoute";
+import type { ServerNewsResponse } from "@/lib/news/types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ articles?: Article[]; error?: string }>,
+  res: NextApiResponse<ServerNewsResponse | { error: string }>,
 ) {
-  try {
-    const query = firstQueryValue(req.query.q) || "";
-    const context = firstQueryValue(req.query.context) || query;
+  return handleMarketNewsRoute(req, res, {
+    buildRequest: (req) => {
+      const query = firstQueryValue(req.query.q)?.trim() || "";
+      const context = firstQueryValue(req.query.context)?.trim() || query;
 
-    if (!query.trim()) {
-      return res.status(400).json({ error: "q is required" });
-    }
-
-    const result = await fetchMarketNewsWithProviders({
-      context,
-      kind: "search",
-      pageSize: normaliseNewsPageSize(firstQueryValue(req.query.pageSize)),
-      query,
-    });
-
-    return res.status(200).json({ articles: result.articles });
-  } catch (cause) {
-    console.error("Market news search error", cause);
-    return res.status(502).json({
-      error:
-        cause instanceof Error
-          ? cause.message
-          : "Market news provider unavailable",
-    });
-  }
+      return {
+        context,
+        kind: "search",
+        marketScopeId: firstQueryValue(req.query.marketScopeId),
+        pageSize: readNewsPageSize(req),
+        query,
+        topicId: firstQueryValue(req.query.topicId),
+      };
+    },
+    errorLogLabel: "Market news search error",
+    validate: (request) => (request.query?.trim() ? null : "q is required"),
+  });
 }

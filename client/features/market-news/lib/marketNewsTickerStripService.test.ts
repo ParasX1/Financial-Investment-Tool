@@ -110,6 +110,9 @@ describe("marketNewsTickerStripService", () => {
     expect(
       Math.max(...snapshot.tickers.map((ticker) => ticker.sparkline.length)),
     ).toBeLessThanOrEqual(42);
+    expect(snapshot.tickers[0]?.previousClose).toBeCloseTo(
+      100 / (1 + 1.25 / 100),
+    );
   });
 
   it("keeps display-safe fallback tickers when Yahoo requests fail", async () => {
@@ -125,12 +128,276 @@ describe("marketNewsTickerStripService", () => {
     expect(snapshot.source).toBe("fallback");
     expect(snapshot.updatedAt).toBeNull();
     expect(snapshot.warnings).toContain(
-      "Live Yahoo Finance quote data was unavailable, so configured fallback quotes are shown.",
+      "Live Yahoo Finance quote data was unavailable, so quote cards show no live data.",
     );
     expect(snapshot.tickers[0]).toMatchObject({
+      change: "No live data",
       signal: "Core",
+      sparkline: [],
+      sparklineSource: "fallback",
       symbol: "^AORD",
-      value: "9,128.00",
+      tone: "neutral",
+      value: "Quote unavailable",
     });
+  });
+
+  it("does not mark Yahoo chart points as live when daily quote fields are missing", async () => {
+    const fetcher = jest.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+
+      if (url.includes("/v1/finance/trending/region/")) {
+        return jsonResponse({ finance: { result: [{ quotes: [] }] } });
+      }
+
+      if (url.includes("/v7/finance/quote")) {
+        return new Response(JSON.stringify({ quoteResponse: { result: [] } }), {
+          status: 401,
+        });
+      }
+
+      if (url.includes("/v8/finance/chart/")) {
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                indicators: {
+                  quote: [{ close: [100, 101, 102] }],
+                },
+                meta: {},
+                timestamp: [1, 2, 3],
+              },
+            ],
+          },
+        });
+      }
+
+      throw new Error(`Unexpected URL ${url}`);
+    });
+
+    const snapshot = await buildMarketNewsTickerStripSnapshot({
+      fetcher,
+      marketScope: resolveMarketNewsMarketScope("australia"),
+      now: () => new Date("2026-06-21T01:02:03.000Z"),
+      watchlistSymbols: [],
+    });
+
+    expect(snapshot.source).toBe("fallback");
+    expect(snapshot.updatedAt).toBeNull();
+    expect(snapshot.warnings).toContain(
+      "Live Yahoo Finance quote data was unavailable, so quote cards show no live data.",
+    );
+    expect(snapshot.tickers[0]).toMatchObject({
+      change: "No live data",
+      sparkline: [],
+      sparklineSource: "fallback",
+      symbol: "^AORD",
+      tone: "neutral",
+      value: "Quote unavailable",
+    });
+  });
+
+  it("uses chart metadata for futures when Yahoo returns no 1d intraday points", async () => {
+    const fetcher = jest.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+
+      if (url.includes("/v1/finance/trending/region/")) {
+        return jsonResponse({ finance: { result: [{ quotes: [] }] } });
+      }
+
+      if (url.includes("/v7/finance/quote")) {
+        return new Response(JSON.stringify({ quoteResponse: { result: [] } }), {
+          status: 401,
+        });
+      }
+
+      if (url.includes("/v8/finance/chart/CL%3DF")) {
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                indicators: { quote: [{ close: [] }] },
+                meta: {
+                  chartPreviousClose: 75.85,
+                  previousClose: 75.85,
+                  regularMarketPrice: 76.54,
+                },
+                timestamp: [],
+              },
+            ],
+          },
+        });
+      }
+
+      if (url.includes("/v8/finance/chart/GC%3DF")) {
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                indicators: { quote: [{ close: [] }] },
+                meta: {
+                  chartPreviousClose: 4245.9,
+                  previousClose: 4245.9,
+                  regularMarketPrice: 4172.9,
+                },
+                timestamp: [],
+              },
+            ],
+          },
+        });
+      }
+
+      return jsonResponse({
+        chart: {
+          result: [
+            {
+              indicators: { quote: [{ close: [] }] },
+              meta: {},
+              timestamp: [],
+            },
+          ],
+        },
+      });
+    });
+
+    const snapshot = await buildMarketNewsTickerStripSnapshot({
+      fetcher,
+      marketScope: resolveMarketNewsMarketScope("australia"),
+      now: () => new Date("2026-06-21T01:02:03.000Z"),
+      watchlistSymbols: [],
+    });
+    const oil = snapshot.tickers.find((ticker) => ticker.symbol === "CL=F");
+    const gold = snapshot.tickers.find((ticker) => ticker.symbol === "GC=F");
+
+    expect(snapshot.source).toBe("mixed");
+    expect(snapshot.warnings).toContain(
+      "Some Yahoo 1D quote lines are unavailable, so those cards show price metadata without a sparkline.",
+    );
+    expect(oil).toMatchObject({
+      change: "+0.69 +0.91%",
+      previousClose: 75.85,
+      sparkline: [],
+      sparklineSource: "unavailable",
+      tone: "positive",
+      value: "76.54",
+    });
+    expect(gold).toMatchObject({
+      change: "-73.00 -1.72%",
+      previousClose: 4245.9,
+      sparkline: [],
+      sparklineSource: "unavailable",
+      tone: "negative",
+      value: "4,172.90",
+    });
+  });
+
+  it("does not replace an empty Yahoo 1d futures chart with 5d points", async () => {
+    const fetcher = jest.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+
+      if (url.includes("/v1/finance/trending/region/")) {
+        return jsonResponse({ finance: { result: [{ quotes: [] }] } });
+      }
+
+      if (url.includes("/v7/finance/quote")) {
+        return new Response(JSON.stringify({ quoteResponse: { result: [] } }), {
+          status: 401,
+        });
+      }
+
+      if (url.includes("/v8/finance/chart/CL%3DF")) {
+        const isFallbackRange = url.includes("range=5d");
+
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                indicators: {
+                  quote: [
+                    {
+                      close: isFallbackRange
+                        ? [75.8, 75.9, 76.2, 76.54]
+                        : [],
+                    },
+                  ],
+                },
+                meta: {
+                  chartPreviousClose: isFallbackRange ? 80.75 : 75.85,
+                  previousClose: 75.85,
+                  regularMarketPrice: 76.54,
+                },
+                timestamp: isFallbackRange ? [1, 2, 3, 4] : [],
+              },
+            ],
+          },
+        });
+      }
+
+      if (url.includes("/v8/finance/chart/GC%3DF")) {
+        const isFallbackRange = url.includes("range=5d");
+
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                indicators: {
+                  quote: [
+                    {
+                      close: isFallbackRange
+                        ? [4246, 4230, 4200, 4172.9]
+                        : [],
+                    },
+                  ],
+                },
+                meta: {
+                  chartPreviousClose: isFallbackRange ? 4328 : 4245.9,
+                  previousClose: 4245.9,
+                  regularMarketPrice: 4172.9,
+                },
+                timestamp: isFallbackRange ? [1, 2, 3, 4] : [],
+              },
+            ],
+          },
+        });
+      }
+
+      return jsonResponse({
+        chart: {
+          result: [
+            {
+              indicators: { quote: [{ close: [] }] },
+              meta: {},
+              timestamp: [],
+            },
+          ],
+        },
+      });
+    });
+
+    const snapshot = await buildMarketNewsTickerStripSnapshot({
+      fetcher,
+      marketScope: resolveMarketNewsMarketScope("australia"),
+      now: () => new Date("2026-06-22T01:02:03.000Z"),
+      watchlistSymbols: [],
+    });
+    const oil = snapshot.tickers.find((ticker) => ticker.symbol === "CL=F");
+    const gold = snapshot.tickers.find((ticker) => ticker.symbol === "GC=F");
+
+    expect(oil).toMatchObject({
+      previousClose: 75.85,
+      sparkline: [],
+      sparklineSource: "unavailable",
+      value: "76.54",
+    });
+    expect(gold).toMatchObject({
+      previousClose: 4245.9,
+      sparkline: [],
+      sparklineSource: "unavailable",
+      value: "4,172.90",
+    });
+    expect(snapshot.warnings).toContain(
+      "Some Yahoo 1D quote lines are unavailable, so those cards show price metadata without a sparkline.",
+    );
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes("range=5d")))
+      .toBe(false);
   });
 });

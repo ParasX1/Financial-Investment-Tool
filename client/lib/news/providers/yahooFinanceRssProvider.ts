@@ -1,6 +1,11 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Article } from "@/services/news";
-import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
+import {
+  compact,
+  dedupeArticles,
+  newsCandidateLimit,
+  safeExternalUrl,
+} from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -8,7 +13,8 @@ import type {
   ServerNewsRequest,
 } from "../types";
 
-const DEFAULT_YAHOO_FINANCE_RSS_URL = "https://finance.yahoo.com/news/rssindex";
+const DEFAULT_YAHOO_FINANCE_RSS_URL =
+  "https://au.finance.yahoo.com/news/rssindex";
 const DEFAULT_YAHOO_FINANCE_TICKER_RSS_URL =
   "https://finance.yahoo.com/rss/headline";
 
@@ -111,16 +117,7 @@ function readSource(value: YahooRssSource | undefined) {
 }
 
 function readMediaUrl(value: YahooRssMedia | undefined) {
-  return compact(asList(value)[0]?.["@_url"]) || null;
-}
-
-function isSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return safeExternalUrl(asList(value)[0]?.["@_url"]) || null;
 }
 
 function readPublishedAt(value: string | undefined) {
@@ -144,9 +141,9 @@ export function mapYahooFinanceRssItems(
   const mapped = items
     .map((item) => {
       const title = stripHtml(item.title);
-      const url = compact(item.link);
+      const url = safeExternalUrl(item.link);
 
-      if (!title || !url || !isSafeExternalUrl(url)) return null;
+      if (!title || !url) return null;
 
       const summary = stripHtml(item.description);
       const source = readSource(item.source);

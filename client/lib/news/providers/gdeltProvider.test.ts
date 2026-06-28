@@ -96,6 +96,43 @@ describe("gdeltProvider", () => {
     ]);
   });
 
+  it("drops unsafe social image URLs without dropping the article", () => {
+    expect(
+      mapGdeltArticles([
+        {
+          domain: "example.com",
+          socialimage: "javascript:alert(1)",
+          title: "ASX investors watch safe story links",
+          url: "https://example.com/asx-safe",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        image: null,
+        title: "ASX investors watch safe story links",
+        url: "https://example.com/asx-safe",
+      }),
+    ]);
+  });
+
+  it("keeps missing GDELT seendates visibly unknown", () => {
+    expect(
+      mapGdeltArticles([
+        {
+          domain: "example.com",
+          title: "ASX investors watch banks and miners",
+          url: "https://example.com/undated-asx",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        publishedAt: "",
+        source: "example.com",
+        title: "ASX investors watch banks and miners",
+      }),
+    ]);
+  });
+
   it("fetches and normalizes GDELT JSON responses", async () => {
     const fetcher = jest.fn(async () =>
       jsonResponse({

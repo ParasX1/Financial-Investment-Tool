@@ -184,104 +184,6 @@
   margin-top: 0.5rem;
 }
 
-.feedInsights {
-  display: grid;
-  gap: 14px;
-  margin-top: 1rem;
-  padding: 16px;
-}
-
-.feedInsightsHeader {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.feedInsightsTitle {
-  margin: 3px 0 0;
-  color: #f4f6ff;
-  font-size: 1rem;
-  font-weight: 850;
-  line-height: 1.2;
-}
-
-.feedInsightTickerStrip {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-start;
-}
-
-.feedInsightMuted {
-  color: #798398;
-  font-size: 0.8rem;
-  font-weight: 750;
-  line-height: 1.35;
-}
-
-.feedInsightMetrics {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0;
-}
-
-.feedInsightMetrics > div {
-  min-width: 0;
-  border: 1px solid rgba(132, 146, 176, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
-  padding: 10px;
-}
-
-.feedInsightMetrics dt {
-  color: #798398;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.feedInsightMetrics dd {
-  margin: 4px 0 0;
-  color: #f2f5ff;
-  font-size: 1rem;
-  font-weight: 850;
-  line-height: 1.15;
-}
-
-.feedInsightSetups {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.feedInsightSetups span {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid rgba(132, 146, 176, 0.14);
-  border-radius: 8px;
-  color: #aeb7c9;
-  font-size: 0.78rem;
-  font-weight: 750;
-  line-height: 1.2;
-  padding: 6px 8px;
-}
-
-.feedInsightSetups strong {
-  color: #f2f5ff;
-  font-size: 0.72rem;
-}
-
 .communityLayoutGrid {
   display: grid;
   gap: 0 1.25rem;
@@ -399,24 +301,6 @@
 
   .primaryPanelPadding {
     padding: 20px 24px;
-  }
-
-  .feedInsights {
-    align-items: start;
-    grid-template-columns: minmax(13rem, 0.9fr) minmax(0, 1fr) minmax(
-        12rem,
-        0.8fr
-      );
-    padding: 18px 20px;
-  }
-
-  .feedInsightsHeader {
-    display: grid;
-    gap: 12px;
-  }
-
-  .feedInsightMetrics {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .postCardGrid {

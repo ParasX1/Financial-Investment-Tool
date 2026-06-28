@@ -40,24 +40,51 @@ export type MarketNewsFetchResult = {
   meta: NewsResponseMeta;
 };
 
+export const MARKET_NEWS_MALFORMED_RESPONSE_ERROR =
+  "Market news response was malformed.";
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isNewsResponseMeta(value: unknown): value is NewsResponseMeta {
+  if (!value || typeof value !== "object") return false;
+
+  const meta = value as Partial<NewsResponseMeta>;
+
+  return (
+    isStringArray(meta.attemptedProviders) &&
+    typeof meta.provider === "string" &&
+    typeof meta.providerLabel === "string" &&
+    typeof meta.query === "string" &&
+    typeof meta.strictCategory === "boolean" &&
+    isStringArray(meta.warnings)
+  );
+}
+
+function isMarketNewsFetchResult(value: unknown): value is MarketNewsFetchResult {
+  if (!value || typeof value !== "object") return false;
+
+  const payload = value as Partial<MarketNewsFetchResult>;
+
+  return Array.isArray(payload.articles) && isNewsResponseMeta(payload.meta);
+}
+
 async function readNewsResponse(res: Response): Promise<MarketNewsFetchResult> {
-  const data = await res.json().catch(() => ({}));
+  const data = await res.json().catch(() => {
+    if (res.ok) throw new Error(MARKET_NEWS_MALFORMED_RESPONSE_ERROR);
+    return {};
+  });
 
   if (!res.ok) {
     throw new Error(data.error || "Failed to fetch market news");
   }
 
-  return {
-    articles: (data.articles || []) as Article[],
-    meta: (data.meta || {
-      attemptedProviders: [],
-      provider: "unknown",
-      providerLabel: "Unknown provider",
-      query: "",
-      strictCategory: true,
-      warnings: [],
-    }) as NewsResponseMeta,
-  };
+  if (!isMarketNewsFetchResult(data)) {
+    throw new Error(MARKET_NEWS_MALFORMED_RESPONSE_ERROR);
+  }
+
+  return data;
 }
 
 export async function fetchMarketNews(

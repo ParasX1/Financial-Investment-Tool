@@ -126,6 +126,42 @@ describe("newsApiProvider", () => {
     ]);
   });
 
+  it("drops unsafe NewsAPI story URLs and strips unsafe image URLs", async () => {
+    const fetcher = jest.fn(async () =>
+      jsonResponse({
+        articles: [
+          {
+            description: "Unsafe story URL should be ignored.",
+            source: { name: "Market Desk" },
+            title: "Unsafe story",
+            url: "javascript:alert(1)",
+            urlToImage: "https://example.com/safe.jpg",
+          },
+          {
+            description: "Unsafe image URL should not render.",
+            source: { name: "Market Desk" },
+            title: "Safe story",
+            url: "https://example.com/safe-newsapi-story",
+            urlToImage: "data:text/html,hello",
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch;
+
+    const articles = await newsApiProvider.fetchArticles(searchRequest, {
+      env: { NEWSAPI_KEY: "test-key" },
+      fetcher,
+    });
+
+    expect(articles).toEqual([
+      expect.objectContaining({
+        image: null,
+        title: "Safe story",
+        url: "https://example.com/safe-newsapi-story",
+      }),
+    ]);
+  });
+
   it("infers related symbols from NewsAPI titles and descriptions", async () => {
     const fetcher = jest.fn(async () =>
       jsonResponse({
@@ -160,6 +196,28 @@ describe("newsApiProvider", () => {
     );
   });
 
+  it("keeps missing provider timestamps visibly unknown instead of rewriting them to now", async () => {
+    const fetcher = jest.fn(async () =>
+      jsonResponse({
+        articles: [
+          {
+            description: "Household cost pressure remains visible.",
+            source: { name: "Market Desk" },
+            title: "Cost of living remains a market signal",
+            url: "https://example.com/undated-cost",
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch;
+
+    const articles = await newsApiProvider.fetchArticles(searchRequest, {
+      env: { NEWSAPI_KEY: "test-key" },
+      fetcher,
+    });
+
+    expect(articles[0]?.publishedAt).toBe("");
+  });
+
   it("tries the strict everything candidate when regional headlines are empty", async () => {
     const fetcher = jest
       .fn()
@@ -185,6 +243,33 @@ describe("newsApiProvider", () => {
 
     expect((fetcher as unknown as jest.Mock).mock.calls).toHaveLength(2);
     expect(articles[0]?.url).toBe("https://example.com/asx");
+  });
+
+  it("continues to the next NewsAPI candidate when an earlier candidate fails", async () => {
+    const fetcher = jest
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ message: "limited" }, 429))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          articles: [
+            {
+              description: "ASX market summary.",
+              publishedAt: "2026-06-16T04:00:00Z",
+              source: { name: "Market Desk" },
+              title: "ASX investors watch banks and miners",
+              url: "https://example.com/asx-after-fallback",
+            },
+          ],
+        }),
+      ) as unknown as typeof fetch;
+
+    const articles = await newsApiProvider.fetchArticles(regionalRequest, {
+      env: { NEWSAPI_KEY: "test-key" },
+      fetcher,
+    });
+
+    expect((fetcher as unknown as jest.Mock).mock.calls).toHaveLength(2);
+    expect(articles[0]?.url).toBe("https://example.com/asx-after-fallback");
   });
 
   it("surfaces NewsAPI HTTP failures", async () => {

@@ -3,11 +3,13 @@ import {
   applyMarketNewsLensChange,
   applyMarketNewsMarketScopeChange,
   applyMarketNewsQuoteLookup,
+  applyMarketNewsQuoteReferenceChange,
   applyMarketNewsSearchClear,
   applyMarketNewsSearchSubmit,
   applyMarketNewsSortChange,
   applyMarketNewsTopicChange,
   deriveMarketNewsViewStateFromRoute,
+  reconcileMarketNewsViewStateFromRoute,
   type MarketNewsViewState,
 } from "./marketNewsViewState";
 
@@ -17,6 +19,7 @@ const baseState: MarketNewsViewState = {
   activeSortId: "relevance",
   activeTopicId: "cost-of-living",
   lookupDraft: "CBA.AX",
+  quoteReferenceVisible: true,
   searchDraft: " asx 200 ",
   searchQuery: "",
   selectedSymbol: "CBA.AX",
@@ -42,6 +45,7 @@ describe("marketNewsViewState", () => {
       searchQuery: "",
       selectedSymbol: "^GSPC",
       tickerSymbol: "",
+      quoteReferenceVisible: false,
     });
   });
 
@@ -62,6 +66,83 @@ describe("marketNewsViewState", () => {
       lookupDraft: "NVDA",
       selectedSymbol: "NVDA",
       tickerSymbol: "NVDA",
+      quoteReferenceVisible: true,
+    });
+  });
+
+  it("keeps local quote reference open across scan-only route changes", () => {
+    expect(
+      reconcileMarketNewsViewStateFromRoute(
+        {
+          ...baseState,
+          quoteReferenceVisible: true,
+          searchQuery: "",
+          selectedSymbol: "NVDA",
+          tickerSymbol: "",
+        },
+        {
+          lensId: "high-relevance",
+          marketScopeId: "us-markets",
+          pageIndex: 1,
+          searchQuery: "",
+          sortId: "watchlist-first",
+          tickerSymbol: "",
+          topicId: "technology",
+        },
+      ),
+    ).toMatchObject({
+      activeLensId: "high-relevance",
+      activeMarketScopeId: "us-markets",
+      activeSortId: "watchlist-first",
+      activeTopicId: "technology",
+      quoteReferenceVisible: true,
+      selectedSymbol: "NVDA",
+      storyPageIndex: 1,
+      tickerSymbol: "",
+    });
+  });
+
+  it("uses route changes to leave ticker-news and search contexts explicitly", () => {
+    expect(
+      reconcileMarketNewsViewStateFromRoute(
+        {
+          ...baseState,
+          quoteReferenceVisible: true,
+          selectedSymbol: "NVDA",
+          tickerSymbol: "NVDA",
+        },
+        {
+          lensId: "all",
+          marketScopeId: "australia",
+          pageIndex: 0,
+          searchQuery: "",
+          sortId: "latest",
+          tickerSymbol: "",
+          topicId: "cost-of-living",
+        },
+      ),
+    ).toMatchObject({
+      quoteReferenceVisible: false,
+      selectedSymbol: "^AORD",
+      tickerSymbol: "",
+    });
+
+    expect(
+      reconcileMarketNewsViewStateFromRoute(baseState, {
+        lensId: "all",
+        marketScopeId: "australia",
+        pageIndex: 0,
+        searchQuery: "inflation",
+        sortId: "latest",
+        tickerSymbol: "",
+        topicId: "cost-of-living",
+      }),
+    ).toMatchObject({
+      lookupDraft: "",
+      quoteReferenceVisible: false,
+      searchQuery: "inflation",
+      selectedSymbol: "^AORD",
+      tickerSymbol: "",
     });
   });
 
@@ -80,6 +161,7 @@ describe("marketNewsViewState", () => {
       searchQuery: "inflation",
       selectedSymbol: "^GSPC",
       tickerSymbol: "",
+      quoteReferenceVisible: true,
     });
 
     expect(
@@ -89,6 +171,7 @@ describe("marketNewsViewState", () => {
       searchQuery: "",
       selectedSymbol: "CBA.AX",
       tickerSymbol: "CBA.AX",
+      quoteReferenceVisible: true,
     });
   });
 
@@ -100,6 +183,7 @@ describe("marketNewsViewState", () => {
       storyPageIndex: 0,
       tickerSymbol: "",
       lookupDraft: "",
+      quoteReferenceVisible: false,
     });
   });
 
@@ -113,6 +197,7 @@ describe("marketNewsViewState", () => {
       searchQuery: "",
       storyPageIndex: 0,
       tickerSymbol: "",
+      quoteReferenceVisible: false,
     });
   });
 
@@ -125,9 +210,34 @@ describe("marketNewsViewState", () => {
       selectedSymbol: "NVDA",
       storyPageIndex: 0,
       tickerSymbol: "NVDA",
+      quoteReferenceVisible: true,
     });
 
     expect(applyMarketNewsQuoteLookup(baseState, "   ")).toBe(baseState);
+  });
+
+  it("quote reference selection does not change the active news query", () => {
+    expect(
+      applyMarketNewsQuoteReferenceChange(
+        {
+          ...baseState,
+          quoteReferenceVisible: false,
+          searchQuery: "inflation",
+          tickerSymbol: "",
+        },
+        " nvda ",
+      ),
+    ).toMatchObject({
+      lookupDraft: "NVDA",
+      quoteReferenceVisible: true,
+      searchQuery: "inflation",
+      selectedSymbol: "NVDA",
+      tickerSymbol: "",
+    });
+
+    expect(applyMarketNewsQuoteReferenceChange(baseState, "   ")).toBe(
+      baseState,
+    );
   });
 
   it("topic, lens, and sort changes reset only the state that should affect scanning", () => {
@@ -140,6 +250,7 @@ describe("marketNewsViewState", () => {
       searchQuery: "",
       storyPageIndex: 0,
       tickerSymbol: "",
+      quoteReferenceVisible: false,
     });
 
     expect(applyMarketNewsLensChange(baseState, "watchlist")).toMatchObject({
@@ -147,6 +258,7 @@ describe("marketNewsViewState", () => {
       activeSortId: "relevance",
       storyPageIndex: 0,
       tickerSymbol: "CBA.AX",
+      quoteReferenceVisible: true,
     });
 
     expect(
@@ -156,6 +268,35 @@ describe("marketNewsViewState", () => {
       activeSortId: "watchlist-first",
       storyPageIndex: 0,
       tickerSymbol: "CBA.AX",
+      quoteReferenceVisible: true,
+    });
+  });
+
+  it("keeps quote reference visibility when scan-only controls change", () => {
+    const quoteReferenceState = {
+      ...baseState,
+      tickerSymbol: "",
+      quoteReferenceVisible: true,
+      selectedSymbol: "NVDA",
+      lookupDraft: "NVDA",
+    };
+
+    expect(
+      applyMarketNewsLensChange(quoteReferenceState, "watchlist"),
+    ).toMatchObject({
+      activeLensId: "watchlist",
+      quoteReferenceVisible: true,
+      selectedSymbol: "NVDA",
+      tickerSymbol: "",
+    });
+
+    expect(
+      applyMarketNewsSortChange(quoteReferenceState, "watchlist-first"),
+    ).toMatchObject({
+      activeSortId: "watchlist-first",
+      quoteReferenceVisible: true,
+      selectedSymbol: "NVDA",
+      tickerSymbol: "",
     });
   });
 });

@@ -95,9 +95,20 @@ export function resolveNewsProviders(
     .map((id) => PROVIDER_REGISTRY[id]);
 }
 
-function providerWarning(provider: NewsProvider, cause: unknown) {
-  const message = cause instanceof Error ? cause.message : "Unavailable";
-  return `${provider.label}: ${message}`;
+function providerFailureMessage(cause: unknown) {
+  return cause instanceof Error ? cause.message : String(cause);
+}
+
+function logProviderFailure(provider: NewsProvider, cause: unknown) {
+  console.warn("Market news provider failed", {
+    message: providerFailureMessage(cause),
+    provider: provider.id,
+    providerLabel: provider.label,
+  });
+}
+
+function providerWarning(provider: NewsProvider) {
+  return `${provider.label}: temporarily unavailable.`;
 }
 
 function strictEmptyWarning(
@@ -295,7 +306,8 @@ export async function fetchMarketNewsWithProviders(
       warnings.push(strictEmptyWarning(provider, normalizedRequest));
     } catch (cause) {
       failedProviders += 1;
-      warnings.push(providerWarning(provider, cause));
+      logProviderFailure(provider, cause);
+      warnings.push(providerWarning(provider));
     }
   }
 
@@ -331,7 +343,7 @@ export async function fetchMarketNewsWithProviders(
   }
 
   if (failedProviders === configuredProviders.length) {
-    throw new Error(`Market news providers failed: ${warnings.join("; ")}`);
+    throw new Error("Market news providers failed");
   }
 
   return {

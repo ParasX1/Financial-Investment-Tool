@@ -148,6 +148,25 @@ describe("googleNewsRssProvider", () => {
     ]);
   });
 
+  it("drops unsafe media URLs without dropping the story", () => {
+    expect(
+      mapGoogleNewsRssItems([
+        {
+          link: "https://news.google.com/rss/articles/safe?oc=5",
+          "media:content": { "@_url": "javascript:alert(1)" },
+          "media:thumbnail": { "@_url": "data:text/html,unsafe" },
+          title: "Safe story with unsafe media",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        image: null,
+        title: "Safe story with unsafe media",
+        url: "https://news.google.com/rss/articles/safe?oc=5",
+      }),
+    ]);
+  });
+
   it("fetches and parses Google News RSS responses", async () => {
     const fetcher = jest.fn(async () => new Response(rss));
 

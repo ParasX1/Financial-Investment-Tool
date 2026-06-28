@@ -163,20 +163,29 @@ export type TopicFeedPagination = {
 
 export function TopicArticleFeed({
   articles,
+  feedStatus,
   pagination,
   providerWarning,
 }: {
   articles: readonly Article[];
+  feedStatus?: string;
   pagination?: TopicFeedPagination;
   providerWarning?: string;
 }) {
   const pageNumber = pagination ? pagination.pageIndex + 1 : 1;
-  const statusText = `${articles.length} ${
+  const statusText = feedStatus ?? `${articles.length} ${
     articles.length === 1 ? "story" : "stories"
   } shown`;
 
   return (
     <section className={styles.topicFeed} aria-label="Topic stories">
+      <div className={styles.topicFeedHeader}>
+        <p className={styles.topicFeedTitle}>Topic stories</p>
+        <p className={cn(styles.topicFeedStatus, fitText.subtle)}>
+          {statusText}
+        </p>
+      </div>
+
       {providerWarning ? (
         <div className={styles.topicFeedWarning}>{providerWarning}</div>
       ) : null}
@@ -215,7 +224,7 @@ export function TopicArticleFeed({
       {pagination ? (
         <nav className={styles.topicPager} aria-label="Story pages">
           <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
-            Page {pageNumber} · {statusText}
+            Page {pageNumber}
           </p>
           <div className={styles.topicPagerActions}>
             <button

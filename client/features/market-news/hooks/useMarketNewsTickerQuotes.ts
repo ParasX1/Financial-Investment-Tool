@@ -1,13 +1,12 @@
 import * as React from "react";
 import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
-import type {
-  MarketNewsTickerStripSnapshot,
-  MarketNewsTickerStripSource,
-} from "../lib/marketNewsTickerStripService";
+import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
 import {
-  mergeMarketNewsTickerQuote,
+  resolveMarketNewsTickerQuoteRefreshState,
+  resolveMarketNewsTickerStripState,
   type MarketNewsQuoteResponse,
   type MarketNewsSparklineResponse,
+  type MarketNewsTickerStripState,
 } from "../lib/marketNewsTickerQuotes";
 
 const QUOTE_REFRESH_MS = 60_000;
@@ -27,50 +26,59 @@ async function fetchJson<T extends object>(
   }
 }
 
-async function fetchTickerSnapshot(ticker: MarketNewsTicker) {
-  const symbol = encodeURIComponent(ticker.symbol);
+async function fetchTickerSnapshot(
+  fallbackTicker: MarketNewsTicker,
+  previousTicker?: MarketNewsTicker | null,
+  init?: RequestInit,
+) {
+  const symbol = encodeURIComponent(fallbackTicker.symbol);
   const [quote, sparkline] = await Promise.all([
-    fetchJson<MarketNewsQuoteResponse>(`/api/market/quote?symbol=${symbol}`),
+    fetchJson<MarketNewsQuoteResponse>(
+      `/api/market/quote?symbol=${symbol}`,
+      init,
+    ),
     fetchJson<MarketNewsSparklineResponse>(
       `/api/market/sparkline?symbol=${symbol}`,
+      init,
     ),
   ]);
 
-  const hasLiveQuote =
-    typeof quote?.price === "number" ||
-    typeof quote?.change === "number" ||
-    typeof quote?.changePct === "number";
-  const hasLiveSparkline = Boolean(sparkline?.points?.length);
-
-  return {
-    recoveredLiveData: hasLiveQuote || hasLiveSparkline,
-    ticker: mergeMarketNewsTickerQuote(ticker, { quote, sparkline }),
-  };
+  return resolveMarketNewsTickerQuoteRefreshState({
+    fallbackTicker,
+    live: { quote, sparkline },
+    previousTicker,
+  });
 }
 
-function isMarketNewsTickerStripSnapshot(
-  payload: unknown,
-): payload is MarketNewsTickerStripSnapshot {
-  return Boolean(
-    payload &&
-      typeof payload === "object" &&
-      Array.isArray((payload as MarketNewsTickerStripSnapshot).tickers),
-  );
+function fallbackTickerStripState(
+  marketScope: MarketNewsMarketScope,
+): MarketNewsTickerStripState {
+  return {
+    providerLabel: "Yahoo Finance",
+    source: "fallback",
+    tickers: marketScope.tickers.map(redactMarketNewsTickerFallback),
+    updatedAt: null,
+    warnings: [],
+  };
 }
 
 export function useMarketNewsTickerQuotes(
   marketScope: MarketNewsMarketScope,
   watchlistSymbols: readonly string[] = [],
 ) {
-  const [liveTickers, setLiveTickers] =
-    React.useState<readonly MarketNewsTicker[]>(marketScope.tickers);
-  const [loading, setLoading] = React.useState(false);
-  const [updatedAt, setUpdatedAt] = React.useState<Date | null>(null);
-  const [source, setSource] =
-    React.useState<MarketNewsTickerStripSource>("fallback");
-  const [providerLabel, setProviderLabel] = React.useState("Yahoo Finance");
-  const [warnings, setWarnings] = React.useState<readonly string[]>([]);
+  const [stripState, setStripState] = React.useState(() =>
+    fallbackTickerStripState(marketScope),
+  );
+  const stripStateRef = React.useRef(stripState);
+  const [loading, setLoading] = React.useState(true);
   const refreshMsRef = React.useRef(QUOTE_REFRESH_MS);
+  const setNextStripState = React.useCallback(
+    (nextState: MarketNewsTickerStripState) => {
+      stripStateRef.current = nextState;
+      setStripState(nextState);
+    },
+    [],
+  );
   const watchlistKey = React.useMemo(
     () =>
       watchlistSymbols
@@ -82,17 +90,36 @@ export function useMarketNewsTickerQuotes(
   );
 
   React.useEffect(() => {
-    setLiveTickers(marketScope.tickers);
-    setUpdatedAt(null);
-    setSource("fallback");
-    setWarnings([]);
-  }, [marketScope]);
+    setNextStripState(fallbackTickerStripState(marketScope));
+    setLoading(true);
+  }, [marketScope, setNextStripState]);
 
   React.useEffect(() => {
     let alive = true;
     let controller: AbortController | null = null;
+    let refreshTimer: number | undefined;
+
+    function clearRefreshTimer() {
+      if (refreshTimer !== undefined) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = undefined;
+      }
+    }
+
+    function scheduleNextRefresh() {
+      clearRefreshTimer();
+      refreshTimer = window.setTimeout(() => {
+        if (document.hidden) {
+          scheduleNextRefresh();
+          return;
+        }
+
+        void load(false);
+      }, refreshMsRef.current);
+    }
 
     async function load(showLoading: boolean) {
+      clearRefreshTimer();
       controller?.abort();
       const activeController = new AbortController();
       controller = activeController;
@@ -103,33 +130,30 @@ export function useMarketNewsTickerQuotes(
         searchParams.set("watchlist", watchlistKey);
       }
 
-      const snapshot = await fetchJson<MarketNewsTickerStripSnapshot>(
+      const snapshot = await fetchJson(
         `/api/market/ticker-strip?${searchParams.toString()}`,
         { signal: activeController.signal },
       );
 
       if (!alive || controller !== activeController) return;
 
-      if (isMarketNewsTickerStripSnapshot(snapshot)) {
-        setLiveTickers(snapshot.tickers);
-        setProviderLabel(snapshot.providerLabel);
-        setSource(snapshot.source);
-        setWarnings(snapshot.warnings);
-        setUpdatedAt(snapshot.updatedAt ? new Date(snapshot.updatedAt) : null);
-        refreshMsRef.current = snapshot.refreshMs || QUOTE_REFRESH_MS;
-      } else {
-        setSource("fallback");
-        setWarnings(["Live quote snapshots are temporarily unavailable."]);
+      const nextState = resolveMarketNewsTickerStripState({
+        fallbackTickers: marketScope.tickers.map(redactMarketNewsTickerFallback),
+        payload: snapshot,
+        previousState: stripStateRef.current,
+      });
+
+      setNextStripState(nextState);
+
+      if (nextState.refreshMs) {
+        refreshMsRef.current = nextState.refreshMs;
       }
 
       setLoading(false);
+      scheduleNextRefresh();
     }
 
     void load(true);
-    const interval = window.setInterval(() => {
-      if (document.hidden) return;
-      void load(false);
-    }, refreshMsRef.current);
 
     function refreshWhenVisible() {
       if (!document.hidden) void load(false);
@@ -140,18 +164,18 @@ export function useMarketNewsTickerQuotes(
     return () => {
       alive = false;
       controller?.abort();
-      window.clearInterval(interval);
+      clearRefreshTimer();
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [marketScope.id, watchlistKey]);
+  }, [marketScope, setNextStripState, watchlistKey]);
 
   return {
     loading,
-    providerLabel,
-    source,
-    tickers: liveTickers,
-    updatedAt,
-    warnings,
+    providerLabel: stripState.providerLabel,
+    source: stripState.source,
+    tickers: stripState.tickers,
+    updatedAt: stripState.updatedAt,
+    warnings: stripState.warnings,
   };
 }
 
@@ -159,10 +183,12 @@ export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
   const [liveTicker, setLiveTicker] = React.useState<MarketNewsTicker | null>(
     ticker,
   );
+  const liveTickerRef = React.useRef<MarketNewsTicker | null>(ticker);
   const [loading, setLoading] = React.useState(false);
   const [updatedAt, setUpdatedAt] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
+    liveTickerRef.current = ticker;
     setLiveTicker(ticker);
     if (!ticker) {
       setLoading(false);
@@ -177,25 +203,67 @@ export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
     }
 
     let alive = true;
+    let controller: AbortController | null = null;
+    let refreshTimer: number | undefined;
     const activeTicker = ticker;
 
-    async function load() {
-      setLoading(true);
-      const snapshot = await fetchTickerSnapshot(activeTicker);
-
-      if (!alive) return;
-
-      setLiveTicker(snapshot.ticker);
-      setUpdatedAt(snapshot.recoveredLiveData ? new Date() : null);
-      setLoading(false);
+    function clearRefreshTimer() {
+      if (refreshTimer !== undefined) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = undefined;
+      }
     }
 
-    void load();
-    const interval = window.setInterval(load, QUOTE_REFRESH_MS);
+    function scheduleNextRefresh() {
+      clearRefreshTimer();
+      refreshTimer = window.setTimeout(() => {
+        if (document.hidden) {
+          scheduleNextRefresh();
+          return;
+        }
+
+        void load(false);
+      }, QUOTE_REFRESH_MS);
+    }
+
+    async function load(showLoading: boolean) {
+      clearRefreshTimer();
+      controller?.abort();
+      const activeController = new AbortController();
+      controller = activeController;
+      if (showLoading) setLoading(true);
+      const snapshot = await fetchTickerSnapshot(
+        activeTicker,
+        liveTickerRef.current,
+        { signal: activeController.signal },
+      );
+
+      if (!alive || controller !== activeController) return;
+
+      liveTickerRef.current = snapshot.ticker;
+      setLiveTicker(snapshot.ticker);
+      if (snapshot.recoveredLiveData) {
+        setUpdatedAt(new Date());
+      } else if (!snapshot.retainedPrevious) {
+        setUpdatedAt(null);
+      }
+      setLoading(false);
+      scheduleNextRefresh();
+    }
+
+    void load(true);
+
+    function refreshWhenVisible() {
+      if (!document.hidden) void load(false);
+    }
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       alive = false;
-      window.clearInterval(interval);
+      controller?.abort();
+      clearRefreshTimer();
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [ticker]);
 

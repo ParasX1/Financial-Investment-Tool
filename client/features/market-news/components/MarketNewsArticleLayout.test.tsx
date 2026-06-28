@@ -35,6 +35,7 @@ describe("MarketNewsArticleLayout", () => {
           title: "Empty",
         }}
         error={null}
+        feedStatus="1-12 shown"
         loading={false}
         pagination={{
           hasNextPage: true,
@@ -55,8 +56,9 @@ describe("MarketNewsArticleLayout", () => {
     ].map(([markup]) => markup);
 
     expect(articleMarkup).toHaveLength(12);
+    expect(html).toContain("Topic stories");
+    expect(html).toContain("1-12 shown");
     expect(html).toContain("Page 1");
-    expect(html).toContain("12 stories shown");
     expect(html).toContain("Next page");
     expect(html).not.toContain("Featured stories");
     expect(html).not.toContain("Latest");
@@ -78,6 +80,26 @@ describe("MarketNewsArticleLayout", () => {
     );
 
     expect(html).toContain("Demo stories are synthetic placeholders.");
+  });
+
+  it("keeps loaded stories visible when a refresh warning is present", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(1)]}
+        emptyState={{
+          message: "No stories",
+          title: "Empty",
+        }}
+        error="Market news could not be loaded right now."
+        loading={false}
+        providerWarning="Could not refresh live market news. Showing the last loaded stories."
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Story 1");
+    expect(html).toContain("Could not refresh live market news");
+    expect(html).not.toContain("Failed to load Cost of Living");
   });
 
   it("keeps no-image topic rows text-first instead of repeating fallback art", () => {

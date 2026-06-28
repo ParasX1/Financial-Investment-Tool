@@ -5,7 +5,12 @@ import {
   buildGoogleNewsSearchQuery,
   getGoogleNewsLocale,
 } from "../queryPacks";
-import { compact, dedupeArticles, newsCandidateLimit } from "../providerUtils";
+import {
+  compact,
+  dedupeArticles,
+  newsCandidateLimit,
+  safeExternalUrl,
+} from "../providerUtils";
 import { inferRelatedSymbolsFromText } from "../symbolAliases";
 import type {
   NewsProvider,
@@ -127,16 +132,7 @@ function readSource(value: GoogleRssSource | undefined) {
 }
 
 function readMediaUrl(value: GoogleRssMedia | undefined) {
-  return compact(asList(value)[0]?.["@_url"]) || null;
-}
-
-function isSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return safeExternalUrl(asList(value)[0]?.["@_url"]) || null;
 }
 
 function readPublishedAt(value: string | undefined) {
@@ -181,9 +177,9 @@ export function mapGoogleNewsRssItems(
   const mapped = items
     .map((item) => {
       const title = stripHtml(item.title);
-      const url = compact(item.link);
+      const url = safeExternalUrl(item.link);
 
-      if (!title || !url || !isSafeExternalUrl(url)) return null;
+      if (!title || !url) return null;
 
       const source = readSource(item.source);
       const summary = summaryWithoutDuplicateTitle(item, title, source);

@@ -406,6 +406,42 @@ describe("fetchMarketNewsWithProviders", () => {
     ]);
   });
 
+  it("keeps undated strict provider stories behind dated stories", async () => {
+    const result = await fetchMarketNewsWithProviders(request, {
+      providers: [
+        provider({
+          articles: [
+            {
+              id: "undated",
+              image: null,
+              publishedAt: "",
+              source: "Market Desk",
+              summary: "Cost of living summary",
+              title: "Cost of living pressure with no timestamp",
+              url: "https://example.com/undated",
+            },
+            {
+              id: "dated",
+              image: null,
+              publishedAt: "2026-06-21T04:00:00Z",
+              source: "Market Desk",
+              summary: "Cost of living summary",
+              title: "Cost of living pressure with a timestamp",
+              url: "https://example.com/dated",
+            },
+          ],
+          id: "newsapi",
+          label: "NewsAPI",
+        }),
+      ],
+    });
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "dated",
+      "undated",
+    ]);
+  });
+
   it("filters provider articles before accepting them for a strict category", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
@@ -447,44 +483,60 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.articles.map((article) => article.id)).toEqual(["cost"]);
   });
 
-  it("falls back to development RSS after a GDELT outage without leaving strict category mode", async () => {
-    const result = await fetchMarketNewsWithProviders(request, {
-      providers: [
-        provider({
-          articles: [],
-          id: "gdelt",
-          label: "GDELT",
-          rejects: true,
-        }),
-        provider({
-          articles: [
-            {
-              id: "google-cost",
-              image: null,
-              provider: "google-news-rss",
-              providerLabel: "Google News RSS",
-              publishedAt: "2026-06-16T04:00:00Z",
-              source: "Yahoo Finance Australia",
-              summary: "Mortgage pressure and grocery bills remain high.",
-              title: "Cost of living pressure hits household budgets",
-              url: "https://news.google.com/rss/articles/cost",
-            },
-          ],
-          id: "google-news-rss",
-          label: "Google News RSS",
-        }),
-      ],
-    });
+  it("falls back after a provider outage without leaking internal failure details", async () => {
+    const consoleWarn = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
 
-    expect(result.articles.map((article) => article.id)).toEqual([
-      "google-cost",
-    ]);
-    expect(result.meta).toMatchObject({
-      provider: "google-news-rss",
-      providerLabel: "Google News RSS",
-      strictCategory: true,
-    });
-    expect(result.meta.warnings[0]).toContain("GDELT down");
+    try {
+      const result = await fetchMarketNewsWithProviders(request, {
+        providers: [
+          provider({
+            articles: [],
+            id: "gdelt",
+            label: "GDELT",
+            rejects: true,
+          }),
+          provider({
+            articles: [
+              {
+                id: "google-cost",
+                image: null,
+                provider: "google-news-rss",
+                providerLabel: "Google News RSS",
+                publishedAt: "2026-06-16T04:00:00Z",
+                source: "Yahoo Finance Australia",
+                summary: "Mortgage pressure and grocery bills remain high.",
+                title: "Cost of living pressure hits household budgets",
+                url: "https://news.google.com/rss/articles/cost",
+              },
+            ],
+            id: "google-news-rss",
+            label: "Google News RSS",
+          }),
+        ],
+      });
+
+      expect(result.articles.map((article) => article.id)).toEqual([
+        "google-cost",
+      ]);
+      expect(result.meta).toMatchObject({
+        provider: "google-news-rss",
+        providerLabel: "Google News RSS",
+        strictCategory: true,
+      });
+      expect(result.meta.warnings[0]).toBe("GDELT: temporarily unavailable.");
+      expect(result.meta.warnings[0]).not.toContain("GDELT down");
+      expect(consoleWarn).toHaveBeenCalledWith(
+        "Market news provider failed",
+        expect.objectContaining({
+          message: "GDELT down",
+          provider: "gdelt",
+        }),
+      );
+    } finally {
+      consoleWarn.mockRestore();
+    }
   });
 
   it("does not let broad fallback preempt later strict providers", async () => {
@@ -585,18 +637,26 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.meta.warnings[0]).toContain("Demo stories");
   });
 
-  it("surfaces an error when every configured provider fails", async () => {
-    await expect(
-      fetchMarketNewsWithProviders(request, {
-        providers: [
-          provider({
-            articles: [],
-            id: "marketaux",
-            label: "MarketAux",
-            rejects: true,
-          }),
-        ],
-      }),
-    ).rejects.toThrow("Market news providers failed");
+  it("surfaces a generic error when every configured provider fails", async () => {
+    const consoleWarn = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        fetchMarketNewsWithProviders(request, {
+          providers: [
+            provider({
+              articles: [],
+              id: "marketaux",
+              label: "MarketAux",
+              rejects: true,
+            }),
+          ],
+        }),
+      ).rejects.toThrow(/^Market news providers failed$/);
+    } finally {
+      consoleWarn.mockRestore();
+    }
   });
 });

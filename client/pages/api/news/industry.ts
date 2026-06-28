@@ -1,33 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { fetchMarketNewsWithProviders } from "@/lib/news/newsService";
-import { normaliseNewsPageSize } from "@/lib/news/providerUtils";
-import type { Article } from "@/services/news";
-
-function firstQueryValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
+import {
+  firstQueryValue,
+  handleMarketNewsRoute,
+  readNewsPageSize,
+} from "@/lib/news/newsApiRoute";
+import type { ServerNewsResponse } from "@/lib/news/types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ articles?: Article[]; error?: string }>,
+  res: NextApiResponse<ServerNewsResponse | { error: string }>,
 ) {
-  try {
-    const industry = firstQueryValue(req.query.industry) || "technology";
-    const result = await fetchMarketNewsWithProviders({
-      context: `${industry} sector stocks companies market news`,
-      industry,
-      kind: "industry",
-      pageSize: normaliseNewsPageSize(firstQueryValue(req.query.pageSize)),
-    });
+  return handleMarketNewsRoute(req, res, {
+    buildRequest: (req) => {
+      const industry =
+        firstQueryValue(req.query.industry)?.trim() || "technology";
 
-    return res.status(200).json({ articles: result.articles });
-  } catch (cause) {
-    console.error("Market news industry error", cause);
-    return res.status(502).json({
-      error:
-        cause instanceof Error
-          ? cause.message
-          : "Market news provider unavailable",
-    });
-  }
+      return {
+        context:
+          firstQueryValue(req.query.context)?.trim() ||
+          `${industry} sector stocks companies market news`,
+        industry,
+        kind: "industry",
+        marketScopeId: firstQueryValue(req.query.marketScopeId),
+        pageSize: readNewsPageSize(req),
+        topicId: firstQueryValue(req.query.topicId),
+      };
+    },
+    errorLogLabel: "Market news industry error",
+  });
 }

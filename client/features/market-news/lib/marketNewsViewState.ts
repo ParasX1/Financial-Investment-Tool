@@ -13,6 +13,7 @@ export interface MarketNewsViewState {
   activeSortId: MarketNewsSortId;
   activeTopicId: MarketNewsTopicId;
   lookupDraft: string;
+  quoteReferenceVisible: boolean;
   searchDraft: string;
   searchQuery: string;
   selectedSymbol: string;
@@ -33,12 +34,37 @@ export function deriveMarketNewsViewStateFromRoute(
     activeSortId: routeState.sortId,
     activeTopicId: routeState.topicId,
     lookupDraft: routeState.tickerSymbol,
+    quoteReferenceVisible: Boolean(routeState.tickerSymbol),
     searchDraft: routeState.searchQuery,
     searchQuery: routeState.searchQuery,
     selectedSymbol:
       routeState.tickerSymbol || getFirstScopeSymbol(routeState.marketScopeId),
     storyPageIndex: routeState.pageIndex,
     tickerSymbol: routeState.tickerSymbol,
+  };
+}
+
+export function reconcileMarketNewsViewStateFromRoute(
+  previousState: MarketNewsViewState,
+  routeState: MarketNewsRouteState,
+): MarketNewsViewState {
+  const routeViewState = deriveMarketNewsViewStateFromRoute(routeState);
+
+  if (
+    routeState.searchQuery ||
+    routeState.tickerSymbol ||
+    previousState.tickerSymbol
+  ) {
+    return routeViewState;
+  }
+
+  return {
+    ...routeViewState,
+    lookupDraft: previousState.lookupDraft,
+    quoteReferenceVisible: previousState.quoteReferenceVisible,
+    selectedSymbol: previousState.quoteReferenceVisible
+      ? previousState.selectedSymbol
+      : routeViewState.selectedSymbol,
   };
 }
 
@@ -51,6 +77,7 @@ export function applyMarketNewsTopicChange(
     activeLensId: "all",
     activeTopicId: topicId,
     lookupDraft: "",
+    quoteReferenceVisible: false,
     searchDraft: "",
     searchQuery: "",
     storyPageIndex: 0,
@@ -65,6 +92,7 @@ export function applyMarketNewsSearchSubmit(
     ...state,
     activeLensId: "all",
     lookupDraft: "",
+    quoteReferenceVisible: false,
     searchQuery: state.searchDraft.trim(),
     storyPageIndex: 0,
     tickerSymbol: "",
@@ -78,6 +106,7 @@ export function applyMarketNewsSearchClear(
     ...state,
     activeLensId: "all",
     lookupDraft: "",
+    quoteReferenceVisible: false,
     searchDraft: "",
     searchQuery: "",
     storyPageIndex: 0,
@@ -109,11 +138,27 @@ export function applyMarketNewsQuoteLookup(
     ...state,
     activeLensId: "all",
     lookupDraft: symbol,
+    quoteReferenceVisible: true,
     searchDraft: "",
     searchQuery: "",
     selectedSymbol: symbol,
     storyPageIndex: 0,
     tickerSymbol: symbol,
+  };
+}
+
+export function applyMarketNewsQuoteReferenceChange(
+  state: MarketNewsViewState,
+  value: string,
+): MarketNewsViewState {
+  const symbol = value.trim().toUpperCase();
+  if (!symbol) return state;
+
+  return {
+    ...state,
+    lookupDraft: symbol,
+    quoteReferenceVisible: true,
+    selectedSymbol: symbol,
   };
 }
 

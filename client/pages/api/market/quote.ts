@@ -12,6 +12,13 @@ type QuoteResp = {
   longName?: string;
 };
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+const MARKET_DATA_UNAVAILABLE = 'Market data unavailable';
+const MARKET_DATA_ERROR_CACHE = 'private, no-store, max-age=0';
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<QuoteResp | { error: string }>
@@ -27,17 +34,35 @@ export default async function handler(
       symbol
     )}`;
     const r = await fetch(url, { headers: { 'User-Agent': 'trend-proxy' } });
+    if (!r.ok) {
+      throw new Error(`Yahoo Finance quote ${r.status}`);
+    }
+
     const json = await r.json();
 
     const q = json?.quoteResponse?.result?.[0];
-    const price = q?.regularMarketPrice ?? null;
-    const prevClose = q?.regularMarketPreviousClose ?? null;
+    if (!q) {
+      throw new Error('Yahoo Finance quote missing result');
+    }
+
+    const price = isFiniteNumber(q?.regularMarketPrice)
+      ? q.regularMarketPrice
+      : null;
+    const prevClose = isFiniteNumber(q?.regularMarketPreviousClose)
+      ? q.regularMarketPreviousClose
+      : null;
     const change =
-      price != null && prevClose != null ? price - prevClose : null;
+      isFiniteNumber(q?.regularMarketChange)
+        ? q.regularMarketChange
+        : price != null && prevClose != null
+          ? price - prevClose
+          : null;
     const changePct =
-      price != null && prevClose != null && prevClose !== 0
-        ? ((price - prevClose) / prevClose) * 100
-        : null;
+      isFiniteNumber(q?.regularMarketChangePercent)
+        ? q.regularMarketChangePercent
+        : price != null && prevClose != null && prevClose !== 0
+          ? ((price - prevClose) / prevClose) * 100
+          : null;
 
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
 
@@ -52,7 +77,11 @@ export default async function handler(
       shortName: q?.shortName,
       longName: q?.longName,
     });
-  } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? 'internal error' });
+  } catch (error: unknown) {
+    console.error('Market quote error', error);
+    res.setHeader('Cache-Control', MARKET_DATA_ERROR_CACHE);
+    res.status(502).json({
+      error: MARKET_DATA_UNAVAILABLE,
+    });
   }
 }

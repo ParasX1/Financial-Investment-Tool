@@ -81,6 +81,25 @@ describe("yahooFinanceRssProvider", () => {
     ]);
   });
 
+  it("drops unsafe RSS media URLs without dropping the story", () => {
+    expect(
+      mapYahooFinanceRssItems([
+        {
+          link: "https://finance.yahoo.com/news/safe-story.html",
+          "media:content": { "@_url": "javascript:alert(1)" },
+          "media:thumbnail": { "@_url": "file:///etc/passwd" },
+          title: "Safe Yahoo story with unsafe media",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        image: null,
+        title: "Safe Yahoo story with unsafe media",
+        url: "https://finance.yahoo.com/news/safe-story.html",
+      }),
+    ]);
+  });
+
   it("uses Yahoo's ticker RSS endpoint for ticker requests and respects page size", async () => {
     const itemXml = rss.match(/<item>[\s\S]*<\/item>/)?.[0] ?? "";
     const doubleRss = rss.replace("</channel>", `${itemXml}</channel>`);
@@ -103,6 +122,31 @@ describe("yahooFinanceRssProvider", () => {
     );
     expect(articles).toHaveLength(1);
     expect(articles[0]?.url).toContain("finance.yahoo.com/news/");
+  });
+
+  it("uses Yahoo Finance Australia RSS for non-ticker development feeds", async () => {
+    const fetcher = jest.fn(async () => new Response(rss));
+
+    await yahooFinanceRssProvider.fetchArticles(
+      {
+        context: "Australian personal finance money news",
+        kind: "search",
+        pageSize: "5",
+        query: "Australia money news banking tax superannuation savings",
+        topicId: "money-news",
+      },
+      {
+        env: {
+          NODE_ENV: "development",
+        },
+        fetcher: fetcher as typeof fetch,
+      },
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://au.finance.yahoo.com/news/rssindex",
+      expect.any(Object),
+    );
   });
 
   it("keeps invalid provider dates visibly uncertain instead of rewriting them to now", () => {

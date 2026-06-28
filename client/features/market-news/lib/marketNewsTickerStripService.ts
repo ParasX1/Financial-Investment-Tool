@@ -9,7 +9,7 @@ import {
   type SelectedMarketNewsTicker,
 } from "./marketNewsDynamicTickers";
 import {
-  mergeMarketNewsTickerQuote,
+  resolveMarketNewsTickerQuoteState,
   type MarketNewsQuoteResponse,
   type MarketNewsSparklineResponse,
 } from "./marketNewsTickerQuotes";
@@ -197,6 +197,12 @@ async function fetchYahooSparkline({
       chart?: {
         result?: Array<{
           indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+          meta?: {
+            chartPreviousClose?: number;
+            previousClose?: number;
+            regularMarketPrice?: number;
+            regularMarketPreviousClose?: number;
+          };
           timestamp?: number[];
         }>;
       };
@@ -213,8 +219,17 @@ async function fetchYahooSparkline({
         isFiniteNumber(point.t) && isFiniteNumber(point.v),
     );
 
+  const previousClose = [
+    result?.meta?.previousClose,
+    result?.meta?.chartPreviousClose,
+    result?.meta?.regularMarketPreviousClose,
+  ].find(isFiniteNumber);
+  const regularMarketPrice = isFiniteNumber(result?.meta?.regularMarketPrice)
+    ? result.meta.regularMarketPrice
+    : null;
+
   if (points.length <= MAX_SPARKLINE_POINTS) {
-    return { points, symbol };
+    return { points, previousClose, regularMarketPrice, symbol };
   }
 
   const step = (points.length - 1) / (MAX_SPARKLINE_POINTS - 1);
@@ -231,7 +246,7 @@ async function fetchYahooSparkline({
     .map((index) => points[index]!)
     .filter(Boolean);
 
-  return { points: compactPoints, symbol };
+  return { points: compactPoints, previousClose, regularMarketPrice, symbol };
 }
 
 function rankDynamicCandidates({
@@ -254,21 +269,6 @@ function rankDynamicCandidates({
     })
     .sort((a, b) => b.move - a.move || a.index - b.index)
     .map((candidate) => candidate.symbol);
-}
-
-function hasLiveTickerData({
-  quote,
-  sparkline,
-}: {
-  quote: MarketNewsQuoteResponse | null;
-  sparkline: MarketNewsSparklineResponse | null;
-}) {
-  return Boolean(
-    isFiniteNumber(quote?.price) ||
-      isFiniteNumber(quote?.change) ||
-      isFiniteNumber(quote?.changePct) ||
-      sparkline?.points?.length,
-  );
 }
 
 function resolveStripSource({
@@ -344,27 +344,39 @@ export async function buildMarketNewsTickerStripSnapshot({
     ),
   );
   let liveCount = 0;
+  let unavailableSparklineCount = 0;
   const tickers = fallbackTickers.map((fallbackTicker, index) => {
     const quote = quoteMap.get(normalizeSymbol(fallbackTicker.symbol)) ?? null;
     const sparkline = sparklines[index] ?? null;
-    const hasLiveData = hasLiveTickerData({ quote, sparkline });
+    const resolvedTicker = resolveMarketNewsTickerQuoteState(fallbackTicker, {
+      quote,
+      sparkline,
+    });
+    const ticker = resolvedTicker.ticker;
 
-    if (hasLiveData) liveCount += 1;
+    if (resolvedTicker.recoveredLiveData) liveCount += 1;
+    if (ticker.sparklineSource === "unavailable") unavailableSparklineCount += 1;
 
-    return mergeMarketNewsTickerQuote(fallbackTicker, { quote, sparkline });
+    return ticker;
   });
   const source = resolveStripSource({
     liveCount,
     tickerCount: tickers.length,
   });
-  const warnings =
-    source === "fallback"
+  const warnings = [
+    ...(source === "fallback"
       ? [
-          "Live Yahoo Finance quote data was unavailable, so configured fallback quotes are shown.",
+          "Live Yahoo Finance quote data was unavailable, so quote cards show no live data.",
         ]
       : source === "mixed"
-        ? ["Some quote snapshots are using configured fallback values."]
-        : [];
+        ? ["Some quote snapshots are unavailable because Yahoo Finance did not return live quote data."]
+        : []),
+    ...(unavailableSparklineCount
+      ? [
+          "Some Yahoo 1D quote lines are unavailable, so those cards show price metadata without a sparkline.",
+        ]
+      : []),
+  ];
 
   return {
     providerLabel: "Yahoo Finance",
