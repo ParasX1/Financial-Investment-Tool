@@ -764,18 +764,18 @@
   display: grid;
   min-width: 0;
   overflow: hidden;
-  gap: 1rem;
+  gap: 0.9rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 0.95rem;
+  border-radius: 0.8rem;
   background:
     radial-gradient(
       circle at 14% 12%,
-      rgba(93, 103, 255, 0.24),
-      transparent 20rem
+      rgba(93, 103, 255, 0.14),
+      transparent 18rem
     ),
     linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 38%),
     rgba(9, 9, 11, 0.92);
-  padding: clamp(1rem, 2vw, 1.35rem);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -785,11 +785,11 @@
 
 .authGateAvatar {
   display: grid;
-  width: 6.25rem;
+  width: 4.75rem;
   aspect-ratio: 1;
   place-items: center;
   border: 1px solid rgba(123, 140, 255, 0.32);
-  border-radius: 1.45rem;
+  border-radius: 1.15rem;
   background:
     radial-gradient(
       circle at 35% 24%,
@@ -798,21 +798,10 @@
     ),
     linear-gradient(145deg, #5367ff, #2b164f);
   color: #ffffff;
-  font-size: var(--fit-type-size-avatar-lg);
+  font-size: var(--fit-type-size-2xl);
   font-weight: var(--fit-type-weight-bold);
   line-height: 1;
-  box-shadow: 0 1.5rem 3.5rem rgba(83, 103, 255, 0.2);
-}
-
-.authGateOrbit {
-  position: absolute;
-  right: 10%;
-  bottom: 12%;
-  width: 2.35rem;
-  height: 2.35rem;
-  border: 1px solid rgba(78, 201, 176, 0.5);
-  border-radius: 999px;
-  background: rgba(78, 201, 176, 0.1);
+  box-shadow: 0 1.2rem 2.6rem rgba(83, 103, 255, 0.16);
 }
 
 .authGateCopy {
@@ -820,70 +809,26 @@
 }
 
 .authGateTitle {
-  max-width: 36rem;
-  margin: 0.35rem 0 0;
+  max-width: 32rem;
+  margin: 0;
   color: #ffffff;
-  font-size: var(--fit-type-size-feature-title);
+  font-size: var(--fit-type-size-panel-title);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
   line-height: var(--fit-type-leading-heading);
 }
 
 .authGateSubtitle {
-  max-width: 41rem;
-  margin: 0.7rem 0 0;
+  max-width: 30rem;
+  margin: 0.45rem 0 0;
   color: var(--profile-copy);
-  font-size: var(--fit-type-size-body);
+  font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-regular);
   line-height: var(--fit-type-leading-body);
 }
 
 .authGateActions {
-  margin-top: 1.1rem;
-}
-
-.authGateRail {
-  min-width: 0;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 0.78rem;
-  background: rgba(255, 255, 255, 0.035);
-  padding: 0.9rem;
-}
-
-.authGateRailTitle {
-  margin: 0 0 0.55rem;
-  color: #dce4ff;
-  font-size: var(--fit-type-size-body-sm);
-  font-weight: var(--fit-type-weight-semibold);
-  line-height: var(--fit-type-leading-control);
-}
-
-.authGateRail ul {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: #9faabd;
-  font-size: var(--fit-type-size-body-sm);
-  font-weight: var(--fit-type-weight-medium);
-  line-height: var(--fit-type-leading-body);
-}
-
-.authGateRail li {
-  position: relative;
-  padding-left: 0.95rem;
-}
-
-.authGateRail li::before {
-  position: absolute;
-  top: 0.56em;
-  left: 0;
-  width: 0.35rem;
-  height: 0.35rem;
-  border-radius: 999px;
-  background: #65a0fd;
-  content: "";
+  margin-top: 0.85rem;
 }
 
 .signedOutPanel {
@@ -909,12 +854,8 @@
   }
 
   .authGate {
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.36fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
-  }
-
-  .authGateRail {
-    align-self: stretch;
   }
 
   .settingRow {
@@ -956,13 +897,13 @@
 
 @media (min-width: 1180px) {
   .authGate {
-    grid-template-columns: 9rem minmax(0, 1fr) minmax(17rem, 0.35fr);
+    grid-template-columns: 6rem minmax(0, 1fr);
   }
 
   .authGateVisual {
     position: relative;
     display: grid;
-    min-height: 9rem;
+    min-height: 6rem;
     place-items: center;
   }
 }

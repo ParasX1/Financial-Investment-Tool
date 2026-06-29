@@ -1,5 +1,5 @@
 .authDialog {
-  max-width: min(31rem, calc(100vw - 1rem));
+  max-width: min(28rem, calc(100vw - 1rem));
 }
 
 .authContent {
@@ -9,7 +9,7 @@
   background:
     radial-gradient(
       circle at 18% 0%,
-      rgba(93, 103, 255, 0.24),
+      rgba(93, 103, 255, 0.16),
       transparent 36%
     ),
     linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 34%), #08090d;
@@ -19,14 +19,14 @@
 }
 
 .authBackdrop {
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(16px);
 }
 
 .loginModal {
   position: relative;
   min-height: auto;
-  padding: 1.35rem;
+  padding: 1.2rem;
 }
 
 .closeButton {
@@ -85,8 +85,8 @@
 }
 
 .authIntro {
-  margin-top: 1.4rem;
-  margin-bottom: 1.25rem;
+  margin-top: 1.15rem;
+  margin-bottom: 1rem;
 }
 
 .authEyebrow {
@@ -296,7 +296,7 @@
 
 @media (min-width: 560px) {
   .loginModal {
-    padding: 1.6rem;
+    padding: 1.4rem;
   }
 
   .inputTwo {

@@ -86,11 +86,7 @@ function ModalLogin({
           <FitLogo className={styles.authLogo} showWordmark size="small" />
         </div>
         <div className={styles.authIntro}>
-          <p className={styles.authEyebrow}>Welcome back</p>
           <h2 className={styles.loginHeader}>Sign in to FIT</h2>
-          <p className={styles.authSubtitle}>
-            Access your profile, watchlist, and account settings.
-          </p>
         </div>
 
         <form onSubmit={handleSubmit}>

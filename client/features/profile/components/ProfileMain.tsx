@@ -187,16 +187,11 @@ export function ProfileMain() {
                 <section className={styles.authGate}>
                   <div className={styles.authGateVisual} aria-hidden="true">
                     <div className={styles.authGateAvatar}>F</div>
-                    <div className={styles.authGateOrbit} />
                   </div>
                   <div className={styles.authGateCopy}>
-                    <p className={styles.eyebrow}>Account required</p>
-                    <h2 className={styles.authGateTitle}>
-                      Sign in to your FIT profile
-                    </h2>
+                    <h2 className={styles.authGateTitle}>Sign in to continue</h2>
                     <p className={styles.authGateSubtitle}>
-                      Keep your profile, contact details, and security settings
-                      synced across your investing workspace.
+                      Manage your profile and account settings.
                     </p>
                     <div className={styles.authGateActions}>
                       <button
@@ -222,15 +217,6 @@ export function ProfileMain() {
                         Create account
                       </button>
                     </div>
-                  </div>
-
-                  <div className={styles.authGateRail}>
-                    <p className={styles.authGateRailTitle}>What stays with you</p>
-                    <ul>
-                      <li>Public name and username</li>
-                      <li>Verified email for recovery</li>
-                      <li>Profile photo and contact details</li>
-                    </ul>
                   </div>
                 </section>
               ) : !hasAccount ? (
