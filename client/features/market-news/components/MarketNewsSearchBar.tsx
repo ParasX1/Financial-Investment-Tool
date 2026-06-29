@@ -2,7 +2,11 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { fitButton } from "@/components/shared/fitStyles";
-import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
+import {
+  FIT_FOCUS_VISIBLE,
+  cn,
+  fitType,
+} from "@/components/shared/uiPrimitives";
 
 export function MarketNewsSearchBar({
   draft,
@@ -46,7 +50,8 @@ export function MarketNewsSearchBar({
           onChange={(event) => onDraftChange(event.target.value)}
           placeholder="Search news"
           className={cn(
-            "h-12 w-full rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-field)] pl-12 pr-12 text-[15px] font-semibold text-white placeholder:text-[#7f8798]",
+            "h-12 w-full rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-field)] pl-12 pr-12 text-white placeholder:text-[#7f8798]",
+            fitType.field,
             "transition-colors hover:border-[#5367ff]/45 focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
           )}
         />
@@ -68,7 +73,8 @@ export function MarketNewsSearchBar({
       <button
         type="submit"
         className={cn(
-          "inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-extrabold sm:w-auto sm:px-4",
+          "inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-lg text-sm sm:w-auto sm:px-4",
+          fitType.control,
           fitButton.primary,
           FIT_FOCUS_VISIBLE,
         )}

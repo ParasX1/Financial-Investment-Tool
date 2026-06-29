@@ -1,4 +1,9 @@
-import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
+import {
+  FIT_FOCUS_VISIBLE,
+  cn,
+  fitText,
+  fitType,
+} from "@/components/shared/uiPrimitives";
 import type { MarketNewsSortId, MarketNewsSortOption } from "../types";
 import styles from "../styles/marketNews.module.css";
 
@@ -17,10 +22,8 @@ export function MarketNewsScanOrderBar({
   return (
     <section className={styles.scanPanel} aria-label="News scan order">
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase text-[var(--fit-color-text-label)]">
-          Scan order
-        </p>
-        <p className="mt-1 text-sm leading-6 text-[var(--fit-color-text-body)]">
+        <p className={cn(fitType.eyebrow, fitText.label)}>Scan order</p>
+        <p className={cn("mt-1", fitType.bodySm, fitText.body)}>
           Choose how this same story set is ordered.
         </p>
       </div>

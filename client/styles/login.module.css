@@ -7,9 +7,12 @@
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 0.9rem;
   background:
-    radial-gradient(circle at 18% 0%, rgba(93, 103, 255, 0.24), transparent 36%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 34%),
-    #08090d;
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(93, 103, 255, 0.24),
+      transparent 36%
+    ),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 34%), #08090d;
   color: #ffffff;
   font-family: var(--fit-font-family);
   box-shadow: 0 2rem 5.5rem rgba(0, 0, 0, 0.62);
@@ -48,6 +51,23 @@
   color: #ffffff;
 }
 
+.closeButton:focus-visible,
+.buttonSubmit:focus-visible,
+.buttonOutline:focus-visible,
+.switchButton:focus-visible {
+  outline: 2px solid var(--fit-color-focus-ring);
+  outline-offset: 3px;
+}
+
+.buttonSubmit:focus-visible,
+.buttonOutline:focus-visible {
+  box-shadow: 0 0 0 4px rgba(123, 140, 255, 0.16);
+}
+
+.switchButton:focus-visible {
+  border-radius: 0.25rem;
+}
+
 .authBrandRow {
   display: inline-flex;
   min-height: 2.35rem;
@@ -56,7 +76,8 @@
   gap: 0.65rem;
   color: #dce4ff;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .authLogo {
@@ -71,35 +92,36 @@
 .authEyebrow {
   margin: 0 0 0.4rem;
   color: #8f98aa;
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  text-transform: uppercase;
+  line-height: var(--fit-type-leading-control);
 }
 
 .loginHeader {
   margin: 0;
   color: #ffffff;
-  font-size: 2.05rem;
-  font-weight: 720;
+  font-size: 1.92rem;
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: var(--fit-type-leading-heading);
 }
 
 .loginSubheader {
   margin: 0.45rem 0 0;
   color: #dce4ff;
-  font-size: 1rem;
-  font-weight: 650;
+  font-size: var(--fit-type-size-md);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .authSubtitle {
   max-width: 25rem;
   margin: 0.65rem 0 0;
   color: #aab4c7;
-  font-size: 0.9rem;
-  font-weight: 500;
-  line-height: 1.55;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
 }
 
 .inputRow {
@@ -117,8 +139,9 @@
   display: block;
   margin-bottom: 0.4rem;
   color: #dce4ff;
-  font-size: 0.83rem;
-  font-weight: 700;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .inputFull {
@@ -129,7 +152,9 @@
   background: rgba(15, 17, 24, 0.92);
   padding: 0.72rem 0.78rem;
   color: #f8fafc;
-  font-size: 0.92rem;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-control);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -144,7 +169,7 @@
 
 .inputFull::placeholder {
   color: #737d91;
-  font-weight: 550;
+  font-weight: var(--fit-type-weight-regular);
 }
 
 .buttonStack {
@@ -163,8 +188,10 @@
   justify-content: center;
   border-radius: 0.72rem;
   padding: 0.74rem 1rem;
-  font-size: 0.92rem;
-  font-weight: 750;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -218,8 +245,9 @@
 .switchText {
   margin: 1rem 0 0;
   color: #8f98aa;
-  font-size: 0.86rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
   text-align: center;
 }
 
@@ -229,7 +257,7 @@
   padding: 0;
   color: #8fc7ff;
   font: inherit;
-  font-weight: 800;
+  font-weight: var(--fit-type-weight-semibold);
 }
 
 .switchButton:hover {
@@ -248,9 +276,9 @@
   border: 1px solid transparent;
   border-radius: 0.65rem;
   padding: 0.65rem 0.75rem;
-  font-size: 0.84rem;
-  font-weight: 650;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
   text-align: left;
 }
 

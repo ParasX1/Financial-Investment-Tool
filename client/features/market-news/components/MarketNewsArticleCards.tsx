@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Article } from "@/services/news";
-import { cn, fitText } from "@/components/shared/uiPrimitives";
+import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import {
   formatArticleTime,
   getArticleDomain,
@@ -18,7 +18,8 @@ const CUE_DESCRIPTIONS: Record<string, string> = {
   Property: "Mentions housing, mortgages, rent, or real estate.",
   "Rate-sensitive": "Mentions rates, inflation, bonds, yields, CPI, or RBA.",
   Risk: "Provider sentiment is negative.",
-  Technology: "Mentions AI, technology, software, semiconductors, or cybersecurity.",
+  Technology:
+    "Mentions AI, technology, software, semiconductors, or cybersecurity.",
   "Ticker-linked": "The story is linked to at least one market symbol.",
 };
 
@@ -52,7 +53,8 @@ function ArticleMeta({ article }: { article: Article }) {
       ? "category demo"
       : getArticleDomain(article.url);
   const confidence =
-    typeof article.confidence === "number" && Number.isFinite(article.confidence)
+    typeof article.confidence === "number" &&
+    Number.isFinite(article.confidence)
       ? article.confidence.toFixed(1)
       : null;
   const investorCues = getArticleInvestorCues(article);
@@ -60,7 +62,8 @@ function ArticleMeta({ article }: { article: Article }) {
   return (
     <div
       className={cn(
-        "mt-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold",
+        "mt-2 flex flex-wrap items-center gap-1.5",
+        fitType.caption,
         fitText.subtle,
       )}
     >
@@ -173,9 +176,9 @@ export function TopicArticleFeed({
   providerWarning?: string;
 }) {
   const pageNumber = pagination ? pagination.pageIndex + 1 : 1;
-  const statusText = feedStatus ?? `${articles.length} ${
-    articles.length === 1 ? "story" : "stories"
-  } shown`;
+  const statusText =
+    feedStatus ??
+    `${articles.length} ${articles.length === 1 ? "story" : "stories"} shown`;
 
   return (
     <section className={styles.topicFeed} aria-label="Topic stories">
@@ -261,22 +264,16 @@ export function EmptyArticleState({
 }) {
   return (
     <section className="rounded-xl border border-[var(--fit-color-border-panel)] bg-[var(--fit-color-surface)] p-6">
-      <p
-        className={cn(
-          "text-xs font-extrabold uppercase tracking-[0.14em]",
-          fitText.label,
-        )}
-      >
-        Empty view
-      </p>
-      <h2 className="mt-2 text-xl font-extrabold text-white">{title}</h2>
-      <p className={cn("mt-2 max-w-[38rem] text-sm leading-6", fitText.body)}>
+      <p className={cn(fitType.eyebrow, fitText.label)}>Empty view</p>
+      <h2 className={cn("mt-2 text-white", fitType.panelTitle)}>{title}</h2>
+      <p className={cn("mt-2 max-w-[38rem]", fitType.bodySm, fitText.body)}>
         {message}
       </p>
       {detail ? (
         <p
           className={cn(
-            "mt-3 max-w-[42rem] rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-xs font-semibold leading-5",
+            "mt-3 max-w-[42rem] rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2",
+            fitType.caption,
             fitText.subtle,
           )}
         >

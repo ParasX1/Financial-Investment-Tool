@@ -19,7 +19,7 @@
   background-clip: text;
   color: transparent;
   font-size: 1.45rem;
-  font-weight: 850;
+  font-weight: var(--fit-type-weight-bold);
   letter-spacing: 0;
   line-height: 1;
   text-shadow: 0 0 20px var(--fit-logo-glow);
@@ -45,15 +45,15 @@
 
 .wordmarkMain {
   font-size: 0.92rem;
-  font-weight: 650;
-  line-height: 1.2;
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .wordmarkSub {
   color: var(--fit-color-text-muted);
   font-size: 0.72rem;
-  font-weight: 500;
-  line-height: 1.2;
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .compact .mark {

@@ -23,3 +23,16 @@ export const fitText = {
   info: "text-[#dbe4ff]",
   accent: "text-[var(--fit-color-accent)]",
 } as const;
+
+export const fitType = {
+  pageTitle: "fit-type-page-title",
+  sectionTitle: "fit-type-section-title",
+  panelTitle: "fit-type-panel-title",
+  body: "fit-type-body",
+  bodySm: "fit-type-body-sm",
+  caption: "fit-type-caption",
+  eyebrow: "fit-type-eyebrow",
+  control: "fit-type-control",
+  field: "fit-type-field",
+  metric: "fit-type-metric",
+} as const;

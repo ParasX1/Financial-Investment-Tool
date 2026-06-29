@@ -18,9 +18,9 @@ export const fitNav = {
     "bg-gradient-to-br from-[#5367ff] via-[#6d4cff] to-[#2b164f] text-white shadow-[0_0_22px_rgba(83,103,255,0.42),inset_0_0_0_1px_rgba(213,220,255,0.24)]",
   iconIdle: "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
   sectionLabel:
-    "text-[11px] font-bold uppercase tracking-[0.14em] text-[#687184]",
+    "text-[11px] font-semibold uppercase tracking-normal text-[#687184]",
   countPill:
-    "rounded-md bg-black/30 px-2 py-[2px] text-xs font-bold tabular-nums text-[#c6cee0]",
+    "rounded-md bg-black/30 px-2 py-[2px] text-xs font-medium tabular-nums text-[#c6cee0]",
 } as const;
 
 export const fitButton = {

@@ -1,4 +1,9 @@
-import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
+import {
+  FIT_FOCUS_VISIBLE,
+  cn,
+  fitText,
+  fitType,
+} from "@/components/shared/uiPrimitives";
 import type { MarketNewsLensId, MarketNewsLensOption } from "../types";
 import styles from "../styles/marketNews.module.css";
 
@@ -35,11 +40,10 @@ export function MarketNewsLensBar({
   return (
     <section className={styles.lensPanel} aria-label="News signals">
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase text-[var(--fit-color-text-label)]">
-          News filters
-        </p>
-        <p className="mt-1 text-sm leading-6 text-[var(--fit-color-text-body)]">
-          Narrow the current story set by watchlist, tickers, relevance, or tone.
+        <p className={cn(fitType.eyebrow, fitText.label)}>News filters</p>
+        <p className={cn("mt-1", fitType.bodySm, fitText.body)}>
+          Narrow the current story set by watchlist, tickers, relevance, or
+          tone.
         </p>
       </div>
       <div className={styles.lensGrid} role="list">

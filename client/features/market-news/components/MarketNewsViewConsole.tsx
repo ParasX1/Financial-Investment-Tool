@@ -1,6 +1,6 @@
 import * as React from "react";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import { cn, fitText } from "@/components/shared/uiPrimitives";
+import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import styles from "../styles/marketNews.module.css";
 
 export function MarketNewsViewConsole({
@@ -24,15 +24,16 @@ export function MarketNewsViewConsole({
     <section className={styles.viewConsole}>
       <div className={styles.viewConsoleHeader}>
         <div className="min-w-0">
-          <p className={cn("text-xs font-bold uppercase", fitText.label)}>
-            {eyebrow}
-          </p>
-          <h2 className="mt-2 text-balance text-2xl font-extrabold leading-tight text-white">
+          <p className={cn(fitType.eyebrow, fitText.label)}>{eyebrow}</p>
+          <h2
+            className={cn("mt-2 text-balance text-white", fitType.sectionTitle)}
+          >
             {title}
           </h2>
           <p
             className={cn(
-              "mt-2 max-w-[48rem] text-pretty text-[15px] leading-6",
+              "mt-2 max-w-[48rem] text-pretty",
+              fitType.body,
               fitText.body,
             )}
           >
@@ -49,7 +50,10 @@ export function MarketNewsViewConsole({
       <details className={styles.feedControls}>
         <summary className={styles.feedControlsSummary}>
           <span className={styles.feedControlsTitle}>Feed controls</span>
-          <span className={styles.feedControlsChips} aria-label="Active feed controls">
+          <span
+            className={styles.feedControlsChips}
+            aria-label="Active feed controls"
+          >
             <span>
               <span>Order</span>
               <strong>{activeSortLabel}</strong>

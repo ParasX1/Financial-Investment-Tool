@@ -6,6 +6,9 @@
   --market-news-panel-soft: var(--fit-color-surface-soft, #111114);
   --market-news-text: #dce4ff;
   --market-news-muted: #8f98aa;
+  --market-news-label-size: var(--fit-type-size-2xs);
+  --market-news-copy-size: var(--fit-type-size-sm);
+  --market-news-title-size: var(--fit-type-size-lg);
 }
 
 .page {
@@ -106,9 +109,10 @@
   display: block;
   overflow: hidden;
   color: #8fc7ff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.15;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
@@ -119,9 +123,9 @@
   overflow: hidden;
   margin-top: 0.15rem;
   color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -164,15 +168,18 @@
 
 .scopeMenuShort {
   color: #8fc7ff;
-  font-size: 0.68rem;
-  font-weight: 900;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
 .scopeMenuLabel {
   overflow: hidden;
-  font-size: 0.85rem;
-  font-weight: 850;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -281,9 +288,10 @@
 .tickerLabel {
   min-width: 0;
   color: #8fc7ff;
-  font-size: 0.72rem;
-  font-weight: 900;
-  line-height: 1.12;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   overflow-wrap: normal;
   text-transform: uppercase;
   white-space: normal;
@@ -291,10 +299,10 @@
 
 .tickerSymbol {
   color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 950;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.1;
+  line-height: var(--fit-type-leading-tight);
   white-space: nowrap;
 }
 
@@ -305,9 +313,10 @@
   background: rgba(56, 217, 150, 0.1);
   padding: 0.04rem 0.28rem;
   color: #dffbea;
-  font-size: 0.55rem;
-  font-weight: 900;
-  line-height: 1.35;
+  font-size: 0.62rem;
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
@@ -318,25 +327,28 @@
   background: rgba(143, 152, 170, 0.08);
   padding: 0.04rem 0.28rem;
   color: #b9c1d0;
-  font-size: 0.55rem;
-  font-weight: 900;
-  line-height: 1.35;
+  font-size: 0.62rem;
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
 .tickerValue {
   margin-top: 0.12rem;
   color: #ffffff;
-  font-size: 1rem;
-  font-weight: 900;
+  font-size: var(--market-news-title-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-tight);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .tickerChange {
   margin-top: 0.08rem;
-  font-size: 0.76rem;
-  font-weight: 850;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -352,9 +364,9 @@
   align-items: center;
   justify-self: end;
   color: var(--fit-color-text-muted, #8f98aa);
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .marketMoverStatusTime {
@@ -370,8 +382,9 @@
   background: rgba(83, 103, 255, 0.1);
   padding: 0.4rem 0.6rem;
   color: #dbe4ff;
-  font-size: 0.75rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .providerPillLoading {
@@ -407,9 +420,9 @@
   background: rgba(246, 200, 95, 0.08);
   padding: 0.65rem 0.75rem;
   color: #ffe7a3;
-  font-size: 0.84rem;
-  font-weight: 750;
-  line-height: 1.5;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .feedControlsSummary {
@@ -441,8 +454,9 @@
 
 .feedControlsTitle {
   color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 850;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .feedControlsChips {
@@ -462,15 +476,17 @@
   background: rgba(83, 103, 255, 0.1);
   padding: 0.25rem 0.46rem;
   color: var(--fit-color-text-muted, #8f98aa);
-  font-size: 0.7rem;
-  font-weight: 800;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .feedControlsChips strong {
   min-width: 0;
   overflow: hidden;
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -525,8 +541,9 @@
   background: var(--market-news-panel-soft);
   padding: 0.5rem 0.7rem;
   color: #dce4ff;
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease;
@@ -545,9 +562,9 @@
 .modeDescription {
   margin-top: -0.15rem;
   color: var(--fit-color-text-muted, #8f98aa);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
 }
 
 .lensGrid {
@@ -600,8 +617,9 @@
 .lensLabel {
   min-width: 0;
   overflow: hidden;
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -612,8 +630,9 @@
   background: rgba(0, 0, 0, 0.26);
   padding: 0.1rem 0.45rem;
   color: #dbe4ff;
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
   font-variant-numeric: tabular-nums;
 }
 
@@ -637,9 +656,9 @@
   background: rgba(246, 200, 95, 0.08);
   padding: 0.75rem 1rem;
   color: #ffe7a3;
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1.5;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .topicFeedHeader {
@@ -655,14 +674,16 @@
 
 .topicFeedTitle {
   color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 850;
+  font-size: var(--market-news-copy-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .topicFeedStatus {
   min-width: 0;
-  font-size: 0.8rem;
-  font-weight: 750;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .topicFeedList {
@@ -710,9 +731,9 @@
 
 .topicArticleTitle {
   color: #ffffff;
-  font-size: 1.05rem;
-  font-weight: 850;
-  line-height: 1.24;
+  font-size: var(--market-news-title-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: 1.28;
 }
 
 .topicArticleSummary {
@@ -721,8 +742,8 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.92rem;
-  line-height: 1.45;
+  font-size: var(--market-news-copy-size);
+  line-height: var(--fit-type-leading-body);
 }
 
 .articleChip {
@@ -731,8 +752,8 @@
   background: rgba(255, 255, 255, 0.04);
   padding: 0.12rem 0.38rem;
   color: #dce4ff;
-  font-weight: 800;
-  line-height: 1.35;
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .articleChip_ticker {
@@ -763,8 +784,9 @@
 
 .topicPagerStatus {
   min-width: 0;
-  font-size: 0.84rem;
-  font-weight: 700;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .topicPagerActions {
@@ -781,8 +803,9 @@
   background: rgba(255, 255, 255, 0.045);
   padding: 0.5rem 0.8rem;
   color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -871,9 +894,10 @@
 
 .marketVisualLabel {
   color: #8ea0ff;
-  font-size: 0.74rem;
-  font-weight: 800;
+  font-size: var(--market-news-label-size);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
@@ -882,8 +906,8 @@
   overflow: hidden;
   color: #ffffff;
   font-size: 2.25rem;
-  font-weight: 900;
-  line-height: 1;
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-tight);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
