@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import ModalBody from 'react-bootstrap/ModalBody'
-import 'bootstrap/dist/css/bootstrap.min.css'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/components/authContext'
+import { FitLogo } from '@/components/shared/FitLogo'
 import styles from '@/styles/login.module.css'
 
 type ModalSignUpProps = {
@@ -113,8 +113,7 @@ function ModalSignUp({
           X
         </button>
         <div className={styles.authBrandRow}>
-          <span className={styles.authMark}>F</span>
-          <span>Financial Investment Tool</span>
+          <FitLogo className={styles.authLogo} showWordmark size="small" />
         </div>
         <div className={styles.authIntro}>
           <p className={styles.authEyebrow}>Start with FIT</p>

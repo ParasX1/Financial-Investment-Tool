@@ -11,6 +11,7 @@
     linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 34%),
     #08090d;
   color: #ffffff;
+  font-family: var(--fit-font-family);
   box-shadow: 0 2rem 5.5rem rgba(0, 0, 0, 0.62);
 }
 
@@ -58,16 +59,8 @@
   font-weight: 700;
 }
 
-.authMark {
-  display: grid;
-  width: 2.35rem;
-  height: 2.35rem;
-  place-items: center;
-  border: 1px solid rgba(123, 140, 255, 0.36);
-  border-radius: 0.72rem;
-  background: linear-gradient(145deg, #5367ff, #25144f);
-  color: #ffffff;
-  font-weight: 800;
+.authLogo {
+  max-width: 100%;
 }
 
 .authIntro {
@@ -181,13 +174,13 @@
 }
 
 .buttonSubmit {
-  border: 1px solid rgba(123, 140, 255, 0.68);
-  background: #5d67ff;
+  border: 1px solid var(--fit-color-brand-border);
+  background: var(--fit-color-brand-gradient);
   color: #ffffff;
 }
 
 .buttonSubmit:hover {
-  background: #7079ff;
+  background: var(--fit-color-brand-gradient-hover);
 }
 
 .buttonOutline {

@@ -6,6 +6,7 @@
     width: "100%";
     align-items: flex-start; 
     gap: 2rem; 
+    font-family: var(--fit-font-family);
 
 }
 
@@ -29,10 +30,8 @@
 }
 
 .fitLogo {
-    width: 50px; 
-    height: auto;
+    width: fit-content;
     margin-bottom: 8px;
-    object-fit: contain;
   }
 
   .socialRow {

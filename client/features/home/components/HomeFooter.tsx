@@ -1,3 +1,4 @@
+import { FitLogo } from "@/components/shared/FitLogo";
 import Link from "next/link";
 import type { HomeFooterGroup } from "../types";
 import styles from "../styles/home.module.css";
@@ -14,7 +15,7 @@ export function HomeFooter({
   return (
     <footer className={styles.footer}>
       <div className={styles.footerBrand}>
-        <strong>FIT</strong>
+        <FitLogo className={styles.footerLogo} decorative size="small" />
         <p>Financial Investment Tool for modern portfolio management.</p>
       </div>
 

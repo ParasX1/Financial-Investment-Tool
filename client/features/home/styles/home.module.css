@@ -27,14 +27,7 @@
     linear-gradient(180deg, color-mix(in srgb, var(--home-brand-glow) 15%, transparent), transparent 22rem),
     var(--fit-color-page-bg);
   color: var(--home-text);
-  font-family:
-    "SF Pro Display",
-    "SF Pro Text",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI Variable",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--fit-font-family);
   font-synthesis-weight: none;
 }
 
@@ -103,25 +96,8 @@
   font-weight: 600;
 }
 
-.brandMark {
-  display: grid;
-  width: 3.05rem;
-  height: 2rem;
-  place-items: center;
-  border: 1px solid var(--home-brand-border);
-  border-radius: 0.5rem;
-  background: var(--home-primary-gradient);
-  box-shadow: 0 0 24px var(--home-brand-glow);
-  color: #ffffff;
-  font-size: 0.86rem;
-  font-weight: 750;
-  line-height: 1;
-}
-
-.brandName {
+.brandWordmark {
   color: #f7f9ff;
-  font-size: 0.9rem;
-  font-weight: 600;
 }
 
 .footerLink:hover {
@@ -614,13 +590,8 @@
   color: var(--home-muted);
 }
 
-.footerBrand strong {
-  display: block;
-  background: var(--home-primary-gradient);
-  background-clip: text;
-  color: transparent;
-  font-size: 1.22rem;
-  font-weight: 700;
+.footerLogo {
+  display: inline-flex;
 }
 
 .footerBrand p,
@@ -737,7 +708,7 @@
     padding: 0 0.75rem;
   }
 
-  .brandButton span:last-child {
+  .brandWordmark {
     display: none;
   }
 
@@ -749,12 +720,6 @@
   .navSecondary {
     min-height: 2.35rem;
     padding: 0 0.7rem;
-  }
-
-  .brandMark {
-    width: 2.75rem;
-    height: 1.9rem;
-    font-size: 0.78rem;
   }
 
   .hero {

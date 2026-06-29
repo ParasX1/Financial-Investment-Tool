@@ -5,6 +5,10 @@
 @layer base {
   :root {
     --app-sidebar-width: 64px;
+    --fit-font-family: "SF Pro Display", "SF Pro Text", -apple-system,
+      BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", sans-serif;
+    --bs-font-sans-serif: var(--fit-font-family);
+    --bs-body-font-family: var(--fit-font-family);
     --fit-color-page-bg: #000000;
     --fit-color-surface: #09090b;
     --fit-color-surface-soft: #111114;
@@ -46,6 +50,13 @@
     --fit-color-brand-fill-hover: rgba(123, 140, 255, 0.12);
     --fit-color-brand-chip: rgba(123, 140, 255, 0.1);
     --fit-color-brand-glow: rgba(83, 103, 255, 0.42);
+    --fit-logo-gradient: linear-gradient(
+      90deg,
+      var(--fit-color-brand-start) 0%,
+      var(--fit-color-brand-mid) 52%,
+      var(--fit-color-brand-hover-mid) 100%
+    );
+    --fit-logo-glow: rgba(109, 76, 255, 0.45);
     --fit-color-focus-ring: rgba(123, 140, 255, 0.82);
     --fit-nav-active-bg: #101939;
     --fit-nav-active-border: #203773;
@@ -59,8 +70,18 @@
 
   body {
     background-color: var(--fit-color-page-bg, #050505);
+    font-family: var(--fit-font-family);
+    font-synthesis-weight: none;
     min-height: 100vh;
     margin: 0;
+    text-rendering: geometricPrecision;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 
   .two-column {

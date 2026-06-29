@@ -429,10 +429,10 @@ export default function WatchlistPage() {
                     onClick={allExpanded ? handleCollapseAll : handleExpandAll}
                     startIcon={allExpanded ? <UnfoldLessIcon fontSize="small" /> : <UnfoldMoreIcon fontSize="small" />}
                     sx={{
-                      background: 'linear-gradient(45deg, #5a5afc 30%, #ea19ea 90%)',
+                      background: 'var(--fit-color-brand-gradient)',
                       color: 'white',
                       fontWeight: 'bold',
-                      '&:hover': { background: 'linear-gradient(45deg, #4444e0 30%, #c010c0 90%)' },
+                      '&:hover': { background: 'var(--fit-color-brand-gradient-hover)' },
                     }}
                   >
                     {allExpanded ? 'CLOSE ALL' : 'OPEN ALL'}

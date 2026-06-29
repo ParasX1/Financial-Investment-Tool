@@ -18,6 +18,7 @@ import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
 import 'boxicons/css/boxicons.min.css'
 import { useAuth } from '@/components/authContext'
 import ModalLogin from '@/components/Modal/ModalLogin'
+import { FitLogo } from '@/components/shared/FitLogo'
 import { fitNav } from '@/components/shared/fitStyles'
 import { FIT_FOCUS_VISIBLE } from '@/components/shared/uiPrimitives'
 
@@ -585,7 +586,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <a
         href={`#${skipTargetId}`}
         className={[
-          'sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[#5367ff] px-3 py-2 text-sm font-bold text-white no-underline shadow-lg',
+          'sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[var(--fit-color-brand-start)] px-3 py-2 text-sm font-bold text-white no-underline shadow-lg',
           'focus:not-sr-only focus:no-underline',
           focusRing,
         ].join(' ')}
@@ -680,29 +681,13 @@ const Sidebar: React.FC<SidebarProps> = ({
               ].join(' ')}
               title="FIT home"
             >
-              <span
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br from-[#14182d] via-[#151126] to-[#0f1016] text-sm font-extrabold text-[#8ea0ff] shadow-[inset_0_0_0_1px_rgba(123,140,255,0.16)]"
-                translate="no"
-                aria-hidden="true"
-              >
-                F
-              </span>
-              <span
-                className={[
-                  'min-w-0 transition-opacity duration-150',
-                  showLabel ? 'opacity-100' : 'sr-only opacity-0',
-                ].join(' ')}
-              >
-                <span
-                  className="block truncate text-lg font-extrabold leading-tight text-[#8ea0ff]"
-                  translate="no"
-                >
-                  FIT
-                </span>
-                <span className="block truncate text-[11px] font-medium text-[#8f98aa]">
-                  Financial Investment Tool
-                </span>
-              </span>
+              <FitLogo
+                decorative
+                showWordmark={showLabel}
+                size={expanded ? 'medium' : 'compact'}
+                subtitle="Financial Investment Tool"
+                wordmark="FIT"
+              />
             </Link>
           )}
         </div>

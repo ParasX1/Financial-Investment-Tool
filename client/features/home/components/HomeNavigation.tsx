@@ -1,5 +1,6 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import { FitLogo } from "@/components/shared/FitLogo";
 import Link from "next/link";
 import styles from "../styles/home.module.css";
 
@@ -23,10 +24,12 @@ export function HomeNavigation({
           className={styles.brandButton}
           aria-label="Go to FIT home"
         >
-          <span className={styles.brandMark} aria-hidden="true">
-            FIT
-          </span>
-          <span className={styles.brandName}>Financial Investment Tool</span>
+          <FitLogo
+            decorative
+            showWordmark
+            size="medium"
+            wordmarkClassName={styles.brandWordmark}
+          />
         </a>
 
         <div className={styles.navActions}>
