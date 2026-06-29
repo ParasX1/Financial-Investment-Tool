@@ -27,9 +27,9 @@ export function HomeNavigation({
           aria-label="Go to FIT home"
         >
           <span className={styles.brandMark} aria-hidden="true">
-            F
+            FIT
           </span>
-          <span>FIT</span>
+          <span className={styles.brandName}>Financial Investment Tool</span>
         </a>
 
         <div className={styles.navLinks} aria-label="Front page sections">

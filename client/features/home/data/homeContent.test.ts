@@ -1,6 +1,7 @@
 import {
+  homeCta,
   homeExperiencePoints,
-  homeFooterLinks,
+  homeFooterGroups,
   homeNavItems,
   homeRouteLinks,
 } from "./homeContent";
@@ -19,8 +20,10 @@ describe("homeContent", () => {
     expect(homeExperiencePoints).toHaveLength(4);
   });
 
-  it("links only to real FIT product routes", () => {
+  it("links only to real FIT routes and sections", () => {
     const allowedRoutes = new Set([
+      "#experience",
+      "#product",
       "/Community",
       "/Guide",
       "/Help",
@@ -30,7 +33,9 @@ describe("homeContent", () => {
     ]);
     const allRoutes = [
       ...homeRouteLinks.map((link) => link.href),
-      ...homeFooterLinks.map((link) => link.href),
+      ...homeFooterGroups.flatMap((group) =>
+        group.items.map((item) => item.href),
+      ),
     ];
 
     expect(allRoutes.every((route) => allowedRoutes.has(route))).toBe(true);
@@ -38,8 +43,9 @@ describe("homeContent", () => {
 
   it("avoids unsupported marketing placeholders from the previous front page", () => {
     const text = JSON.stringify({
+      homeCta,
       homeExperiencePoints,
-      homeFooterLinks,
+      homeFooterGroups,
     });
 
     expect(text).not.toMatch(

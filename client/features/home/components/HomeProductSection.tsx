@@ -21,7 +21,7 @@ export function HomeProductSection({
     >
       <div className={styles.sectionIntro}>
         <p className={styles.eyebrow}>Product</p>
-        <h2 id="home-product-title">Start where the work starts.</h2>
+        <h2 id="home-product-title">Powerful features for modern investors.</h2>
       </div>
 
       <div className={styles.routeGrid}>

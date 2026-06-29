@@ -1,30 +1,67 @@
 import Link from "next/link";
-import type { HomeRouteLink } from "../types";
+import type { HomeFooterGroup } from "../types";
 import styles from "../styles/home.module.css";
 
 export function HomeFooter({
-  links,
+  groups,
+  signedIn,
+  onSignIn,
 }: {
-  links: HomeRouteLink[];
+  groups: HomeFooterGroup[];
+  signedIn: boolean;
+  onSignIn: () => void;
 }) {
   return (
     <footer className={styles.footer}>
-      <div>
+      <div className={styles.footerBrand}>
         <strong>FIT</strong>
-        <p>Financial Investment Tool</p>
+        <p>Financial Investment Tool for modern portfolio management.</p>
       </div>
-      <nav aria-label="Footer">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={styles.footerLink}
-          >
-            {link.label}
-          </Link>
+
+      <div className={styles.footerGroups}>
+        {groups.map((group) => (
+          <nav key={group.title} aria-label={group.title}>
+            <strong>{group.title}</strong>
+            {group.items.map((item) =>
+              item.href.startsWith("#") ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={styles.footerLink}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={styles.footerLink}
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
+          </nav>
         ))}
-      </nav>
-      <p>© 2026 FIT. All rights reserved.</p>
+        <div className={styles.footerAccount}>
+          <strong>Account</strong>
+          {signedIn ? (
+            <Link href="/dashboardView" className={styles.footerLink}>
+              Dashboard
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={styles.footerLink}
+              onClick={onSignIn}
+            >
+              Sign in
+            </button>
+          )}
+        </div>
+      </div>
+
+      <p className={styles.footerLegal}>© 2026 FIT. All rights reserved.</p>
     </footer>
   );
 }

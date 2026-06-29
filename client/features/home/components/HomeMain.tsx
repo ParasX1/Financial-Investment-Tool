@@ -5,11 +5,12 @@ import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
 import {
   homeExperiencePoints,
-  homeFooterLinks,
+  homeFooterGroups,
   homeNavItems,
   homeRouteLinks,
 } from "../data/homeContent";
 import type { HomeRouteLink } from "../types";
+import { HomeCtaSection } from "./HomeCtaSection";
 import { HomeFooter } from "./HomeFooter";
 import { HomeExperienceSection } from "./HomeExperienceSection";
 import { HomeHero } from "./HomeHero";
@@ -66,10 +67,18 @@ export function HomeMain() {
             onRouteSelect={openRoute}
           />
           <HomeExperienceSection points={homeExperiencePoints} />
+          <HomeCtaSection
+            signedIn={signedIn}
+            onOpenWorkspace={openWorkspace}
+          />
         </div>
       </main>
 
-      <HomeFooter links={homeFooterLinks} />
+      <HomeFooter
+        groups={homeFooterGroups}
+        signedIn={signedIn}
+        onSignIn={() => setShowLogin(true)}
+      />
 
       <ModalLogin
         redirectTo="/dashboardView"

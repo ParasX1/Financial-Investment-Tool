@@ -3,7 +3,12 @@ import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
-import type { HomeExperiencePoint, HomeNavItem, HomeRouteLink } from "../types";
+import type {
+  HomeExperiencePoint,
+  HomeFooterGroup,
+  HomeNavItem,
+  HomeRouteLink,
+} from "../types";
 
 export const homeMetadata = {
   description:
@@ -21,6 +26,14 @@ export const homeHeroActions = {
   primary: "Sign in",
   secondary: "See features",
 };
+
+export const homeCta = {
+  body:
+    "Analyze markets, optimize portfolios, and keep the conversation close to the decision.",
+  primarySignedIn: "Open dashboard",
+  primarySignedOut: "Start free today",
+  title: "Ready to get FIT?",
+} as const;
 
 export const homeRouteLinks: HomeRouteLink[] = [
   {
@@ -70,15 +83,19 @@ export const homeExperiencePoints: HomeExperiencePoint[] = [
   },
 ];
 
-export const homeFooterLinks: HomeRouteLink[] = [
+export const homeFooterGroups: HomeFooterGroup[] = [
   {
-    description: "Metric definitions and portfolio interpretation.",
-    href: "/Guide",
-    label: "Guide",
+    items: [
+      { href: "#product", label: "Features" },
+      { href: "#experience", label: "Experience" },
+    ],
+    title: "Product",
   },
   {
-    description: "Answers for common FIT tasks.",
-    href: "/Help",
-    label: "Help Center",
+    items: [
+      { href: "/Guide", label: "Guide" },
+      { href: "/Help", label: "Help Center" },
+    ],
+    title: "Learn",
   },
 ];

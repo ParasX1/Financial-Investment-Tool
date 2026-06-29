@@ -14,6 +14,14 @@ export type HomeRouteLink = {
   label: string;
 };
 
+export type HomeFooterGroup = {
+  items: Array<{
+    href: string;
+    label: string;
+  }>;
+  title: string;
+};
+
 export type HomeExperiencePoint = {
   description: string;
   icon: SvgIconComponent;

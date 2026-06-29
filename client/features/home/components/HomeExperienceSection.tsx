@@ -18,10 +18,10 @@ export function HomeExperienceSection({
     >
       <div className={styles.experienceCopy}>
         <p className={styles.eyebrow}>Experience</p>
-        <h2 id="home-experience-title">See the whole decision.</h2>
+        <h2 id="home-experience-title">Built for modern investing.</h2>
         <p>
-          Portfolio analytics, market context, and investor discussion stay
-          close without crowding the workspace.
+          Bring analytics, news, and investor perspective together without
+          turning the workspace into noise.
         </p>
 
         <div className={styles.experienceGrid}>
@@ -48,7 +48,6 @@ export function HomeExperienceSection({
             alt="Market chart lines on a trading screen"
             sizes="(max-width: 900px) 100vw, 46vw"
           />
-          <figcaption>Market context</figcaption>
         </figure>
         <figure className={styles.mediaFrameSecondary}>
           <Image
@@ -56,7 +55,6 @@ export function HomeExperienceSection({
             alt="Portfolio charts on a tablet"
             sizes="(max-width: 640px) 100vw, (max-width: 900px) 48vw, 20vw"
           />
-          <figcaption>Portfolio view</figcaption>
         </figure>
         <figure className={styles.mediaFrameTertiary}>
           <Image
@@ -64,7 +62,6 @@ export function HomeExperienceSection({
             alt="Investment discussion illustration"
             sizes="(max-width: 640px) 100vw, (max-width: 900px) 48vw, 18vw"
           />
-          <figcaption>Shared review</figcaption>
         </figure>
       </div>
     </section>
