@@ -1,6 +1,6 @@
 // File purpose: Renders loading and empty states for Community discussions.
 import communityStyles from "../styles/community.module.css";
-import { cn, communityUi } from "../design";
+import { cn, communityUi, fitText, fitType } from "../design";
 import type { CommunityFeedView } from "../types";
 
 export function LoadingDiscussions() {
@@ -9,13 +9,15 @@ export function LoadingDiscussions() {
       className={cn(
         communityUi.card,
         communityStyles.primaryPanelPadding,
-        communityStyles.panelBorder
+        communityStyles.panelBorder,
       )}
       role="status"
       aria-label="Loading community discussions"
     >
       <div className="flex items-center gap-3">
-        <div className={cn("h-10 w-10 rounded-full", communityStyles.skeleton)} />
+        <div
+          className={cn("h-10 w-10 rounded-full", communityStyles.skeleton)}
+        />
         <div className="min-w-0 flex-1 space-y-2">
           <div className={cn("h-3 w-28 rounded", communityStyles.skeleton)} />
           <div className={cn("h-3 w-20 rounded", communityStyles.skeleton)} />
@@ -26,7 +28,9 @@ export function LoadingDiscussions() {
         <div className={cn("h-3 w-full rounded", communityStyles.skeleton)} />
         <div className={cn("h-3 w-5/6 rounded", communityStyles.skeleton)} />
       </div>
-      <p className="mt-5 text-sm text-[#8f98aa]">Loading latest discussions…</p>
+      <p className={cn("mt-5", fitType.bodySm, fitText.subtle)}>
+        Loading latest discussions…
+      </p>
     </div>
   );
 }
@@ -68,11 +72,13 @@ export function EmptyState({
     <div
       className={cn(
         communityUi.card,
-        "px-6 py-12 text-center text-sm text-[#8f98aa]",
-        communityStyles.panelBorder
+        "px-6 py-12 text-center",
+        fitType.bodySm,
+        fitText.subtle,
+        communityStyles.panelBorder,
       )}
     >
-      <p className="font-semibold text-[#e2e7f2]">
+      <p className={cn(fitType.panelTitle, fitText.strong)}>
         {hasSearch ? "No discussions match your search." : copy.title}
       </p>
       <p className="mt-2">

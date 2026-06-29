@@ -7,6 +7,7 @@ import {
   FIT_FOCUS_VISIBLE,
   cn,
   fitText,
+  fitType,
 } from "@/components/shared/uiPrimitives";
 import styles from "./LearningPageLayout.module.css";
 import type { LearningIcon, LearningNavItem } from "./types";
@@ -94,7 +95,7 @@ export function LearningPageLayout({
                   >
                     <NavIcon sx={{ fontSize: 18 }} />
                   </span>
-                  <span className="min-w-0 truncate text-sm font-bold">
+                  <span className={cn("min-w-0 truncate", fitType.navLabel)}>
                     {navTitle}
                   </span>
                 </div>
@@ -128,7 +129,9 @@ export function LearningPageLayout({
                             <Icon sx={{ fontSize: 18 }} />
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-bold leading-tight">
+                            <span
+                              className={cn("block truncate", fitType.navLabel)}
+                            >
                               {item.label}
                             </span>
                           </span>
@@ -183,11 +186,11 @@ export function LearningCard({
         >
           <Icon sx={{ fontSize: 19 }} />
         </span>
-        <h2 className="min-w-0 truncate text-base font-extrabold text-white">
+        <h2 className={cn("min-w-0 truncate text-white", fitType.panelTitle)}>
           {title}
         </h2>
       </div>
-      <div className={cn("text-pretty text-[15px] leading-7", fitText.body)}>
+      <div className={cn("text-pretty", fitType.body, fitText.body)}>
         {children}
       </div>
     </section>
@@ -198,7 +201,8 @@ export function FormulaBlock({ children }: { children: React.ReactNode }) {
   return (
     <code
       className={cn(
-        "block overflow-x-auto px-4 py-3 font-mono text-sm leading-6 text-[var(--fit-color-accent-strong)]",
+        "block overflow-x-auto px-4 py-3 font-mono text-[var(--fit-color-accent-strong)]",
+        fitType.bodySm,
         "rounded-lg",
         styles.formula,
       )}
@@ -223,7 +227,8 @@ export function QuestionCard({
       <div className="flex min-w-0 items-start gap-4">
         <span
           className={cn(
-            "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-extrabold tabular-nums",
+            "grid h-9 w-9 shrink-0 place-items-center rounded-full tabular-nums",
+            fitType.metric,
             styles.questionBadge,
           )}
           aria-hidden="true"
@@ -231,15 +236,10 @@ export function QuestionCard({
           {index + 1}
         </span>
         <div className="min-w-0">
-          <h2 className="text-pretty text-base font-extrabold leading-6 text-white">
+          <h2 className={cn("text-pretty text-white", fitType.panelTitle)}>
             {question}
           </h2>
-          <p
-            className={cn(
-              "mt-2 text-pretty text-[15px] leading-7",
-              fitText.body,
-            )}
-          >
+          <p className={cn("mt-2 text-pretty", fitType.body, fitText.body)}>
             {answer}
           </p>
         </div>
@@ -278,10 +278,11 @@ export function LearningActionPanel({
           <Icon sx={{ fontSize: 20 }} />
         </span>
       ) : null}
-      <h2 className="text-xl font-extrabold text-white">{title}</h2>
+      <h2 className={cn("text-white", fitType.sectionTitle)}>{title}</h2>
       <p
         className={cn(
-          "mx-auto mt-2 max-w-[36rem] text-pretty text-[15px] leading-6",
+          "mx-auto mt-2 max-w-[36rem] text-pretty",
+          fitType.body,
           fitText.body,
         )}
       >
@@ -291,7 +292,8 @@ export function LearningActionPanel({
         type="button"
         onClick={onAction}
         className={cn(
-          "mt-5 inline-flex min-h-[42px] touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-bold",
+          "mt-5 inline-flex min-h-[42px] touch-manipulation items-center justify-center rounded-lg px-4",
+          fitType.control,
           styles.actionButton,
           LEARNING_FOCUS_VISIBLE,
         )}
@@ -300,7 +302,7 @@ export function LearningActionPanel({
       </button>
       {status ? (
         <p
-          className={cn("mt-4 text-sm font-semibold", fitText.info)}
+          className={cn("mt-4", fitType.control, fitText.info)}
           aria-live="polite"
         >
           {status}
@@ -329,18 +331,14 @@ export function LearningTopicCard({
       )}
     >
       {eyebrow ? (
-        <p
-          className={cn(
-            "text-xs font-bold uppercase tracking-[0.14em]",
-            fitText.label,
-          )}
-        >
+        <p className={cn("uppercase", fitType.eyebrow, fitText.label)}>
           {eyebrow}
         </p>
       ) : null}
       <h2
         className={cn(
-          "text-balance text-2xl font-extrabold leading-tight text-white",
+          "text-balance text-white",
+          fitType.sectionTitle,
           eyebrow ? "mt-2" : "mt-0",
         )}
       >
@@ -348,7 +346,8 @@ export function LearningTopicCard({
       </h2>
       <div
         className={cn(
-          "mt-3 max-w-[56rem] text-pretty text-[15px] leading-7",
+          "mt-3 max-w-[56rem] text-pretty",
+          fitType.body,
           fitText.body,
         )}
       >

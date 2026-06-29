@@ -73,7 +73,7 @@ export function MarketNewsSearchBar({
       <button
         type="submit"
         className={cn(
-          "inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-lg text-sm sm:w-auto sm:px-4",
+          "inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-lg sm:w-auto sm:px-4",
           fitType.control,
           fitButton.primary,
           FIT_FOCUS_VISIBLE,

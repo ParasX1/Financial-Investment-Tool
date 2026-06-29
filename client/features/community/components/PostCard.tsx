@@ -6,7 +6,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
 import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
 import communityStyles from "../styles/community.module.css";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
 import {
   getCommunityPostSignals,
   type CommunitySignalTone,
@@ -101,7 +101,11 @@ export function PostCard({
       <div className={communityStyles.postCardGrid}>
         <div className={communityStyles.postIdentityColumn}>
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
+            className={cn(
+              communityUi.avatar,
+              "h-10 w-10 shadow-[0_0_0_1px_rgba(255,255,255,0.06)]",
+              fitType.avatarMd,
+            )}
             style={{ background: post.avatarGradient }}
           >
             {post.initials}
@@ -110,15 +114,25 @@ export function PostCard({
 
         <div className="min-w-0">
           <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-[7px] gap-y-1 text-sm">
-              <span className="min-w-0 truncate font-bold text-[#f7f8ff]">
+            <div
+              className={cn(
+                "flex min-w-0 flex-wrap items-center gap-x-[7px] gap-y-1",
+                fitType.bodySm,
+              )}
+            >
+              <span className="min-w-0 truncate font-semibold text-[#f7f8ff]">
                 {post.user}
               </span>
               <span
                 aria-hidden
                 className="h-[3px] w-[3px] shrink-0 rounded-full bg-[#687184]"
               />
-              <span className="inline-flex items-center gap-[4px] text-xs text-[#8d95a6]">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-[4px] text-[#8d95a6]",
+                  fitType.caption,
+                )}
+              >
                 <AccessTimeRoundedIcon
                   sx={{ fontSize: 14 }}
                   aria-hidden="true"
@@ -130,7 +144,8 @@ export function PostCard({
 
           <h2
             className={cn(
-              "mt-[6px] text-[17px] font-semibold leading-[1.35] text-[#fbfbff] sm:text-[18px]",
+              "mt-[6px] text-[#fbfbff]",
+              fitType.panelTitle,
               communityStyles.postCopyMeasure,
               communityStyles.wrapAnywhere,
             )}
@@ -230,7 +245,8 @@ export function PostCard({
               type="button"
               onClick={() => setOpen((value) => !value)}
               className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-sm font-semibold transition-colors",
+                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] transition-colors",
+                fitType.control,
                 open
                   ? "bg-[#171b4a] text-[#cfd8ff]"
                   : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
@@ -252,7 +268,8 @@ export function PostCard({
               onClick={() => onToggleLike(post.id)}
               disabled={likeBusy}
               className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] text-sm font-semibold transition-colors",
+                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] transition-colors",
+                fitType.control,
                 liked
                   ? "bg-[#171b4a] text-[#cfd8ff]"
                   : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",

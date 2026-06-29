@@ -4,7 +4,7 @@ import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownR
 import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
 import communityStyles from "../styles/community.module.css";
 import { POST_BODY_PREVIEW_MAX_CHARS } from "../constants";
-import { FOCUS_VISIBLE, cn } from "../design";
+import { FOCUS_VISIBLE, cn, fitType } from "../design";
 import { getExpandableText } from "../lib/communityText";
 import { MarkdownBody } from "./MarkdownBody";
 
@@ -32,7 +32,8 @@ export function ExpandableText({
       <MarkdownBody
         id={contentId}
         className={cn(
-          "text-[15px] leading-[1.65] text-[#c4ccdc]",
+          "text-[#c4ccdc]",
+          fitType.body,
           communityStyles.wrapAnywhere,
         )}
         text={visibleText}
@@ -44,7 +45,8 @@ export function ExpandableText({
             type="button"
             onClick={() => setExpanded((value) => !value)}
             className={cn(
-              "inline-flex min-h-8 touch-manipulation items-center gap-[4px] rounded-md px-[8px] py-[4px] text-sm font-semibold text-[#9eb2ff] transition-colors hover:bg-white/[0.04] hover:text-[#d9e0ff]",
+              "inline-flex min-h-8 touch-manipulation items-center gap-[4px] rounded-md px-[8px] py-[4px] text-[#9eb2ff] transition-colors hover:bg-white/[0.04] hover:text-[#d9e0ff]",
+              fitType.control,
               FOCUS_VISIBLE,
             )}
             aria-expanded={expanded}

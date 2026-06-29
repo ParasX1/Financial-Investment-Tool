@@ -6,7 +6,7 @@ import type { MouseEvent } from "react";
 import Link from "next/link";
 import { fitButton } from "@/components/shared/fitStyles";
 import communityStyles from "../styles/community.module.css";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
 
 export function CommunityToolbar({
   actionHref,
@@ -62,7 +62,7 @@ export function CommunityToolbar({
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Search discussions…"
             className={cn(
-              "w-full pl-[44px] pr-[16px] text-[15px]",
+              "w-full pl-[44px] pr-[16px]",
               communityStyles.toolbarControl,
               communityUi.field,
               communityStyles.panelBorder,
@@ -74,7 +74,8 @@ export function CommunityToolbar({
           href={actionHref}
           onClick={onActionClick}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-sm font-bold text-white no-underline transition-colors hover:no-underline sm:px-4",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-white no-underline transition-colors hover:no-underline sm:px-4",
+            fitType.control,
             communityStyles.toolbarControl,
             actionType === "create" ? fitButton.primary : fitButton.secondary,
             FOCUS_VISIBLE,

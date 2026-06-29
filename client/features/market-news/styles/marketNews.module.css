@@ -313,7 +313,7 @@
   background: rgba(56, 217, 150, 0.1);
   padding: 0.04rem 0.28rem;
   color: #dffbea;
-  font-size: 0.62rem;
+  font-size: var(--fit-type-size-2xs);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
   line-height: var(--fit-type-leading-control);
@@ -327,7 +327,7 @@
   background: rgba(143, 152, 170, 0.08);
   padding: 0.04rem 0.28rem;
   color: #b9c1d0;
-  font-size: 0.62rem;
+  font-size: var(--fit-type-size-2xs);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
   line-height: var(--fit-type-leading-control);
@@ -733,7 +733,7 @@
   color: #ffffff;
   font-size: var(--market-news-title-size);
   font-weight: var(--fit-type-weight-semibold);
-  line-height: 1.28;
+  line-height: var(--fit-type-leading-heading);
 }
 
 .topicArticleSummary {
@@ -905,7 +905,7 @@
   max-width: 100%;
   overflow: hidden;
   color: #ffffff;
-  font-size: 2.25rem;
+  font-size: var(--fit-type-size-feature-title);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-tight);
   text-overflow: ellipsis;
@@ -917,11 +917,11 @@
 }
 
 .marketVisual[data-variant="feature"] .marketVisualLabel {
-  font-size: 0.62rem;
+  font-size: var(--fit-type-size-2xs);
 }
 
 .marketVisual[data-variant="feature"] .marketVisualSignal {
-  font-size: 1.2rem;
+  font-size: var(--fit-type-size-lg);
 }
 
 .sparklinePath {

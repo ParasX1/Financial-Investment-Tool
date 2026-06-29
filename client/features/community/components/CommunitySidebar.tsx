@@ -25,7 +25,7 @@ import {
   COMMUNITY_RESOURCE_LINKS,
   COMMUNITY_TOP_TIME_RANGE_ITEMS,
 } from "../constants";
-import { FOCUS_VISIBLE, cn } from "../design";
+import { FOCUS_VISIBLE, cn, fitType } from "../design";
 import type {
   CommunityFeedCounts,
   CommunityFeedView,
@@ -149,7 +149,7 @@ export function CommunitySidebar({
             )
           : compact && collapsed
             ? cn("fixed z-[900]", communityStyles.sidebarCompactToggle)
-          : "min-w-0",
+            : "min-w-0",
         drawerOpen ? communityStyles.drawerIn : "",
         communityStyles.sidebarShell,
       )}
@@ -166,7 +166,8 @@ export function CommunitySidebar({
         aria-expanded={!collapsed}
         aria-controls="community-feed-navigation"
         className={cn(
-          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[#101014] text-sm font-bold text-[#dce4ff] transition-colors hover:bg-[#171b4a]",
+          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[#101014] text-[#dce4ff] transition-colors hover:bg-[#171b4a]",
+          fitType.control,
           communityStyles.sidebarToggle,
           compact && collapsed
             ? cn(communityStyles.toolbarControl, "px-0")
@@ -196,7 +197,9 @@ export function CommunitySidebar({
               "rounded-lg py-2 text-center",
               fitNav.itemActiveCompactQuiet,
             )}
-            aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
+            aria-label={
+              activeItem ? `Current view: ${activeItem.label}` : undefined
+            }
           >
             <ActiveIcon sx={{ fontSize: 19 }} aria-hidden="true" />
             <span className="sr-only">{activeItem?.label}</span>
@@ -270,7 +273,7 @@ export function CommunitySidebar({
                   <Icon sx={{ fontSize: 18 }} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold leading-tight">
+                  <span className={cn("block", fitType.navLabel)}>
                     {item.label}
                   </span>
                 </span>
@@ -288,9 +291,7 @@ export function CommunitySidebar({
           className={cn("mt-4 min-w-0", collapsed ? "hidden" : "")}
           aria-label="Top feed time range"
         >
-          <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>
-            Time
-          </p>
+          <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>Time</p>
           <div
             className={cn(
               drawerOpen
@@ -310,7 +311,8 @@ export function CommunitySidebar({
                   onClick={() => onTimeRangeChange(item.id)}
                   aria-pressed={active}
                   className={cn(
-                    "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors lg:min-w-0",
+                    "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors lg:min-w-0",
+                    fitType.control,
                     drawerOpen ? "min-w-0" : "",
                     active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
                     FOCUS_VISIBLE,
@@ -334,7 +336,11 @@ export function CommunitySidebar({
       ) : null}
 
       <div
-        className={cn("my-4", communityStyles.dividerTop, collapsed ? "hidden" : "")}
+        className={cn(
+          "my-4",
+          communityStyles.dividerTop,
+          collapsed ? "hidden" : "",
+        )}
         aria-hidden="true"
       />
 
@@ -342,12 +348,12 @@ export function CommunitySidebar({
         className={cn("min-w-0", collapsed ? "hidden" : "")}
         aria-label="Community resources"
       >
-        <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>
-          Resources
-        </p>
+        <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>Resources</p>
         <div
           className={cn(
-            drawerOpen ? "space-y-1" : "grid grid-cols-2 gap-2 lg:block lg:space-y-1",
+            drawerOpen
+              ? "space-y-1"
+              : "grid grid-cols-2 gap-2 lg:block lg:space-y-1",
           )}
         >
           {COMMUNITY_RESOURCE_LINKS.map((label, index) => {
@@ -358,8 +364,11 @@ export function CommunitySidebar({
                 key={label}
                 aria-label={`${label} coming soon`}
                 className={cn(
-                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-[#697185]",
-                  drawerOpen ? "bg-transparent" : "bg-white/[0.02] lg:bg-transparent",
+                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-[#697185]",
+                  fitType.control,
+                  drawerOpen
+                    ? "bg-transparent"
+                    : "bg-white/[0.02] lg:bg-transparent",
                 )}
               >
                 <Icon sx={{ fontSize: 17 }} aria-hidden="true" />

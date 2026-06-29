@@ -41,7 +41,7 @@
   border-radius: 0.6rem;
   background: rgba(255, 255, 255, 0.04);
   color: #dce4ff;
-  font-size: 1.35rem;
+  font-size: var(--fit-type-size-xl);
   line-height: 1;
 }
 
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 0.65rem;
   color: #dce4ff;
-  font-size: 0.82rem;
+  font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
 }
@@ -101,7 +101,7 @@
 .loginHeader {
   margin: 0;
   color: #ffffff;
-  font-size: 1.92rem;
+  font-size: var(--fit-type-size-page-title);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
   line-height: var(--fit-type-leading-heading);
@@ -306,7 +306,7 @@
 
 @media (max-width: 559px) {
   .loginHeader {
-    font-size: 1.65rem;
+    font-size: var(--fit-type-size-page-title-mobile);
   }
 }
 

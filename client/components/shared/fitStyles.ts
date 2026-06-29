@@ -1,3 +1,5 @@
+import { fitType } from "./uiPrimitives";
+
 export const fitNav = {
   itemBase:
     "group flex min-h-[44px] min-w-0 touch-manipulation items-center gap-3 rounded-lg px-3 py-2 text-left transition-[background-color,color,box-shadow] duration-150",
@@ -17,10 +19,8 @@ export const fitNav = {
   iconActiveStandalone:
     "bg-gradient-to-br from-[#5367ff] via-[#6d4cff] to-[#2b164f] text-white shadow-[0_0_22px_rgba(83,103,255,0.42),inset_0_0_0_1px_rgba(213,220,255,0.24)]",
   iconIdle: "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
-  sectionLabel:
-    "text-[11px] font-semibold uppercase tracking-normal text-[#687184]",
-  countPill:
-    "rounded-md bg-black/30 px-2 py-[2px] text-xs font-medium tabular-nums text-[#c6cee0]",
+  sectionLabel: `${fitType.eyebrow} uppercase text-[#687184]`,
+  countPill: `rounded-md bg-black/30 px-2 py-[2px] tabular-nums text-[#c6cee0] ${fitType.badge}`,
 } as const;
 
 export const fitButton = {

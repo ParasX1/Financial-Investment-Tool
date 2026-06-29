@@ -23,11 +23,18 @@
   overflow-x: hidden;
   color-scheme: dark;
   background:
-    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--home-accent) 15%, transparent), transparent 27rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--home-brand-glow) 15%, transparent), transparent 22rem),
+    radial-gradient(
+      circle at 82% 0%,
+      color-mix(in srgb, var(--home-accent) 15%, transparent),
+      transparent 27rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--home-brand-glow) 15%, transparent),
+      transparent 22rem
+    ),
     var(--fit-color-page-bg);
   color: var(--home-text);
-  font-family: var(--fit-font-family);
   font-synthesis-weight: none;
 }
 
@@ -75,8 +82,9 @@
   background: var(--home-panel);
   padding: 0.65rem 0.85rem;
   color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   text-decoration: none;
   transition: transform 150ms ease;
 }
@@ -92,8 +100,9 @@
   gap: 0.65rem;
   background: transparent;
   color: #ffffff;
-  font-size: 0.93rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .brandWordmark {
@@ -125,8 +134,9 @@
   border: 1px solid transparent;
   border-radius: 0.5rem;
   padding: 0 0.95rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -139,7 +149,8 @@
 .primaryButton {
   border-color: var(--home-brand-border);
   background: var(--home-primary-gradient);
-  box-shadow: 0 0.8rem 2.2rem color-mix(in srgb, var(--home-brand-glow) 42%, transparent);
+  box-shadow: 0 0.8rem 2.2rem
+    color-mix(in srgb, var(--home-brand-glow) 42%, transparent);
   color: #ffffff;
 }
 
@@ -221,7 +232,12 @@
   inset: 0;
   z-index: -2;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.84) 0%, rgba(0, 0, 0, 0.5) 45%, rgba(0, 0, 0, 0.16) 100%),
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.84) 0%,
+      rgba(0, 0, 0, 0.5) 45%,
+      rgba(0, 0, 0, 0.16) 100%
+    ),
     linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, #000000 100%);
 }
 
@@ -237,10 +253,10 @@
 .eyebrow {
   margin: 0;
   color: #88a3d5;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
@@ -248,10 +264,10 @@
   max-width: 45rem;
   margin: 0;
   color: #f8faff;
-  font-size: 4.25rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-display-title);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 0.98;
+  line-height: var(--fit-type-leading-display);
   text-wrap: balance;
 }
 
@@ -259,9 +275,9 @@
   max-width: 39rem;
   margin: 0;
   color: #d9e2f5;
-  font-size: 1.12rem;
-  font-weight: 400;
-  line-height: 1.58;
+  font-size: var(--fit-type-size-lg);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
 }
 
 .heroActions {
@@ -299,10 +315,10 @@
   max-width: 42rem;
   margin: 0;
   color: #f6f8ff;
-  font-size: 2.25rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-feature-title);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.12;
+  line-height: var(--fit-type-leading-heading);
   text-wrap: balance;
 }
 
@@ -347,16 +363,16 @@
   min-width: 0;
   gap: 0.7rem;
   color: var(--home-body);
-  font-size: 0.96rem;
-  line-height: 1.55;
+  font-size: var(--fit-type-size-body);
+  line-height: var(--fit-type-leading-body);
 }
 
 .routeTile strong {
   display: block;
   color: #f7f9ff;
-  font-size: 1.06rem;
-  font-weight: 600;
-  line-height: 1.2;
+  font-size: var(--fit-type-size-lg);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .routeBody > span {
@@ -368,8 +384,8 @@
   grid-auto-flow: row;
   gap: 0.45rem;
   color: #aeb8cb;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
 }
 
 .routeHighlights span {
@@ -423,9 +439,9 @@
   max-width: 43rem;
   margin: 0;
   color: var(--home-body);
-  font-size: 1.02rem;
-  font-weight: 400;
-  line-height: 1.72;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
 }
 
 .experienceGrid {
@@ -447,8 +463,8 @@
   background: rgba(9, 9, 11, 0.68);
   padding: 0.9rem;
   color: var(--home-body);
-  font-size: 0.95rem;
-  line-height: 1.55;
+  font-size: var(--fit-type-size-body);
+  line-height: var(--fit-type-leading-body);
 }
 
 .experiencePoint > svg {
@@ -464,9 +480,9 @@
 .experiencePoint strong {
   display: block;
   color: #f7f9ff;
-  font-size: 0.96rem;
-  font-weight: 600;
-  line-height: 1.25;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .experienceMedia {
@@ -542,7 +558,11 @@
   border: 1px solid var(--home-brand-border);
   border-radius: 0.5rem;
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--home-brand-glow) 35%, transparent), transparent 28rem),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--home-brand-glow) 35%, transparent),
+      transparent 28rem
+    ),
     rgba(8, 9, 19, 0.82);
   padding: 3rem 1.25rem;
   text-align: center;
@@ -562,10 +582,10 @@
   max-width: 38rem;
   margin: 0;
   color: #ffffff;
-  font-size: 3rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-feature-title);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.02;
+  line-height: var(--fit-type-leading-display);
   text-wrap: balance;
 }
 
@@ -573,8 +593,8 @@
   max-width: 38rem;
   margin: 0;
   color: var(--home-body);
-  font-size: 1.02rem;
-  line-height: 1.65;
+  font-size: var(--fit-type-size-body);
+  line-height: var(--fit-type-leading-body);
 }
 
 .footer {
@@ -597,8 +617,8 @@
 .footerBrand p,
 .footerLegal {
   margin: 0.5rem 0 0;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
 }
 
 .footerGroups {
@@ -619,8 +639,9 @@
 .footerGroups strong,
 .footerAccount strong {
   color: #ffffff;
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .footerLink {
@@ -632,14 +653,15 @@
   background: transparent;
   padding: 0;
   color: #aab4c7;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
   text-align: left;
 }
 
 @media (max-width: 1180px) {
   .heroTitle {
-    font-size: 3.45rem;
+    font-size: var(--fit-type-size-display-title);
   }
 
   .routeGrid {
@@ -732,12 +754,12 @@
   }
 
   .heroTitle {
-    font-size: 2.65rem;
-    line-height: 0.98;
+    font-size: var(--fit-type-size-display-title-mobile);
+    line-height: var(--fit-type-leading-display);
   }
 
   .heroSubtitle {
-    font-size: 0.98rem;
+    font-size: var(--fit-type-size-body);
   }
 
   .content {
@@ -747,7 +769,7 @@
 
   .sectionIntro h2,
   .experienceCopy h2 {
-    font-size: 1.9rem;
+    font-size: var(--fit-type-size-feature-title-mobile);
   }
 
   .ctaPanel {
@@ -755,11 +777,11 @@
   }
 
   .ctaPanel h2 {
-    font-size: 2.15rem;
+    font-size: var(--fit-type-size-feature-title-mobile);
   }
 
   .ctaPanel p {
-    font-size: 0.98rem;
+    font-size: var(--fit-type-size-body);
   }
 
   .routeGrid {
@@ -771,7 +793,7 @@
   }
 
   .routeHighlights {
-    font-size: 0.88rem;
+    font-size: var(--fit-type-size-body-sm);
   }
 
   .primaryButton,

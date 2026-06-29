@@ -1,7 +1,7 @@
 // File purpose: Renders the supported Community markdown subset without using raw HTML injection.
 import * as React from "react";
 import communityStyles from "../styles/community.module.css";
-import { cn } from "../design";
+import { cn, fitType } from "../design";
 import { DRAFT_IMAGE_MARKER } from "../lib/markdownEditor";
 
 type ImageToken = {
@@ -21,9 +21,7 @@ type InlineToken = {
   href?: string;
 };
 
-const inlineMarkers: Array<
-  Pick<InlineToken, "kind"> & { marker: string }
-> = [
+const inlineMarkers: Array<Pick<InlineToken, "kind"> & { marker: string }> = [
   { kind: "boldItalic", marker: "***" },
   { kind: "strike", marker: "~~" },
   { kind: "bold", marker: "**" },
@@ -152,12 +150,7 @@ function findNextInlineToken(text: string, start: number) {
     if (link) return link;
 
     for (const marker of inlineMarkers) {
-      const token = findDelimitedToken(
-        text,
-        index,
-        marker.kind,
-        marker.marker,
-      );
+      const token = findDelimitedToken(text, index, marker.kind, marker.marker);
       if (token) return token;
     }
   }
@@ -251,9 +244,14 @@ function renderTextBlock(text: string, key: string) {
 
     if (bulletItems.length) {
       nodes.push(
-        <ul key={`${key}-ul-${index}`} className="my-2 list-disc space-y-1 pl-5">
+        <ul
+          key={`${key}-ul-${index}`}
+          className="my-2 list-disc space-y-1 pl-5"
+        >
           {bulletItems.map((item, itemIndex) => (
-            <li key={itemIndex}>{renderInlineMarkdown(item, `${key}-ul-${itemIndex}`)}</li>
+            <li key={itemIndex}>
+              {renderInlineMarkdown(item, `${key}-ul-${itemIndex}`)}
+            </li>
           ))}
         </ul>,
       );
@@ -270,9 +268,14 @@ function renderTextBlock(text: string, key: string) {
 
     if (numberedItems.length) {
       nodes.push(
-        <ol key={`${key}-ol-${index}`} className="my-2 list-decimal space-y-1 pl-5">
+        <ol
+          key={`${key}-ol-${index}`}
+          className="my-2 list-decimal space-y-1 pl-5"
+        >
           {numberedItems.map((item, itemIndex) => (
-            <li key={itemIndex}>{renderInlineMarkdown(item, `${key}-ol-${itemIndex}`)}</li>
+            <li key={itemIndex}>
+              {renderInlineMarkdown(item, `${key}-ol-${itemIndex}`)}
+            </li>
           ))}
         </ol>,
       );
@@ -284,7 +287,7 @@ function renderTextBlock(text: string, key: string) {
       nodes.push(
         <h3
           key={`${key}-h-${index}`}
-          className="mt-3 text-[17px] font-extrabold leading-snug text-[#f6f7ff]"
+          className={cn("mt-3 text-[#f6f7ff]", fitType.panelTitle)}
         >
           {renderInlineMarkdown(heading[1], `${key}-h-${index}`)}
         </h3>,
@@ -365,7 +368,8 @@ export function MarkdownBody({
     <div
       id={id}
       className={cn(
-        "text-[15px] leading-[1.65] text-[#c4ccdc]",
+        "text-[#c4ccdc]",
+        fitType.body,
         communityStyles.wrapAnywhere,
         className,
       )}

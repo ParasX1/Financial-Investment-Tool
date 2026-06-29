@@ -25,14 +25,23 @@ export const fitText = {
 } as const;
 
 export const fitType = {
+  displayTitle: "fit-type-display-title",
   pageTitle: "fit-type-page-title",
   sectionTitle: "fit-type-section-title",
+  featureTitle: "fit-type-feature-title",
   panelTitle: "fit-type-panel-title",
   body: "fit-type-body",
   bodySm: "fit-type-body-sm",
   caption: "fit-type-caption",
   eyebrow: "fit-type-eyebrow",
+  badge: "fit-type-badge",
   control: "fit-type-control",
+  navLabel: "fit-type-nav-label",
   field: "fit-type-field",
   metric: "fit-type-metric",
+  metricMd: "fit-type-metric-md",
+  metricLg: "fit-type-metric-lg",
+  avatar: "fit-type-avatar",
+  avatarSm: "fit-type-avatar-sm",
+  avatarMd: "fit-type-avatar-md",
 } as const;

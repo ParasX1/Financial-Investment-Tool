@@ -61,35 +61,35 @@
 
 .postRailLabel {
   color: var(--fit-color-text-label, #7f8798);
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
 .postRailTitle {
   margin-top: 3px;
   color: #e5eaff;
-  font-size: 0.88rem;
-  font-weight: 800;
-  line-height: 1.25;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .postRailEmpty {
   border: 1px dashed rgba(132, 146, 176, 0.2);
   border-radius: 8px;
   color: #7f8798;
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
   padding: 10px;
 }
 
 .postRailHint {
   color: #7f8798;
-  font-size: 0.82rem;
-  font-weight: 650;
-  line-height: 1.35;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .postTagCluster,
@@ -102,9 +102,9 @@
 
 .signalBadge {
   border-radius: 7px;
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   padding: 5px 8px;
 }
 
@@ -137,19 +137,19 @@
 
 .postSignalGrid dt {
   color: #798398;
-  font-size: 0.66rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
 .postSignalGrid dd {
   margin: 3px 0 0;
   overflow-wrap: anywhere;
-  font-size: 0.82rem;
-  font-weight: 850;
-  line-height: 1.25;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .signalTonePositive {
@@ -171,9 +171,9 @@
 .postSourceLine {
   margin: -2px 0 0;
   color: #858ea1;
-  font-size: 0.76rem;
-  font-weight: 650;
-  line-height: 1.3;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .postEngagementGrid {
@@ -348,8 +348,9 @@
   border-radius: 8px;
   background: #5367ff;
   color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   padding: 8px 12px;
   transform: translateY(-160%);
   transition: transform 150ms ease;

@@ -14,8 +14,16 @@
   margin-left: var(--app-sidebar-width, 64px);
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 20% 0%, rgba(83, 103, 255, 0.16), transparent 34rem),
-    radial-gradient(circle at 92% 18%, rgba(78, 201, 176, 0.08), transparent 26rem),
+    radial-gradient(
+      circle at 20% 0%,
+      rgba(83, 103, 255, 0.16),
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(78, 201, 176, 0.08),
+      transparent 26rem
+    ),
     var(--fit-color-page-bg, #000000);
   padding: 1.5rem clamp(0.75rem, 1.2vw, 1.35rem) 2rem;
   color: #ffffff;
@@ -29,13 +37,15 @@
 }
 
 .header :global(h1) {
-  font-size: 1.42rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-page-title);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .header :global(p) {
   max-width: 30rem;
-  font-size: 0.88rem;
+  font-size: var(--fit-type-size-body);
+  line-height: var(--fit-type-leading-body);
 }
 
 .signedOutLayout {
@@ -119,7 +129,11 @@
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 999px;
   background:
-    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.32), transparent 28%),
+    radial-gradient(
+      circle at 32% 22%,
+      rgba(255, 255, 255, 0.32),
+      transparent 28%
+    ),
     linear-gradient(145deg, rgba(83, 103, 255, 0.44), rgba(78, 201, 176, 0.12));
   box-shadow:
     0 1.5rem 4rem rgba(0, 0, 0, 0.32),
@@ -128,8 +142,8 @@
 
 .avatarInitialsLarge {
   color: #ffffff;
-  font-size: 3.2rem;
-  font-weight: 750;
+  font-size: var(--fit-type-size-avatar-xl);
+  font-weight: var(--fit-type-weight-bold);
   letter-spacing: 0;
   line-height: 1;
 }
@@ -143,28 +157,28 @@
   margin: 0.3rem 0 0;
   overflow-wrap: anywhere;
   color: #ffffff;
-  font-size: 2.15rem;
-  font-weight: 720;
+  font-size: var(--fit-type-size-feature-title);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.04;
+  line-height: var(--fit-type-leading-heading);
 }
 
 .profileHandle {
   margin: 0.28rem 0 0;
   overflow-wrap: anywhere;
   color: #aab4c7;
-  font-size: 1.02rem;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: var(--fit-type-size-lg);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .profileEmail {
   margin: 0.65rem 0 0;
   overflow-wrap: anywhere;
   color: #dce4ff;
-  font-size: 0.9rem;
-  font-weight: 650;
-  line-height: 1.4;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .profileActions,
@@ -185,8 +199,9 @@
   gap: 0.45rem;
   border-radius: 0.68rem;
   padding: 0.6rem 0.9rem;
-  font-size: 0.86rem;
-  font-weight: 750;
+  font-size: var(--fit-type-size-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -237,8 +252,9 @@
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   padding-top: 0.9rem;
   color: #8f98aa;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: var(--fit-type-size-xs);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .settingsColumn {
@@ -256,9 +272,9 @@
 .settingsColumnHeader h3 {
   margin: 0.24rem 0 0;
   color: #ffffff;
-  font-size: 1.05rem;
-  font-weight: 650;
-  line-height: 1.25;
+  font-size: var(--fit-type-size-lg);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .panelHeader,
@@ -282,27 +298,27 @@
 
 .eyebrow {
   color: var(--fit-color-text-label, #687184);
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: var(--fit-type-leading-control);
   text-transform: uppercase;
 }
 
 .panelTitle {
   margin-top: 0.35rem;
   color: #ffffff;
-  font-size: 1.08rem;
-  font-weight: 600;
-  line-height: 1.18;
+  font-size: var(--fit-type-size-panel-title);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .panelSubtitle {
   max-width: 42rem;
   margin-top: 0.45rem;
   color: var(--profile-copy);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
 }
 
 .panelBody {
@@ -316,9 +332,9 @@
   background: rgba(246, 200, 95, 0.08);
   padding: 0.75rem 0.85rem;
   color: #ffe7a3;
-  font-size: 0.84rem;
-  font-weight: 500;
-  line-height: 1.5;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .avatarImage {
@@ -356,8 +372,9 @@
 .fieldLabel {
   display: block;
   color: #dce4ff;
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .fieldInput {
@@ -369,7 +386,9 @@
   background: var(--profile-field);
   padding: 0.65rem 0.75rem;
   color: #ffffff;
-  font-size: 0.92rem;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-control);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -395,9 +414,9 @@
 .fieldHelp,
 .fieldError {
   margin-top: 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .fieldHelp {
@@ -429,8 +448,9 @@
   gap: 0.45rem;
   border-radius: 0.62rem;
   padding: 0.55rem 0.85rem;
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -515,9 +535,9 @@
 .settingCardTitle {
   margin: 0;
   color: #ffffff;
-  font-size: 0.98rem;
-  font-weight: 600;
-  line-height: 1.25;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .settingsList {
@@ -565,8 +585,9 @@
 
 .settingLabel {
   color: #ffffff;
-  font-size: 0.88rem;
-  font-weight: 550;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
 }
 
 .settingValue {
@@ -574,17 +595,17 @@
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--profile-copy);
-  font-size: 0.9rem;
-  font-weight: 500;
-  line-height: 1.4;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .settingDescription {
   margin-top: 0.28rem;
   color: var(--profile-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  line-height: 1.45;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .settingActions {
@@ -607,8 +628,9 @@
   background: transparent;
   padding: 0.4rem 0;
   color: var(--profile-accent);
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
   text-align: right;
 }
 
@@ -630,8 +652,9 @@
   background: rgba(255, 255, 255, 0.04);
   padding: 0.12rem 0.48rem;
   color: var(--profile-copy);
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .statusBadgeSuccess {
@@ -660,8 +683,7 @@
   border: 1px solid rgba(132, 146, 176, 0.22);
   border-radius: 0.72rem;
   background:
-    linear-gradient(145deg, rgba(83, 103, 255, 0.08), transparent 36%),
-    #09090b;
+    linear-gradient(145deg, rgba(83, 103, 255, 0.08), transparent 36%), #09090b;
   color: #ffffff;
   box-shadow: 0 1.8rem 5rem rgba(0, 0, 0, 0.62);
 }
@@ -683,16 +705,16 @@
 
 .editDialogTitle {
   color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.15;
+  font-size: var(--fit-type-size-xl);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
 }
 
 .editDialogDescription {
   margin-top: 0.45rem;
   color: var(--profile-copy);
-  font-size: 0.86rem;
-  line-height: 1.5;
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
 }
 
 .editDialogBody {
@@ -732,9 +754,9 @@
   border-width: 1px;
   border-style: solid;
   padding: 0.8rem 0.9rem;
-  font-size: 0.88rem;
-  font-weight: 500;
-  line-height: 1.5;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .authGate {
@@ -746,7 +768,11 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0.95rem;
   background:
-    radial-gradient(circle at 14% 12%, rgba(93, 103, 255, 0.24), transparent 20rem),
+    radial-gradient(
+      circle at 14% 12%,
+      rgba(93, 103, 255, 0.24),
+      transparent 20rem
+    ),
     linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 38%),
     rgba(9, 9, 11, 0.92);
   padding: clamp(1rem, 2vw, 1.35rem);
@@ -765,11 +791,16 @@
   border: 1px solid rgba(123, 140, 255, 0.32);
   border-radius: 1.45rem;
   background:
-    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.28), transparent 28%),
+    radial-gradient(
+      circle at 35% 24%,
+      rgba(255, 255, 255, 0.28),
+      transparent 28%
+    ),
     linear-gradient(145deg, #5367ff, #2b164f);
   color: #ffffff;
-  font-size: 2.45rem;
-  font-weight: 800;
+  font-size: var(--fit-type-size-avatar-lg);
+  font-weight: var(--fit-type-weight-bold);
+  line-height: 1;
   box-shadow: 0 1.5rem 3.5rem rgba(83, 103, 255, 0.2);
 }
 
@@ -792,19 +823,19 @@
   max-width: 36rem;
   margin: 0.35rem 0 0;
   color: #ffffff;
-  font-size: 2.25rem;
-  font-weight: 720;
+  font-size: var(--fit-type-size-feature-title);
+  font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
-  line-height: 1.06;
+  line-height: var(--fit-type-leading-heading);
 }
 
 .authGateSubtitle {
   max-width: 41rem;
   margin: 0.7rem 0 0;
   color: var(--profile-copy);
-  font-size: 0.94rem;
-  font-weight: 500;
-  line-height: 1.65;
+  font-size: var(--fit-type-size-body);
+  font-weight: var(--fit-type-weight-regular);
+  line-height: var(--fit-type-leading-body);
 }
 
 .authGateActions {
@@ -822,8 +853,9 @@
 .authGateRailTitle {
   margin: 0 0 0.55rem;
   color: #dce4ff;
-  font-size: 0.86rem;
-  font-weight: 750;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
 }
 
 .authGateRail ul {
@@ -833,9 +865,9 @@
   padding: 0;
   list-style: none;
   color: #9faabd;
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-body);
 }
 
 .authGateRail li {
@@ -941,15 +973,15 @@
   }
 
   .avatarInitialsLarge {
-    font-size: 2.55rem;
+    font-size: var(--fit-type-size-avatar-xl-mobile);
   }
 
   .profileDisplayName {
-    font-size: 1.85rem;
+    font-size: var(--fit-type-size-page-title);
   }
 
   .authGateTitle {
-    font-size: 1.72rem;
+    font-size: var(--fit-type-size-page-title-mobile);
   }
 
   .button {

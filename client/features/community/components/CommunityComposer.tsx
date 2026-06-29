@@ -13,7 +13,7 @@ import SuperscriptRoundedIcon from "@mui/icons-material/SuperscriptRounded";
 import TitleRoundedIcon from "@mui/icons-material/TitleRounded";
 import communityStyles from "../styles/community.module.css";
 import { COMMUNITY_IMAGE_TYPES } from "../constants";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { FOCUS_VISIBLE, cn, communityUi, fitText, fitType } from "../design";
 import {
   applyMarkdownCommand,
   insertMarkdownImage,
@@ -24,7 +24,10 @@ import {
   type MarkdownEdit,
   type TextSelection,
 } from "../lib/markdownEditor";
-import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../lib/smartTags";
+import {
+  getSmartTagSuggestions,
+  mergeSelectedTagSuggestions,
+} from "../lib/smartTags";
 import type { DiscussionDraft, DiscussionDraftField } from "../types";
 import { validateCommunityImage } from "../lib/communityValidation";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
@@ -37,11 +40,27 @@ const toolbarActions: Array<{
 }> = [
   { command: "bold", label: "Bold", icon: FormatBoldRoundedIcon },
   { command: "italic", label: "Italic", icon: FormatItalicRoundedIcon },
-  { command: "strike", label: "Strikethrough", icon: StrikethroughSRoundedIcon },
-  { command: "superscript", label: "Superscript", icon: SuperscriptRoundedIcon },
+  {
+    command: "strike",
+    label: "Strikethrough",
+    icon: StrikethroughSRoundedIcon,
+  },
+  {
+    command: "superscript",
+    label: "Superscript",
+    icon: SuperscriptRoundedIcon,
+  },
   { command: "heading", label: "Heading", icon: TitleRoundedIcon },
-  { command: "bullet", label: "Bullet list", icon: FormatListBulletedRoundedIcon },
-  { command: "numbered", label: "Numbered list", icon: FormatListNumberedRoundedIcon },
+  {
+    command: "bullet",
+    label: "Bullet list",
+    icon: FormatListBulletedRoundedIcon,
+  },
+  {
+    command: "numbered",
+    label: "Numbered list",
+    icon: FormatListNumberedRoundedIcon,
+  },
 ];
 
 export function CommunityComposer({
@@ -70,7 +89,9 @@ export function CommunityComposer({
   const linkSelection = React.useRef<TextSelection | null>(null);
   const linkUrlInput = React.useRef<HTMLInputElement | null>(null);
   const cachedSelection = React.useRef<TextSelection | null>(null);
-  const [attachmentError, setAttachmentError] = React.useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = React.useState<string | null>(
+    null,
+  );
   const [linkPanelOpen, setLinkPanelOpen] = React.useState(false);
   const [linkText, setLinkText] = React.useState("");
   const [linkUrl, setLinkUrl] = React.useState("");
@@ -79,10 +100,7 @@ export function CommunityComposer({
   const attachImageLabel = canAttachImage
     ? "Insert image"
     : "Sign in to insert images";
-  const smartTags = React.useMemo(
-    () => getSmartTagSuggestions(draft),
-    [draft],
-  );
+  const smartTags = React.useMemo(() => getSmartTagSuggestions(draft), [draft]);
   const visibleTags = React.useMemo(
     () => mergeSelectedTagSuggestions(draft.tags, smartTags),
     [draft.tags, smartTags],
@@ -101,7 +119,10 @@ export function CommunityComposer({
     const textarea = bodyInput.current;
     if (!textarea) {
       return (
-        cachedSelection.current ?? { start: draft.body.length, end: draft.body.length }
+        cachedSelection.current ?? {
+          start: draft.body.length,
+          end: draft.body.length,
+        }
       );
     }
     return {
@@ -230,7 +251,13 @@ export function CommunityComposer({
       }}
     >
       <div className="flex flex-col gap-[14px] sm:flex-row sm:items-start">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#4f63ff] to-[#7c3aed] text-sm font-extrabold text-white">
+        <div
+          className={cn(
+            communityUi.avatar,
+            "h-10 w-10 bg-gradient-to-br from-[#4f63ff] to-[#7c3aed]",
+            fitType.avatarMd,
+          )}
+        >
           YU
         </div>
 
@@ -248,7 +275,7 @@ export function CommunityComposer({
             onChange={(event) => onDraftChange("title", event.target.value)}
             placeholder="Title"
             className={cn(
-              "h-11 w-full px-[16px] text-[15px] font-semibold leading-6",
+              "h-11 w-full px-[16px]",
               communityUi.field,
               communityStyles.inputBorder,
               "disabled:cursor-not-allowed disabled:opacity-60",
@@ -309,7 +336,10 @@ export function CommunityComposer({
                 aria-expanded={linkPanelOpen}
                 aria-controls="community-link-panel"
               >
-                <InsertLinkRoundedIcon sx={{ fontSize: 20 }} aria-hidden="true" />
+                <InsertLinkRoundedIcon
+                  sx={{ fontSize: 20 }}
+                  aria-hidden="true"
+                />
               </button>
 
               <input
@@ -349,7 +379,7 @@ export function CommunityComposer({
                 className="border-b border-white/10 bg-[#101116] px-3 py-3"
               >
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.12em] text-[#7f8798]">
+                  <label className={cn(fitType.eyebrow, fitText.label)}>
                     Display text
                     <input
                       value={linkText}
@@ -364,7 +394,7 @@ export function CommunityComposer({
                         }
                       }}
                       className={cn(
-                        "mt-1 h-10 w-full px-3 text-sm normal-case tracking-normal",
+                        "mt-1 h-10 w-full px-3 normal-case",
                         communityUi.field,
                         communityStyles.inputBorder,
                       )}
@@ -372,7 +402,7 @@ export function CommunityComposer({
                     />
                   </label>
 
-                  <label className="text-xs font-semibold uppercase tracking-[0.12em] text-[#7f8798]">
+                  <label className={cn(fitType.eyebrow, fitText.label)}>
                     URL
                     <input
                       ref={linkUrlInput}
@@ -391,7 +421,7 @@ export function CommunityComposer({
                         }
                       }}
                       className={cn(
-                        "mt-1 h-10 w-full px-3 text-sm normal-case tracking-normal",
+                        "mt-1 h-10 w-full px-3 normal-case",
                         communityUi.field,
                         communityStyles.inputBorder,
                       )}
@@ -402,7 +432,10 @@ export function CommunityComposer({
                 </div>
 
                 {linkError ? (
-                  <p className="mt-2 text-sm text-[#ffd9e2]" role="alert">
+                  <p
+                    className={cn("mt-2 text-[#ffd9e2]", fitType.bodySm)}
+                    role="alert"
+                  >
                     {linkError}
                   </p>
                 ) : null}
@@ -412,7 +445,8 @@ export function CommunityComposer({
                     type="button"
                     onClick={cancelLink}
                     className={cn(
-                      "h-9 rounded-lg px-3 text-sm font-bold text-[#aeb7c9] hover:bg-white/[0.05]",
+                      "h-9 rounded-lg px-3 text-[#aeb7c9] hover:bg-white/[0.05]",
+                      fitType.control,
                       FOCUS_VISIBLE,
                     )}
                   >
@@ -422,7 +456,8 @@ export function CommunityComposer({
                     type="button"
                     onClick={saveLink}
                     className={cn(
-                      "h-9 rounded-lg bg-[#5d67ff] px-3 text-sm font-bold text-white hover:bg-[#7079ff]",
+                      "h-9 rounded-lg bg-[#5d67ff] px-3 text-white hover:bg-[#7079ff]",
+                      fitType.control,
                       FOCUS_VISIBLE,
                     )}
                   >
@@ -449,7 +484,8 @@ export function CommunityComposer({
               placeholder="Body text (optional)"
               rows={5}
               className={cn(
-                "min-h-[142px] w-full resize-none overflow-hidden bg-transparent px-[16px] py-[14px] text-[15px] leading-6 text-[#e2e7f2] outline-none placeholder:text-[#7f8798] sm:min-h-[126px]",
+                "min-h-[142px] w-full resize-none overflow-hidden bg-transparent px-[16px] py-[14px] text-[#e2e7f2] outline-none placeholder:text-[#7f8798] sm:min-h-[126px]",
+                fitType.body,
                 "disabled:cursor-not-allowed disabled:opacity-60",
               )}
             />
@@ -471,7 +507,8 @@ export function CommunityComposer({
             onClick={() => handleImageFile(null)}
             disabled={creating}
             className={cn(
-              "mr-auto inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
+              "mr-auto inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
+              fitType.caption,
               communityUi.disabled,
               communityStyles.softBorder,
               FOCUS_VISIBLE,
@@ -479,11 +516,13 @@ export function CommunityComposer({
             title="Remove inline image"
             aria-label={`Remove inline image ${draft.imageFile.name}`}
           >
-            <span className="max-w-[14rem] truncate">{draft.imageFile.name}</span>
+            <span className="max-w-[14rem] truncate">
+              {draft.imageFile.name}
+            </span>
             <CloseRoundedIcon sx={{ fontSize: 15 }} aria-hidden="true" />
           </button>
         ) : (
-          <span className="mr-auto text-xs text-[#7f8798]">
+          <span className={cn("mr-auto", fitType.caption, fitText.label)}>
             Formatting is saved as Markdown.
           </span>
         )}
@@ -492,7 +531,8 @@ export function CommunityComposer({
           type="submit"
           disabled={creating || !canSubmit}
           className={cn(
-            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[16px] text-sm font-bold text-white transition-colors",
+            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[16px] text-white transition-colors",
+            fitType.control,
             "hover:bg-[#7079ff]",
             communityUi.disabled,
             FOCUS_VISIBLE,
@@ -506,7 +546,8 @@ export function CommunityComposer({
       {attachmentError ? (
         <p
           className={cn(
-            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-sm text-[#ffd9e2]",
+            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-[#ffd9e2]",
+            fitType.bodySm,
             communityStyles.wrapAnywhere,
           )}
           role="alert"

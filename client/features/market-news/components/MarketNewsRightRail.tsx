@@ -127,7 +127,7 @@ export function MarketNewsRightRail({
                   type="button"
                   onClick={() => onQuoteReferenceChange(ticker.symbol)}
                   className={cn(
-                    "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-xs text-[#dbe4ff]",
+                    "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-[#dbe4ff]",
                     fitType.control,
                     fitButton.secondary,
                     FIT_FOCUS_VISIBLE,
@@ -170,15 +170,17 @@ export function MarketNewsRightRail({
                 <span className="min-w-0">
                   <span className="flex min-w-0 items-center gap-2">
                     <span
-                      className={cn(
-                        "truncate text-sm text-[#8fc7ff]",
-                        fitType.control,
-                      )}
+                      className={cn("truncate text-[#8fc7ff]", fitType.control)}
                     >
                       {ticker.symbol}
                     </span>
                     {ticker.inWatchlist ? (
-                      <span className="rounded-full bg-[#0f2b22] px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-[var(--fit-type-leading-control)] tracking-normal text-[#7dffc0]">
+                      <span
+                        className={cn(
+                          "rounded-full bg-[#0f2b22] px-1.5 py-0.5 uppercase text-[#7dffc0]",
+                          fitType.badge,
+                        )}
+                      >
                         Saved
                       </span>
                     ) : null}
@@ -194,14 +196,16 @@ export function MarketNewsRightRail({
                   </span>
                 </span>
                 <span className="text-right">
-                  <span className="block text-xs font-medium leading-[var(--fit-type-leading-control)] tracking-normal text-[#dce4ff]">
+                  <span className={cn("block text-[#dce4ff]", fitType.caption)}>
                     {ticker.count} {ticker.count === 1 ? "story" : "stories"}
                   </span>
                   {ticker.value ? (
                     <span
-                      className={`block text-xs font-medium leading-[var(--fit-type-leading-control)] tracking-normal ${
-                        toneClass[ticker.tone ?? "neutral"]
-                      }`}
+                      className={cn(
+                        "block",
+                        fitType.caption,
+                        toneClass[ticker.tone ?? "neutral"],
+                      )}
                     >
                       {ticker.change ?? ticker.value}
                     </span>
@@ -225,18 +229,18 @@ export function MarketNewsRightRail({
               Quote reference
             </h2>
             <span
-              className={`text-xs font-medium leading-[var(--fit-type-leading-control)] tracking-normal ${toneClass[selectedTicker.tone]}`}
+              className={cn(fitType.caption, toneClass[selectedTicker.tone])}
             >
               {quoteLoading ? "Updating" : selectedTicker.change}
             </span>
           </div>
-          <p className={cn("mt-2 text-xl text-white", fitType.metric)}>
+          <p className={cn("mt-2 text-white", fitType.metricLg)}>
             {selectedTicker.symbol}
           </p>
-          <p className={cn("text-sm", fitType.caption, fitText.subtle)}>
+          <p className={cn(fitType.caption, fitText.subtle)}>
             {selectedTicker.label}
           </p>
-          <p className={cn("mt-3 text-lg text-white", fitType.metric)}>
+          <p className={cn("mt-3 text-white", fitType.metricMd)}>
             {selectedTicker.value}
           </p>
           <p className={cn("mt-2", fitType.caption, fitText.subtle)}>
@@ -247,7 +251,7 @@ export function MarketNewsRightRail({
             type="button"
             onClick={() => onTickerNewsRequest(selectedTicker.symbol)}
             className={cn(
-              "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-sm text-[#dbe4ff] transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white",
+              "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-[#dbe4ff] transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white",
               fitType.control,
               FIT_FOCUS_VISIBLE,
             )}

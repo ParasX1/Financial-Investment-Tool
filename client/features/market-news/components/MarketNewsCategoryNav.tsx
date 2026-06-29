@@ -34,7 +34,7 @@ export function MarketNewsCategoryNav({
               onClick={() => onTopicChange(targetTopic)}
               aria-pressed={active}
               className={cn(
-                "min-h-[40px] shrink-0 rounded-lg px-3 text-sm transition-colors",
+                "min-h-[40px] shrink-0 rounded-lg px-3 transition-colors",
                 fitType.control,
                 active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
                 FIT_FOCUS_VISIBLE,
@@ -61,7 +61,8 @@ export function MarketNewsCategoryNav({
                 onClick={() => onTopicChange(topic.id)}
                 aria-pressed={active}
                 className={cn(
-                  "min-h-[34px] shrink-0 rounded-md border px-3 text-xs font-medium leading-[var(--fit-type-leading-control)] tracking-normal transition-colors",
+                  "min-h-[34px] shrink-0 rounded-md border px-3 transition-colors",
+                  fitType.badge,
                   active
                     ? "border-[var(--fit-nav-active-border)] bg-[var(--fit-nav-active-bg)] text-[var(--fit-color-accent-strong)]"
                     : "border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] text-[#a5adbf] hover:border-[#5367ff]/40 hover:text-white",
