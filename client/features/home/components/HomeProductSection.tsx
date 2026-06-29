@@ -19,13 +19,8 @@ export function HomeProductSection({
       aria-labelledby="home-product-title"
     >
       <div className={styles.sectionIntro}>
-        <div className={styles.sectionMetaLine}>
-          <p className={styles.eyebrow}>Product map</p>
-          {!signedIn ? (
-            <span className={styles.sectionNote}>Sign in required</span>
-          ) : null}
-        </div>
-        <h2 id="home-product-title">Start where the decision is.</h2>
+        <p className={styles.eyebrow}>Product</p>
+        <h2 id="home-product-title">Start where the work starts.</h2>
       </div>
 
       <div className={styles.routeGrid}>

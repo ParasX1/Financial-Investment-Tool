@@ -1,22 +1,22 @@
 import {
+  homeExperiencePoints,
   homeFooterLinks,
   homeNavItems,
   homeRouteLinks,
-  homeTrustSignals,
 } from "./homeContent";
 
 describe("homeContent", () => {
   it("keeps nav links scoped to sections rendered by the front page", () => {
     expect(homeNavItems.map((item) => item.href)).toEqual([
       "#product",
-      "#trust",
+      "#experience",
     ]);
   });
 
   it("keeps the front page entry points intentionally limited", () => {
     expect(homeRouteLinks).toHaveLength(3);
     expect(homeNavItems).toHaveLength(2);
-    expect(homeTrustSignals).toHaveLength(2);
+    expect(homeExperiencePoints).toHaveLength(4);
   });
 
   it("links only to real FIT product routes", () => {
@@ -38,12 +38,12 @@ describe("homeContent", () => {
 
   it("avoids unsupported marketing placeholders from the previous front page", () => {
     const text = JSON.stringify({
+      homeExperiencePoints,
       homeFooterLinks,
-      homeTrustSignals,
     });
 
     expect(text).not.toMatch(
-      /15K|2\.4B|Pricing|Careers|Legal|Assets Analyzed/i,
+      /15K|2\.4B|Pricing|Careers|Legal|Assets Analyzed|Real routes|Private by default/i,
     );
   });
 });

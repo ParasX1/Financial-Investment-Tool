@@ -4,17 +4,17 @@ import ModalLogin from "@/components/Modal/ModalLogin";
 import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
 import {
+  homeExperiencePoints,
   homeFooterLinks,
   homeNavItems,
   homeRouteLinks,
-  homeTrustSignals,
 } from "../data/homeContent";
 import type { HomeRouteLink } from "../types";
 import { HomeFooter } from "./HomeFooter";
+import { HomeExperienceSection } from "./HomeExperienceSection";
 import { HomeHero } from "./HomeHero";
 import { HomeNavigation } from "./HomeNavigation";
 import { HomeProductSection } from "./HomeProductSection";
-import { HomeTrustSection } from "./HomeTrustSection";
 import styles from "../styles/home.module.css";
 
 export function HomeMain() {
@@ -65,7 +65,7 @@ export function HomeMain() {
             signedIn={signedIn}
             onRouteSelect={openRoute}
           />
-          <HomeTrustSection signals={homeTrustSignals} />
+          <HomeExperienceSection points={homeExperiencePoints} />
         </div>
       </main>
 

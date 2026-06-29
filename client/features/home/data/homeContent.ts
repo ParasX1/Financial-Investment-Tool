@@ -1,39 +1,37 @@
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
+import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
-import type {
-  HomeNavItem,
-  HomeRouteLink,
-  HomeTrustSignal,
-} from "../types";
+import type { HomeExperiencePoint, HomeNavItem, HomeRouteLink } from "../types";
 
 export const homeNavItems: HomeNavItem[] = [
   { href: "#product", id: "product", label: "Product" },
-  { href: "#trust", id: "trust", label: "Trust" },
+  { href: "#experience", id: "experience", label: "Experience" },
 ];
 
 export const homeHeroActions = {
   primary: "Enter FIT",
-  secondary: "See product",
+  secondary: "Explore",
 };
 
 export const homeRouteLinks: HomeRouteLink[] = [
   {
-    description: "Portfolio, risk, and allocation in one workspace.",
+    description: "Risk, allocation, and portfolio movement in one workspace.",
     gated: true,
     href: "/dashboardView",
     icon: AccountBalanceWalletRoundedIcon,
     label: "Portfolio",
   },
   {
-    description: "Market context without leaving the app.",
+    description: "Market context without jumping between tabs.",
     gated: true,
     href: "/MarketNews",
     icon: NewspaperRoundedIcon,
     label: "Market News",
   },
   {
-    description: "Shared notes when your idea needs another angle.",
+    description: "Shared thinking when an idea needs another angle.",
     gated: true,
     href: "/Community",
     icon: GroupsRoundedIcon,
@@ -41,14 +39,27 @@ export const homeRouteLinks: HomeRouteLink[] = [
   },
 ];
 
-export const homeTrustSignals: HomeTrustSignal[] = [
+export const homeExperiencePoints: HomeExperiencePoint[] = [
   {
-    detail: "The front page links only to app surfaces that exist today.",
-    label: "Real routes",
+    description: "See risk and return in the same conversation.",
+    icon: AutoGraphRoundedIcon,
+    label: "Portfolio clarity",
   },
   {
-    detail: "Account-only areas stay behind sign-in.",
-    label: "Private by default",
+    description:
+      "Bring headlines, ticker context, and your watchlist closer together.",
+    icon: NewspaperRoundedIcon,
+    label: "Market context",
+  },
+  {
+    description: "Use guide topics and community notes to test the idea.",
+    icon: GroupsRoundedIcon,
+    label: "Second opinion",
+  },
+  {
+    description: "Use guide topics when a metric needs plain-English context.",
+    icon: MenuBookRoundedIcon,
+    label: "Metric meaning",
   },
 ];
 

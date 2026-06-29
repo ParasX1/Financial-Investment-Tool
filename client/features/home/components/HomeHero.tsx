@@ -14,22 +14,17 @@ export function HomeHero({
 }) {
   return (
     <section id="top" className={styles.hero} aria-labelledby="home-hero-title">
-      <Image
-        className={styles.heroImage}
-        src={graphsImage}
-        alt=""
-        priority
-      />
+      <Image className={styles.heroImage} src={graphsImage} alt="" priority />
       <div className={styles.heroShade} aria-hidden="true" />
 
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>Financial Investment Tool</p>
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Invest with less noise.
+          Invest with clarity.
         </h1>
         <p className={styles.heroSubtitle}>
-          Portfolio, market news, and community context in one focused dark
-          workspace.
+          A focused workspace for portfolio analytics, market context, and the
+          thinking around every decision.
         </p>
 
         <div className={styles.heroActions}>
@@ -54,10 +49,7 @@ export function HomeHero({
               />
             </button>
           )}
-          <a
-            href="#product"
-            className={styles.secondaryButton}
-          >
+          <a href="#experience" className={styles.secondaryButton}>
             {homeHeroActions.secondary}
           </a>
         </div>

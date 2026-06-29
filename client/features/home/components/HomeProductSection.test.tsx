@@ -12,8 +12,6 @@ describe("HomeProductSection", () => {
       />,
     );
 
-    expect(markup).toContain("Sign in required");
-    expect(markup.match(/Sign in required/g)).toHaveLength(1);
     expect(markup).toContain("aria-label=\"Portfolio requires sign in\"");
     expect(markup).not.toContain("href=\"/dashboardView\"");
   });
@@ -30,6 +28,5 @@ describe("HomeProductSection", () => {
     expect(markup).toContain("href=\"/dashboardView\"");
     expect(markup).toContain("href=\"/MarketNews\"");
     expect(markup).toContain("href=\"/Community\"");
-    expect(markup).not.toContain("Sign in required");
   });
 });

@@ -14,7 +14,8 @@ export type HomeRouteLink = {
   label: string;
 };
 
-export type HomeTrustSignal = {
-  detail: string;
+export type HomeExperiencePoint = {
+  description: string;
+  icon: SvgIconComponent;
   label: string;
 };
