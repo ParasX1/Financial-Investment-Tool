@@ -6,7 +6,6 @@ import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
 import type {
   HomeExperiencePoint,
   HomeFooterGroup,
-  HomeNavItem,
   HomeRouteLink,
 } from "../types";
 
@@ -16,11 +15,6 @@ export const homeMetadata = {
   themeColor: "#000000",
   title: "FIT | Financial Investment Tool",
 } as const;
-
-export const homeNavItems: HomeNavItem[] = [
-  { href: "#product", id: "product", label: "Product" },
-  { href: "#experience", id: "experience", label: "Experience" },
-];
 
 export const homeHeroActions = {
   primary: "Sign in",
@@ -37,22 +31,40 @@ export const homeCta = {
 
 export const homeRouteLinks: HomeRouteLink[] = [
   {
-    description: "Risk, allocation, and movement together.",
+    description:
+      "Analyze allocation, performance, and downside exposure without leaving the dashboard.",
     gated: true,
+    highlights: [
+      "Sharpe, Sortino, alpha, beta, and volatility",
+      "Efficient frontier and allocation views",
+      "Value at Risk, drawdown, and correlation context",
+    ],
     href: "/dashboardView",
     icon: AccountBalanceWalletRoundedIcon,
     label: "Portfolio",
   },
   {
-    description: "Headlines and context near your portfolio.",
+    description:
+      "Stay close to the market stories that can change a portfolio decision.",
     gated: true,
+    highlights: [
+      "Market, regional, industry, and commodity news",
+      "Ticker search with quote and sparkline context",
+      "Trending symbols for quick scanning",
+    ],
     href: "/MarketNews",
     icon: NewspaperRoundedIcon,
     label: "Market News",
   },
   {
-    description: "Discuss ideas before they become decisions.",
+    description:
+      "Use discussion to pressure-test ideas before they become positions.",
     gated: true,
+    highlights: [
+      "Post theses, questions, and portfolio reviews",
+      "Reply threads for follow-up reasoning",
+      "Smart tags that keep discussions easy to scan",
+    ],
     href: "/Community",
     icon: GroupsRoundedIcon,
     label: "Community",

@@ -18,6 +18,35 @@
     --fit-color-text-label: #687184;
     --fit-color-accent: #8ea0ff;
     --fit-color-accent-strong: #65a0fd;
+    --fit-color-brand-start: #5367ff;
+    --fit-color-brand-mid: #6d4cff;
+    --fit-color-brand-end: #2b164f;
+    --fit-color-brand-hover-start: #6374ff;
+    --fit-color-brand-hover-mid: #7b58ff;
+    --fit-color-brand-hover-end: #3a155f;
+    --fit-color-brand-gradient: linear-gradient(
+      135deg,
+      var(--fit-color-brand-start) 0%,
+      var(--fit-color-brand-mid) 48%,
+      var(--fit-color-brand-end) 100%
+    );
+    --fit-color-brand-gradient-hover: linear-gradient(
+      135deg,
+      var(--fit-color-brand-hover-start) 0%,
+      var(--fit-color-brand-hover-mid) 48%,
+      var(--fit-color-brand-hover-end) 100%
+    );
+    --fit-color-brand-wash: linear-gradient(
+      135deg,
+      rgba(83, 103, 255, 0.1),
+      rgba(124, 58, 237, 0.12)
+    );
+    --fit-color-brand-border: #203773;
+    --fit-color-brand-border-hover: rgba(123, 140, 255, 0.44);
+    --fit-color-brand-fill-hover: rgba(123, 140, 255, 0.12);
+    --fit-color-brand-chip: rgba(123, 140, 255, 0.1);
+    --fit-color-brand-glow: rgba(83, 103, 255, 0.42);
+    --fit-color-focus-ring: rgba(123, 140, 255, 0.82);
     --fit-nav-active-bg: #101939;
     --fit-nav-active-border: #203773;
   }

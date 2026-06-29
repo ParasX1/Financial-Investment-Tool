@@ -6,7 +6,6 @@ import { useAuth } from "@/components/authContext";
 import {
   homeExperiencePoints,
   homeFooterGroups,
-  homeNavItems,
   homeRouteLinks,
 } from "../data/homeContent";
 import type { HomeRouteLink } from "../types";
@@ -50,7 +49,6 @@ export function HomeMain() {
     <div className={styles.shell}>
       <HomeNavigation
         loading={loading}
-        navItems={homeNavItems}
         signedIn={signedIn}
         onSignIn={() => setShowLogin(true)}
       />

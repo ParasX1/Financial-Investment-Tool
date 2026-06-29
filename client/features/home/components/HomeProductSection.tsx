@@ -35,7 +35,16 @@ export function HomeProductSection({
               </span>
               <span className={styles.routeBody}>
                 <strong>{route.label}</strong>
-                {route.description}
+                <span>{route.description}</span>
+                {route.highlights ? (
+                  <span className={styles.routeHighlights} role="list">
+                    {route.highlights.map((highlight) => (
+                      <span key={highlight} role="listitem">
+                        {highlight}
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
               </span>
               <span className={styles.routeAction} aria-hidden="true">
                 {locked ? <LockOutlinedIcon sx={{ fontSize: 15 }} /> : null}

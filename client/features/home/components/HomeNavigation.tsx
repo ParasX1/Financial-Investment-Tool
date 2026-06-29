@@ -1,17 +1,14 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import Link from "next/link";
-import type { HomeNavItem } from "../types";
 import styles from "../styles/home.module.css";
 
 export function HomeNavigation({
   loading,
-  navItems,
   signedIn,
   onSignIn,
 }: {
   loading: boolean;
-  navItems: HomeNavItem[];
   signedIn: boolean;
   onSignIn: () => void;
 }) {
@@ -31,18 +28,6 @@ export function HomeNavigation({
           </span>
           <span className={styles.brandName}>Financial Investment Tool</span>
         </a>
-
-        <div className={styles.navLinks} aria-label="Front page sections">
-          {navItems.map((item) => (
-            <a
-              key={item.id}
-              href={item.href}
-              className={styles.navLink}
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
 
         <div className={styles.navActions}>
           {signedIn ? (

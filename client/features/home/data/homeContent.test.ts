@@ -2,21 +2,12 @@ import {
   homeCta,
   homeExperiencePoints,
   homeFooterGroups,
-  homeNavItems,
   homeRouteLinks,
 } from "./homeContent";
 
 describe("homeContent", () => {
-  it("keeps nav links scoped to sections rendered by the front page", () => {
-    expect(homeNavItems.map((item) => item.href)).toEqual([
-      "#product",
-      "#experience",
-    ]);
-  });
-
   it("keeps the front page entry points intentionally limited", () => {
     expect(homeRouteLinks).toHaveLength(3);
-    expect(homeNavItems).toHaveLength(2);
     expect(homeExperiencePoints).toHaveLength(4);
   });
 
