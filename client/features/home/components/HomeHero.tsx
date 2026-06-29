@@ -30,7 +30,7 @@ export function HomeHero({
         <div className={styles.heroActions}>
           {signedIn ? (
             <Link href="/dashboardView" className={styles.primaryButton}>
-              Dashboard
+              Open dashboard
               <KeyboardArrowRightRoundedIcon
                 sx={{ fontSize: 18 }}
                 aria-hidden="true"

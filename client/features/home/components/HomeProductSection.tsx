@@ -1,3 +1,4 @@
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import Link from "next/link";
 import type { HomeRouteLink } from "../types";
@@ -36,10 +37,10 @@ export function HomeProductSection({
                 <strong>{route.label}</strong>
                 {route.description}
               </span>
-              <KeyboardArrowRightRoundedIcon
-                sx={{ fontSize: 20 }}
-                aria-hidden="true"
-              />
+              <span className={styles.routeAction} aria-hidden="true">
+                {locked ? <LockOutlinedIcon sx={{ fontSize: 15 }} /> : null}
+                <KeyboardArrowRightRoundedIcon sx={{ fontSize: 20 }} />
+              </span>
             </>
           );
 

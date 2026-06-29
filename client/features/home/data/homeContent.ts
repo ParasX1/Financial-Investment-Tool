@@ -5,33 +5,40 @@ import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
 import type { HomeExperiencePoint, HomeNavItem, HomeRouteLink } from "../types";
 
+export const homeMetadata = {
+  description:
+    "A focused workspace for portfolio analytics, market context, and investment discussion.",
+  themeColor: "#000000",
+  title: "FIT | Financial Investment Tool",
+} as const;
+
 export const homeNavItems: HomeNavItem[] = [
   { href: "#product", id: "product", label: "Product" },
   { href: "#experience", id: "experience", label: "Experience" },
 ];
 
 export const homeHeroActions = {
-  primary: "Enter FIT",
-  secondary: "Explore",
+  primary: "Sign in",
+  secondary: "See features",
 };
 
 export const homeRouteLinks: HomeRouteLink[] = [
   {
-    description: "Risk, allocation, and portfolio movement in one workspace.",
+    description: "Risk, allocation, and movement together.",
     gated: true,
     href: "/dashboardView",
     icon: AccountBalanceWalletRoundedIcon,
     label: "Portfolio",
   },
   {
-    description: "Market context without jumping between tabs.",
+    description: "Headlines and context near your portfolio.",
     gated: true,
     href: "/MarketNews",
     icon: NewspaperRoundedIcon,
     label: "Market News",
   },
   {
-    description: "Shared thinking when an idea needs another angle.",
+    description: "Discuss ideas before they become decisions.",
     gated: true,
     href: "/Community",
     icon: GroupsRoundedIcon,
@@ -41,23 +48,23 @@ export const homeRouteLinks: HomeRouteLink[] = [
 
 export const homeExperiencePoints: HomeExperiencePoint[] = [
   {
-    description: "See risk and return in the same conversation.",
+    description: "Risk and return in the same view.",
     icon: AutoGraphRoundedIcon,
     label: "Portfolio clarity",
   },
   {
     description:
-      "Bring headlines, ticker context, and your watchlist closer together.",
+      "Headlines, ticker context, and watchlists together.",
     icon: NewspaperRoundedIcon,
     label: "Market context",
   },
   {
-    description: "Use guide topics and community notes to test the idea.",
+    description: "Use community notes to test an idea.",
     icon: GroupsRoundedIcon,
     label: "Second opinion",
   },
   {
-    description: "Use guide topics when a metric needs plain-English context.",
+    description: "Plain-English context for unfamiliar metrics.",
     icon: MenuBookRoundedIcon,
     label: "Metric meaning",
   },

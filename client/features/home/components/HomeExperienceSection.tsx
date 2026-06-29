@@ -1,6 +1,7 @@
 import Image from "next/image";
 import pic1Image from "@/assets/pic1.jpg";
 import pic2Image from "@/assets/pic2.jpg";
+import teamImage from "@/assets/teamimage.png";
 import type { HomeExperiencePoint } from "../types";
 import styles from "../styles/home.module.css";
 
@@ -17,13 +18,10 @@ export function HomeExperienceSection({
     >
       <div className={styles.experienceCopy}>
         <p className={styles.eyebrow}>Experience</p>
-        <h2 id="home-experience-title">
-          Calm enough to read. Dense enough to decide.
-        </h2>
+        <h2 id="home-experience-title">See the whole decision.</h2>
         <p>
-          FIT keeps the homepage light, then lets the workspace carry the
-          details: portfolio analytics, market context, and investor discussion
-          where they belong.
+          Portfolio analytics, market context, and investor discussion stay
+          close without crowding the workspace.
         </p>
 
         <div className={styles.experienceGrid}>
@@ -56,9 +54,17 @@ export function HomeExperienceSection({
           <Image
             src={pic1Image}
             alt="Portfolio charts on a tablet"
-            sizes="(max-width: 900px) 48vw, 20vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 900px) 48vw, 20vw"
           />
           <figcaption>Portfolio view</figcaption>
+        </figure>
+        <figure className={styles.mediaFrameTertiary}>
+          <Image
+            src={teamImage}
+            alt="Investment discussion illustration"
+            sizes="(max-width: 640px) 100vw, (max-width: 900px) 48vw, 18vw"
+          />
+          <figcaption>Shared review</figcaption>
         </figure>
       </div>
     </section>
