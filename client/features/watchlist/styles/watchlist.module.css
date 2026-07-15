@@ -313,6 +313,13 @@
   text-transform: uppercase;
 }
 
+.listDisclosure {
+  margin: 0.35rem 0 0;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-2xs);
+  line-height: var(--fit-type-leading-body);
+}
+
 .stateCopy {
   max-width: 37rem;
 }
@@ -326,6 +333,9 @@
 }
 
 .listSection {
+  --watchlist-table-columns: minmax(12rem, 1.15fr) minmax(9rem, 0.72fr)
+    minmax(14rem, 1.35fr) 17.75rem;
+
   margin-top: 1.5rem;
   overflow: hidden;
 }
@@ -379,7 +389,7 @@
 .listHeader,
 .watchlistRow {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.15fr) minmax(9rem, 0.72fr) minmax(14rem, 1.35fr) auto;
+  grid-template-columns: var(--watchlist-table-columns);
   gap: 1rem;
 }
 
@@ -392,6 +402,10 @@
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
   text-transform: uppercase;
+}
+
+.listHeader span:last-child {
+  text-align: right;
 }
 
 .watchlistRow {
@@ -471,17 +485,12 @@
   font-weight: var(--fit-type-weight-semibold);
 }
 
-.quoteMeta,
-.targetDisclaimer {
+.quoteMeta {
   color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-2xs);
   line-height: var(--fit-type-leading-body);
 }
 
-.targetDisclaimer {
-  display: block;
-  margin-top: 0.2rem;
-}
 
 .changePositive { color: #53dec7; }
 .changeNegative { color: #ff9bb0; }
@@ -527,7 +536,15 @@
 }
 
 .mobileLabel {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
   color: var(--fit-color-text-label);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
@@ -602,6 +619,38 @@
   50% { opacity: 1; }
 }
 
+@media (max-width: 1100px) {
+  .listHeader { display: none; }
+
+  .watchlistRow {
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
+  }
+
+  .researchCell,
+  .rowActions {
+    grid-column: 1 / -1;
+  }
+
+  .rowActions {
+    flex-wrap: wrap;
+  }
+
+  .quoteStatus {
+    flex-wrap: wrap;
+  }
+
+  .mobileLabel {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
 @media (max-width: 900px) {
   .headerRow,
   .listToolbar {
@@ -611,14 +660,6 @@
 
   .newsLink { align-self: flex-start; }
   .addPanel { grid-template-columns: minmax(0, 1fr); }
-  .listHeader { display: none; }
-
-  .watchlistRow {
-    grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
-  }
-
-  .researchCell { grid-column: 1 / -1; }
-  .mobileLabel { display: block; }
 }
 
 @media (max-width: 640px) {

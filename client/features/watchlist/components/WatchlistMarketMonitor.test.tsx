@@ -73,10 +73,12 @@ describe("WatchlistMarketMonitorView", () => {
     );
 
     expect(markup).toContain("CBA.AX Market Monitor");
-    expect(markup).toContain("Prices every 15s");
-    expect(markup).toContain("trend every 30s");
+    expect(markup).toContain("Prices 15s · chart 30s");
     expect(markup).toContain("Data may be delayed");
+    expect(markup).toContain("1-minute snapshots");
     expect(markup).toContain("/MarketNews?q=CBA.AX");
+    expect(markup).not.toContain("Focused 1D monitor");
+    expect(markup).not.toContain("Follow one saved idea");
     expect(markup).not.toContain(">Live<");
     expect(markup).not.toContain("extended-hours price");
   });
@@ -92,7 +94,7 @@ describe("WatchlistMarketMonitorView", () => {
   });
   it.each([
     {
-      expectedCadence: "Checks every 30s",
+      expectedCadence: "Regular-session price/chart · checks 30s",
       expectedChange: "↓ −1.00 (−0.50%)",
       expectedState: "Pre-market",
       marketState: "PREPRE",
@@ -106,7 +108,7 @@ describe("WatchlistMarketMonitorView", () => {
       },
     },
     {
-      expectedCadence: "Checks every 30s",
+      expectedCadence: "Regular-session price/chart · checks 30s",
       expectedChange: "→ 0.00 (0.00%)",
       expectedState: "After hours",
       marketState: "POSTPOST",
@@ -178,12 +180,12 @@ describe("WatchlistMarketMonitorView", () => {
     );
 
     expect(closed).toContain("Market closed");
-    expect(closed).toContain("refresh every 5 minutes");
+    expect(closed).toContain("Updates every 5 min");
     expect(closed).toContain("Quote time unavailable");
-    expect(closed).toContain("CBA.AX market snapshot");
+    expect(closed).not.toContain("CBA.AX market snapshot");
     expect(closed).toContain("Daily change unavailable");
     expect(unknown).toContain("Market status unavailable");
-    expect(unknown).toContain("Refreshes every 60s");
+    expect(unknown).toContain("Checks every 60s");
     expect(unknown).toContain("Quote unavailable");
   });
 

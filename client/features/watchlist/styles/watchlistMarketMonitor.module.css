@@ -18,19 +18,13 @@
 }
 
 .monitorTitle {
-  margin: 0.25rem 0 0;
+  margin: 0;
   color: #fff;
   font-size: var(--fit-type-size-xl);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
 }
 
-.monitorIntro {
-  margin: 0.4rem 0 0;
-  color: var(--fit-color-text-body);
-  font-size: var(--fit-type-size-body-sm);
-  line-height: var(--fit-type-leading-body);
-}
 
 .monitorActions {
   display: flex;

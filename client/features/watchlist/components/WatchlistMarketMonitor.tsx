@@ -49,7 +49,7 @@ function marketStateView(value: string | null) {
   switch (value?.toUpperCase()) {
     case "REGULAR":
       return {
-        cadence: "Prices every 15s · trend every 30s while market open.",
+        cadence: "Prices 15s · chart 30s",
         label: "Market open",
         tone: styles.monitorStateOpen,
       };
@@ -58,8 +58,7 @@ function marketStateView(value: string | null) {
     case "POST":
     case "POSTPOST":
       return {
-        cadence:
-          "Checks every 30s; chart reflects available regular-session data.",
+        cadence: "Regular-session price/chart · checks 30s",
         label: value.toUpperCase().startsWith("PRE")
           ? "Pre-market"
           : "After hours",
@@ -67,13 +66,13 @@ function marketStateView(value: string | null) {
       };
     case "CLOSED":
       return {
-        cadence: "Prices and trend refresh every 5 minutes while closed.",
+        cadence: "Updates every 5 min",
         label: "Market closed",
         tone: styles.monitorStateClosed,
       };
     default:
       return {
-        cadence: "Refreshes every 60s while market status is unknown.",
+        cadence: "Checks every 60s",
         label: "Market status unavailable",
         tone: styles.monitorStateUnknown,
       };
@@ -142,8 +141,7 @@ export function WatchlistMarketMonitorView({
     quote?.change ?? null,
     quote?.changePercent ?? null,
   );
-  const companyName =
-    quote?.longName ?? quote?.shortName ?? item.symbol + " market snapshot";
+  const companyName = quote?.longName ?? quote?.shortName ?? null;
   const refreshing = quoteRefreshing || chartState.refreshing;
 
   return (
@@ -153,15 +151,9 @@ export function WatchlistMarketMonitorView({
       id="watchlist-market-monitor"
     >
       <header className={styles.monitorHeader}>
-        <div>
-          <p className={sharedStyles.stateEyebrow}>Focused 1D monitor</p>
-          <h2 id="watchlist-monitor-title" className={styles.monitorTitle}>
-            {item.symbol} Market Monitor
-          </h2>
-          <p className={styles.monitorIntro}>
-            Follow one saved idea at a time with one-minute intraday snapshots.
-          </p>
-        </div>
+        <h2 id="watchlist-monitor-title" className={styles.monitorTitle}>
+          {item.symbol} Market Monitor
+        </h2>
         <div className={styles.monitorActions}>
           <button
             type="button"
@@ -196,7 +188,9 @@ export function WatchlistMarketMonitorView({
       <div className={styles.monitorGrid}>
         <div className={styles.monitorSummary}>
           <div>
-            <p className={styles.monitorCompany}>{companyName}</p>
+            {companyName ? (
+              <p className={styles.monitorCompany}>{companyName}</p>
+            ) : null}
             <strong className={styles.monitorPrice}>
               {formatPrice(price, currency)}
             </strong>
@@ -211,11 +205,9 @@ export function WatchlistMarketMonitorView({
                 className={cn(styles.monitorStateDot, state.tone)}
                 aria-hidden="true"
               />
-              {state.label}
+              {state.label} · {formatQuoteTime(quoteTime)}
             </p>
-            <p>{formatQuoteTime(quoteTime)}</p>
-            <p>{state.cadence}</p>
-            <p>Data may be delayed depending on the exchange and provider.</p>
+            <p>{state.cadence} · Data may be delayed.</p>
           </div>
 
           <Link

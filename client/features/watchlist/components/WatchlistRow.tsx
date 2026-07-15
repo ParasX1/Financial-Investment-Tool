@@ -116,15 +116,12 @@ export function WatchlistRow({
       <div className={styles.researchCell}>
         <span className={styles.mobileLabel}>Research note</span>
         <p className={item.note ? styles.note : styles.noteEmpty}>
-          {item.note ?? "Add why you're watching this idea."}
+          {item.note ?? "Add note"}
         </p>
         {item.targetPrice !== null ? (
-          <>
-            <span className={styles.target}>Research target: {formatPrice(item.targetPrice, quote?.currency ?? null)}</span>
-            <span className={styles.targetDisclaimer}>
-              Personal comparison only — not an alert or recommendation.
-            </span>
-          </>
+          <span className={styles.target}>
+            Research target: {formatPrice(item.targetPrice, quote?.currency ?? null)}
+          </span>
         ) : null}
       </div>
 

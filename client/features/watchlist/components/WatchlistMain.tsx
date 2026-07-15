@@ -321,6 +321,9 @@ export function WatchlistMain() {
                 <div>
                   <p className={styles.stateEyebrow}>{watchlist.items.length} of {WATCHLIST_LIMIT} ideas</p>
                   <h2 id="watchlist-list-title" className={styles.panelTitle}>My Research List</h2>
+                  <p className={styles.listDisclosure}>
+                    Targets are personal references—not alerts or recommendations.
+                  </p>
                 </div>
                 <div className={styles.toolbarControls}>
                   <label>

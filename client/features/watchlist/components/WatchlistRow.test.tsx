@@ -90,7 +90,7 @@ describe("WatchlistRow", () => {
 
     expect(markup).toContain("Market closed");
     expect(markup).toContain("Quote as of");
-    expect(markup).toContain("not an alert or recommendation");
+    expect(markup).not.toContain("not an alert or recommendation");
   });
 
   it("exposes an accessible control for the selected market monitor", () => {
@@ -131,7 +131,7 @@ describe("WatchlistRow", () => {
     });
 
     expect(pending).toContain("Loading…");
-    expect(pending).toContain("Add why you&#x27;re watching this idea.");
+    expect(pending).toContain("Add note");
     expect(unavailable).toContain("Quote unavailable");
     expect(unavailablePlaceholder).toContain("Quote unavailable");
     expect(unavailablePlaceholder).not.toContain("↑ 1.25%");
