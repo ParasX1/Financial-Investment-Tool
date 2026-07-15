@@ -13,18 +13,7 @@
   min-height: 100vh;
   margin-left: var(--app-sidebar-width, 64px);
   overflow-x: hidden;
-  background:
-    radial-gradient(
-      circle at 20% 0%,
-      rgba(83, 103, 255, 0.16),
-      transparent 34rem
-    ),
-    radial-gradient(
-      circle at 92% 18%,
-      rgba(78, 201, 176, 0.08),
-      transparent 26rem
-    ),
-    var(--fit-color-page-bg, #000000);
+  background: transparent;
   padding: 1.5rem clamp(0.75rem, 1.2vw, 1.35rem) 2rem;
   color: #ffffff;
   transition: margin-left 200ms ease-out;

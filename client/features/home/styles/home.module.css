@@ -22,18 +22,7 @@
   min-height: 100vh;
   overflow-x: hidden;
   color-scheme: dark;
-  background:
-    radial-gradient(
-      circle at 82% 0%,
-      color-mix(in srgb, var(--home-accent) 15%, transparent),
-      transparent 27rem
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--home-brand-glow) 15%, transparent),
-      transparent 22rem
-    ),
-    var(--fit-color-page-bg);
+  background: var(--fit-page-background);
   color: var(--home-text);
   font-synthesis-weight: none;
 }

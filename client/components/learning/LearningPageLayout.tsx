@@ -66,7 +66,7 @@ export function LearningPageLayout({
       <main
         id={mainId}
         tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,64px)] min-h-screen overflow-x-hidden bg-black px-3 pb-8 pt-8 text-white transition-[margin-left] duration-200 ease-out sm:px-5 sm:pb-10 sm:pt-10 lg:px-6 xl:px-7"
+        className="ml-[var(--app-sidebar-width,64px)] min-h-screen overflow-x-hidden bg-transparent px-3 pb-8 pt-8 text-white transition-[margin-left] duration-200 ease-out sm:px-5 sm:pb-10 sm:pt-10 lg:px-6 xl:px-7"
       >
         <div
           className="mx-auto w-full"

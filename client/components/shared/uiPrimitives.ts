@@ -8,7 +8,7 @@ export const FIT_FOCUS_VISIBLE =
 export const FIT_CONTENT_MAX_WIDTH_PX = 1680;
 
 export const fitSurface = {
-  page: "bg-[var(--fit-color-page-bg)] text-white",
+  page: "fit-page-background text-white",
   panel:
     "rounded-xl border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface)]",
   card: "rounded-xl border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface)]",

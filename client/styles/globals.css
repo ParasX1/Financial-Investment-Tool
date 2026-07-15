@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer components {
+  .fit-page-background {
+    background: var(--fit-page-background);
+  }
+
   .fit-type-display-title {
     font-size: var(--fit-type-size-display-title-mobile);
     font-weight: var(--fit-type-weight-semibold);
@@ -191,6 +195,13 @@
     --bs-font-sans-serif: var(--fit-font-family);
     --bs-body-font-family: var(--fit-font-family);
     --fit-color-page-bg: #000000;
+    --fit-page-background:
+      radial-gradient(
+        circle at 20% 0%,
+        rgba(83, 103, 255, 0.12),
+        transparent 34rem
+      ),
+      var(--fit-color-page-bg);
     --fit-color-surface: #09090b;
     --fit-color-surface-soft: #111114;
     --fit-color-field: #18181b;
@@ -256,7 +267,7 @@
   }
 
   body {
-    background-color: var(--fit-color-page-bg, #050505);
+    background: var(--fit-page-background);
     font-family: var(--fit-font-family);
     font-synthesis-weight: none;
     line-height: var(--fit-type-leading-body);

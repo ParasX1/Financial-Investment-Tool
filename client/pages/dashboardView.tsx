@@ -26,6 +26,7 @@ import supabase from "@/components/supabase";
 import OHLCChart from '@/components/ohlc';
 import { Select, SelectItem } from "@nextui-org/react";
 import StockChartCard, { stockDataMap } from '@/components/StockCardComponent';
+import { cn, fitType } from '@/components/shared/uiPrimitives';
 import { MetricType } from '@/components/graphSettingsModal';
 import { useAuth } from '@/components/authContext'
 import { loadPortfolioConfig, savePortfolioConfig } from '@/services/portfolioPrefs'
@@ -149,8 +150,8 @@ const ObserverChartWindow = React.memo(({
             height: windowState.h,
             minWidth: OBSERVER_WINDOW_MIN_WIDTH,
             minHeight: OBSERVER_WINDOW_MIN_HEIGHT,
-            border: '1px solid #343846',
-            bgcolor: '#0b0b0f',
+            border: '1px solid var(--fit-color-border-panel, #27272a)',
+            bgcolor: 'var(--fit-color-surface, #09090b)',
             boxShadow: '0 20px 52px rgba(0,0,0,0.42)',
             overflow: 'hidden',
             zIndex: windowState.z,
@@ -166,19 +167,24 @@ const ObserverChartWindow = React.memo(({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'move',
-                borderBottom: '1px solid #24262d',
-                bgcolor: '#121217',
+                borderBottom: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+                bgcolor: 'var(--fit-color-surface-soft, #111114)',
                 userSelect: 'none',
             }}
         >
-            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#dce4ff' }}>
+            <Typography sx={{ fontSize: 'var(--fit-type-size-caption)', fontWeight: 'var(--fit-type-weight-semibold)', color: '#e2e7f2' }}>
                 Chart {windowState.cardIndex + 1}
             </Typography>
             <IconButton
                 size="small"
+                aria-label="Close chart window"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onClose(windowState.cardIndex)}
-                sx={{ color: '#9aa0aa' }}
+                sx={{
+                    color: 'var(--fit-color-text-muted, #8f98aa)',
+                    '&:hover': { color: '#fff', bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))' },
+                    '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 },
+                }}
             >
                 <CloseIcon fontSize="small" />
             </IconButton>
@@ -209,7 +215,7 @@ const ObserverChartWindow = React.memo(({
                 height: 18,
                 cursor: 'nwse-resize',
                 background:
-                    'linear-gradient(135deg, transparent 50%, rgba(154,167,255,0.65) 50%)',
+                    'linear-gradient(135deg, transparent 50%, var(--fit-color-accent-strong, #65a0fd) 50%)',
             }}
         />
     </Box>
@@ -621,7 +627,10 @@ const DashboardView: React.FC = () => {
             sx={{
                 height: '100vh',
                 overflow: 'hidden',
-                backgroundColor: 'black',
+                backgroundColor: 'var(--fit-color-page-bg, #000000)',
+                color: '#fff',
+                colorScheme: 'dark',
+                fontFamily: 'var(--fit-font-family)',
                 '@media (max-height: 720px), (max-width: 900px)': {
                     overflowY: 'auto',
                     overflowX: 'hidden',
@@ -641,7 +650,7 @@ const DashboardView: React.FC = () => {
                         overflow: 'hidden',
                         paddingLeft: 'var(--app-sidebar-width, 64px)',
                         transition: 'padding-left 200ms ease',
-                        backgroundColor: 'black',
+                        background: 'var(--fit-page-background)',
                         display: 'flex',
                         flexDirection: 'column',
                         '@media (max-height: 720px), (max-width: 900px)': {
@@ -672,18 +681,9 @@ const DashboardView: React.FC = () => {
                             },
                         }}
                     >    
-                        <Typography
-                            variant="h6"
-                            sx={{ 
-                                color: 'white', 
-                                fontWeight: 600, 
-                                fontSize: 'clamp(22px, 1.65vw, 32px)',
-                                lineHeight: 1.1,
-                                flexShrink: 0,
-                            }}
-                            >
+                        <h1 className={cn("text-balance text-white", fitType.pageTitle)}>
                             Portfolio Analytics
-                        </Typography>
+                        </h1>
 
 
 {/* Search Bar UI only ---------------------------------------------------------------------------------------------------*/}
@@ -698,20 +698,21 @@ const DashboardView: React.FC = () => {
                             }}
                         >
                             <Box ref={stockSelectRef} sx={{ flex: '1 1 420px', minWidth: { xs: '100%', md: 320 }, position: 'relative', zIndex: 20 }}>
-                                <Typography
-                                    variant="h5"
-                                    sx={{ 
-                                        color: 'white', 
-                                        fontWeight: 300, 
-                                        fontSize: 'clamp(11px, 0.72vw, 14px)',
+                                <Box
+                                    component="label"
+                                    htmlFor="portfolio-stock-select"
+                                    className={fitType.eyebrow}
+                                    sx={{
+                                        display: 'block',
+                                        color: 'var(--fit-color-text-body, #b9c1d0)',
                                         mb: 'clamp(2px, 0.35vh, 4px)',
-                                        lineHeight: 1.1,
                                     }}
                                 >
                                     Select Stocks
-                                </Typography>
+                                </Box>
 
                                 <Autocomplete
+                                    id="portfolio-stock-select"
                                     multiple
                                     freeSolo
                                     disablePortal
@@ -740,29 +741,29 @@ const DashboardView: React.FC = () => {
                                             flexWrap: 'wrap',
                                             gap: 'clamp(3px, 0.35vw, 6px)',
                                             minHeight: 'clamp(34px, 4vh, 42px)',
-                                            backgroundColor: '#1b1b20',
+                                            backgroundColor: 'var(--fit-color-field, #18181b)',
                                             color: '#fff',
-                                            borderRadius: 1,
+                                            borderRadius: '0.625rem',
                                             py: 'clamp(3px, 0.5vh, 6px)',
                                             pl: 'clamp(6px, 0.55vw, 10px)',
                                         },
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
-                                                borderColor: '#2c2c33',
+                                                borderColor: 'var(--fit-color-border-control, #202230)',
                                             },
                                             '&:hover fieldset': {
-                                                borderColor: '#3a3a42',
+                                                borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
                                             },
                                             '&.Mui-focused fieldset': {
-                                                borderColor: '#6d5dfc',
+                                                borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
                                             },
                                         },
                                         '& input': {
                                             color: '#fff',
-                                            fontSize: 'clamp(12px, 0.75vw, 14px)',
+                                            fontSize: 'var(--fit-type-size-body-sm)',
                                         },
                                         '& input::placeholder': {
-                                            color: '#a09ca8',
+                                            color: 'var(--fit-color-text-muted, #8f98aa)',
                                             opacity: 1,
                                         },
                                         '& .MuiAutocomplete-popperDisablePortal': {
@@ -781,20 +782,20 @@ const DashboardView: React.FC = () => {
                                         },
                                         paper: {
                                             sx: {
-                                                bgcolor: '#1b1b20',
+                                                bgcolor: 'var(--fit-color-surface, #09090b)',
                                                 color: '#fff',
-                                                border: '1px solid #2c2c33',
-                                                borderRadius: 1,
+                                                border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+                                                borderRadius: '0.625rem',
                                                 boxShadow: '0 12px 32px rgba(0,0,0,.45)',
                                                 '& .MuiAutocomplete-option': {
                                                     color: '#fff',
-                                                    fontSize: 'clamp(12px, 0.75vw, 14px)',
+                                                    fontSize: 'var(--fit-type-size-body-sm)',
                                                 },
                                                 '& .MuiAutocomplete-option[aria-selected="true"]': {
-                                                    bgcolor: 'rgba(109,93,252,.22)',
+                                                    bgcolor: 'var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))',
                                                 },
                                                 '& .MuiAutocomplete-option.Mui-focused': {
-                                                    bgcolor: 'rgba(109,93,252,.28)',
+                                                    bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
                                                 },
                                                 '& .MuiAutocomplete-listbox': {
                                                     p: 0,
@@ -810,16 +811,16 @@ const DashboardView: React.FC = () => {
                                                     position: 'sticky',
                                                     top: 0,
                                                     zIndex: 1,
-                                                    bgcolor: '#141419',
-                                                    color: '#9aa7ff',
+                                                    bgcolor: 'var(--fit-color-surface-soft, #111114)',
+                                                    color: 'var(--fit-color-accent-strong, #65a0fd)',
                                                     px: 1.5,
                                                     minHeight: 38,
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    fontSize: 'clamp(11px, 0.68vw, 13px)',
-                                                    fontWeight: 700,
-                                                    borderTop: '1px solid rgba(255,255,255,0.04)',
-                                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                    fontSize: 'var(--fit-type-size-caption)',
+                                                    fontWeight: 'var(--fit-type-weight-semibold)',
+                                                    borderTop: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+                                                    borderBottom: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
                                                     boxShadow: '0 8px 12px rgba(20,20,25,0.92)',
                                                 }}
                                             >
@@ -843,20 +844,24 @@ const DashboardView: React.FC = () => {
                                                     sx={{
                                                         mr: 'clamp(3px, 0.35vw, 6px)',
                                                         height: 'clamp(22px, 2.7vh, 26px)',
-                                                        fontSize: 'clamp(11px, 0.7vw, 13px)',
+                                                        fontSize: 'var(--fit-type-size-caption)',
                                                         cursor: 'pointer',
-                                                        bgcolor: isSelected ? '#6d5dfc' : '#2c2c33',
-                                                        color: isSelected ? '#fff' : '#a09ca8',
+                                                        bgcolor: isSelected ? '#5d67ff' : 'var(--fit-color-field, #18181b)',
+                                                        color: isSelected ? '#fff' : 'var(--fit-color-text-muted, #8f98aa)',
                                                         border: '1px solid',
-                                                        borderColor: isSelected ? '#8c80ff' : '#3a3a42',
+                                                        borderColor: isSelected ? 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))' : 'var(--fit-color-border-control, #202230)',
                                                         '&:hover': {
-                                                            bgcolor: isSelected ? '#7b6cff' : '#35353d',
+                                                            bgcolor: isSelected ? '#7079ff' : 'var(--fit-color-surface-soft, #111114)',
                                                         },
                                                         '& .MuiChip-deleteIcon': {
-                                                            color: isSelected ? '#d8d4ff' : '#8b8794',
+                                                            color: isSelected ? '#dce4ff' : 'var(--fit-color-text-muted, #8f98aa)',
                                                             '&:hover': {
                                                                 color: '#fff',
                                                             },
+                                                        },
+                                                        '&:focus-visible': {
+                                                            outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+                                                            outlineOffset: 2,
                                                         },
                                                     }}
                                                 />
@@ -874,7 +879,7 @@ const DashboardView: React.FC = () => {
                                                 startAdornment: (
                                                     <>
                                                         <InputAdornment position="start">
-                                                            <SearchIcon sx={{ color: '#8b8794', fontSize: 22 }} />
+                                                            <SearchIcon sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', fontSize: 22 }} />
                                                         </InputAdornment>
                                                         {params.InputProps.startAdornment}
                                                     </>
@@ -896,19 +901,21 @@ const DashboardView: React.FC = () => {
                             }}
                         >
                             <Box sx={{ flex: 1 }}>
-                                <Typography
+                                <Box
+                                    component="label"
+                                    htmlFor="portfolio-start-date"
+                                    className={fitType.eyebrow}
                                     sx={{
-                                        color: 'white',
-                                        fontSize: 'clamp(11px, 0.68vw, 13px)',
-                                        fontWeight: 300,
+                                        display: 'block',
+                                        color: 'var(--fit-color-text-body, #b9c1d0)',
                                         mb: 'clamp(2px, 0.35vh, 4px)',
-                                        lineHeight: 1.1,
                                     }}
                                 >
                                     Start Date
-                                </Typography>
+                                </Box>
                                 <Tooltip title="Start" arrow>
                                     <TextField
+                                        id="portfolio-start-date"
                                         fullWidth
                                         type="date"
                                         variant="outlined"
@@ -919,18 +926,18 @@ const DashboardView: React.FC = () => {
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 height: 'clamp(34px, 4vh, 42px)',
-                                                backgroundColor: '#1b1b20',
+                                                backgroundColor: 'var(--fit-color-field, #18181b)',
                                                 color: '#fff',
-                                                borderRadius: 2,
-                                                fontSize: 'clamp(12px, 0.75vw, 14px)',
+                                                borderRadius: '0.625rem',
+                                                fontSize: 'var(--fit-type-size-body-sm)',
                                                 '& fieldset': {
-                                                    borderColor: '#2c2c33',
+                                                    borderColor: 'var(--fit-color-border-control, #202230)',
                                                 },
                                                 '&:hover fieldset': {
-                                                    borderColor: '#3a3a42',
+                                                    borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
                                                 },
                                                 '&.Mui-focused fieldset': {
-                                                    borderColor: '#6d5dfc',
+                                                    borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
                                                 },
                                             },
                                             '& input': {
@@ -945,19 +952,21 @@ const DashboardView: React.FC = () => {
                             </Box>
 
                             <Box sx={{ flex: 1 }}>
-                                <Typography
+                                <Box
+                                    component="label"
+                                    htmlFor="portfolio-end-date"
+                                    className={fitType.eyebrow}
                                     sx={{
-                                        color: 'white',
-                                        fontSize: 'clamp(11px, 0.68vw, 13px)',
-                                        fontWeight: 300,
+                                        display: 'block',
+                                        color: 'var(--fit-color-text-body, #b9c1d0)',
                                         mb: 'clamp(2px, 0.35vh, 4px)',
-                                        lineHeight: 1.1,
                                     }}
                                 >
                                     End Date
-                                </Typography>
+                                </Box>
                                 <Tooltip title="End" arrow>
                                     <TextField
+                                        id="portfolio-end-date"
                                         fullWidth
                                         type="date"
                                         variant="outlined"
@@ -968,18 +977,18 @@ const DashboardView: React.FC = () => {
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 height: 'clamp(34px, 4vh, 42px)',
-                                                backgroundColor: '#1b1b20',
+                                                backgroundColor: 'var(--fit-color-field, #18181b)',
                                                 color: '#fff',
-                                                borderRadius: 2,
-                                                fontSize: 'clamp(12px, 0.75vw, 14px)',
+                                                borderRadius: '0.625rem',
+                                                fontSize: 'var(--fit-type-size-body-sm)',
                                                 '& fieldset': {
-                                                    borderColor: '#2c2c33',
+                                                    borderColor: 'var(--fit-color-border-control, #202230)',
                                                 },
                                                 '&:hover fieldset': {
-                                                    borderColor: '#3a3a42',
+                                                    borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
                                                 },
                                                 '&.Mui-focused fieldset': {
-                                                    borderColor: '#6d5dfc',
+                                                    borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
                                                 },
                                             },
                                             '& input': {
@@ -997,8 +1006,8 @@ const DashboardView: React.FC = () => {
                                 <Typography
                                     sx={{
                                         color: 'transparent',
-                                        fontSize: 'clamp(11px, 0.68vw, 13px)',
-                                        fontWeight: 300,
+                                        fontSize: 'var(--fit-type-size-caption)',
+                                        fontWeight: 'var(--fit-type-weight-semibold)',
                                         mb: 'clamp(2px, 0.35vh, 4px)',
                                         lineHeight: 1.1,
                                         userSelect: 'none',
@@ -1013,18 +1022,22 @@ const DashboardView: React.FC = () => {
                                     sx={{
                                         height: 'clamp(34px, 4vh, 42px)',
                                         px: 'clamp(12px, 1vw, 16px)',
-                                        borderRadius: 1,
-                                        border: '1px solid #4f46e5',
-                                        bgcolor: '#17181d',
+                                        borderRadius: '0.625rem',
+                                        border: '1px solid var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
+                                        bgcolor: 'var(--fit-color-field, #18181b)',
                                         color: '#fff',
                                         boxShadow: 'none',
                                         textTransform: 'none',
-                                        fontSize: 'clamp(12px, 0.75vw, 14px)',
-                                        fontWeight: 700,
+                                        fontSize: 'var(--fit-type-size-body-sm)',
+                                        fontWeight: 'var(--fit-type-weight-semibold)',
                                         whiteSpace: 'nowrap',
                                         '&:hover': {
-                                            bgcolor: '#22243a',
+                                            bgcolor: 'var(--fit-color-surface-soft, #111114)',
                                             boxShadow: 'none',
+                                        },
+                                        '&:focus-visible': {
+                                            outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+                                            outlineOffset: 2,
                                         },
                                     }}
                                 >
@@ -1151,7 +1164,7 @@ const DashboardView: React.FC = () => {
                                 position: 'fixed',
                                 inset: 0,
                                 zIndex: 1500,
-                                bgcolor: '#050506',
+                                bgcolor: 'var(--fit-color-inner-surface, #050506)',
                                 color: '#fff',
                                 overflow: 'hidden',
                             }}
@@ -1163,16 +1176,16 @@ const DashboardView: React.FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    borderBottom: '1px solid #24262d',
-                                    bgcolor: '#0b0b0f',
+                                    borderBottom: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+                                    bgcolor: 'var(--fit-color-surface, #09090b)',
                                 }}
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <VisibilityOutlinedIcon sx={{ color: '#9aa7ff' }} />
-                                    <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
+                                    <VisibilityOutlinedIcon sx={{ color: 'var(--fit-color-accent-strong, #65a0fd)' }} />
+                                    <Typography sx={{ fontWeight: 'var(--fit-type-weight-semibold)', fontSize: 'var(--fit-type-size-panel-title)', lineHeight: 'var(--fit-type-leading-heading)' }}>
                                         Observer Mode
                                     </Typography>
-                                    <Typography sx={{ color: '#8f98aa', fontSize: 13 }}>
+                                    <Typography sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', fontSize: 'var(--fit-type-size-caption)' }}>
                                         Drag, resize, add, or close chart windows
                                     </Typography>
                                 </Box>
@@ -1184,16 +1197,17 @@ const DashboardView: React.FC = () => {
                                         onClick={addObserverWindow}
                                         disabled={observerWindows.length >= cardSettings.length}
                                         sx={{
-                                            bgcolor: '#17181d',
+                                            bgcolor: 'var(--fit-color-field, #18181b)',
                                             color: '#fff',
-                                            border: '1px solid #2f3340',
+                                            border: '1px solid var(--fit-color-border-control, #202230)',
                                             boxShadow: 'none',
                                             textTransform: 'none',
-                                            '&:hover': { bgcolor: '#22243a', boxShadow: 'none' },
+                                            '&:hover': { bgcolor: 'var(--fit-color-surface-soft, #111114)', boxShadow: 'none' },
+                                            '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 },
                                             '&.Mui-disabled': {
-                                                bgcolor: '#17181d',
+                                                bgcolor: 'var(--fit-color-field, #18181b)',
                                                 color: '#dce4ff',
-                                                border: '1px solid #2f3340',
+                                                border: '1px solid var(--fit-color-border-control, #202230)',
                                                 opacity: 1,
                                             },
                                         }}
@@ -1207,12 +1221,13 @@ const DashboardView: React.FC = () => {
                                         )}
                                         sx={{
                                             color: '#dce4ff',
-                                            borderColor: '#343846',
+                                            borderColor: 'var(--fit-color-border-panel, #27272a)',
                                             textTransform: 'none',
                                             '&:hover': {
-                                                borderColor: '#5367ff',
-                                                bgcolor: 'rgba(83,103,255,0.08)',
+                                                borderColor: 'var(--fit-color-brand-start, #5367ff)',
+                                                bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
                                             },
+                                            '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 },
                                         }}
                                     >
                                         Reset Layout
@@ -1226,6 +1241,7 @@ const DashboardView: React.FC = () => {
                                             boxShadow: 'none',
                                             textTransform: 'none',
                                             '&:hover': { bgcolor: '#7079ff', boxShadow: 'none' },
+                                            '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 },
                                         }}
                                     >
                                         Exit
@@ -1249,8 +1265,8 @@ const DashboardView: React.FC = () => {
                                             height: '100%',
                                             display: 'grid',
                                             placeItems: 'center',
-                                            color: '#8f98aa',
-                                            fontSize: 15,
+                                            color: 'var(--fit-color-text-muted, #8f98aa)',
+                                            fontSize: 'var(--fit-type-size-body)',
                                         }}
                                     >
                                         No chart windows. Use Add Chart to bring one back.

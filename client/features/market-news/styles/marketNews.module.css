@@ -15,7 +15,7 @@
   margin-left: var(--app-sidebar-width, 64px);
   min-height: 100vh;
   overflow-x: hidden;
-  background: var(--fit-color-page-bg, #000000);
+  background: transparent;
   padding: 2rem clamp(0.5rem, 1vw, 1rem) 2rem;
   color: #ffffff;
   transition: margin-left 200ms ease-out;
