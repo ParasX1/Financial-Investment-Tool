@@ -10,6 +10,7 @@ const config = {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testEnvironment: "node",
+  testPathIgnorePatterns: ["<rootDir>/tests/e2e/"],
   verbose: true,
 };
 

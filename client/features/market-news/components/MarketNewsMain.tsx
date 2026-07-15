@@ -324,6 +324,7 @@ export function MarketNewsMain({
                 selectedTicker={
                   quoteReferenceVisible ? selectedQuoteTicker : null
                 }
+                watchlistError={watchlist.error}
                 watchlistLoading={watchlist.loading}
                 watchlistSymbols={watchlist.symbols}
                 onLookupDraftChange={setLookupDraft}

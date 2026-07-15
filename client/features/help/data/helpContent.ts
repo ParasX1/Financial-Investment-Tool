@@ -135,22 +135,22 @@ export const helpSections: HelpSection[] = [
       {
         question: "How many stocks can I add to my watchlist?",
         answer:
-          "You can track up to 10 stocks in your watchlist. Each stock gets its own collapsible card with chart and related news. Use the stock selector to add or remove stocks.",
+          "You can save up to 20 market ideas. Search by company name or ticker, then remove an idea when it is no longer part of your research queue.",
       },
       {
         question: "What information is shown for each stock?",
         answer:
-          "Each watchlist item displays current price, daily change, a 90-day performance chart, and related news articles. Click the card to expand/collapse detailed information.",
+          "Each item shows the latest available price and daily move, plus an optional note explaining why you are watching it and an optional research target. A research target is only a personal comparison point, not an alert or recommendation.",
       },
       {
         question: "Can I reorder my watchlist stocks?",
         answer:
-          "Yes, you can drag and drop watchlist cards to reorder them according to your preference. Your custom order is saved automatically.",
+          "Yes. Choose Custom order, then use the up and down controls on an item. You can also sort temporarily by symbol, company, daily move, or date added without changing the saved custom order.",
       },
       {
-        question: "What are the market trends indicators?",
+        question: "How do I continue researching a saved idea?",
         answer:
-          "The market trends panel shows real-time data for major indices (S&P 500, NASDAQ, Dow Jones) and the VIX volatility index, providing context for your watchlist performance.",
+          "Open the news action on an item to review stories for that ticker, or use View Watchlist News to see stories connected to your saved list. Use Portfolio Analytics only after an idea represents an investment you actually hold.",
       },
     ],
   },

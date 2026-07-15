@@ -1,4 +1,5 @@
 import * as React from "react";
+import { describe, expect, it } from "@jest/globals";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MARKET_NEWS_MARKET_SCOPES } from "../data/marketNewsConfig";
 import { MarketNewsRightRail } from "./MarketNewsRightRail";
@@ -38,6 +39,7 @@ describe("MarketNewsRightRail", () => {
           ],
         }}
         selectedTicker={null}
+        watchlistError={null}
         watchlistLoading={false}
         watchlistSymbols={["CBA.AX"]}
         onLookupDraftChange={() => undefined}
@@ -75,6 +77,7 @@ describe("MarketNewsRightRail", () => {
           watchlistTickers: [],
         }}
         selectedTicker={selectedTicker}
+        watchlistError={null}
         watchlistLoading={false}
         watchlistSymbols={[]}
         onLookupDraftChange={() => undefined}
@@ -87,5 +90,31 @@ describe("MarketNewsRightRail", () => {
     expect(html).toContain(selectedTicker.symbol);
     expect(html).toContain("Show ticker news");
     expect(html).toContain("Quote context only");
+  });
+
+  it("makes a failed Watchlist integration explicit instead of showing an empty result", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsRightRail
+        authenticated
+        lookupDraft=""
+        railSummary={{
+          mentionedTickers: [],
+          totalLinkedStoryCount: 0,
+          watchlistHitCount: 0,
+          watchlistStoryCount: 0,
+          watchlistTickers: [],
+        }}
+        selectedTicker={null}
+        watchlistError="Saved tickers could not be loaded. Watchlist news may be incomplete."
+        watchlistLoading={false}
+        watchlistSymbols={[]}
+        onLookupDraftChange={() => undefined}
+        onQuoteReferenceChange={() => undefined}
+        onTickerNewsRequest={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Saved tickers could not be loaded");
+    expect(html).not.toContain("No watchlist tickers are linked");
   });
 });

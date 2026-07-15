@@ -15,6 +15,19 @@ function createResponse() {
   return { headers, res };
 }
 
+function createRequest(
+  symbol: string,
+  address: string,
+  method = "GET",
+): NextApiRequest {
+  return {
+    headers: { "x-forwarded-for": address },
+    method,
+    query: { symbol },
+    socket: {},
+  } as unknown as NextApiRequest;
+}
+
 describe("/api/market/quote", () => {
   const originalFetch = global.fetch;
 
@@ -27,20 +40,24 @@ describe("/api/market/quote", () => {
     jest.restoreAllMocks();
   });
 
-  it("returns Yahoo quote payloads with cache headers", async () => {
+  it("returns Yahoo spark quote payloads with cache headers", async () => {
     global.fetch = jest.fn(async () =>
       new Response(
         JSON.stringify({
-          quoteResponse: {
+          spark: {
+            error: null,
             result: [
               {
-                currency: "AUD",
-                marketState: "REGULAR",
-                regularMarketChange: 1.7,
-                regularMarketChangePercent: 1.05,
-                regularMarketPreviousClose: 160,
-                regularMarketPrice: 162,
-                shortName: "CBA",
+                response: [{
+                  meta: {
+                    chartPreviousClose: 160,
+                    currency: "AUD",
+                    regularMarketPrice: 162,
+                    shortName: "CBA",
+                    symbol: "CBA.AX",
+                  },
+                }],
+                symbol: "CBA.AX",
               },
             ],
           },
@@ -50,10 +67,7 @@ describe("/api/market/quote", () => {
     ) as unknown as typeof fetch;
     const { headers, res } = createResponse();
 
-    await handler(
-      { query: { symbol: "cba.ax" } } as unknown as NextApiRequest,
-      res,
-    );
+    await handler(createRequest("cba.ax", "203.0.113.1"), res);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(headers.get("cache-control")).toBe(
@@ -61,8 +75,8 @@ describe("/api/market/quote", () => {
     );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        change: 1.7,
-        changePct: 1.05,
+        change: 2,
+        changePct: 1.25,
         currency: "AUD",
         price: 162,
         prevClose: 160,
@@ -77,10 +91,7 @@ describe("/api/market/quote", () => {
     ) as unknown as typeof fetch;
     const { headers, res } = createResponse();
 
-    await handler(
-      { query: { symbol: "cba.ax" } } as unknown as NextApiRequest,
-      res,
-    );
+    await handler(createRequest("cba.ax", "203.0.113.2"), res);
 
     expect(res.status).toHaveBeenCalledWith(502);
     expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
@@ -97,15 +108,55 @@ describe("/api/market/quote", () => {
     ) as unknown as typeof fetch;
     const { headers, res } = createResponse();
 
-    await handler(
-      { query: { symbol: "cba.ax" } } as unknown as NextApiRequest,
-      res,
-    );
+    await handler(createRequest("cba.ax", "203.0.113.3"), res);
 
     expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(res.status).toHaveBeenCalledWith(502);
     expect(res.json).toHaveBeenCalledWith({
       error: "Market data unavailable",
+    });
+  });
+
+  it("rejects non-GET requests before contacting the provider", async () => {
+    global.fetch = jest.fn() as unknown as typeof fetch;
+    const { headers, res } = createResponse();
+
+    await handler(createRequest("CBA.AX", "203.0.113.4", "POST"), res);
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(headers.get("allow")).toBe("GET");
+    expect(res.status).toHaveBeenCalledWith(405);
+    expect(res.json).toHaveBeenCalledWith({ error: "Method not allowed." });
+  });
+
+  it("rate limits repeated requests from the same client", async () => {
+    global.fetch = jest.fn(async () =>
+      new Response(JSON.stringify({
+        spark: {
+          error: null,
+          result: [{
+            response: [{ meta: {
+              chartPreviousClose: 160,
+              regularMarketPrice: 162,
+              symbol: "CBA.AX",
+            } }],
+            symbol: "CBA.AX",
+          }],
+        },
+      }), { status: 200 }),
+    ) as unknown as typeof fetch;
+
+    let lastResponse = createResponse();
+    for (let requestNumber = 0; requestNumber < 61; requestNumber += 1) {
+      lastResponse = createResponse();
+      await handler(createRequest("CBA.AX", "203.0.113.61"), lastResponse.res);
+    }
+
+    expect(global.fetch).toHaveBeenCalledTimes(60);
+    expect(lastResponse.headers.get("retry-after")).toBe("60");
+    expect(lastResponse.res.status).toHaveBeenCalledWith(429);
+    expect(lastResponse.res.json).toHaveBeenCalledWith({
+      error: "Too many quote requests. Please wait a moment.",
     });
   });
 });

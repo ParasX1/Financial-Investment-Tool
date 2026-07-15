@@ -1,12 +1,18 @@
 import * as React from "react";
 import { useAuth } from "@/components/authContext";
 import supabase from "@/components/supabase";
+import { createWatchlistRepository } from "@/features/watchlist";
 
 export function useMarketNewsWatchlist() {
   const { user } = useAuth();
   const [mounted, setMounted] = React.useState(false);
   const [symbols, setSymbols] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const repository = React.useMemo(
+    () => createWatchlistRepository(supabase),
+    [],
+  );
 
   React.useEffect(() => {
     setMounted(true);
@@ -16,33 +22,20 @@ export function useMarketNewsWatchlist() {
     if (!mounted || !user) {
       setSymbols([]);
       setLoading(false);
+      setError(null);
       return;
     }
 
     const userId = user.id;
     let alive = true;
     setLoading(true);
+    setError(null);
 
     async function loadWatchlist() {
-      const { data, error } = await supabase
-        .from("user_watchlist")
-        .select("symbol, position")
-        .eq("user_id", userId)
-        .order("position", { ascending: true });
+      const items = await repository.list(userId);
 
       if (!alive) return;
-
-      if (error) {
-        console.error("load watchlist failed:", error);
-        setSymbols([]);
-        return;
-      }
-
-      setSymbols(
-        (data ?? [])
-          .map((row) => row.symbol)
-          .filter((symbol): symbol is string => Boolean(symbol)),
-      );
+      setSymbols(items.map((item) => item.symbol));
     }
 
     loadWatchlist()
@@ -50,6 +43,7 @@ export function useMarketNewsWatchlist() {
         if (!alive) return;
         console.error("load watchlist failed:", error);
         setSymbols([]);
+        setError("Saved tickers could not be loaded. Watchlist news may be incomplete.");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -58,10 +52,11 @@ export function useMarketNewsWatchlist() {
     return () => {
       alive = false;
     };
-  }, [mounted, user]);
+  }, [mounted, repository, user]);
 
   return {
     authenticated: mounted && Boolean(user),
+    error: mounted ? error : null,
     loading: mounted ? loading : false,
     symbols: mounted ? symbols : [],
   };

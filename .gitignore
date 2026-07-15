@@ -30,6 +30,8 @@ out/
 .vercel/
 .turbo/
 coverage/
+client/playwright-report/
+client/test-results/
 
 client/.idea
 

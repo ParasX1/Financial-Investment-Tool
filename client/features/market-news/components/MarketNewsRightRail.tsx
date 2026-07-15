@@ -24,6 +24,7 @@ export function MarketNewsRightRail({
   quoteLoading = false,
   railSummary,
   selectedTicker,
+  watchlistError,
   watchlistLoading,
   watchlistSymbols,
   onLookupDraftChange,
@@ -35,6 +36,7 @@ export function MarketNewsRightRail({
   quoteLoading?: boolean;
   railSummary: MarketNewsRailSummary;
   selectedTicker: MarketNewsTicker | null;
+  watchlistError: string | null;
   watchlistLoading: boolean;
   watchlistSymbols: readonly string[];
   onLookupDraftChange: (value: string) => void;
@@ -103,6 +105,10 @@ export function MarketNewsRightRail({
         {watchlistLoading ? (
           <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
             Loading saved tickers...
+          </p>
+        ) : watchlistError ? (
+          <p className={cn("mt-3 text-[#ff9bb0]", fitType.bodySm)} role="status">
+            {watchlistError}
           </p>
         ) : !authenticated ? (
           <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
