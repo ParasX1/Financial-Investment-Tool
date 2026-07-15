@@ -647,3 +647,8 @@
   .iconAction { transition: none; }
   .skeletonIcon { animation: none; }
 }
+
+.monitorActionActive {
+  background: var(--fit-color-brand-fill-hover);
+  color: var(--fit-color-accent-strong);
+}

@@ -31,6 +31,7 @@ import { useWatchlistController } from "../hooks/useWatchlistController";
 import { useWatchlistQuotes } from "../hooks/useWatchlistQuotes";
 import { useWatchlistSymbolSearch } from "../hooks/useWatchlistSymbolSearch";
 import { WatchlistRow } from "./WatchlistRow";
+import { WatchlistMarketMonitor } from "./WatchlistMarketMonitor";
 import {
   WatchlistEmptyState,
   WatchlistLoadError,
@@ -49,10 +50,11 @@ const sortOptions: Array<{ label: string; value: WatchlistSort }> = [
 ];
 
 function formatRefreshTime(value: Date | null) {
-  if (!value) return "Not refreshed yet";
-  return `Updated ${new Intl.DateTimeFormat(undefined, {
+  if (!value) return "Waiting for market data…";
+  return `Auto-updating · Updated ${new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
     minute: "2-digit",
+    second: "2-digit",
   }).format(value)}`;
 }
 
@@ -69,6 +71,8 @@ export function WatchlistMain() {
   const [draft, setDraft] = React.useState<WatchlistDraft>({ note: "", targetPrice: "" });
   const [draftErrors, setDraftErrors] = React.useState<WatchlistDraftErrors>({});
   const [pendingRemove, setPendingRemove] = React.useState<WatchlistItem | null>(null);
+  const [monitoredSymbol, setMonitoredSymbol] = React.useState<string | null>(null);
+  const [monitorOpen, setMonitorOpen] = React.useState(true);
   const symbolSearch = useWatchlistSymbolSearch(addQuery);
   const quoteState = useWatchlistQuotes(watchlist.items.map((item) => item.symbol));
 
@@ -85,6 +89,20 @@ export function WatchlistMain() {
   React.useEffect(() => {
     setActiveSuggestion(symbolSearch.results.length ? 0 : -1);
   }, [symbolSearch.results]);
+
+  React.useEffect(() => {
+    setMonitoredSymbol((current) => {
+      if (!watchlist.items.length) return null;
+      return current && watchlist.items.some((item) => item.symbol === current)
+        ? current
+        : watchlist.items[0]!.symbol;
+    });
+  }, [watchlist.items]);
+
+  const monitoredItem = React.useMemo(
+    () => watchlist.items.find((item) => item.symbol === monitoredSymbol) ?? null,
+    [monitoredSymbol, watchlist.items],
+  );
 
   const addSymbol = React.useCallback(async (symbol: string) => {
     const added = await watchlist.addItem(symbol);
@@ -279,6 +297,20 @@ export function WatchlistMain() {
             </div>
           ) : null}
 
+          {listReady && monitorOpen && monitoredItem ? (
+            <WatchlistMarketMonitor
+              item={monitoredItem}
+              quote={
+                quoteState.loading && !quoteState.quotes[monitoredItem.symbol]
+                  ? undefined
+                  : quoteState.quotes[monitoredItem.symbol] ?? null
+              }
+              quoteRefreshing={quoteState.refreshing}
+              onClose={() => setMonitorOpen(false)}
+              onRefreshQuotes={quoteState.refresh}
+            />
+          ) : null}
+
           {watchlist.authLoading ? <WatchlistLoadingState /> : !watchlist.authenticated ? (
             <WatchlistSignedOut onSignIn={() => setShowLogin(true)} onCreateAccount={() => setShowSignUp(true)} />
           ) : watchlist.loading ? <WatchlistLoadingState /> : watchlist.loadError ? (
@@ -304,10 +336,10 @@ export function WatchlistMain() {
                 </div>
               </div>
 
-              <div className={styles.quoteStatus} aria-live="polite">
-                <span>{quoteState.loading ? "Refreshing market data…" : formatRefreshTime(quoteState.lastUpdated)}</span>
+              <div className={styles.quoteStatus}>
+                <span>{quoteState.refreshing ? "Auto-updating · Updating quotes…" : formatRefreshTime(quoteState.lastUpdated)}</span>
                 {quoteState.error ? <span className={styles.searchError}>{quoteState.error}</span> : null}
-                <button type="button" className={cn(styles.textButton, FIT_FOCUS_VISIBLE)} onClick={quoteState.refresh} disabled={quoteState.loading}>Refresh Quotes</button>
+                <button type="button" className={cn(styles.textButton, FIT_FOCUS_VISIBLE)} onClick={quoteState.refresh} disabled={quoteState.loading || quoteState.refreshing}>Refresh Quotes</button>
               </div>
 
               <div className={styles.listHeader} aria-hidden="true">
@@ -320,11 +352,16 @@ export function WatchlistMain() {
                     <WatchlistRow
                       key={item.symbol}
                       item={item}
+                      isMonitored={monitorOpen && monitoredSymbol === item.symbol}
                       quote={quoteState.loading && !quoteState.quotes[item.symbol] ? undefined : quoteState.quotes[item.symbol] ?? null}
                       busy={busy}
                       canMoveUp={reorderEnabled && savedIndex > 0}
                       canMoveDown={reorderEnabled && savedIndex >= 0 && savedIndex < watchlist.items.length - 1}
                       onEdit={() => openEdit(item)}
+                      onMonitor={() => {
+                        setMonitoredSymbol(item.symbol);
+                        setMonitorOpen(true);
+                      }}
                       onRemove={() => setPendingRemove(item)}
                       onMoveUp={() => void watchlist.moveItem(item.symbol, "up")}
                       onMoveDown={() => void watchlist.moveItem(item.symbol, "down")}

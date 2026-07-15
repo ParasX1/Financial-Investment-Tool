@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { getQuoteRefreshInterval } from "../refreshPolicy";
 import {
   getMarketApiError,
@@ -77,6 +77,16 @@ async function fetchMarketQuotes(key: string): Promise<MarketQuotesResponse> {
   return payload;
 }
 
+export function resolveMarketQuotesActivity({
+  initialLoading,
+  refreshing,
+}: {
+  initialLoading: boolean;
+  refreshing: boolean;
+}) {
+  return { loading: initialLoading, refreshing };
+}
+
 export function useMarketQuotes(symbols: readonly string[]) {
   const key = React.useMemo(
     () => createMarketQuotesRequestKey(symbols),
@@ -86,6 +96,10 @@ export function useMarketQuotes(symbols: readonly string[]) {
     fetcher: fetchMarketQuotes,
     key,
     refreshInterval: getMarketQuotesRefreshInterval,
+  });
+  const activity = resolveMarketQuotesActivity({
+    initialLoading: polling.initialLoading,
+    refreshing: polling.refreshing,
   });
   const indexed = React.useMemo(
     () =>
@@ -98,9 +112,9 @@ export function useMarketQuotes(symbols: readonly string[]) {
   return {
     error: key ? (polling.error?.message ?? indexed.warning) : null,
     lastUpdated: key ? polling.lastUpdated : null,
-    loading: key ? polling.initialLoading || polling.refreshing : false,
+    loading: key ? activity.loading : false,
     quotes: indexed.quotes,
     refresh: polling.refresh,
-    refreshing: polling.refreshing,
+    refreshing: key ? activity.refreshing : false,
   };
 }

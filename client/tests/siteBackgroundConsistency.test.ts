@@ -57,6 +57,17 @@ describe("site-wide page background contract", () => {
     expect(tokenValue).toContain("var(--fit-color-page-bg)");
   });
 
+  it("keeps the root scrollbar track on the shared dark canvas", () => {
+    const globals = readClientSource("styles/globals.css");
+
+    expect(cssBlock(globals, "html")).toContain(
+      "scrollbar-color: var(--fit-color-text-label) var(--fit-color-page-bg);",
+    );
+    expect(cssBlock(globals, "html::-webkit-scrollbar-track")).toContain(
+      "background: var(--fit-color-page-bg);",
+    );
+  });
+
   it("requires every user page entrypoint to stay in the background manifest", () => {
     const actualEntrypoints = readdirSync(join(process.cwd(), "pages"), {
       withFileTypes: true,

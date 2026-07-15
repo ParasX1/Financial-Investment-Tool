@@ -266,6 +266,25 @@
     }
   }
 
+  html {
+    background-color: var(--fit-color-page-bg);
+    scrollbar-color: var(--fit-color-text-label) var(--fit-color-page-bg);
+  }
+
+  html::-webkit-scrollbar {
+    background: var(--fit-color-page-bg);
+  }
+
+  html::-webkit-scrollbar-track {
+    background: var(--fit-color-page-bg);
+  }
+
+  html::-webkit-scrollbar-thumb {
+    border: 3px solid var(--fit-color-page-bg);
+    border-radius: 999px;
+    background: var(--fit-color-text-label);
+  }
+
   body {
     background: var(--fit-page-background);
     font-family: var(--fit-font-family);

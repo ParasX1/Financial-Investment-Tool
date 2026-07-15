@@ -2,6 +2,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import Link from "next/link";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
@@ -59,8 +60,10 @@ export function WatchlistRow({
   busy,
   canMoveDown,
   canMoveUp,
+  isMonitored,
   item,
   onEdit,
+  onMonitor,
   onMoveDown,
   onMoveUp,
   onRemove,
@@ -69,8 +72,10 @@ export function WatchlistRow({
   busy: boolean;
   canMoveDown: boolean;
   canMoveUp: boolean;
+  isMonitored: boolean;
   item: WatchlistItem;
   onEdit: () => void;
+  onMonitor: () => void;
   onMoveDown: () => void;
   onMoveUp: () => void;
   onRemove: () => void;
@@ -124,6 +129,21 @@ export function WatchlistRow({
       </div>
 
       <div className={styles.rowActions}>
+        <button
+          type="button"
+          className={cn(
+            styles.iconAction,
+            isMonitored && styles.monitorActionActive,
+            FIT_FOCUS_VISIBLE,
+          )}
+          onClick={onMonitor}
+          aria-label={`Monitor ${item.symbol} price trend`}
+          aria-controls="watchlist-market-monitor"
+          aria-expanded={isMonitored}
+          title={isMonitored ? "Market monitor selected" : "Open market monitor"}
+        >
+          <ShowChartRoundedIcon fontSize="small" aria-hidden="true" />
+        </button>
         <Link
           href={`/MarketNews?q=${encodeURIComponent(item.symbol)}`}
           className={cn(styles.iconAction, FIT_FOCUS_VISIBLE)}

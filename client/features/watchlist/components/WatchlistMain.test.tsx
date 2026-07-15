@@ -61,7 +61,27 @@ describe("WatchlistMain interactions", () => {
       default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) =>
         React.createElement("a", { ...props, href }, children),
     }));
-    jest.doMock("@/components/Modal/ModalLogin", () => ({
+    jest.doMock("./WatchlistMarketMonitor", () => ({
+      WatchlistMarketMonitor: ({
+        item,
+        onClose,
+      }: {
+        item: WatchlistItem;
+        onClose: () => void;
+      }) => React.createElement(
+        "section",
+        { "data-testid": "market-monitor" },
+        React.createElement("h2", null, `${item.symbol} Market Monitor`),
+        React.createElement(
+          "button",
+          {
+            "aria-label": `Close ${item.symbol} market monitor`,
+            onClick: onClose,
+          },
+          "Close monitor",
+        ),
+      ),
+    }));    jest.doMock("@/components/Modal/ModalLogin", () => ({
       __esModule: true,
       default: ({
         onHide,
@@ -130,6 +150,7 @@ describe("WatchlistMain interactions", () => {
       loading: false,
       quotes: {},
       refresh: jest.fn(),
+      refreshing: false,
     };
     mockSearch = {
       error: null,
@@ -187,6 +208,80 @@ describe("WatchlistMain interactions", () => {
     expect(renderer!.root.findAllByType("h2").some((heading) =>
       heading.children.includes("Build your research shortlist"),
     )).toBe(true);
+    renderer!.unmount();
+  });
+
+  it("opens the first saved idea, switches the focused monitor, and closes it", async () => {
+    mockController.authenticated = true;
+    mockController.items = [item("CBA.AX", 0), item("BHP.AX", 1)];
+    mockQuotes.quotes = {
+      "BHP.AX": quote("BHP.AX", 2),
+      "CBA.AX": quote("CBA.AX", -1),
+    };
+    let renderer: ReactTestRenderer;
+
+    await act(async () => {
+      renderer = TestRenderer.create(<WatchlistMain />);
+      await Promise.resolve();
+    });
+
+    expect(renderer!.root.findByProps({ "data-testid": "market-monitor" }))
+      .toBeTruthy();
+    expect(
+      renderer!.root.findAll((node) =>
+        node.children.some(
+          (child) =>
+            typeof child === "string" && child.includes("Auto-updating · Updated"),
+        ),
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType("h2").some((heading) =>
+      heading.children.includes("CBA.AX Market Monitor"),
+    )).toBe(true);
+    expect(renderer!.root.findByProps({
+      "aria-label": "Monitor CBA.AX price trend",
+    }).props["aria-expanded"]).toBe(true);
+
+    act(() => renderer!.root.findByProps({
+      "aria-label": "Monitor BHP.AX price trend",
+    }).props.onClick());
+    expect(renderer!.root.findAllByType("h2").some((heading) =>
+      heading.children.includes("BHP.AX Market Monitor"),
+    )).toBe(true);
+
+    act(() => renderer!.root.findByProps({
+      "aria-label": "Close BHP.AX market monitor",
+    }).props.onClick());
+    expect(renderer!.root.findAllByProps({ "data-testid": "market-monitor" }))
+      .toHaveLength(0);
+    renderer!.unmount();
+  });
+  it("does not mark or announce the whole list busy during background quote refresh", async () => {
+    mockController.authenticated = true;
+    mockController.items = [item("CBA.AX", 0)];
+    mockQuotes.quotes = { "CBA.AX": quote("CBA.AX", 1) };
+    mockQuotes.refreshing = true;
+    let renderer: ReactTestRenderer;
+
+    await act(async () => {
+      renderer = TestRenderer.create(<WatchlistMain />);
+      await Promise.resolve();
+    });
+
+    const updatingStatus = renderer!.root.findAll((node) =>
+      node.children.some(
+        (child) =>
+          typeof child === "string" && child.includes("Updating quotes"),
+      ),
+    )[0];
+    expect(updatingStatus).toBeTruthy();
+    expect(updatingStatus!.props["aria-live"]).toBeUndefined();
+    const list = renderer!.root.findAll(
+      (node) =>
+        typeof node.props.className === "string" &&
+        node.props.className.split(" ").includes("list"),
+    )[0];
+    expect(list!.props["aria-busy"]).toBe(false);
     renderer!.unmount();
   });
 

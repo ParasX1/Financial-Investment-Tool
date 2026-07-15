@@ -1,15 +1,17 @@
 import * as React from "react";
+import { useMarketQuotes } from "@/features/market-data/hooks/useMarketQuotes";
 import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
 import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
 import {
+  overlayMarketNewsTickerQuotes,
+  resolveMarketNewsTickerOverlayState,
   resolveMarketNewsTickerQuoteRefreshState,
   resolveMarketNewsTickerStripState,
-  type MarketNewsQuoteResponse,
   type MarketNewsSparklineResponse,
   type MarketNewsTickerStripState,
 } from "../lib/marketNewsTickerQuotes";
 
-const QUOTE_REFRESH_MS = 60_000;
+const SPARKLINE_REFRESH_MS = 60_000;
 
 async function fetchJson<T extends object>(
   url: string,
@@ -32,20 +34,14 @@ async function fetchTickerSnapshot(
   init?: RequestInit,
 ) {
   const symbol = encodeURIComponent(fallbackTicker.symbol);
-  const [quote, sparkline] = await Promise.all([
-    fetchJson<MarketNewsQuoteResponse>(
-      `/api/market/quote?symbol=${symbol}`,
-      init,
-    ),
-    fetchJson<MarketNewsSparklineResponse>(
-      `/api/market/sparkline?symbol=${symbol}`,
-      init,
-    ),
-  ]);
+  const sparkline = await fetchJson<MarketNewsSparklineResponse>(
+    `/api/market/sparkline?symbol=${symbol}`,
+    init,
+  );
 
   return resolveMarketNewsTickerQuoteRefreshState({
     fallbackTicker,
-    live: { quote, sparkline },
+    live: { quote: null, sparkline },
     previousTicker,
   });
 }
@@ -71,7 +67,7 @@ export function useMarketNewsTickerQuotes(
   );
   const stripStateRef = React.useRef(stripState);
   const [loading, setLoading] = React.useState(true);
-  const refreshMsRef = React.useRef(QUOTE_REFRESH_MS);
+  const refreshMsRef = React.useRef(SPARKLINE_REFRESH_MS);
   const setNextStripState = React.useCallback(
     (nextState: MarketNewsTickerStripState) => {
       stripStateRef.current = nextState;
@@ -87,6 +83,28 @@ export function useMarketNewsTickerQuotes(
         .sort()
         .join(","),
     [watchlistSymbols],
+  );
+  const quoteSymbols = React.useMemo(
+    () => stripState.tickers.map((ticker) => ticker.symbol),
+    [stripState.tickers],
+  );
+  const adaptiveQuotes = useMarketQuotes(quoteSymbols);
+  const overlayState = React.useMemo(
+    () =>
+      resolveMarketNewsTickerOverlayState(
+        stripState.source,
+        stripState.tickers,
+        adaptiveQuotes.quotes,
+      ),
+    [adaptiveQuotes.quotes, stripState.source, stripState.tickers],
+  );
+  const warnings = React.useMemo(
+    () =>
+      adaptiveQuotes.error &&
+      !stripState.warnings.includes(adaptiveQuotes.error)
+        ? [adaptiveQuotes.error, ...stripState.warnings]
+        : stripState.warnings,
+    [adaptiveQuotes.error, stripState.warnings],
   );
 
   React.useEffect(() => {
@@ -138,7 +156,9 @@ export function useMarketNewsTickerQuotes(
       if (!alive || controller !== activeController) return;
 
       const nextState = resolveMarketNewsTickerStripState({
-        fallbackTickers: marketScope.tickers.map(redactMarketNewsTickerFallback),
+        fallbackTickers: marketScope.tickers.map(
+          redactMarketNewsTickerFallback,
+        ),
         payload: snapshot,
         previousState: stripStateRef.current,
       });
@@ -172,14 +192,19 @@ export function useMarketNewsTickerQuotes(
   return {
     loading,
     providerLabel: stripState.providerLabel,
-    source: stripState.source,
-    tickers: stripState.tickers,
-    updatedAt: stripState.updatedAt,
-    warnings: stripState.warnings,
+    source: overlayState.source,
+    tickers: overlayState.tickers,
+    updatedAt: adaptiveQuotes.lastUpdated ?? stripState.updatedAt,
+    warnings,
   };
 }
 
 export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
+  const selectedQuoteSymbols = React.useMemo(
+    () => (ticker ? [ticker.symbol] : []),
+    [ticker],
+  );
+  const adaptiveQuotes = useMarketQuotes(selectedQuoteSymbols);
   const [liveTicker, setLiveTicker] = React.useState<MarketNewsTicker | null>(
     ticker,
   );
@@ -223,7 +248,7 @@ export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
         }
 
         void load(false);
-      }, QUOTE_REFRESH_MS);
+      }, SPARKLINE_REFRESH_MS);
     }
 
     async function load(showLoading: boolean) {
@@ -267,5 +292,20 @@ export function useMarketNewsTickerQuote(ticker: MarketNewsTicker | null) {
     };
   }, [ticker]);
 
-  return { loading, ticker: liveTicker, updatedAt };
+  const displayedTicker = React.useMemo(
+    () =>
+      liveTicker
+        ? (overlayMarketNewsTickerQuotes(
+            [liveTicker],
+            adaptiveQuotes.quotes,
+          )[0] ?? liveTicker)
+        : null,
+    [adaptiveQuotes.quotes, liveTicker],
+  );
+
+  return {
+    loading,
+    ticker: displayedTicker,
+    updatedAt: adaptiveQuotes.lastUpdated ?? updatedAt,
+  };
 }

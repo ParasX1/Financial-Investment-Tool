@@ -1,9 +1,10 @@
-﻿import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import type { MarketQuote } from "../types";
 import {
   createMarketQuotesRequestKey,
   getMarketQuotesRefreshInterval,
   indexMarketQuotes,
+  resolveMarketQuotesActivity,
 } from "./useMarketQuotes";
 
 function quote(
@@ -61,5 +62,20 @@ describe("shared market quote helpers", () => {
       }),
     ).toBe(300_000);
     expect(getMarketQuotesRefreshInterval(undefined)).toBe(60_000);
+  });
+
+  it("keeps background refresh separate from the initial loading state", () => {
+    expect(
+      resolveMarketQuotesActivity({
+        initialLoading: false,
+        refreshing: true,
+      }),
+    ).toEqual({ loading: false, refreshing: true });
+    expect(
+      resolveMarketQuotesActivity({
+        initialLoading: true,
+        refreshing: false,
+      }),
+    ).toEqual({ loading: true, refreshing: false });
   });
 });

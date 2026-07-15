@@ -2,6 +2,8 @@ import { describe, expect, it } from "@jest/globals";
 import {
   MARKET_NEWS_TICKER_STRIP_REFRESH_WARNING,
   mergeMarketNewsTickerQuote,
+  overlayMarketNewsTickerQuotes,
+  resolveMarketNewsTickerOverlayState,
   resolveMarketNewsTickerQuoteRefreshState,
   resolveMarketNewsTickerQuoteState,
   resolveMarketNewsTickerStripState,
@@ -46,6 +48,111 @@ describe("marketNewsTickerQuotes", () => {
       previousClose: 6100,
       marketState: "REGULAR",
     });
+  });
+
+  it("overlays shared adaptive quotes without replacing ticker sparkline context", () => {
+    const ticker = {
+      symbol: "CBA.AX",
+      label: "CBA",
+      value: "119.00",
+      change: "-1.00 -0.83%",
+      tone: "negative" as const,
+      sparkline: [118, 119, 120],
+      sparklineSource: "live" as const,
+      signal: "Watchlist" as const,
+    };
+
+    expect(
+      overlayMarketNewsTickerQuotes([ticker], {
+        "CBA.AX": {
+          change: 2,
+          changePercent: 1.67,
+          currency: "AUD",
+          exchange: "ASX",
+          longName: "Commonwealth Bank",
+          marketState: "REGULAR",
+          previousClose: 120,
+          price: 122,
+          quoteTime: "2026-07-15T04:00:00.000Z",
+          shortName: "CBA",
+          symbol: "CBA.AX",
+        },
+      }),
+    ).toEqual([
+      {
+        ...ticker,
+        change: "+2.00 +1.67%",
+        label: "CBA",
+        marketState: "REGULAR",
+        previousClose: 120,
+        tone: "positive",
+        value: "122.00",
+      },
+    ]);
+  });
+
+  it("retains the last ticker snapshot when an adaptive quote is unavailable", () => {
+    const ticker = {
+      symbol: "CBA.AX",
+      label: "CBA",
+      value: "121.00",
+      change: "+1.00 +0.83%",
+      tone: "positive" as const,
+      sparkline: [118, 119, 121],
+      sparklineSource: "live" as const,
+    };
+
+    expect(
+      overlayMarketNewsTickerQuotes([ticker], {
+        "CBA.AX": {
+          change: null,
+          changePercent: null,
+          currency: null,
+          exchange: null,
+          longName: null,
+          marketState: null,
+          previousClose: null,
+          price: null,
+          quoteTime: null,
+          shortName: null,
+          symbol: "CBA.AX",
+        },
+      })[0],
+    ).toBe(ticker);
+  });
+  it("marks fallback ticker data mixed when adaptive quotes recover a price", () => {
+    const fallbackTicker = {
+      symbol: "CBA.AX",
+      label: "CBA",
+      value: "Quote unavailable",
+      change: "No live data",
+      tone: "neutral" as const,
+      sparkline: [],
+      sparklineSource: "fallback" as const,
+    };
+
+    const resolved = resolveMarketNewsTickerOverlayState(
+      "fallback",
+      [fallbackTicker],
+      {
+        "CBA.AX": {
+          change: 2,
+          changePercent: 1.67,
+          currency: "AUD",
+          exchange: "ASX",
+          longName: "Commonwealth Bank",
+          marketState: "REGULAR",
+          previousClose: 120,
+          price: 122,
+          quoteTime: "2026-07-15T04:00:00.000Z",
+          shortName: "CBA",
+          symbol: "CBA.AX",
+        },
+      },
+    );
+
+    expect(resolved.source).toBe("mixed");
+    expect(resolved.tickers[0]?.value).toBe("122.00");
   });
 
   it("redacts configured fallback prices when live quote fields are missing", () => {

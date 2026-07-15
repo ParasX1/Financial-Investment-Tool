@@ -1,3 +1,4 @@
+import type { MarketQuote } from "@/features/market-data/types";
 import type { MarketNewsTicker } from "../types";
 import { redactMarketNewsTickerFallback } from "./marketNewsDynamicTickers";
 import type {
@@ -66,7 +67,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
 }
 
 function isMarketNewsTicker(value: unknown): value is MarketNewsTicker {
@@ -117,9 +120,7 @@ export function isMarketNewsTickerStripSnapshot(
     Number.isFinite(payload.refreshMs) &&
     payload.refreshMs > 0 &&
     typeof payload.source === "string" &&
-    TICKER_STRIP_SOURCES.has(
-      payload.source as MarketNewsTickerStripSource,
-    ) &&
+    TICKER_STRIP_SOURCES.has(payload.source as MarketNewsTickerStripSource) &&
     payload.strategy === "core-plus-dynamic-movers" &&
     (typeof payload.updatedAt === "string" || payload.updatedAt === null) &&
     Array.isArray(payload.tickers) &&
@@ -294,6 +295,57 @@ export function mergeMarketNewsTickerQuote(
   };
 }
 
+export function overlayMarketNewsTickerQuotes(
+  tickers: readonly MarketNewsTicker[],
+  quotes: Readonly<Record<string, MarketQuote>>,
+): MarketNewsTicker[] {
+  return tickers.map((ticker) => {
+    const quote = quotes[normalizedTickerSymbol(ticker.symbol)];
+    if (!quote) return ticker;
+
+    const merged = mergeMarketNewsTickerQuote(ticker, {
+      quote: {
+        change: quote.change,
+        changePct: quote.changePercent,
+        longName: quote.longName ?? undefined,
+        marketState: quote.marketState ?? undefined,
+        prevClose: quote.previousClose,
+        price: quote.price,
+        shortName: quote.shortName ?? undefined,
+        symbol: quote.symbol,
+      },
+      sparkline: null,
+    });
+
+    if (isUnavailableTicker(merged)) return ticker;
+
+    const {
+      sparkline: _discardedSparkline,
+      sparklineSource: _discardedSparklineSource,
+      ...quoteFields
+    } = merged;
+    return { ...ticker, ...quoteFields };
+  });
+}
+export function resolveMarketNewsTickerOverlayState(
+  source: MarketNewsTickerStripSource,
+  tickers: readonly MarketNewsTicker[],
+  quotes: Readonly<Record<string, MarketQuote>>,
+): Pick<MarketNewsTickerStripState, "source" | "tickers"> {
+  const overlaidTickers = overlayMarketNewsTickerQuotes(tickers, quotes);
+  const recoveredFallbackQuote =
+    source === "fallback" &&
+    overlaidTickers.some(
+      (ticker, index) =>
+        ticker !== tickers[index] && !isUnavailableTicker(ticker),
+    );
+
+  return {
+    source: recoveredFallbackQuote ? "mixed" : source,
+    tickers: overlaidTickers,
+  };
+}
+
 export function resolveMarketNewsTickerQuoteState(
   ticker: MarketNewsTicker,
   live: {
@@ -304,7 +356,8 @@ export function resolveMarketNewsTickerQuoteState(
   const nextTicker = mergeMarketNewsTickerQuote(ticker, live);
 
   return {
-    recoveredLiveData: nextTicker !== ticker && !isUnavailableTicker(nextTicker),
+    recoveredLiveData:
+      nextTicker !== ticker && !isUnavailableTicker(nextTicker),
     retainedPrevious: false,
     ticker: nextTicker,
   };

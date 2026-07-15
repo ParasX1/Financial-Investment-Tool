@@ -31,15 +31,18 @@ function renderRow(
   quote: WatchlistQuote | null | undefined,
   item: WatchlistItem = baseItem,
   busy = false,
+  isMonitored = false,
 ) {
   return renderToStaticMarkup(
     <WatchlistRow
       busy={busy}
+      isMonitored={isMonitored}
       canMoveDown
       canMoveUp
       item={item}
       quote={quote}
       onEdit={jest.fn()}
+      onMonitor={jest.fn()}
       onMoveDown={jest.fn()}
       onMoveUp={jest.fn()}
       onRemove={jest.fn()}
@@ -52,6 +55,7 @@ describe("WatchlistRow", () => {
     const markup = renderToStaticMarkup(
       <WatchlistRow
         busy={false}
+        isMonitored={false}
         canMoveDown={false}
         canMoveUp={false}
         item={{
@@ -77,7 +81,8 @@ describe("WatchlistRow", () => {
           symbol: "CBA.AX",
         }}
         onEdit={jest.fn()}
-        onMoveDown={jest.fn()}
+        onMonitor={jest.fn()}
+      onMoveDown={jest.fn()}
         onMoveUp={jest.fn()}
         onRemove={jest.fn()}
       />,
@@ -88,6 +93,13 @@ describe("WatchlistRow", () => {
     expect(markup).toContain("not an alert or recommendation");
   });
 
+  it("exposes an accessible control for the selected market monitor", () => {
+    const markup = renderRow(baseQuote, baseItem, false, true);
+
+    expect(markup).toContain('aria-label="Monitor CBA.AX price trend"');
+    expect(markup).toContain('aria-controls="watchlist-market-monitor"');
+    expect(markup).toContain('aria-expanded="true"');
+  });
   it("renders pending, unavailable, neutral, and extended-session quote states", () => {
     const pending = renderRow(undefined, { ...baseItem, note: null, targetPrice: null });
     const unavailable = renderRow(null, { ...baseItem, note: null, targetPrice: null });
