@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMarketQuotes } from "@/features/market-data/hooks/useMarketQuotes";
+import { useMarketQuotes } from "@/features/market-data";
 import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
 import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
 import {
@@ -12,6 +12,28 @@ import {
 } from "../lib/marketNewsTickerQuotes";
 
 const SPARKLINE_REFRESH_MS = 60_000;
+
+export function buildMarketNewsTickerStripRequest(
+  scopeId: string,
+  watchlistSymbols: readonly string[],
+  signal?: AbortSignal,
+) {
+  const url = "/api/market/ticker-strip?scope=" + encodeURIComponent(scopeId);
+
+  if (!watchlistSymbols.length) {
+    return { init: { method: "GET", signal } satisfies RequestInit, url };
+  }
+
+  return {
+    init: {
+      body: JSON.stringify({ watchlistSymbols }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal,
+    } satisfies RequestInit,
+    url,
+  };
+}
 
 async function fetchJson<T extends object>(
   url: string,
@@ -143,15 +165,12 @@ export function useMarketNewsTickerQuotes(
       controller = activeController;
       if (showLoading) setLoading(true);
 
-      const searchParams = new URLSearchParams({ scope: marketScope.id });
-      if (watchlistKey) {
-        searchParams.set("watchlist", watchlistKey);
-      }
-
-      const snapshot = await fetchJson(
-        `/api/market/ticker-strip?${searchParams.toString()}`,
-        { signal: activeController.signal },
+      const request = buildMarketNewsTickerStripRequest(
+        marketScope.id,
+        watchlistKey ? watchlistKey.split(",") : [],
+        activeController.signal,
       );
+      const snapshot = await fetchJson(request.url, request.init);
 
       if (!alive || controller !== activeController) return;
 

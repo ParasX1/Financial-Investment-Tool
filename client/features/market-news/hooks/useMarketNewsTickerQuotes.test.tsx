@@ -1,7 +1,10 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveMarketNewsMarketScope } from "../lib/marketNewsNavigation";
-import { useMarketNewsTickerQuotes } from "./useMarketNewsTickerQuotes";
+import {
+  buildMarketNewsTickerStripRequest,
+  useMarketNewsTickerQuotes,
+} from "./useMarketNewsTickerQuotes";
 
 function TickerQuoteProbe() {
   const state = useMarketNewsTickerQuotes(
@@ -19,6 +22,26 @@ function TickerQuoteProbe() {
 }
 
 describe("useMarketNewsTickerQuotes", () => {
+  it("keeps personalized Watchlist symbols out of request URLs", () => {
+    const publicRequest = buildMarketNewsTickerStripRequest("australia", []);
+    expect(publicRequest.url).toBe("/api/market/ticker-strip?scope=australia");
+    expect(publicRequest.init.method).toBe("GET");
+
+    const personalizedRequest = buildMarketNewsTickerStripRequest(
+      "australia",
+      ["CBA.AX", "NVDA"],
+    );
+    expect(personalizedRequest.url).toBe(
+      "/api/market/ticker-strip?scope=australia",
+    );
+    expect(personalizedRequest.url).not.toContain("CBA.AX");
+    expect(personalizedRequest.init).toMatchObject({
+      body: JSON.stringify({ watchlistSymbols: ["CBA.AX", "NVDA"] }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+  });
+
   it("starts in updating state instead of claiming configured fallback before fetch", () => {
     const html = renderToStaticMarkup(<TickerQuoteProbe />);
 

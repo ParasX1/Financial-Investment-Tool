@@ -25,6 +25,24 @@ function createResponse() {
   return { headers, res };
 }
 
+function createRequest({
+  body,
+  method = "GET",
+  query = {},
+}: {
+  body?: unknown;
+  method?: string;
+  query?: NextApiRequest["query"];
+} = {}) {
+  return {
+    body,
+    headers: {},
+    method,
+    query,
+    socket: { remoteAddress: "127.0.0.1" },
+  } as unknown as NextApiRequest;
+}
+
 describe("/api/market/ticker-strip", () => {
   beforeEach(() => {
     mockBuildMarketNewsTickerStripSnapshot.mockResolvedValue({
@@ -44,10 +62,7 @@ describe("/api/market/ticker-strip", () => {
   it("allows shared short-lived caching for public scope snapshots", async () => {
     const { headers, res } = createResponse();
 
-    await handler(
-      { query: { scope: "australia" } } as unknown as NextApiRequest,
-      res,
-    );
+    await handler(createRequest({ query: { scope: "australia" } }), res);
 
     expect(headers.get("cache-control")).toBe(
       "s-maxage=45, stale-while-revalidate=120",
@@ -58,26 +73,51 @@ describe("/api/market/ticker-strip", () => {
     );
   });
 
-  it("does not put watchlist-personalized ticker strips into shared cache", async () => {
+  it("accepts personalized symbols in a private POST body", async () => {
     const { headers, res } = createResponse();
 
     await handler(
-      {
+      createRequest({
+        body: { watchlistSymbols: [" cba.ax ", "bad symbol", "NVDA", "NVDA"] },
+        method: "POST",
         query: {
           scope: "australia",
-          watchlist: "CBA.AX,NVDA",
         },
-      } as unknown as NextApiRequest,
+      }),
       res,
     );
 
-    expect(headers.get("cache-control")).toBe(
-      "private, no-store, max-age=0",
-    );
+    expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(mockBuildMarketNewsTickerStripSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ watchlistSymbols: ["CBA.AX", "NVDA"] }),
     );
+  });
+
+  it("rejects unsupported methods and invalid personalized bodies", async () => {
+    const unsupported = createResponse();
+    await handler(createRequest({ method: "DELETE" }), unsupported.res);
+    expect(unsupported.res.status).toHaveBeenCalledWith(405);
+    expect(mockBuildMarketNewsTickerStripSnapshot).not.toHaveBeenCalled();
+
+    const invalid = createResponse();
+    await handler(
+      createRequest({
+        body: { watchlistSymbols: "CBA.AX" },
+        method: "POST",
+      }),
+      invalid.res,
+    );
+    expect(invalid.res.status).toHaveBeenCalledWith(400);
+    expect(mockBuildMarketNewsTickerStripSnapshot).not.toHaveBeenCalled();
+
+    const leakedQuery = createResponse();
+    await handler(
+      createRequest({ query: { watchlist: "CBA.AX" } }),
+      leakedQuery.res,
+    );
+    expect(leakedQuery.res.status).toHaveBeenCalledWith(400);
+    expect(mockBuildMarketNewsTickerStripSnapshot).not.toHaveBeenCalled();
   });
 
   it("redacts ticker strip build errors from client responses", async () => {
@@ -88,10 +128,7 @@ describe("/api/market/ticker-strip", () => {
     mockBuildMarketNewsTickerStripSnapshot.mockRejectedValueOnce(providerError);
     const { headers, res } = createResponse();
 
-    await handler(
-      { query: { scope: "australia" } } as unknown as NextApiRequest,
-      res,
-    );
+    await handler(createRequest({ query: { scope: "australia" } }), res);
 
     expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(res.status).toHaveBeenCalledWith(502);
@@ -101,10 +138,10 @@ describe("/api/market/ticker-strip", () => {
     expect(JSON.stringify((res.json as jest.Mock).mock.calls)).not.toContain(
       "API_SECRET",
     );
-    expect(consoleError).toHaveBeenCalledWith(
-      "Market ticker strip error",
-      providerError,
-    );
+    expect(consoleError).toHaveBeenCalledWith("Market ticker strip error", {
+      name: "Error",
+    });
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain("API_SECRET");
 
     consoleError.mockRestore();
   });

@@ -1,4 +1,4 @@
-import type { MarketQuote } from "@/features/market-data/types";
+import type { MarketQuote } from "@/features/market-data";
 import type { MarketNewsTicker } from "../types";
 import { redactMarketNewsTickerFallback } from "./marketNewsDynamicTickers";
 import type {
