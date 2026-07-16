@@ -11,6 +11,7 @@ import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
 import { createCommentsState } from "../state/commentsReducer";
 import {
   clearCommunityMemoryCache,
+  rememberLocalCommunityPost,
   rememberCommunityData,
 } from "../state/communityMemory";
 import type { PostUI } from "../types";
@@ -67,10 +68,85 @@ describe("useCommunityData account-scoped resource", () => {
     jest.restoreAllMocks();
   });
 
+  it("restores demo Create posts across Feed remounts without exposing them to remote signed-out mode", async () => {
+    const localPost = {
+      ...post("local-created", "local"),
+      fromDB: undefined,
+      authorId: undefined,
+    };
+    rememberLocalCommunityPost(localPost);
+    const dependencies: CommunityDataDependencies = {
+      load: jest.fn<any>(),
+      subscribeToCommentInserts: jest.fn<any>(() => jest.fn()),
+    };
+    let latest: ReturnType<typeof useCommunityData> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function DemoProbe() {
+      latest = useCommunityData(
+        {
+          authLoading: false,
+          currentUserId: null,
+          feedView: "new",
+          query: "",
+          supabase: null,
+          topTimeRange: "all-time",
+        },
+        dependencies,
+      );
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<DemoProbe />);
+      await flushPromises();
+    });
+    expect(latest!.posts[0].id).toBe("local-created");
+    renderer!.unmount();
+
+    await act(async () => {
+      renderer = TestRenderer.create(<DemoProbe />);
+      await flushPromises();
+    });
+    expect(latest!.posts[0].id).toBe("local-created");
+    renderer!.unmount();
+
+    const remoteLoad = deferred<ReturnType<typeof result>>();
+    dependencies.load = jest.fn<any>(() => remoteLoad.promise);
+    const supabase = {} as any;
+
+    function SignedOutProbe() {
+      latest = useCommunityData(
+        {
+          authLoading: false,
+          currentUserId: null,
+          feedView: "new",
+          query: "",
+          supabase,
+          topTimeRange: "all-time",
+        },
+        dependencies,
+      );
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<SignedOutProbe />);
+      await flushPromises();
+    });
+    expect(latest!.posts).toEqual([]);
+
+    await act(async () => {
+      remoteLoad.resolve(result([]));
+      await flushPromises();
+      renderer!.unmount();
+    });
+  });
+
   it("masks the previous account cache while auth resolves and user B loads", async () => {
     const oldPost = post("post-a", "user-a");
     rememberCommunityData({
-      currentUserId: "user-a",
+      ownerKey: "user:user-a",
       posts: [oldPost],
       likedPostIds: [oldPost.id],
       commentsState: createCommentsState([oldPost]),

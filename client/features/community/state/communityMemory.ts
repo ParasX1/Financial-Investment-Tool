@@ -5,12 +5,14 @@ import type {
   CommunityTopTimeRange,
   PostUI,
 } from "../types";
+import { DEMO_POSTS } from "../constants";
+import { commentsReducer, createCommentsState } from "./commentsReducer";
 
 export type CommunityMemoryCache = {
   posts: PostUI[];
   likedPostIds: string[];
   commentsState: CommentsState;
-  currentUserId: string | null;
+  ownerKey: string;
 };
 
 let communityMemoryCache: CommunityMemoryCache | null = null;
@@ -19,17 +21,45 @@ let rememberedCommunityTopTimeRange: CommunityTopTimeRange = "all-time";
 let rememberedCommunityQuery = "";
 let rememberedDesktopSidebarCollapsed = false;
 
-export function getCachedCommunityForUser(
-  enabled: boolean,
-  currentUserId: string | null,
-) {
-  return enabled && communityMemoryCache?.currentUserId === currentUserId
+export function getCachedCommunityForOwner(ownerKey: string) {
+  return communityMemoryCache?.ownerKey === ownerKey
     ? communityMemoryCache
     : null;
 }
 
 export function rememberCommunityData(cache: CommunityMemoryCache) {
   communityMemoryCache = cache;
+}
+
+export function invalidateCommunityDataForUser(currentUserId: string) {
+  if (communityMemoryCache?.ownerKey === `user:${currentUserId}`) {
+    communityMemoryCache = null;
+  }
+}
+
+export function rememberLocalCommunityPost(post: PostUI) {
+  const current =
+    getCachedCommunityForOwner("demo") ??
+    ({
+      posts: [...DEMO_POSTS],
+      likedPostIds: [],
+      commentsState: createCommentsState(DEMO_POSTS),
+      ownerKey: "demo",
+    } satisfies CommunityMemoryCache);
+  const posts = [
+    post,
+    ...current.posts.filter((candidate) => candidate.id !== post.id),
+  ];
+
+  communityMemoryCache = {
+    ...current,
+    posts,
+    commentsState: commentsReducer(current.commentsState, {
+      type: "ensurePost",
+      postId: post.id,
+      initialCount: 0,
+    }),
+  };
 }
 
 export function clearCommunityMemoryCache() {

@@ -12,7 +12,7 @@ import {
 } from "../lib/communitySelectors";
 import { commentsReducer, createCommentsState } from "../state/commentsReducer";
 import {
-  getCachedCommunityForUser,
+  getCachedCommunityForOwner,
   rememberCommunityData,
   type CommunityMemoryCache,
 } from "../state/communityMemory";
@@ -55,6 +55,9 @@ const EMPTY_RESOURCE: CommunityResource = {
 };
 
 function createDemoResource(): CommunityResource {
+  const cache = getCachedCommunityForOwner("demo");
+  if (cache) return createCachedResource(cache);
+
   return {
     commentsState: createCommentsState(DEMO_POSTS),
     likedPostIds: new Set(),
@@ -96,12 +99,10 @@ function getOwnerKey({
 
 function createInitialState({
   authLoading,
-  currentUserId,
   ownerKey,
   supabase,
 }: {
   authLoading: boolean;
-  currentUserId: string | null;
   ownerKey: string;
   supabase: SupabaseClient | null;
 }): CommunityResourceState {
@@ -114,9 +115,7 @@ function createInitialState({
     };
   }
 
-  const cache = authLoading
-    ? null
-    : getCachedCommunityForUser(true, currentUserId);
+  const cache = authLoading ? null : getCachedCommunityForOwner(ownerKey);
 
   return {
     error: null,
@@ -148,7 +147,6 @@ export function useCommunityData(
   const [state, setState] = React.useState<CommunityResourceState>(() =>
     createInitialState({
       authLoading,
-      currentUserId,
       ownerKey,
       supabase,
     }),
@@ -202,7 +200,7 @@ export function useCommunityData(
   );
 
   React.useEffect(() => {
-    if (!supabase || !stateIsCurrent || state.loading || state.error) {
+    if (!stateIsCurrent || state.loading || state.error) {
       return;
     }
 
@@ -210,15 +208,15 @@ export function useCommunityData(
       posts: state.resource.posts,
       likedPostIds: Array.from(state.resource.likedPostIds),
       commentsState: state.resource.commentsState,
-      currentUserId,
+      ownerKey,
     });
-  }, [currentUserId, state, stateIsCurrent, supabase]);
+  }, [ownerKey, state, stateIsCurrent]);
 
   React.useEffect(() => {
     if (!supabase || authLoading) return;
 
     let active = true;
-    const cache = getCachedCommunityForUser(true, currentUserId);
+    const cache = getCachedCommunityForOwner(ownerKey);
 
     setState({
       error: null,

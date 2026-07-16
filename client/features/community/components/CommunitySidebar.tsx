@@ -73,7 +73,7 @@ export function CommunitySidebar({
   activeTimeRange: CommunityTopTimeRange;
   collapsed: boolean;
   compact: boolean;
-  counts: CommunityFeedCounts;
+  counts?: CommunityFeedCounts;
   onCollapsedChange: (collapsed: boolean) => void;
   onTimeRangeChange: (range: CommunityTopTimeRange) => void;
   onViewChange: (view: CommunityFeedView) => void;
@@ -277,9 +277,11 @@ export function CommunitySidebar({
                     {item.label}
                   </span>
                 </span>
-                <span className={fitNav.countPill}>
-                  {counts[item.id].toLocaleString()}
-                </span>
+                {counts ? (
+                  <span className={fitNav.countPill}>
+                    {counts[item.id].toLocaleString()}
+                  </span>
+                ) : null}
               </button>
             );
           })}

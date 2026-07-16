@@ -148,8 +148,14 @@ describe("site-wide page background contract", () => {
     const guide = readClientSource("features/guide/components/GuideMain.tsx");
     const help = readClientSource("features/help/components/HelpMain.tsx");
     const homeMain = readClientSource("features/home/components/HomeMain.tsx");
-    const communityMain = readClientSource(
-      "features/community/components/CommunityMain.tsx",
+    const communityLayout = readClientSource(
+      "features/community/components/CommunityLayout.tsx",
+    );
+    const communityFeedScreen = readClientSource(
+      "features/community/screens/CommunityFeedScreen.tsx",
+    );
+    const communityCreateScreen = readClientSource(
+      "features/community/screens/CommunityCreateScreen.tsx",
     );
     const communityShell = readClientSource(
       "features/community/components/CommunityPageShell.tsx",
@@ -167,7 +173,9 @@ describe("site-wide page background contract", () => {
     expect(help).toContain("<LearningPageLayout");
     expect(learningLayout).toContain("<FitPageShell");
     expect(communityShell).toContain("<FitPageShell");
-    expect(communityMain).toContain("className={communityUi.page}");
+    expect(communityLayout).toContain("className={communityUi.page}");
+    expect(communityFeedScreen).toContain("<CommunityLayout");
+    expect(communityCreateScreen).toContain("<CommunityLayout");
     expect(watchlistRoute).toContain("<WatchlistMain");
     expect(watchlistMain).toContain("<FitPageShell");
     expect(watchlistMain).toContain("className={styles.page}");

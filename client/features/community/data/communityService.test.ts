@@ -65,12 +65,41 @@ describe("Community delete image cleanup", () => {
     const { db } = createMockSupabase([], null);
 
     await expect(
-      createCommunityPost(db, {
-        title: "Unsigned discussion",
-        body: "This should not be inserted remotely.",
-        tags: [],
-      }),
+      createCommunityPost(
+        db,
+        {
+          title: "Unsigned discussion",
+          body: "This should not be inserted remotely.",
+          tags: [],
+        },
+        "user-1",
+      ),
     ).rejects.toThrow("Sign in to create a discussion.");
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a discussion when the active session no longer owns the action", async () => {
+    const db = {
+      auth: {
+        getSession: jest.fn().mockResolvedValue({
+          data: { session: { user: { id: "user-b" } } },
+        }),
+      },
+      from: jest.fn(),
+    } as any;
+
+    await expect(
+      createCommunityPost(
+        db,
+        {
+          title: "Stale discussion",
+          body: "This must not be written as another account.",
+          tags: [],
+        },
+        "user-a",
+      ),
+    ).rejects.toThrow("Your session changed. Please try again.");
 
     expect(db.from).not.toHaveBeenCalled();
   });

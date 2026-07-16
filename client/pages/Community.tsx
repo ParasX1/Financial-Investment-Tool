@@ -1,5 +1,5 @@
 import {
-  CommunityMain,
+  CommunityFeedScreen,
   CommunityPageShell,
   getSupabaseClient,
 } from "@/features/community";
@@ -9,7 +9,7 @@ const supabase = getSupabaseClient();
 export default function CommunityPage() {
   return (
     <CommunityPageShell skipLabel="Skip to community content">
-      <CommunityMain mode="feed" supabase={supabase} />
+      <CommunityFeedScreen supabase={supabase} />
     </CommunityPageShell>
   );
 }

@@ -6,12 +6,10 @@ import type { DiscussionDraft, FeedbackMessage } from "../types";
 
 export function useCommunityDraftNavigation({
   draft,
-  mode,
   pushFeedback,
   router,
 }: {
   draft: DiscussionDraft;
-  mode: "feed" | "create";
   pushFeedback: (message: Omit<FeedbackMessage, "id">) => void;
   router: NextRouter;
 }) {
@@ -22,11 +20,11 @@ export function useCommunityDraftNavigation({
   );
 
   React.useEffect(() => {
-    if (!draftDirty) blockedNavigationRef.current = null;
-  }, [draftDirty]);
+    blockedNavigationRef.current = null;
+  }, [draft]);
 
   React.useEffect(() => {
-    if (mode !== "create" || !draftDirty) return;
+    if (!draftDirty) return;
 
     const preventUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -35,11 +33,9 @@ export function useCommunityDraftNavigation({
 
     window.addEventListener("beforeunload", preventUnload);
     return () => window.removeEventListener("beforeunload", preventUnload);
-  }, [draftDirty, mode]);
+  }, [draftDirty]);
 
   React.useEffect(() => {
-    if (mode !== "create") return;
-
     router.beforePopState(() => {
       if (!draftDirty) return true;
 
@@ -61,11 +57,11 @@ export function useCommunityDraftNavigation({
     return () => {
       router.beforePopState(() => true);
     };
-  }, [draftDirty, mode, pushFeedback, router]);
+  }, [draftDirty, pushFeedback, router]);
 
   const navigateWithDraftGuard = React.useCallback(
     (key: string, navigate: () => void) => {
-      if (mode !== "create" || !draftDirty) {
+      if (!draftDirty) {
         blockedNavigationRef.current = null;
         navigate();
         return;
@@ -85,7 +81,7 @@ export function useCommunityDraftNavigation({
           "Your draft has unsaved content. Select the action again to leave this page.",
       });
     },
-    [draftDirty, mode, pushFeedback],
+    [draftDirty, pushFeedback],
   );
 
   return {

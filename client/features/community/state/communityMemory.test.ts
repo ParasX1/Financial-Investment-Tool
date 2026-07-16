@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it } from "@jest/globals";
 import { createCommentsState } from "./commentsReducer";
 import {
   clearCommunityMemoryCache,
-  getCachedCommunityForUser,
+  getCachedCommunityForOwner,
   getRememberedCommunityFeedView,
   getRememberedCommunityQuery,
   getRememberedCommunityTopTimeRange,
   getRememberedDesktopSidebarCollapsed,
+  invalidateCommunityDataForUser,
+  rememberLocalCommunityPost,
   rememberCommunityData,
   rememberCommunityFeedView,
   rememberCommunityQuery,
@@ -25,19 +27,19 @@ describe("community memory ownership", () => {
 
   it("returns cached feed data only to the account that owns it", () => {
     const cache = {
-      currentUserId: "user-a",
+      ownerKey: "user:user-a",
       posts: [],
       likedPostIds: ["post-1"],
       commentsState: createCommentsState([]),
     };
     rememberCommunityData(cache);
 
-    expect(getCachedCommunityForUser(true, "user-a")).toBe(cache);
-    expect(getCachedCommunityForUser(true, "user-b")).toBeNull();
-    expect(getCachedCommunityForUser(false, "user-a")).toBeNull();
+    expect(getCachedCommunityForOwner("user:user-a")).toBe(cache);
+    expect(getCachedCommunityForOwner("user:user-b")).toBeNull();
+    expect(getCachedCommunityForOwner("signed-out")).toBeNull();
 
     clearCommunityMemoryCache();
-    expect(getCachedCommunityForUser(true, "user-a")).toBeNull();
+    expect(getCachedCommunityForOwner("user:user-a")).toBeNull();
   });
 
   it("remembers non-sensitive feed preferences across route transitions", () => {
@@ -50,5 +52,45 @@ describe("community memory ownership", () => {
     expect(getRememberedCommunityQuery()).toBe("banks");
     expect(getRememberedCommunityTopTimeRange()).toBe("past-week");
     expect(getRememberedDesktopSidebarCollapsed()).toBe(true);
+  });
+
+  it("keeps a local Create post in the demo feed until refresh", () => {
+    const post = {
+      id: "local-1",
+      user: "You",
+      initials: "YU",
+      title: "Local discussion",
+      body: "Saved in route memory.",
+      votes: 0,
+      time: "just now",
+      sortTime: Date.now(),
+      tags: [],
+      commentCount: 0,
+      avatarGradient: "linear-gradient(#000, #111)",
+    };
+
+    rememberLocalCommunityPost(post);
+
+    const cache = getCachedCommunityForOwner("demo");
+    expect(cache?.posts[0]).toEqual(post);
+    expect(cache?.commentsState.counts[post.id]).toBe(0);
+    expect(getCachedCommunityForOwner("demo")?.posts[0]).toEqual(post);
+    expect(getCachedCommunityForOwner("signed-out")).toBeNull();
+  });
+
+  it("invalidates only the remote account that completed a create", () => {
+    const cache = {
+      ownerKey: "user:user-a",
+      posts: [],
+      likedPostIds: [],
+      commentsState: createCommentsState([]),
+    };
+    rememberCommunityData(cache);
+
+    invalidateCommunityDataForUser("user-b");
+    expect(getCachedCommunityForOwner("user:user-a")).toBe(cache);
+
+    invalidateCommunityDataForUser("user-a");
+    expect(getCachedCommunityForOwner("user:user-a")).toBeNull();
   });
 });

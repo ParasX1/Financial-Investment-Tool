@@ -131,19 +131,23 @@ async function loadLikedPostIds(
 export async function createCommunityPost(
   db: SupabaseClient,
   draft: DiscussionPostInput,
+  authorId: string,
 ): Promise<PostUI> {
-  const uid = requireSessionUserId(
+  const activeUserId = requireSessionUserId(
     await getSessionUserId(db),
     "create a discussion",
   );
+  if (activeUserId !== authorId) {
+    throw new Error("Your session changed. Please try again.");
+  }
   const postDraft = {
     ...normalizeDiscussionDraft(draft),
     imageUrl: draft.imageUrl ?? null,
     imagePath: draft.imagePath ?? null,
   };
 
-  const row = await insertCommunityPostRow(db, postDraft, uid);
-  return postFromRow(row, uid);
+  const row = await insertCommunityPostRow(db, postDraft, authorId);
+  return postFromRow(row, authorId);
 }
 
 export async function deleteCommunityPost(
