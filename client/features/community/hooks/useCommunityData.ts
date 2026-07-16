@@ -1,251 +1,302 @@
-// File purpose: Manages Community auth state, data loading, realtime comments, feed counts, and cached feed state.
+// File purpose: Owns the account-scoped Community feed resource, derivations, and realtime lifecycle.
 import * as React from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEMO_POSTS } from "../constants";
-import { commentsReducer, createCommentsState } from "../state/commentsReducer";
-import { commentFromRow } from "../lib/communityMappers";
-import { getErrorMessage } from "../lib/communityErrors";
-import { getCommunityLoadErrorMessage } from "../lib/communityLoadStatus";
 import { loadCommunityData } from "../data/communityService";
+import { subscribeToCommunityCommentInserts } from "../data/communityRealtime";
+import { commentFromRow } from "../lib/communityMappers";
+import { getCommunityLoadErrorMessage } from "../lib/communityLoadStatus";
 import {
   getCommunityFeedCounts,
   getVisibleCommunityPosts,
 } from "../lib/communitySelectors";
+import { commentsReducer, createCommentsState } from "../state/commentsReducer";
+import {
+  getCachedCommunityForUser,
+  rememberCommunityData,
+  type CommunityMemoryCache,
+} from "../state/communityMemory";
 import type {
-  CommentRow,
   CommentUI,
+  CommentsAction,
+  CommentsState,
   CommunityFeedView,
   CommunityTopTimeRange,
   PostUI,
 } from "../types";
-import {
-  getCachedCommunityForRememberedUser,
-  hasCommunityMemoryCache,
-  rememberCommunityData,
-  rememberCommunityUserId,
-} from "../state/communityMemory";
 
-export function useCommunityData({
-  feedView,
-  query,
+type CommunityResource = {
+  commentsState: CommentsState;
+  likedPostIds: Set<string>;
+  posts: PostUI[];
+};
+
+type CommunityResourceState = {
+  error: string | null;
+  loading: boolean;
+  ownerKey: string;
+  resource: CommunityResource;
+};
+
+export type CommunityDataDependencies = {
+  load: typeof loadCommunityData;
+  subscribeToCommentInserts: typeof subscribeToCommunityCommentInserts;
+};
+
+const defaultCommunityDataDependencies: CommunityDataDependencies = {
+  load: loadCommunityData,
+  subscribeToCommentInserts: subscribeToCommunityCommentInserts,
+};
+
+const EMPTY_RESOURCE: CommunityResource = {
+  commentsState: createCommentsState([]),
+  likedPostIds: new Set(),
+  posts: [],
+};
+
+function createDemoResource(): CommunityResource {
+  return {
+    commentsState: createCommentsState(DEMO_POSTS),
+    likedPostIds: new Set(),
+    posts: [...DEMO_POSTS],
+  };
+}
+
+function createCachedResource(cache: CommunityMemoryCache): CommunityResource {
+  return {
+    commentsState: cache.commentsState,
+    likedPostIds: new Set(cache.likedPostIds),
+    posts: cache.posts,
+  };
+}
+
+function createLoadedResource(
+  result: Awaited<ReturnType<typeof loadCommunityData>>,
+): CommunityResource {
+  return {
+    commentsState: createCommentsState(result.posts, result.comments),
+    likedPostIds: new Set(result.likedPostIds),
+    posts: result.posts,
+  };
+}
+
+function getOwnerKey({
+  authLoading,
+  currentUserId,
   supabase,
-  topTimeRange,
 }: {
-  feedView: CommunityFeedView;
-  query: string;
+  authLoading: boolean;
+  currentUserId: string | null;
   supabase: SupabaseClient | null;
-  topTimeRange: CommunityTopTimeRange;
 }) {
-  const cachedCommunity = getCachedCommunityForRememberedUser(Boolean(supabase));
-  const [loadingCommunity, setLoadingCommunity] = React.useState(
-    Boolean(supabase && !cachedCommunity),
+  if (!supabase) return "demo";
+  if (authLoading) return "auth-loading";
+  return currentUserId ? `user:${currentUserId}` : "signed-out";
+}
+
+function createInitialState({
+  authLoading,
+  currentUserId,
+  ownerKey,
+  supabase,
+}: {
+  authLoading: boolean;
+  currentUserId: string | null;
+  ownerKey: string;
+  supabase: SupabaseClient | null;
+}): CommunityResourceState {
+  if (!supabase) {
+    return {
+      error: null,
+      loading: false,
+      ownerKey,
+      resource: createDemoResource(),
+    };
+  }
+
+  const cache = authLoading
+    ? null
+    : getCachedCommunityForUser(true, currentUserId);
+
+  return {
+    error: null,
+    loading: !cache,
+    ownerKey,
+    resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
+  };
+}
+
+export function useCommunityData(
+  {
+    authLoading,
+    currentUserId,
+    feedView,
+    query,
+    supabase,
+    topTimeRange,
+  }: {
+    authLoading: boolean;
+    currentUserId: string | null;
+    feedView: CommunityFeedView;
+    query: string;
+    supabase: SupabaseClient | null;
+    topTimeRange: CommunityTopTimeRange;
+  },
+  dependencies: CommunityDataDependencies = defaultCommunityDataDependencies,
+) {
+  const ownerKey = getOwnerKey({ authLoading, currentUserId, supabase });
+  const [state, setState] = React.useState<CommunityResourceState>(() =>
+    createInitialState({
+      authLoading,
+      currentUserId,
+      ownerKey,
+      supabase,
+    }),
   );
-  const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [authReady, setAuthReady] = React.useState(!supabase);
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(
-    cachedCommunity?.currentUserId ?? null,
-  );
-  const [posts, setPosts] = React.useState<PostUI[]>(
-    cachedCommunity?.posts ?? (supabase ? [] : DEMO_POSTS),
-  );
-  const [likedPostIds, setLikedPostIds] = React.useState<Set<string>>(
-    () => new Set(cachedCommunity?.likedPostIds ?? []),
-  );
-  const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-  const initialCommentsState = React.useMemo(
-    () =>
-      cachedCommunity?.commentsState ??
-      createCommentsState(supabase ? [] : DEMO_POSTS),
-    [cachedCommunity, supabase],
-  );
-  const [commentsState, dispatchComments] = React.useReducer(
-    commentsReducer,
-    initialCommentsState,
+  const stateIsCurrent = state.ownerKey === ownerKey;
+  const resource = stateIsCurrent ? state.resource : EMPTY_RESOURCE;
+
+  const updateCurrentResource = React.useCallback(
+    (update: (current: CommunityResource) => CommunityResource) => {
+      setState((current) => {
+        if (current.ownerKey !== ownerKey) return current;
+        return { ...current, resource: update(current.resource) };
+      });
+    },
+    [ownerKey],
   );
 
-  const applyAuthUserId = React.useCallback((nextUserId: string | null) => {
-    rememberCommunityUserId(nextUserId);
-    setCurrentUserId(nextUserId);
-  }, []);
+  const setPosts = React.useCallback<
+    React.Dispatch<React.SetStateAction<PostUI[]>>
+  >(
+    (update) => {
+      updateCurrentResource((current) => ({
+        ...current,
+        posts: typeof update === "function" ? update(current.posts) : update,
+      }));
+    },
+    [updateCurrentResource],
+  );
+
+  const setLikedPostIds = React.useCallback<
+    React.Dispatch<React.SetStateAction<Set<string>>>
+  >(
+    (update) => {
+      updateCurrentResource((current) => ({
+        ...current,
+        likedPostIds:
+          typeof update === "function" ? update(current.likedPostIds) : update,
+      }));
+    },
+    [updateCurrentResource],
+  );
+
+  const dispatchComments = React.useCallback<React.Dispatch<CommentsAction>>(
+    (action) => {
+      updateCurrentResource((current) => ({
+        ...current,
+        commentsState: commentsReducer(current.commentsState, action),
+      }));
+    },
+    [updateCurrentResource],
+  );
 
   React.useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !stateIsCurrent || state.loading || state.error) {
+      return;
+    }
 
     rememberCommunityData({
-      posts,
-      likedPostIds: Array.from(likedPostIds),
-      commentsState,
+      posts: state.resource.posts,
+      likedPostIds: Array.from(state.resource.likedPostIds),
+      commentsState: state.resource.commentsState,
       currentUserId,
     });
-  }, [commentsState, currentUserId, likedPostIds, posts, supabase]);
+  }, [currentUserId, state, stateIsCurrent, supabase]);
 
   React.useEffect(() => {
-    if (!supabase) {
-      setCurrentUserId(null);
-      setAuthReady(true);
-      return;
-    }
+    if (!supabase || authLoading) return;
 
-    let mounted = true;
-    setAuthReady(false);
+    let active = true;
+    const cache = getCachedCommunityForUser(true, currentUserId);
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!mounted) return;
-        applyAuthUserId(data.session?.user.id ?? null);
-        setAuthReady(true);
-      })
-      .catch((error) => {
-        console.error("load auth session failed:", error);
-        if (!mounted) return;
-        applyAuthUserId(null);
-        setAuthReady(true);
-      });
+    setState({
+      error: null,
+      loading: !cache,
+      ownerKey,
+      resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
+    });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        applyAuthUserId(session?.user?.id ?? null);
-        setAuthReady(true);
-      },
-    );
+    dependencies
+      .load(supabase, currentUserId)
+      .then((result) => {
+        if (!active) return;
 
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
-  }, [applyAuthUserId, supabase]);
-
-  React.useEffect(() => {
-    if (!supabase) {
-      setLoadingCommunity(false);
-      return;
-    }
-
-    if (!authReady) return;
-
-    let mounted = true;
-
-    async function loadCommunity(db: SupabaseClient) {
-      if (!hasCommunityMemoryCache()) setLoadingCommunity(true);
-      setLoadError(null);
-
-      try {
-        const result = await loadCommunityData(db, currentUserId);
-        if (!mounted) return;
-
-        setPosts(result.posts);
-        setLikedPostIds(new Set(result.likedPostIds));
-        dispatchComments({
-          type: "reset",
-          posts: result.posts,
-          comments: result.comments,
-        });
-
-        setLoadError(
-          getCommunityLoadErrorMessage({
+        setState({
+          error: getCommunityLoadErrorMessage({
             commentsError: result.commentsError,
             likesError: result.likesError,
           }),
-        );
-      } catch (error) {
+          loading: false,
+          ownerKey,
+          resource: createLoadedResource(result),
+        });
+      })
+      .catch((error) => {
         console.error("load community failed:", error);
-        if (!mounted) return;
+        if (!active) return;
 
-        setPosts(DEMO_POSTS);
-        setLikedPostIds(new Set());
-        dispatchComments({ type: "reset", posts: DEMO_POSTS });
-        setLoadError(
-          getErrorMessage(
-            error,
-            "Could not load latest community posts. Showing demo discussions.",
-          ),
-        );
-      } finally {
-        if (mounted) setLoadingCommunity(false);
-      }
-    }
-
-    loadCommunity(supabase);
+        setState((current) => {
+          if (current.ownerKey !== ownerKey) return current;
+          return {
+            ...current,
+            error: "Could not load latest community posts.",
+            loading: false,
+          };
+        });
+      });
 
     return () => {
-      mounted = false;
+      active = false;
     };
-  }, [authReady, supabase, currentUserId]);
+  }, [authLoading, currentUserId, dependencies, ownerKey, supabase]);
 
   React.useEffect(() => {
     if (!supabase) return;
 
-    const channel = supabase
-      .channel("comments-inserts")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "comments" },
-        (payload) => {
-          const row = payload.new as CommentRow;
-          dispatchComments({
-            type: "addComment",
-            postId: row.post_id,
-            comment: commentFromRow(row),
-          });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase]);
-
-  const filteredPosts = React.useMemo(() => {
-    return getVisibleCommunityPosts({
-      posts,
-      query,
-      view: feedView,
-      topTimeRange,
-      likedPostIds,
-      commentsState,
-      currentUserId,
+    return dependencies.subscribeToCommentInserts(supabase, (row) => {
+      dispatchComments({
+        type: "addComment",
+        postId: row.post_id,
+        comment: commentFromRow(row, currentUserId),
+      });
     });
-  }, [
-    commentsState,
-    currentUserId,
-    feedView,
-    likedPostIds,
-    posts,
-    query,
-    topTimeRange,
-  ]);
+  }, [currentUserId, dependencies, dispatchComments, supabase]);
+
+  const filteredPosts = React.useMemo(
+    () =>
+      getVisibleCommunityPosts({
+        posts: resource.posts,
+        query,
+        view: feedView,
+        topTimeRange,
+        likedPostIds: resource.likedPostIds,
+        commentsState: resource.commentsState,
+        currentUserId,
+      }),
+    [currentUserId, feedView, query, resource, topTimeRange],
+  );
 
   const feedCounts = React.useMemo(
     () =>
       getCommunityFeedCounts({
-        posts,
-        likedPostIds,
-        commentsState,
+        posts: resource.posts,
+        likedPostIds: resource.likedPostIds,
+        commentsState: resource.commentsState,
         currentUserId,
       }),
-    [commentsState, currentUserId, likedPostIds, posts],
+    [currentUserId, resource],
   );
-
-  const removePostFromState = React.useCallback((postId: string) => {
-    setPosts((previous) => previous.filter((post) => post.id !== postId));
-    dispatchComments({ type: "removePost", postId });
-    setLikedPostIds((previous) => {
-      if (!previous.has(postId)) return previous;
-      const next = new Set(previous);
-      next.delete(postId);
-      return next;
-    });
-    setLikingPostIds((previous) => {
-      if (!previous.has(postId)) return previous;
-      const next = new Set(previous);
-      next.delete(postId);
-      return next;
-    });
-  }, []);
 
   const canDeletePost = React.useCallback(
     (post: PostUI) => {
@@ -257,8 +308,9 @@ export function useCommunityData({
 
   const canDeleteComment = React.useCallback(
     (comment: CommentUI) => {
-      if (!comment.fromDB && comment.id.startsWith("local-comment-"))
+      if (!comment.fromDB && comment.id.startsWith("local-comment-")) {
         return true;
+      }
       return Boolean(currentUserId && comment.authorId === currentUserId);
     },
     [currentUserId],
@@ -267,19 +319,18 @@ export function useCommunityData({
   return {
     canDeleteComment,
     canDeletePost,
-    commentsState,
+    commentsState: resource.commentsState,
     currentUserId,
+    dataMode: supabase ? ("remote" as const) : ("demo" as const),
     dispatchComments,
     feedCounts,
     filteredPosts,
-    likedPostIds,
-    likingPostIds,
-    loadError,
-    loadingCommunity,
-    posts,
-    removePostFromState,
+    likedPostIds: resource.likedPostIds,
+    loadError: stateIsCurrent ? state.error : null,
+    loadingCommunity:
+      !stateIsCurrent || (state.loading && resource.posts.length === 0),
+    posts: resource.posts,
     setLikedPostIds,
-    setLikingPostIds,
     setPosts,
   };
 }

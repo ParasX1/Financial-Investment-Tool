@@ -24,12 +24,11 @@ import { useCommunityDraftNavigation } from "../hooks/useCommunityDraftNavigatio
 import { useCommunityRouteSync } from "../hooks/useCommunityRouteSync";
 import { useCommunitySidebarLayout } from "../hooks/useCommunitySidebarLayout";
 import { CommunityComposer } from "./CommunityComposer";
-import { CommunityNotice, FeedbackStack, StatusMessage } from "./CommunityFeedback";
+import { CommunityNotice, FeedbackStack } from "./CommunityFeedback";
+import { CommunityFeed } from "./CommunityFeed";
 import { CommunitySidebar } from "./CommunitySidebar";
 import { CommunityToolbar } from "./CommunityToolbar";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
-import { EmptyState, LoadingDiscussions } from "./CommunityStates";
-import { PostCard } from "./PostCard";
 
 const communityLayoutStyle = {
   "--community-app-rail-width": `var(--app-sidebar-width, ${COMMUNITY_APP_RAIL_WIDTH_PX}px)`,
@@ -293,60 +292,27 @@ export function CommunityMain({
               onDismiss={community.dismissFeedback}
             />
 
-            {community.loadError ? (
-              <div className="mt-4">
-                <StatusMessage
-                  tone="error"
-                  title="Community data did not fully load"
-                >
-                  {community.loadError}
-                </StatusMessage>
-              </div>
-            ) : null}
-
             {mode === "feed" ? (
-              <section
-                className={cn(communityStyles.primaryContentStart, "space-y-4")}
-                data-community-content-start
-                aria-label="Community discussions"
-                aria-busy={community.loadingCommunity}
-              >
-              {community.loadingCommunity ? (
-                <LoadingDiscussions />
-              ) : community.filteredPosts.length ? (
-                community.filteredPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    comments={community.commentsState.byPost[post.id] ?? []}
-                    count={
-                      community.commentsState.counts[post.id] ??
-                      post.commentCount
-                    }
-                    liked={community.likedPostIds.has(post.id)}
-                    likeBusy={community.likingPostIds.has(post.id)}
-                    canDeletePost={community.canDeletePost(post)}
-                    canDeleteComment={community.canDeleteComment}
-                    canAttachCommentImage={Boolean(
-                      supabase && community.currentUserId,
-                    )}
-                    onAddComment={community.handleAddComment}
-                    onDeleteComment={community.requestDeleteComment}
-                    onDeletePost={
-                      community.canDeletePost(post)
-                        ? community.requestDeletePost
-                        : undefined
-                    }
-                    onToggleLike={community.handleToggleLike}
-                  />
-                ))
-              ) : (
-                <EmptyState
-                  query={community.query}
-                  view={community.feedView}
-                />
-              )}
-              </section>
+              <CommunityFeed
+                canAttachCommentImage={Boolean(
+                  supabase && community.currentUserId,
+                )}
+                canDeleteComment={community.canDeleteComment}
+                canDeletePost={community.canDeletePost}
+                commentsState={community.commentsState}
+                hasLoadedPosts={community.hasLoadedPosts}
+                likedPostIds={community.likedPostIds}
+                likingPostIds={community.likingPostIds}
+                loadError={community.loadError}
+                loading={community.loadingCommunity}
+                onAddComment={community.handleAddComment}
+                onDeleteComment={community.requestDeleteComment}
+                onDeletePost={community.requestDeletePost}
+                onToggleLike={community.handleToggleLike}
+                posts={community.filteredPosts}
+                query={community.query}
+                view={community.feedView}
+              />
             ) : null}
           </div>
         </div>

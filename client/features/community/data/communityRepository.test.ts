@@ -140,6 +140,7 @@ describe("Community repository", () => {
       .map((call) => call.value as Record<string, unknown>);
     expect(inserts[0]).toHaveProperty("image_path");
     expect(inserts[1]).not.toHaveProperty("image_path");
+    inserts.forEach((insert) => expect(insert).not.toHaveProperty("votes"));
   });
 
   it("does not silently fall back to an image-less post insert when an image was uploaded", async () => {
@@ -162,7 +163,9 @@ describe("Community repository", () => {
         },
         "user-1",
       ),
-    ).rejects.toThrow("Could not create post with the current Community schema.");
+    ).rejects.toThrow(
+      "Could not create post with the current Community schema.",
+    );
 
     expect(db.from).toHaveBeenCalledTimes(1);
   });
@@ -198,6 +201,7 @@ describe("Community repository", () => {
       .map((call) => call.value as Record<string, unknown>);
     expect(inserts[0]).toHaveProperty("image_path");
     expect(inserts[1]).not.toHaveProperty("image_path");
+    inserts.forEach((insert) => expect(insert).not.toHaveProperty("user_name"));
   });
 
   it("returns a null post image path when legacy delete context lacks image_path", async () => {

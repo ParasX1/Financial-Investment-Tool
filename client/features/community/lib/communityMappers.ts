@@ -52,11 +52,10 @@ export function postFromRow(
 ): PostUI {
   const fallbackCopy = splitPostCopy(row.title);
   const hasBodyColumn = row.body !== undefined && row.body !== null;
-  const body = hasBodyColumn ? row.body?.trim() ?? "" : fallbackCopy.body;
-  const title =
-    !hasBodyColumn
-      ? fallbackCopy.title
-      : row.title.trim() || fallbackCopy.title;
+  const body = hasBodyColumn ? (row.body?.trim() ?? "") : fallbackCopy.body;
+  const title = !hasBodyColumn
+    ? fallbackCopy.title
+    : row.title.trim() || fallbackCopy.title;
   const savedTags = Array.isArray(row.tags)
     ? normalizeSelectedTags(row.tags)
     : null;
@@ -89,12 +88,11 @@ export function commentFromRow(
   row: CommentRow,
   currentUserId?: string | null,
 ): CommentUI {
-  const user =
-    row.author_id && row.author_id === currentUserId
+  const user = row.author_id
+    ? row.author_id === currentUserId
       ? "You"
-      : row.author_id && row.user_name === "You"
-        ? "Member"
-        : row.user_name;
+      : "Member"
+    : row.user_name?.trim() || "Guest";
 
   return {
     id: row.id,

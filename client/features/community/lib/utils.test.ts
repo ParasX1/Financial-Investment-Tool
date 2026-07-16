@@ -1,5 +1,9 @@
 // File purpose: Tests Community helper behavior across mapping, validation, draft state, load status, and feed selectors.
-import { createLocalPost, postFromRow } from "./communityMappers";
+import {
+  commentFromRow,
+  createLocalPost,
+  postFromRow,
+} from "./communityMappers";
 import {
   getCommunityFeedCounts,
   getTopTimeRangeCutoff,
@@ -11,7 +15,7 @@ import {
   normalizeDiscussionDraft,
 } from "./communityDraft";
 import { validateCommunityImage } from "./communityValidation";
-import type { CommentsState, DBPost, PostUI } from "../types";
+import type { CommentRow, CommentsState, DBPost, PostUI } from "../types";
 
 const baseRow: DBPost = {
   id: "post-1",
@@ -109,6 +113,25 @@ describe("Community post mapping", () => {
       body: "Looking at implied volatility.",
       tags: ["$TSLA", "Risk"],
     });
+  });
+
+  it("derives authenticated comment labels from ownership, not user input", () => {
+    const row: CommentRow = {
+      id: "comment-1",
+      post_id: "post-1",
+      user_name: "Administrator",
+      body: "Comment",
+      image_url: null,
+      created_at: "2026-07-17T00:00:00.000Z",
+      author_id: "user-b",
+    };
+
+    expect(commentFromRow(row, "user-a").user).toBe("Member");
+    expect(commentFromRow(row, "user-b").user).toBe("You");
+    expect(
+      commentFromRow({ ...row, author_id: null, user_name: null }, "user-a")
+        .user,
+    ).toBe("Guest");
   });
 });
 

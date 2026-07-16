@@ -80,12 +80,34 @@ describe("Community delete image cleanup", () => {
 
     await expect(
       createCommunityComment({
+        authorId: "user-1",
         db,
         postId: "post-1",
         text: "Unsigned comment",
       }),
     ).rejects.toThrow("Sign in to comment.");
 
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a comment when the active session no longer owns the action", async () => {
+    const db = {
+      auth: {
+        getSession: jest.fn().mockResolvedValue({
+          data: { session: { user: { id: "user-b" } } },
+        }),
+      },
+      from: jest.fn(),
+    } as any;
+
+    await expect(
+      createCommunityComment({
+        authorId: "user-a",
+        db,
+        postId: "post-1",
+        text: "Stale action",
+      }),
+    ).rejects.toThrow("Your session changed. Please try again.");
     expect(db.from).not.toHaveBeenCalled();
   });
 
@@ -126,6 +148,19 @@ describe("Community delete image cleanup", () => {
     expect(result.posts[0].id).toBe("post-1");
   });
 
+  it("keeps a successful empty remote feed empty instead of injecting demos", async () => {
+    const { db } = createMockSupabase([
+      {
+        table: "posts",
+        result: { data: [], error: null },
+      },
+    ]);
+
+    const result = await loadCommunityData(db, "user-1");
+
+    expect(result).toEqual({ posts: [], comments: [], likedPostIds: [] });
+  });
+
   it("removes a deleted comment image from storage", async () => {
     const { db, remove } = createMockSupabase([
       {
@@ -164,9 +199,9 @@ describe("Community delete image cleanup", () => {
       },
     ]);
 
-    await expect(deleteCommunityComment(db, "comment-1", "user-1")).rejects.toThrow(
-      "You can only delete comments you created.",
-    );
+    await expect(
+      deleteCommunityComment(db, "comment-1", "user-1"),
+    ).rejects.toThrow("You can only delete comments you created.");
 
     expect(remove).not.toHaveBeenCalled();
   });

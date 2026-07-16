@@ -9,13 +9,13 @@ import type {
 
 export function createCommentsState(
   posts: PostUI[],
-  comments: CommentEntry[] = []
+  comments: CommentEntry[] = [],
 ): CommentsState {
   const byPost: Record<string, CommentUI[]> = Object.fromEntries(
-    posts.map((post) => [post.id, []])
+    posts.map((post) => [post.id, []]),
   );
   const counts: Record<string, number> = Object.fromEntries(
-    posts.map((post) => [post.id, post.fromDB ? 0 : post.commentCount])
+    posts.map((post) => [post.id, post.fromDB ? 0 : post.commentCount]),
   );
   const seenIds: Record<string, true> = {};
 
@@ -32,7 +32,7 @@ export function createCommentsState(
 
 export function commentsReducer(
   state: CommentsState,
-  action: CommentsAction
+  action: CommentsAction,
 ): CommentsState {
   switch (action.type) {
     case "reset":
@@ -72,6 +72,13 @@ export function commentsReducer(
     }
 
     case "addComment": {
+      if (
+        !(action.postId in state.byPost) ||
+        !(action.postId in state.counts)
+      ) {
+        return state;
+      }
+
       const current = state.byPost[action.postId] ?? [];
 
       if (
@@ -102,7 +109,7 @@ export function commentsReducer(
     case "removeComment": {
       const current = state.byPost[action.postId] ?? [];
       const nextComments = current.filter(
-        (comment) => comment.id !== action.commentId
+        (comment) => comment.id !== action.commentId,
       );
       const commentWasPresent = nextComments.length !== current.length;
 
@@ -122,7 +129,7 @@ export function commentsReducer(
               ...state.counts,
               [action.postId]: Math.max(
                 0,
-                (state.counts[action.postId] ?? 1) - 1
+                (state.counts[action.postId] ?? 1) - 1,
               ),
             }
           : state.counts,

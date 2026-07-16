@@ -14,36 +14,26 @@ export type CommunityMemoryCache = {
 };
 
 let communityMemoryCache: CommunityMemoryCache | null = null;
-let rememberedCommunityUserId: string | null = null;
 let rememberedCommunityFeedView: CommunityFeedView = "top";
 let rememberedCommunityTopTimeRange: CommunityTopTimeRange = "all-time";
 let rememberedCommunityQuery = "";
 let rememberedDesktopSidebarCollapsed = false;
 
-export function getCachedCommunityForRememberedUser(enabled: boolean) {
-  return enabled &&
-    communityMemoryCache?.currentUserId === rememberedCommunityUserId
+export function getCachedCommunityForUser(
+  enabled: boolean,
+  currentUserId: string | null,
+) {
+  return enabled && communityMemoryCache?.currentUserId === currentUserId
     ? communityMemoryCache
     : null;
-}
-
-export function hasCommunityMemoryCache() {
-  return Boolean(communityMemoryCache);
 }
 
 export function rememberCommunityData(cache: CommunityMemoryCache) {
   communityMemoryCache = cache;
 }
 
-export function rememberCommunityUserId(nextUserId: string | null) {
-  rememberedCommunityUserId = nextUserId;
-
-  if (
-    communityMemoryCache &&
-    communityMemoryCache.currentUserId !== nextUserId
-  ) {
-    communityMemoryCache = null;
-  }
+export function clearCommunityMemoryCache() {
+  communityMemoryCache = null;
 }
 
 export function getRememberedCommunityQuery() {

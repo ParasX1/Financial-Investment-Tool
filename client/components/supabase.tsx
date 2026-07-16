@@ -1,13 +1,17 @@
 "use client";
 
-import {createClient} from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_ANON ||
-  'missing-supabase-anon-key';
+const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const configuredAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_ANON;
+const supabaseUrl = configuredUrl || "http://localhost:54321";
+const supabaseAnonKey = configuredAnonKey || "missing-supabase-anon-key";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export function getConfiguredSupabaseClient(): SupabaseClient | null {
+  return configuredUrl && configuredAnonKey ? supabase : null;
+}
+
 export default supabase;

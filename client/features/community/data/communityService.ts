@@ -1,12 +1,8 @@
 // File purpose: Coordinates Community business operations between repository, mapping, auth, and storage cleanup.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { DEMO_POSTS } from "../constants";
 import { normalizeDiscussionDraft } from "../lib/communityDraft";
 import { getErrorMessage } from "../lib/communityErrors";
-import {
-  commentFromRow,
-  postFromRow,
-} from "../lib/communityMappers";
+import { commentFromRow, postFromRow } from "../lib/communityMappers";
 import {
   deleteCommunityCommentRow,
   deleteCommunityPostRow,
@@ -23,11 +19,7 @@ import {
   type CommentDeleteContext,
 } from "./communityRepository";
 import { removeCommunityImages, uniqueImagePaths } from "./communityStorage";
-import type {
-  CommentEntry,
-  DiscussionPostInput,
-  PostUI,
-} from "../types";
+import type { CommentEntry, DiscussionPostInput, PostUI } from "../types";
 
 async function getSessionUserId(db: SupabaseClient) {
   const { data } = await db.auth.getSession();
@@ -59,7 +51,7 @@ export async function loadCommunityData(
   const dbPosts: PostUI[] = rows
     ? rows.map((row) => postFromRow(row, activeUserId))
     : [];
-  const posts: PostUI[] = dbPosts.length ? dbPosts : DEMO_POSTS;
+  const posts: PostUI[] = dbPosts;
 
   if (!dbPosts.length) {
     return { posts, comments: [], likedPostIds: [] };
@@ -120,11 +112,7 @@ async function loadLikedPostIds(
     return { ids: [] as string[] };
   }
 
-  const { data, error } = await selectLikedPostRows(
-    db,
-    postIds,
-    currentUserId,
-  );
+  const { data, error } = await selectLikedPostRows(db, postIds, currentUserId);
 
   if (error) {
     console.error(
@@ -194,29 +182,38 @@ export async function deleteCommunityPost(
 }
 
 export async function createCommunityComment({
+  authorId,
   db,
   postId,
   text,
   imageUrl,
   imagePath,
 }: {
+  authorId: string;
   db: SupabaseClient;
   postId: string;
   text: string;
   imageUrl?: string;
   imagePath?: string;
 }) {
-  const uid = requireSessionUserId(await getSessionUserId(db), "comment");
+  const activeUserId = requireSessionUserId(
+    await getSessionUserId(db),
+    "comment",
+  );
+  if (activeUserId !== authorId) {
+    throw new Error("Your session changed. Please try again.");
+  }
+
   const row = await insertCommunityCommentRow({
     db,
     postId,
     text,
     imageUrl,
     imagePath,
-    uid,
+    uid: authorId,
   });
 
-  return commentFromRow(row, uid);
+  return commentFromRow(row, authorId);
 }
 
 export async function deleteCommunityComment(
@@ -224,8 +221,10 @@ export async function deleteCommunityComment(
   commentId: string,
   currentUserId: string,
 ) {
-  const { data: owner, error: ownerError } =
-    await selectCommentDeleteContext(db, commentId);
+  const { data: owner, error: ownerError } = await selectCommentDeleteContext(
+    db,
+    commentId,
+  );
 
   if (isMissingAuthorIdColumn(ownerError)) {
     throw new Error("Comment ownership is not available for older comments.");

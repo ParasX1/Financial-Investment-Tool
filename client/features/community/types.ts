@@ -70,7 +70,7 @@ export type PostUI = SeedPost & {
 export type CommentRow = {
   id: string;
   post_id: string;
-  user_name: string;
+  user_name: string | null;
   body: string;
   image_url: string | null;
   image_path?: string | null;

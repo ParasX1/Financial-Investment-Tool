@@ -164,7 +164,9 @@ export async function selectCommentDeleteContext(
     .from("comments")
     .select("author_id, post_id")
     .eq("id", commentId)
-    .single()) as CommunityQueryResult<Omit<CommentDeleteContext, "image_path">>;
+    .single()) as CommunityQueryResult<
+    Omit<CommentDeleteContext, "image_path">
+  >;
 
   return {
     data: fallback.data ? { ...fallback.data, image_path: null } : null,
@@ -198,7 +200,9 @@ export async function selectLikedPostRows(
     .from("post_likes")
     .select("post_id")
     .eq("user_id", currentUserId)
-    .in("post_id", postIds)) as CommunityQueryResult<Array<{ post_id: string }>>;
+    .in("post_id", postIds)) as CommunityQueryResult<
+    Array<{ post_id: string }>
+  >;
 }
 
 export async function insertCommunityPostRow(
@@ -217,7 +221,6 @@ export async function insertCommunityPostRow(
       tags: postDraft.tags,
       image_url: postDraft.imageUrl,
       image_path: postDraft.imagePath,
-      votes: 0,
       author_id: uid,
     },
     select: POST_SELECT,
@@ -229,7 +232,6 @@ export async function insertCommunityPostRow(
         body: postDraft.body,
         tags: postDraft.tags,
         image_url: postDraft.imageUrl,
-        votes: 0,
         author_id: uid,
       },
       select: POST_SELECT_WITHOUT_IMAGE_PATH,
@@ -239,7 +241,6 @@ export async function insertCommunityPostRow(
         title: postDraft.title,
         body: postDraft.body,
         tags: postDraft.tags,
-        votes: 0,
         author_id: uid,
       },
       select: POST_SELECT_WITHOUT_IMAGE,
@@ -248,7 +249,6 @@ export async function insertCommunityPostRow(
       values: {
         title: postDraft.title,
         body: postDraft.body,
-        votes: 0,
         author_id: uid,
       },
       select: POST_SELECT_WITHOUT_TAGS,
@@ -256,7 +256,6 @@ export async function insertCommunityPostRow(
     {
       values: {
         title: `${postDraft.title}\n\n${postDraft.body}`,
-        votes: 0,
         author_id: uid,
       },
       select: LEGACY_POST_SELECT,
@@ -300,7 +299,6 @@ export async function insertCommunityCommentRow({
   const fullSchemaAttempt: CommunityInsertAttempt = {
     values: {
       post_id: postId,
-      user_name: uid ? "You" : "Guest",
       body: text,
       image_url: imageUrl ?? null,
       image_path: imagePath ?? null,
@@ -311,7 +309,6 @@ export async function insertCommunityCommentRow({
   const legacyAttempt: CommunityInsertAttempt = {
     values: {
       post_id: postId,
-      user_name: uid ? "You" : "Guest",
       body: text,
       image_url: imageUrl ?? null,
       author_id: uid,
