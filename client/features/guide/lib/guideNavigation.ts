@@ -1,11 +1,13 @@
 // File purpose: Maps Guide topic data into navigation models and resolves the active Guide topic.
 import type { LearningNavItem } from "@/components/learning/types";
 import { guideSections } from "../data/guideContent";
-import type { GuideSection } from "../types";
+import type { GuideSection, GuideSectionCollection } from "../types";
 
-export const guideSectionIds = guideSections.map((section) => section.id);
+export const guideSectionIds = Object.freeze(
+  guideSections.map((section) => section.id),
+);
 
-export const defaultGuideSectionId = guideSections[0]!.id;
+export const defaultGuideSectionId = guideSections[0].id;
 
 export function getGuideNavItems(
   sections: readonly GuideSection[] = guideSections,
@@ -18,9 +20,9 @@ export function getGuideNavItems(
   }));
 }
 
-export function resolveGuideSection(activeId: string): GuideSection {
-  return (
-    guideSections.find((section) => section.id === activeId) ??
-    guideSections[0]!
-  );
+export function resolveGuideSection(
+  activeId: string,
+  sections: GuideSectionCollection = guideSections,
+): GuideSection {
+  return sections.find((section) => section.id === activeId) ?? sections[0];
 }

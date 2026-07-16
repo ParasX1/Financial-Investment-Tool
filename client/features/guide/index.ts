@@ -1,2 +1,2 @@
-// File purpose: Exposes the public Guide feature API used by the Next.js route page.
-export { GuideMain } from "./components/GuideMain";
+// File purpose: Exposes the route-ready Guide screen to the Next.js page.
+export { GuideScreen } from "./screens/GuideScreen";

@@ -7,9 +7,9 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import TimelineRoundedIcon from "@mui/icons-material/TimelineRounded";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
-import type { GuideSection } from "../types";
+import type { GuideSectionCollection } from "../types";
 
-export const guideSections: GuideSection[] = [
+export const guideSections = Object.freeze([
   {
     id: "sharpe-ratio",
     label: "Sharpe Ratio",
@@ -30,7 +30,7 @@ export const guideSections: GuideSection[] = [
     description:
       "The Sortino Ratio is a variation of the Sharpe Ratio that only considers downside volatility. It focuses on harmful volatility rather than all price movement.",
     formula:
-      "Sortino Ratio = (Portfolio Return - Target Return) / Downside Deviation",
+      "Sortino Ratio = (Annualised Average Return - Risk-Free Rate) / Annualised Downside Deviation",
     interpretation:
       "A higher Sortino Ratio is better. Values above 2.0 are generally strong. This measure is especially useful when investors care more about downside losses than upside fluctuations.",
     takeaway:
@@ -45,7 +45,7 @@ export const guideSections: GuideSection[] = [
     formula:
       "Alpha = Actual Return - (Risk-Free Rate + Beta x (Market Return - Risk-Free Rate))",
     interpretation:
-      "Positive alpha suggests outperformance after adjusting for risk, while negative alpha suggests underperformance. An alpha of +2.0 means the portfolio outperformed the expected return by 2 percentage points.",
+      "FIT returns annualised alpha as a decimal. Positive alpha suggests risk-adjusted outperformance, while negative alpha suggests underperformance. An alpha of 0.02 means the investment outperformed its CAPM expected return by about 2 percentage points over a year.",
     takeaway:
       "Consistent positive alpha can indicate value added beyond passive benchmark exposure.",
   },
@@ -79,36 +79,38 @@ export const guideSections: GuideSection[] = [
     label: "Max Drawdown",
     icon: ShieldRoundedIcon,
     description:
-      "Maximum Drawdown measures the largest peak-to-trough decline in portfolio value over a period. It shows the worst loss an investor would have experienced during that window.",
-    formula: "Max Drawdown = (Trough Value - Peak Value) / Peak Value x 100%",
+      "FIT plots the drawdown path across the selected date range. Each point measures how far the current price is below its highest price so far, and the lowest point in the path is the Maximum Drawdown.",
+    formula:
+      "Drawdown(t) = (Current Price - Highest Price So Far) / Highest Price So Far; Max Drawdown = minimum Drawdown(t)",
     interpretation:
-      "A maximum drawdown of -25% means the portfolio fell 25% from its highest point. Smaller drawdowns generally indicate stronger downside protection.",
+      "A drawdown value of -0.25 means the price is 25% below its previous peak (-25%). The most negative value in the selected period is the Maximum Drawdown; a return to 0 means a new peak was reached.",
     takeaway:
-      "Use drawdown to test whether a strategy's worst historical loss fits your emotional and financial risk capacity.",
+      "Read the full path to see both the depth and duration of declines, then use its lowest point to judge the worst historical drawdown.",
   },
   {
     id: "value-at-risk",
     label: "Value at Risk",
     icon: QueryStatsRoundedIcon,
     description:
-      "Value at Risk estimates the maximum expected loss over a specified period at a given confidence level. It is widely used in risk management.",
-    formula: "VaR = Portfolio Value x Z-score x Standard Deviation",
+      "FIT uses historical Value at Risk to estimate a lower-tail one-day return threshold from the observed daily returns in the selected date range.",
+    formula:
+      "Historical VaR (95% confidence) = 5th percentile of observed daily returns",
     interpretation:
-      "A 95% VaR of $100,000 means there is a 95% probability the portfolio will not lose more than $100,000 over the selected period. It does not describe losses beyond that threshold.",
+      "A Historical VaR of -3% means 5% of the observed daily returns were at or below -3%. It is a historical return threshold, not a guaranteed maximum loss or a dollar-loss forecast.",
     takeaway:
-      "VaR is useful for setting risk limits, but it should be paired with tail-risk analysis.",
+      "Use FIT's Historical VaR as one downside threshold and pair it with Max Drawdown to understand losses beyond that threshold.",
   },
   {
     id: "efficient-frontier",
     label: "Efficient Frontier",
     icon: AccountTreeRoundedIcon,
     description:
-      "The Efficient Frontier represents portfolios that offer the highest expected return for a given risk level or the lowest risk for a given expected return.",
+      "FIT currently simulates 10,000 random long-only portfolios and plots their annualised expected return against risk. The result is a portfolio cloud that approximates the opportunity set; it is not a mathematically filtered frontier.",
     formula:
-      "Optimization: Maximize Return for Given Risk or Minimize Risk for Given Return",
+      "Each sample: Expected Return = Weights x Annualised Mean Returns; Risk = Square Root of (Weights x Covariance Matrix x Weights)",
     interpretation:
-      "Portfolios on the frontier are considered efficient. Portfolios below it are inefficient because they either take too much risk for the return or earn too little return for the risk.",
+      "Each point is one random allocation whose weights sum to 100%. The upper-left boundary of the cloud can approximate efficient choices, but FIT does not currently filter or optimize those boundary points.",
     takeaway:
-      "The Efficient Frontier explains why diversification can improve the risk-return tradeoff.",
+      "Use the simulated cloud to explore diversification and risk-return trade-offs, while treating its apparent frontier as an approximation rather than an optimizer result.",
   },
-];
+] satisfies GuideSectionCollection);

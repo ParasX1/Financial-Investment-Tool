@@ -2,11 +2,13 @@
 import type { LearningIcon } from "@/components/learning/types";
 
 export interface GuideSection {
-  id: string;
-  label: string;
-  description: string;
-  formula: string;
-  interpretation: string;
-  takeaway: string;
-  icon: LearningIcon;
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly formula: string;
+  readonly interpretation: string;
+  readonly takeaway: string;
+  readonly icon: LearningIcon;
 }
+
+export type GuideSectionCollection = readonly [GuideSection, ...GuideSection[]];

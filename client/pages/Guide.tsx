@@ -1,5 +1,5 @@
-import { GuideMain } from "@/features/guide";
+import { GuideScreen } from "@/features/guide";
 
 export default function Guide() {
-  return <GuideMain />;
+  return <GuideScreen />;
 }

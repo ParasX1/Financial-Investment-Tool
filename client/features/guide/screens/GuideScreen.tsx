@@ -1,4 +1,4 @@
-// File purpose: Composes the Guide page from shared learning layout primitives and Guide feature data.
+// File purpose: Composes the route-ready Guide screen from shared learning primitives and Guide content.
 import FunctionsRoundedIcon from "@mui/icons-material/FunctionsRounded";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
@@ -19,7 +19,7 @@ import {
 
 const guideNavItems = getGuideNavItems();
 
-export function GuideMain() {
+export function GuideScreen() {
   const { activeId, selectSection } = useLearningSection(
     guideSectionIds,
     defaultGuideSectionId,
