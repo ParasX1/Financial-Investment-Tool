@@ -1,4 +1,4 @@
-import { WatchlistMain } from "@/features/watchlist/components/WatchlistMain";
+import { WatchlistMain } from "@/features/watchlist";
 
 export default function WatchlistPage() {
   return <WatchlistMain />;

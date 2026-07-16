@@ -2,9 +2,11 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import Link from "next/link";
-import { MarketLineChart } from "@/features/market-data/components/MarketLineChart";
-import { useMarketChart } from "@/features/market-data/hooks/useMarketChart";
-import type { MarketChartSnapshot } from "@/features/market-data/types";
+import {
+  MarketLineChart,
+  useMarketChart,
+  type MarketChartSnapshot,
+} from "@/features/market-data";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import sharedStyles from "../styles/watchlist.module.css";

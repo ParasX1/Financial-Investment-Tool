@@ -1,3 +1,4 @@
+export { WatchlistMain } from "./components/WatchlistMain";
 export {
   WATCHLIST_ITEM_SELECT,
   WATCHLIST_LIMIT,

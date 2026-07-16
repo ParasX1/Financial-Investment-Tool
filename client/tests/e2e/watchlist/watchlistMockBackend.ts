@@ -14,7 +14,8 @@ type WatchlistRow = {
 };
 
 const jsonHeaders = {
-  "access-control-allow-headers": "authorization,apikey,content-type,prefer,x-client-info",
+  "access-control-allow-headers":
+    "authorization,apikey,content-type,prefer,x-client-info",
   "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
   "access-control-allow-origin": "*",
   "access-control-expose-headers": "content-range",
@@ -22,7 +23,11 @@ const jsonHeaders = {
 };
 
 async function fulfillJson(route: Route, body: unknown, status = 200) {
-  await route.fulfill({ body: JSON.stringify(body), headers: jsonHeaders, status });
+  await route.fulfill({
+    body: JSON.stringify(body),
+    headers: jsonHeaders,
+    status,
+  });
 }
 
 function createRow(symbol: string, position: number): WatchlistRow {
@@ -92,7 +97,8 @@ export async function installWatchlistMockBackend(
       const body = request.postDataJSON() as { ordered_symbols: string[] };
       rows = body.ordered_symbols.map((symbol, position) => {
         const existing = rows.find((row) => row.symbol === symbol);
-        if (!existing) throw new Error(`Unknown mock Watchlist symbol: ${symbol}`);
+        if (!existing)
+          throw new Error(`Unknown mock Watchlist symbol: ${symbol}`);
         return { ...existing, position };
       });
       await fulfillJson(route, null);
@@ -109,12 +115,19 @@ export async function installWatchlistMockBackend(
     }
 
     if (!url.pathname.endsWith("/user_watchlist")) {
-      await fulfillJson(route, { message: "Unexpected mock database route." }, 404);
+      await fulfillJson(
+        route,
+        { message: "Unexpected mock database route." },
+        404,
+      );
       return;
     }
 
     if (method === "GET") {
-      await fulfillJson(route, [...rows].sort((a, b) => a.position - b.position));
+      await fulfillJson(
+        route,
+        [...rows].sort((a, b) => a.position - b.position),
+      );
       return;
     }
 
@@ -138,7 +151,10 @@ export async function installWatchlistMockBackend(
     }
 
     if (method === "PATCH") {
-      const symbol = (url.searchParams.get("symbol") ?? "").replace(/^eq\./, "");
+      const symbol = (url.searchParams.get("symbol") ?? "").replace(
+        /^eq\./,
+        "",
+      );
       const body = request.postDataJSON() as {
         note?: string | null;
         target_price?: number | null;
@@ -162,24 +178,30 @@ export async function installWatchlistMockBackend(
       return;
     }
 
-    await fulfillJson(route, { message: "Unexpected mock database method." }, 405);
+    await fulfillJson(
+      route,
+      { message: "Unexpected mock database method." },
+      405,
+    );
   });
 
   await page.route("**/api/market/symbol-search?*", async (route) => {
     await fulfillJson(route, {
-      results: [{
-        exchange: "ASX",
-        name: "Wesfarmers Limited",
-        quoteType: "EQUITY",
-        symbol: "WES.AX",
-      }],
+      results: [
+        {
+          exchange: "ASX",
+          name: "Wesfarmers Limited",
+          quoteType: "EQUITY",
+          symbol: "WES.AX",
+        },
+      ],
     });
   });
 
-  await page.route("**/api/market/watchlist-quotes?*", async (route) => {
-    const symbols = new URL(route.request().url()).searchParams
-      .get("symbols")
-      ?.split(",") ?? [];
+  await page.route("**/api/market/quotes?*", async (route) => {
+    const symbols =
+      new URL(route.request().url()).searchParams.get("symbols")?.split(",") ??
+      [];
     await fulfillJson(route, {
       quotes: symbols.map((symbol) =>
         unavailableSymbols.has(symbol)
@@ -210,7 +232,9 @@ export async function installWatchlistMockBackend(
               symbol,
             },
       ),
-      unavailableSymbols: symbols.filter((symbol) => unavailableSymbols.has(symbol)),
+      unavailableSymbols: symbols.filter((symbol) =>
+        unavailableSymbols.has(symbol),
+      ),
     });
   });
 

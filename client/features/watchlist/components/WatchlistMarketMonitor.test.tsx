@@ -1,7 +1,7 @@
 import * as React from "react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { MarketChartSnapshot } from "@/features/market-data/types";
+import type { MarketChartSnapshot } from "@/features/market-data";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import {
   refreshMarketMonitor,
