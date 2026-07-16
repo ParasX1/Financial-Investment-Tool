@@ -1,17 +1,18 @@
 import * as React from "react";
-import supabase from "@/components/supabase";
 import { useAuth } from "@/components/authContext";
 import {
+  defaultProfileDependencies,
+  type ProfileControllerDependencies,
+} from "../data/profileDependencies";
+import { ProfileAvatarStorageError } from "../data/profileAvatarStorage";
+import {
   MAX_AVATAR_SIZE,
-  isValidEmail,
+  buildFallbackHandle,
   sanitizeEmail,
-  sanitizeHandle,
-  sanitizeName,
-  sanitizeNameInput,
-  sanitizePhone,
-  validateHandle,
-  validateName,
-  validatePhone,
+  sanitizeProfileField,
+  validateEmail,
+  validateIdentity,
+  validatePhoneDetails,
 } from "../lib/profileValidation";
 import {
   buildAvatarDisplayUrl,
@@ -20,107 +21,75 @@ import {
   buildInitials,
   formatUserIdPreview,
 } from "../lib/profileView";
-import { buildProfileDetailsPayload } from "../lib/profilePersistence";
 import type {
   ProfileEmailValues,
   ProfileErrors,
   ProfileFieldKey,
-  ProfileFormValues,
   ProfilePhoneValues,
   ProfileIdentityValues,
   ProfileMessage,
   ProfileSnapshot,
 } from "../types";
 
-const AVATAR_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET ||
-  process.env.NEXT_PUBLIC_SUPABASE_BUCKET ||
-  "avatars";
 const ALLOWED_AVATAR_TYPES = new Set([
   "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
 ]);
-const PROFILE_TABLE = "Users";
 
-function sanitizeProfileField(field: ProfileFieldKey, value: string) {
-  if (field === "firstName" || field === "lastName") {
-    return sanitizeNameInput(value);
+type ProfileOwner = {
+  sessionToken: symbol;
+  userId: string;
+};
+
+type ProfileSession = {
+  key: string;
+  token: symbol;
+};
+
+const useCommittedLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+async function removeAvatarObject(
+  avatarStorage: ProfileControllerDependencies["avatarStorage"],
+  input: { path: string; userId: string },
+) {
+  try {
+    await avatarStorage.remove(input);
+    return true;
+  } catch {
+    return false;
   }
-
-  if (field === "email") return sanitizeEmail(value);
-  if (field === "handle") return sanitizeHandle(value);
-  return sanitizePhone(value);
 }
 
-function buildFallbackHandle(email: string, userId: string) {
-  const fromEmail = sanitizeHandle(email.split("@")[0] || "");
-  if (!validateHandle(fromEmail)) return fromEmail;
-  return `u${userId
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toLowerCase()
-    .slice(0, 12)}`;
-}
-
-function validateIdentity(values: ProfileIdentityValues) {
-  const nextValues: ProfileIdentityValues = {
-    firstName: sanitizeName(values.firstName),
-    handle: sanitizeHandle(values.handle),
-    lastName: sanitizeName(values.lastName),
-  };
-  const errors: ProfileErrors = {};
-  const firstNameError = validateName("First name", nextValues.firstName);
-  const handleError = validateHandle(nextValues.handle);
-  const lastNameError = validateName("Last name", nextValues.lastName);
-
-  if (firstNameError) errors.firstName = firstNameError;
-  if (handleError) errors.handle = handleError;
-  if (lastNameError) errors.lastName = lastNameError;
-
-  return {
-    errors,
-    valid: Object.keys(errors).length === 0,
-    values: nextValues,
-  };
-}
-
-function validateEmail(values: ProfileEmailValues) {
-  const nextValues: ProfileEmailValues = {
-    email: sanitizeEmail(values.email),
-  };
-  const errors: ProfileErrors = {};
-
-  if (!nextValues.email) errors.email = "Email is required";
-  else if (!isValidEmail(nextValues.email)) {
-    errors.email = "Enter a valid email address";
-  }
-
-  return {
-    errors,
-    valid: Object.keys(errors).length === 0,
-    values: nextValues,
-  };
-}
-
-function validatePhoneDetails(values: ProfilePhoneValues) {
-  const nextValues: ProfilePhoneValues = {
-    phone: sanitizePhone(values.phone),
-  };
-  const errors: ProfileErrors = {};
-  const phoneError = validatePhone(nextValues.phone);
-
-  if (phoneError) errors.phone = phoneError;
-
-  return {
-    errors,
-    valid: Object.keys(errors).length === 0,
-    values: nextValues,
-  };
-}
-
-export function useProfileController() {
+export function useProfileController(
+  dependencies: ProfileControllerDependencies = defaultProfileDependencies,
+) {
+  const { accountClient, avatarStorage, usersRepository } = dependencies;
   const { user, loading: authLoading } = useAuth();
+  const authUserId = user?.id ?? null;
+  const authEmail = sanitizeEmail(user?.email || "");
+  const authSessionKey = authLoading
+    ? `loading:${authUserId ?? ""}`
+    : authUserId
+      ? `user:${authUserId}`
+      : "signed-out";
+  const authSession = React.useMemo<ProfileSession>(
+    () => ({ key: authSessionKey, token: Symbol(authSessionKey) }),
+    [authSessionKey],
+  );
+  const committedSessionRef = React.useRef(authSession);
+  useCommittedLayoutEffect(() => {
+    committedSessionRef.current = authSession;
+  }, [authSession]);
+
+  const isSessionCurrent = React.useCallback(
+    (ownerId: string, sessionToken: symbol) =>
+      committedSessionRef.current.key === `user:${ownerId}` &&
+      committedSessionRef.current.token === sessionToken,
+    [],
+  );
 
   const [email, setEmail] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
@@ -128,12 +97,18 @@ export function useProfileController() {
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [avatarStoragePath, setAvatarStoragePath] = React.useState<
+    string | null
+  >(null);
   const [avatarVersion, setAvatarVersion] = React.useState(0);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState<string | null>(
     null,
   );
   const [profileSnapshot, setProfileSnapshot] =
     React.useState<ProfileSnapshot | null>(null);
+  const [profileOwner, setProfileOwner] = React.useState<ProfileOwner | null>(
+    null,
+  );
   const [profileLoading, setProfileLoading] = React.useState(false);
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [message, setMessage] = React.useState<ProfileMessage | null>(null);
@@ -147,72 +122,105 @@ export function useProfileController() {
 
   React.useEffect(() => {
     if (authLoading) return;
-    if (!user) {
+    if (!authUserId) {
       setEmail("");
       setFirstName("");
       setHandle("");
       setLastName("");
       setPhone("");
       setAvatarUrl(null);
+      setAvatarStoragePath(null);
       setAvatarPreviewUrl(null);
       setProfileSnapshot(null);
+      setProfileOwner(null);
       setPendingEmailOverride("");
       setErrors({});
       setMessage(null);
       setProfileLoading(false);
+      setSavingDetails(false);
+      setSavingContact(false);
+      setSavingAvatar(false);
+      setSendingVerification(false);
+      setUpdatingPassword(false);
       return;
     }
 
     let active = true;
-    const authEmail = sanitizeEmail(user.new_email || user.email || "");
+    const owner: ProfileOwner = {
+      sessionToken: authSession.token,
+      userId: authUserId,
+    };
 
     setEmail(authEmail);
+    setFirstName("");
+    setHandle("");
+    setLastName("");
+    setPhone("");
+    setAvatarUrl(null);
+    setAvatarStoragePath(null);
+    setAvatarPreviewUrl(null);
+    setProfileSnapshot(null);
+    setProfileOwner(owner);
+    setPendingEmailOverride("");
+    setErrors({});
+    setMessage(null);
     setProfileLoading(true);
+    setSavingDetails(false);
+    setSavingContact(false);
+    setSavingAvatar(false);
+    setSendingVerification(false);
+    setUpdatingPassword(false);
 
     const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from(PROFILE_TABLE)
-        .select("first_name,last_name,handle,phone,avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
+      try {
+        const details = await usersRepository.findByUserId(authUserId);
 
-      if (!active) return;
+        if (!active || !isSessionCurrent(authUserId, authSession.token)) return;
 
-      if (error) {
+        const nextProfile: ProfileSnapshot = {
+          avatarUrl: details?.avatarUrl ?? null,
+          email: authEmail,
+          firstName: details?.firstName ?? "",
+          handle: details?.handle || buildFallbackHandle(authEmail, authUserId),
+          lastName: details?.lastName ?? "",
+          phone: details?.phone ?? "",
+        };
+
+        setFirstName(nextProfile.firstName);
+        setHandle(nextProfile.handle);
+        setLastName(nextProfile.lastName);
+        setPhone(nextProfile.phone);
+        setAvatarUrl(nextProfile.avatarUrl);
+        setAvatarStoragePath(details?.avatarPath ?? null);
+        setAvatarVersion(Date.now());
+        setAvatarPreviewUrl(null);
+        setProfileSnapshot(nextProfile);
+      } catch {
+        if (!active || !isSessionCurrent(authUserId, authSession.token)) return;
         setMessage({
           tone: "error",
           text: "Profile details could not be loaded. Refresh the page or sign in again.",
         });
-        setProfileLoading(false);
-        return;
+      } finally {
+        if (active && isSessionCurrent(authUserId, authSession.token)) {
+          setProfileLoading(false);
+        }
       }
-
-      const nextProfile: ProfileSnapshot = {
-        avatarUrl: data?.avatar_url || null,
-        email: authEmail,
-        firstName: data?.first_name || "",
-        handle: data?.handle || buildFallbackHandle(authEmail, user.id),
-        lastName: data?.last_name || "",
-        phone: data?.phone || "",
-      };
-
-      setFirstName(nextProfile.firstName);
-      setHandle(nextProfile.handle);
-      setLastName(nextProfile.lastName);
-      setPhone(nextProfile.phone);
-      setAvatarUrl(nextProfile.avatarUrl);
-      setAvatarVersion(Date.now());
-      setAvatarPreviewUrl(null);
-      setProfileSnapshot(nextProfile);
-      setProfileLoading(false);
     };
 
-    loadProfile();
+    void loadProfile();
 
     return () => {
       active = false;
     };
-  }, [authLoading, user]);
+  }, [
+    authEmail,
+    authLoading,
+    authSession.token,
+    authUserId,
+    isSessionCurrent,
+    usersRepository,
+  ]);
 
   React.useEffect(() => {
     if (!user?.new_email && !user?.email_change_sent_at) {
@@ -230,25 +238,72 @@ export function useProfileController() {
     () => ({ email, firstName, handle, lastName, phone }),
     [email, firstName, handle, lastName, phone],
   );
+  const profileVisible = Boolean(
+    !authLoading &&
+      user &&
+      profileOwner?.userId === user.id &&
+      profileOwner.sessionToken === authSession.token,
+  );
+  const profileReady =
+    profileVisible && Boolean(profileSnapshot) && !profileLoading;
+  const visibleValues = React.useMemo(
+    () => ({
+      email: profileVisible
+        ? email
+        : !authLoading && user
+          ? sanitizeEmail(user.email || "")
+          : "",
+      firstName: profileVisible ? firstName : "",
+      handle: profileVisible ? handle : "",
+      lastName: profileVisible ? lastName : "",
+      phone: profileVisible ? phone : "",
+    }),
+    [
+      authLoading,
+      email,
+      firstName,
+      handle,
+      lastName,
+      phone,
+      profileVisible,
+      user,
+    ],
+  );
   const currentProfile = React.useMemo<ProfileSnapshot>(
-    () => ({ ...values, avatarUrl }),
-    [avatarUrl, values],
+    () => ({
+      ...visibleValues,
+      avatarUrl: profileVisible ? avatarUrl : null,
+    }),
+    [avatarUrl, profileVisible, visibleValues],
   );
-  const displayName = React.useMemo(() => buildDisplayName(values), [values]);
+  const displayName = React.useMemo(
+    () => buildDisplayName(visibleValues),
+    [visibleValues],
+  );
   const profileHandle = React.useMemo(
-    () => buildProfileHandle(values),
-    [values],
+    () => buildProfileHandle(visibleValues),
+    [visibleValues],
   );
-  const initials = React.useMemo(() => buildInitials(values), [values]);
+  const initials = React.useMemo(
+    () => buildInitials(visibleValues),
+    [visibleValues],
+  );
   const userIdPreview = React.useMemo(
-    () => formatUserIdPreview(user?.id),
-    [user?.id],
+    () => formatUserIdPreview(profileVisible ? user?.id : undefined),
+    [profileVisible, user?.id],
   );
   const avatarDisplayUrl = React.useMemo(
-    () => avatarPreviewUrl || buildAvatarDisplayUrl(avatarUrl, avatarVersion),
-    [avatarPreviewUrl, avatarUrl, avatarVersion],
+    () =>
+      profileVisible
+        ? avatarPreviewUrl || buildAvatarDisplayUrl(avatarUrl, avatarVersion)
+        : null,
+    [avatarPreviewUrl, avatarUrl, avatarVersion, profileVisible],
   );
-  const pendingEmail = sanitizeEmail(user?.new_email || pendingEmailOverride);
+  const pendingEmail = sanitizeEmail(
+    !authLoading && user
+      ? user.new_email || (profileVisible ? pendingEmailOverride : "")
+      : "",
+  );
   const hasPendingEmailChange = Boolean(
     pendingEmail && (user?.email_change_sent_at || pendingEmailOverride),
   );
@@ -257,6 +312,7 @@ export function useProfileController() {
 
   const updateProfileField = React.useCallback(
     (field: ProfileFieldKey, value: string) => {
+      if (!profileReady) return;
       const sanitizedValue = sanitizeProfileField(field, value);
 
       if (field === "firstName") setFirstName(sanitizedValue);
@@ -267,7 +323,7 @@ export function useProfileController() {
 
       setErrors((current) => ({ ...current, [field]: undefined }));
     },
-    [],
+    [profileReady],
   );
 
   const clearFeedback = React.useCallback(() => {
@@ -275,25 +331,11 @@ export function useProfileController() {
     setMessage(null);
   }, []);
 
-  const saveUsersRow = React.useCallback(
-    async (nextValues: ProfileFormValues, nextAvatarUrl: string | null) => {
-      if (!user) return { error: new Error("No signed-in user") };
-
-      return supabase.from(PROFILE_TABLE).upsert(
-        buildProfileDetailsPayload({
-          avatarUrl: nextAvatarUrl,
-          userId: user.id,
-          values: nextValues,
-        }),
-        { onConflict: "id" },
-      );
-    },
-    [user],
-  );
-
   const saveIdentity = React.useCallback(
     async (nextIdentity: ProfileIdentityValues) => {
-      if (!user) return false;
+      if (!user || !profileReady) return false;
+      const ownerId = user.id;
+      const ownerToken = authSession.token;
 
       const result = validateIdentity(nextIdentity);
       setErrors(result.errors);
@@ -306,31 +348,44 @@ export function useProfileController() {
         return false;
       }
 
-      const nextValues = { ...values, ...result.values };
       setSavingDetails(true);
       setMessage(null);
 
-      const { error } = await saveUsersRow(nextValues, avatarUrl);
-      setSavingDetails(false);
-
-      if (error) {
-        setMessage({ tone: "error", text: "Profile save failed. Try again." });
+      try {
+        await usersRepository.saveIdentity({
+          ...result.values,
+          userId: ownerId,
+        });
+      } catch {
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          setSavingDetails(false);
+          setMessage({
+            tone: "error",
+            text: "Profile save failed. Try again.",
+          });
+        }
         return false;
       }
 
+      if (!isSessionCurrent(ownerId, ownerToken)) return false;
+      setSavingDetails(false);
       setFirstName(result.values.firstName);
       setHandle(result.values.handle);
       setLastName(result.values.lastName);
-      setProfileSnapshot({ ...nextValues, avatarUrl });
+      setProfileSnapshot((current) =>
+        current ? { ...current, ...result.values } : current,
+      );
       setMessage({ tone: "success", text: "Profile identity updated." });
       return true;
     },
-    [avatarUrl, saveUsersRow, user, values],
+    [isSessionCurrent, profileReady, authSession.token, user, usersRepository],
   );
 
   const saveEmail = React.useCallback(
     async (nextEmail: ProfileEmailValues) => {
-      if (!user) return false;
+      if (!user || !profileReady) return false;
+      const ownerId = user.id;
+      const ownerToken = authSession.token;
 
       const result = validateEmail(nextEmail);
       setErrors(result.errors);
@@ -355,37 +410,36 @@ export function useProfileController() {
         return false;
       }
 
-      const { data: emailData, error: emailError } =
-        await supabase.auth.updateUser(
-          { email: result.values.email },
-          { emailRedirectTo: `${window.location.origin}/Profile` },
-        );
-
-      setSavingContact(false);
-
-      if (emailError) {
-        setEmail(previousEmail);
-        setProfileSnapshot({
-          ...values,
-          avatarUrl,
-          email: previousEmail,
+      let emailChange;
+      try {
+        emailChange = await accountClient.requestEmailChange({
+          email: result.values.email,
+          redirectTo: `${window.location.origin}/Profile`,
         });
-        setMessage({
-          tone: "error",
-          text: "Email change could not be started. Please try again.",
-        });
+      } catch {
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          setSavingContact(false);
+          setEmail(previousEmail);
+          setProfileSnapshot((current) =>
+            current ? { ...current, email: previousEmail } : current,
+          );
+          setMessage({
+            tone: "error",
+            text: "Email change could not be started. Please try again.",
+          });
+        }
         return false;
       }
 
+      if (!isSessionCurrent(ownerId, ownerToken)) return false;
+      setSavingContact(false);
       setEmail(previousEmail);
-      setProfileSnapshot({
-        ...values,
-        avatarUrl,
-        email: previousEmail,
-      });
-      const nextPendingEmail = sanitizeEmail(emailData.user?.new_email || "");
+      setProfileSnapshot((current) =>
+        current ? { ...current, email: previousEmail } : current,
+      );
+      const nextPendingEmail = sanitizeEmail(emailChange.pendingEmail || "");
       setPendingEmailOverride(
-        emailData.user?.email_change_sent_at || nextPendingEmail
+        emailChange.sentAt || nextPendingEmail
           ? nextPendingEmail || result.values.email
           : "",
       );
@@ -395,12 +449,21 @@ export function useProfileController() {
       });
       return true;
     },
-    [avatarUrl, profileSnapshot?.email, user, values],
+    [
+      accountClient,
+      isSessionCurrent,
+      profileSnapshot?.email,
+      profileReady,
+      authSession.token,
+      user,
+    ],
   );
 
   const savePhone = React.useCallback(
     async (nextPhone: ProfilePhoneValues) => {
-      if (!user) return false;
+      if (!user || !profileReady) return false;
+      const ownerId = user.id;
+      const ownerToken = authSession.token;
 
       const result = validatePhoneDetails(nextPhone);
       setErrors(result.errors);
@@ -413,29 +476,39 @@ export function useProfileController() {
         return false;
       }
 
-      const nextValues = { ...values, ...result.values };
       setSavingContact(true);
       setMessage(null);
 
-      const { error } = await saveUsersRow(nextValues, avatarUrl);
-      setSavingContact(false);
-
-      if (error) {
-        setMessage({ tone: "error", text: "Phone save failed. Try again." });
+      try {
+        await usersRepository.savePhone({
+          phone: result.values.phone,
+          userId: ownerId,
+        });
+      } catch {
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          setSavingContact(false);
+          setMessage({ tone: "error", text: "Phone save failed. Try again." });
+        }
         return false;
       }
 
+      if (!isSessionCurrent(ownerId, ownerToken)) return false;
+      setSavingContact(false);
       setPhone(result.values.phone);
-      setProfileSnapshot({ ...nextValues, avatarUrl });
+      setProfileSnapshot((current) =>
+        current ? { ...current, phone: result.values.phone } : current,
+      );
       setMessage({ tone: "success", text: "Phone updated." });
       return true;
     },
-    [avatarUrl, saveUsersRow, user, values],
+    [isSessionCurrent, profileReady, authSession.token, user, usersRepository],
   );
 
   const changeAvatar = React.useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!user) return false;
+      if (!user || !profileReady) return false;
+      const ownerId = user.id;
+      const ownerToken = authSession.token;
 
       const file = event.target.files?.[0];
       event.target.value = "";
@@ -460,63 +533,122 @@ export function useProfileController() {
       }
 
       const previewUrl = URL.createObjectURL(file);
-      const ext = file.name.split(".").pop() || "png";
-      const uploadedAvatarPath = `${user.id}/${Date.now()}.${ext}`;
-
       setSavingAvatar(true);
       setAvatarPreviewUrl(previewUrl);
 
-      const { error: uploadError } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(uploadedAvatarPath, file, {
-          contentType: file.type,
-        });
+      let uploadedAvatar: Awaited<
+        ReturnType<ProfileControllerDependencies["avatarStorage"]["upload"]>
+      > | null = null;
+      let profileSaved = false;
+      const previousAvatarPath = avatarStoragePath;
 
-      if (uploadError) {
-        const bucketMissing = uploadError.message
-          .toLowerCase()
-          .includes("bucket not found");
-        setSavingAvatar(false);
-        setAvatarPreviewUrl(null);
-        URL.revokeObjectURL(previewUrl);
-        setMessage({
-          tone: bucketMissing ? "info" : "error",
-          text: bucketMissing
-            ? `Avatar cannot be saved because Supabase bucket "${AVATAR_BUCKET}" does not exist.`
-            : "Avatar upload failed. Please try another supported image.",
-        });
+      try {
+        uploadedAvatar = await avatarStorage.upload({ file, userId: ownerId });
+
+        if (!isSessionCurrent(ownerId, ownerToken)) {
+          if (previousAvatarPath !== uploadedAvatar.path) {
+            await removeAvatarObject(avatarStorage, {
+              path: uploadedAvatar.path,
+              userId: ownerId,
+            });
+          }
+          uploadedAvatar = null;
+          return false;
+        }
+
+        const profileAlreadyReferencesAvatar = Boolean(
+          avatarUrl && previousAvatarPath === uploadedAvatar.path,
+        );
+        if (!profileAlreadyReferencesAvatar) {
+          await usersRepository.saveAvatar({
+            avatarPath: uploadedAvatar.path,
+            avatarUrl: uploadedAvatar.publicUrl,
+            userId: ownerId,
+          });
+        }
+        profileSaved = true;
+
+        const previousAvatarRemoved =
+          !previousAvatarPath || previousAvatarPath === uploadedAvatar.path
+            ? true
+            : await removeAvatarObject(avatarStorage, {
+                path: previousAvatarPath,
+                userId: ownerId,
+              });
+
+        if (!isSessionCurrent(ownerId, ownerToken)) return false;
+
+        const nextAvatarUrl = uploadedAvatar.publicUrl;
+        setAvatarStoragePath(uploadedAvatar.path);
+        setAvatarUrl(nextAvatarUrl);
+        setAvatarVersion(Date.now());
+        setProfileSnapshot((current) =>
+          current ? { ...current, avatarUrl: nextAvatarUrl } : current,
+        );
+        setMessage(
+          previousAvatarRemoved
+            ? { tone: "success", text: "Profile photo updated." }
+            : {
+                tone: "info",
+                text: "Profile photo updated, but the previous file could not be removed.",
+              },
+        );
+        return true;
+      } catch (error) {
+        let uploadedAvatarRemoved = true;
+        if (
+          uploadedAvatar &&
+          !profileSaved &&
+          uploadedAvatar.path !== previousAvatarPath
+        ) {
+          uploadedAvatarRemoved = await removeAvatarObject(avatarStorage, {
+            path: uploadedAvatar.path,
+            userId: ownerId,
+          });
+        }
+
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          const bucketMissing =
+            error instanceof ProfileAvatarStorageError &&
+            error.code === "bucket_missing";
+          setMessage({
+            tone: bucketMissing ? "info" : "error",
+            text: bucketMissing
+              ? "Avatar storage is not available yet."
+              : uploadedAvatar
+                ? uploadedAvatarRemoved
+                  ? "Avatar save failed. Try again."
+                  : "Avatar save failed, and the uploaded file could not be removed."
+                : "Avatar upload failed. Please try another supported image.",
+          });
+        }
         return false;
-      }
-
-      const { data } = supabase.storage
-        .from(AVATAR_BUCKET)
-        .getPublicUrl(uploadedAvatarPath);
-      const nextAvatarUrl = data.publicUrl;
-      const { error } = await saveUsersRow(values, nextAvatarUrl);
-
-      if (error) {
-        await supabase.storage.from(AVATAR_BUCKET).remove([uploadedAvatarPath]);
-        setSavingAvatar(false);
-        setAvatarPreviewUrl(null);
+      } finally {
         URL.revokeObjectURL(previewUrl);
-        setMessage({ tone: "error", text: "Avatar save failed. Try again." });
-        return false;
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          setSavingAvatar(false);
+          setAvatarPreviewUrl(null);
+        }
       }
-
-      setSavingAvatar(false);
-      setAvatarUrl(nextAvatarUrl);
-      setAvatarVersion(Date.now());
-      setAvatarPreviewUrl(null);
-      URL.revokeObjectURL(previewUrl);
-      setProfileSnapshot({ ...values, avatarUrl: nextAvatarUrl });
-      setMessage({ tone: "success", text: "Profile photo updated." });
-      return true;
     },
-    [saveUsersRow, user, values],
+    [
+      avatarStorage,
+      avatarStoragePath,
+      avatarUrl,
+      isSessionCurrent,
+      profileReady,
+      authSession.token,
+      user,
+      usersRepository,
+    ],
   );
 
   const changePassword = React.useCallback(
     async (newPassword: string, confirmPassword: string) => {
+      if (!user || !profileReady) return false;
+      const ownerId = user.id;
+      const ownerToken = authSession.token;
+
       if (!newPassword || newPassword.length < 6) {
         setMessage({
           tone: "error",
@@ -535,34 +667,39 @@ export function useProfileController() {
 
       setUpdatingPassword(true);
       setMessage(null);
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+
+      try {
+        await accountClient.updatePassword(newPassword);
+      } catch {
+        if (isSessionCurrent(ownerId, ownerToken)) {
+          setUpdatingPassword(false);
+          setMessage({
+            tone: "error",
+            text: "Password update failed. Please sign in again and retry.",
+          });
+        }
+        return false;
+      }
+
+      if (!isSessionCurrent(ownerId, ownerToken)) return false;
       setUpdatingPassword(false);
-
-      setMessage(
-        error
-          ? {
-              tone: "error",
-              text: "Password update failed. Please sign in again and retry.",
-            }
-          : { tone: "success", text: "Password updated successfully." },
-      );
-
-      return !error;
+      setMessage({ tone: "success", text: "Password updated successfully." });
+      return true;
     },
-    [],
+    [accountClient, isSessionCurrent, profileReady, authSession.token, user],
   );
 
   const resendVerification = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !profileReady) return;
+    const ownerId = user.id;
+    const ownerToken = authSession.token;
 
     const targetEmail = sanitizeEmail(
       pendingEmail || profileSnapshot?.email || user.email || "",
     );
     const resendType = pendingEmail ? "email_change" : "signup";
 
-    if (!targetEmail || !isValidEmail(targetEmail)) {
+    if (!validateEmail({ email: targetEmail }).valid) {
       setErrors((current) => ({
         ...current,
         email: "Save a valid email address before sending verification.",
@@ -573,61 +710,76 @@ export function useProfileController() {
     setSendingVerification(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.resend({
-      email: targetEmail,
-      options: { emailRedirectTo: `${window.location.origin}/Profile` },
-      type: resendType,
-    });
+    try {
+      await accountClient.resendVerification({
+        email: targetEmail,
+        kind: resendType,
+        redirectTo: `${window.location.origin}/Profile`,
+      });
+    } catch {
+      if (isSessionCurrent(ownerId, ownerToken)) {
+        setSendingVerification(false);
+        setMessage({
+          tone: "error",
+          text: "Verification email could not be sent. Please try again.",
+        });
+      }
+      return;
+    }
 
+    if (!isSessionCurrent(ownerId, ownerToken)) return;
     setSendingVerification(false);
-    setMessage(
-      error
-        ? {
-            tone: "error",
-            text: "Verification email could not be sent. Please try again.",
-          }
-        : {
-            tone: "success",
-            text: pendingEmail
-              ? "Email change verification sent. Check the confirmation email."
-              : "Verification email sent. Check your inbox.",
-          },
-    );
-  }, [pendingEmail, profileSnapshot?.email, user]);
+    setMessage({
+      tone: "success",
+      text: pendingEmail
+        ? "Email change verification sent. Check the confirmation email."
+        : "Verification email sent. Check your inbox.",
+    });
+  }, [
+    accountClient,
+    isSessionCurrent,
+    pendingEmail,
+    profileReady,
+    profileSnapshot?.email,
+    authSession.token,
+    user,
+  ]);
 
   return {
     authLoading,
     avatarDisplayUrl,
-    avatarUrl,
+    avatarUrl: profileVisible ? avatarUrl : null,
     changeAvatar,
     changePassword,
     clearFeedback,
     currentProfile,
     displayName,
-    email,
+    email: visibleValues.email,
     emailVerified,
-    errors,
-    firstName,
-    handle,
+    errors: profileVisible ? errors : {},
+    firstName: visibleValues.firstName,
+    handle: visibleValues.handle,
     hasPendingEmailChange,
     initials,
-    lastName,
-    message,
-    phone,
+    lastName: visibleValues.lastName,
+    message: profileVisible ? message : null,
+    phone: visibleValues.phone,
     pendingEmail,
     profileHandle,
-    profileLoading,
-    profileSnapshot,
+    profileLoading: Boolean(
+      !authLoading && user && (!profileVisible || profileLoading),
+    ),
+    profileSnapshot: profileVisible ? profileSnapshot : null,
     resendVerification,
     saveEmail,
     saveIdentity,
     savePhone,
-    savingAvatar,
-    savingContact,
-    savingDetails,
-    sendingVerification,
+    savingAvatar: profileVisible ? savingAvatar : false,
+    savingContact: profileVisible ? savingContact : false,
+    savingDetails: profileVisible ? savingDetails : false,
+    sendingVerification: profileVisible ? sendingVerification : false,
     updateProfileField,
-    updatingPassword,
+    updatingPassword: profileVisible ? updatingPassword : false,
     user,
     userIdPreview,
   };

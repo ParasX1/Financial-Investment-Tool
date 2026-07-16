@@ -33,6 +33,9 @@ export function ProfileMain() {
   const [showLogin, setShowLogin] = React.useState(false);
   const [showSignUp, setShowSignUp] = React.useState(false);
   const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>(null);
+  const [dialogOwnerUserId, setDialogOwnerUserId] = React.useState<
+    string | null
+  >(null);
   const [identityDraft, setIdentityDraft] =
     React.useState<ProfileIdentityValues>({
       firstName: "",
@@ -58,76 +61,107 @@ export function ProfileMain() {
   const showAccountRequired = !profile.authLoading && !hasAccount;
   const showInitialProfileLoading =
     hasAccount && profile.profileLoading && !profile.profileSnapshot;
+  const dialogIsCurrent = Boolean(
+    !profile.authLoading &&
+      profile.profileSnapshot &&
+      dialogOwnerUserId &&
+      dialogOwnerUserId === profile.user?.id,
+  );
+
+  const resetDialogState = React.useCallback(() => {
+    setActiveDialog(null);
+    setDialogOwnerUserId(null);
+    setIdentityDraft({ firstName: "", handle: "", lastName: "" });
+    setEmailDraft({ email: "" });
+    setPhoneDraft({ phone: "" });
+    setPasswordDraft({ confirmPassword: "", newPassword: "" });
+    setPasswordErrors({});
+  }, []);
+
+  React.useEffect(() => {
+    resetDialogState();
+  }, [profile.authLoading, profile.user?.id, resetDialogState]);
 
   const closeDialog = React.useCallback(() => {
-    setActiveDialog(null);
-    setPasswordErrors({});
+    resetDialogState();
     profile.clearFeedback();
-  }, [profile]);
+  }, [profile, resetDialogState]);
 
   const openIdentityDialog = React.useCallback(() => {
+    if (!profile.user || !profile.profileSnapshot) return;
     profile.clearFeedback();
     setIdentityDraft({
       firstName: profile.firstName,
       handle: profile.handle,
       lastName: profile.lastName,
     });
+    setDialogOwnerUserId(profile.user.id);
     setActiveDialog("identity");
   }, [profile]);
 
   const openEmailDialog = React.useCallback(() => {
+    if (!profile.user || !profile.profileSnapshot) return;
     profile.clearFeedback();
     setEmailDraft({
       email: profile.email,
     });
+    setDialogOwnerUserId(profile.user.id);
     setActiveDialog("email");
   }, [profile]);
 
   const openPhoneDialog = React.useCallback(() => {
+    if (!profile.user || !profile.profileSnapshot) return;
     profile.clearFeedback();
     setPhoneDraft({
       phone: profile.phone,
     });
+    setDialogOwnerUserId(profile.user.id);
     setActiveDialog("phone");
   }, [profile]);
 
   const openPasswordDialog = React.useCallback(() => {
+    if (!profile.user || !profile.profileSnapshot) return;
     profile.clearFeedback();
     setPasswordDraft({ confirmPassword: "", newPassword: "" });
     setPasswordErrors({});
+    setDialogOwnerUserId(profile.user.id);
     setActiveDialog("password");
   }, [profile]);
 
   const saveIdentity = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (!dialogIsCurrent) return;
       const saved = await profile.saveIdentity(identityDraft);
-      if (saved) setActiveDialog(null);
+      if (saved) resetDialogState();
     },
-    [identityDraft, profile],
+    [dialogIsCurrent, identityDraft, profile, resetDialogState],
   );
 
   const saveEmail = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (!dialogIsCurrent) return;
       const saved = await profile.saveEmail(emailDraft);
-      if (saved) setActiveDialog(null);
+      if (saved) resetDialogState();
     },
-    [emailDraft, profile],
+    [dialogIsCurrent, emailDraft, profile, resetDialogState],
   );
 
   const savePhone = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (!dialogIsCurrent) return;
       const saved = await profile.savePhone(phoneDraft);
-      if (saved) setActiveDialog(null);
+      if (saved) resetDialogState();
     },
-    [phoneDraft, profile],
+    [dialogIsCurrent, phoneDraft, profile, resetDialogState],
   );
 
   const savePassword = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (!dialogIsCurrent) return;
       const nextErrors: typeof passwordErrors = {};
 
       if (!passwordDraft.newPassword || passwordDraft.newPassword.length < 6) {
@@ -145,9 +179,9 @@ export function ProfileMain() {
         passwordDraft.newPassword,
         passwordDraft.confirmPassword,
       );
-      if (saved) setActiveDialog(null);
+      if (saved) resetDialogState();
     },
-    [passwordDraft, passwordErrors, profile],
+    [dialogIsCurrent, passwordDraft, profile, resetDialogState],
   );
 
   return (
@@ -189,7 +223,9 @@ export function ProfileMain() {
                     <div className={styles.authGateAvatar}>F</div>
                   </div>
                   <div className={styles.authGateCopy}>
-                    <h2 className={styles.authGateTitle}>Sign in to continue</h2>
+                    <h2 className={styles.authGateTitle}>
+                      Sign in to continue
+                    </h2>
                     <p className={styles.authGateSubtitle}>
                       Manage your profile and account settings.
                     </p>
@@ -273,7 +309,7 @@ export function ProfileMain() {
       </main>
 
       <ProfileEditDialog
-        show={activeDialog === "identity"}
+        show={dialogIsCurrent && activeDialog === "identity"}
         title="Edit profile"
         submitLabel={profile.savingDetails ? "Saving..." : "Save identity"}
         disabled={profile.savingDetails}
@@ -329,7 +365,7 @@ export function ProfileMain() {
       </ProfileEditDialog>
 
       <ProfileEditDialog
-        show={activeDialog === "email"}
+        show={dialogIsCurrent && activeDialog === "email"}
         title="Change email"
         description="Email changes are confirmed from your inbox before becoming active."
         submitLabel={profile.savingContact ? "Saving..." : "Save email"}
@@ -362,7 +398,7 @@ export function ProfileMain() {
       </ProfileEditDialog>
 
       <ProfileEditDialog
-        show={activeDialog === "phone"}
+        show={dialogIsCurrent && activeDialog === "phone"}
         title="Update phone"
         description="This is a contact number for account support. It is not used as a sign-in method."
         submitLabel={profile.savingContact ? "Saving..." : "Save phone"}
@@ -390,7 +426,7 @@ export function ProfileMain() {
       </ProfileEditDialog>
 
       <ProfileEditDialog
-        show={activeDialog === "password"}
+        show={dialogIsCurrent && activeDialog === "password"}
         title="Change password"
         description="Update this account password."
         submitLabel={

@@ -1,4 +1,11 @@
-import type { ProfileErrors, ProfileFormValues } from "../types";
+import type {
+  ProfileEmailValues,
+  ProfileErrors,
+  ProfileFieldKey,
+  ProfileFormValues,
+  ProfileIdentityValues,
+  ProfilePhoneValues,
+} from "../types";
 
 export const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
@@ -29,6 +36,31 @@ export function sanitizePhone(value: string) {
     .replace(/\s+/g, " ")
     .slice(0, 24)
     .trim();
+}
+
+export function sanitizeProfileField(field: ProfileFieldKey, value: string) {
+  switch (field) {
+    case "firstName":
+    case "lastName":
+      return sanitizeNameInput(value);
+    case "email":
+      return sanitizeEmail(value);
+    case "handle":
+      return sanitizeHandle(value);
+    case "phone":
+      return sanitizePhone(value);
+  }
+}
+
+export function buildFallbackHandle(email: string, userId: string) {
+  const fromEmail = sanitizeHandle(email.split("@")[0] || "");
+  const idSuffix =
+    userId
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase()
+      .slice(-12) || "profile";
+  const base = /^[a-z]/.test(fromEmail) ? fromEmail : "user";
+  return `${base.slice(0, 29 - idSuffix.length)}_${idSuffix}`;
 }
 
 export function isValidEmail(value: string) {
@@ -77,29 +109,76 @@ export function validatePhone(value: string) {
   return "";
 }
 
-export function validateProfileForm(values: ProfileFormValues) {
-  const nextValues: ProfileFormValues = {
-    email: sanitizeEmail(values.email),
+export function validateIdentity(values: ProfileIdentityValues) {
+  const nextValues: ProfileIdentityValues = {
     firstName: sanitizeName(values.firstName),
     handle: sanitizeHandle(values.handle),
     lastName: sanitizeName(values.lastName),
-    phone: sanitizePhone(values.phone),
   };
   const errors: ProfileErrors = {};
-
   const firstNameError = validateName("First name", nextValues.firstName);
   const handleError = validateHandle(nextValues.handle);
   const lastNameError = validateName("Last name", nextValues.lastName);
-  const phoneError = validatePhone(nextValues.phone);
 
   if (firstNameError) errors.firstName = firstNameError;
   if (handleError) errors.handle = handleError;
   if (lastNameError) errors.lastName = lastNameError;
+
+  return {
+    errors,
+    valid: Object.keys(errors).length === 0,
+    values: nextValues,
+  };
+}
+
+export function validateEmail(values: ProfileEmailValues) {
+  const nextValues: ProfileEmailValues = {
+    email: sanitizeEmail(values.email),
+  };
+  const errors: ProfileErrors = {};
+
   if (!nextValues.email) errors.email = "Email is required";
   else if (!isValidEmail(nextValues.email)) {
     errors.email = "Enter a valid email address";
   }
+
+  return {
+    errors,
+    valid: Object.keys(errors).length === 0,
+    values: nextValues,
+  };
+}
+
+export function validatePhoneDetails(values: ProfilePhoneValues) {
+  const nextValues: ProfilePhoneValues = {
+    phone: sanitizePhone(values.phone),
+  };
+  const errors: ProfileErrors = {};
+  const phoneError = validatePhone(nextValues.phone);
+
   if (phoneError) errors.phone = phoneError;
+
+  return {
+    errors,
+    valid: Object.keys(errors).length === 0,
+    values: nextValues,
+  };
+}
+
+export function validateProfileForm(values: ProfileFormValues) {
+  const identity = validateIdentity(values);
+  const email = validateEmail(values);
+  const phone = validatePhoneDetails(values);
+  const errors: ProfileErrors = {
+    ...identity.errors,
+    ...email.errors,
+    ...phone.errors,
+  };
+  const nextValues: ProfileFormValues = {
+    ...identity.values,
+    ...email.values,
+    ...phone.values,
+  };
 
   return {
     errors,

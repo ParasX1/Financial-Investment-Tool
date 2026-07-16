@@ -1,20 +1,23 @@
-import type { ProfileFormValues } from "../types";
+import type { ProfileIdentityValues, ProfilePhoneValues } from "../types";
 
-export function buildProfileDetailsPayload({
-  avatarUrl,
-  userId,
-  values,
-}: {
-  avatarUrl: string | null;
-  userId: string;
-  values: ProfileFormValues;
-}) {
+export function buildProfileIdentityPayload(values: ProfileIdentityValues) {
   return {
-    avatar_url: avatarUrl,
     first_name: values.firstName,
     handle: values.handle,
-    id: userId,
     last_name: values.lastName,
-    phone: values.phone,
   };
+}
+
+export function buildProfilePhonePayload(values: ProfilePhoneValues) {
+  return { phone: values.phone };
+}
+
+export function buildProfileAvatarPayload({
+  avatarPath,
+  avatarUrl,
+}: {
+  avatarPath: string;
+  avatarUrl: string | null;
+}) {
+  return { avatar_path: avatarPath, avatar_url: avatarUrl };
 }

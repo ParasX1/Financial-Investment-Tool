@@ -19,6 +19,11 @@ export type ProfileSnapshot = ProfileFormValues & {
   avatarUrl: string | null;
 };
 
+export type ProfileDetailsValues = Pick<
+  ProfileFormValues,
+  "firstName" | "handle" | "lastName" | "phone"
+>;
+
 export type ProfileIdentityValues = Pick<
   ProfileFormValues,
   "firstName" | "handle" | "lastName"
