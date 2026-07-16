@@ -1,2 +1,2 @@
-// File purpose: Exposes the public Help feature API used by the Next.js route page.
-export { HelpMain } from "./components/HelpMain";
+// File purpose: Exposes the route-ready Help screen to the Next.js page.
+export { HelpScreen } from "./screens/HelpScreen";

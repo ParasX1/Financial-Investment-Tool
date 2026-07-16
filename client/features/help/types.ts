@@ -2,14 +2,19 @@
 import type { LearningIcon } from "@/components/learning/types";
 
 export interface FAQItem {
-  question: string;
-  answer: string;
+  readonly question: string;
+  readonly answer: string;
 }
 
 export interface HelpSection {
-  id: string;
-  label: string;
-  subtitle: string;
-  icon: LearningIcon;
-  faqs: FAQItem[];
+  readonly id: string;
+  readonly label: string;
+  readonly subtitle: string;
+  readonly icon: LearningIcon;
+  readonly faqs: readonly FAQItem[];
 }
+
+export type HelpSectionCollection = readonly [
+  HelpSection,
+  ...HelpSection[],
+];

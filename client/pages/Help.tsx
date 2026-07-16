@@ -1,5 +1,5 @@
-import { HelpMain } from "@/features/help";
+import { HelpScreen } from "@/features/help";
 
 export default function Help() {
-  return <HelpMain />;
+  return <HelpScreen />;
 }

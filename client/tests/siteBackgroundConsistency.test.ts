@@ -146,7 +146,7 @@ describe("site-wide page background contract", () => {
 
   it("binds every shared-shell route to its tested page canvas", () => {
     const guide = readClientSource("features/guide/screens/GuideScreen.tsx");
-    const help = readClientSource("features/help/components/HelpMain.tsx");
+    const help = readClientSource("features/help/screens/HelpScreen.tsx");
     const homeMain = readClientSource("features/home/components/HomeMain.tsx");
     const communityLayout = readClientSource(
       "features/community/components/CommunityLayout.tsx",

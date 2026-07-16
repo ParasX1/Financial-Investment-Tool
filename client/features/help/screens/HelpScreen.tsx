@@ -1,9 +1,8 @@
-// File purpose: Composes the Help Center page from shared learning layout primitives and Help feature data.
-import * as React from "react";
+// File purpose: Composes the route-ready Help screen from shared learning primitives and Help content.
 import ContactSupportRoundedIcon from "@mui/icons-material/ContactSupportRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import {
-  LearningActionPanel,
+  LearningCard,
   LearningPageLayout,
   LearningTopicCard,
   QuestionCard,
@@ -18,17 +17,12 @@ import {
 
 const helpNavItems = getHelpNavItems();
 
-export function HelpMain() {
-  const [supportStatus, setSupportStatus] = React.useState("");
+export function HelpScreen() {
   const { activeId, selectSection } = useLearningSection(
     helpSectionIds,
     defaultHelpSectionId,
   );
   const active = resolveHelpSection(activeId);
-
-  React.useEffect(() => {
-    setSupportStatus("");
-  }, [active.id]);
 
   return (
     <LearningPageLayout
@@ -46,7 +40,10 @@ export function HelpMain() {
           {active.subtitle}
         </LearningTopicCard>
 
-        <div className="space-y-3" aria-label={`${active.label} questions`}>
+        <section
+          className="space-y-3"
+          aria-label={`${active.label} questions`}
+        >
           {active.faqs.map((faq, index) => (
             <QuestionCard
               key={faq.question}
@@ -55,23 +52,17 @@ export function HelpMain() {
               question={faq.question}
             />
           ))}
-        </div>
+        </section>
 
-        <LearningActionPanel
-          actionLabel="Contact Support"
+        <LearningCard
           icon={ContactSupportRoundedIcon}
-          onAction={() =>
-            setSupportStatus(
-              "Support contact routing is not connected yet. Please raise this with the project team if you need help now.",
-            )
-          }
-          status={supportStatus}
-          title="Still Need Help?"
+          title="Support availability"
+          tone="support"
         >
-          Can&apos;t find what you&apos;re looking for? Use this area for the
-          future support workflow without interrupting the page with browser
-          popups.
-        </LearningActionPanel>
+          Direct support is not connected in this build. Use the relevant Help
+          topic to troubleshoot a workflow, and do not post passwords, account
+          details, or other sensitive information in Community.
+        </LearningCard>
       </div>
     </LearningPageLayout>
   );

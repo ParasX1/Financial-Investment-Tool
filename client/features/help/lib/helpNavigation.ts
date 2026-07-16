@@ -1,11 +1,13 @@
 // File purpose: Maps Help topic data into navigation models and resolves the active Help topic.
 import type { LearningNavItem } from "@/components/learning/types";
 import { helpSections } from "../data/helpContent";
-import type { HelpSection } from "../types";
+import type { HelpSection, HelpSectionCollection } from "../types";
 
-export const helpSectionIds = helpSections.map((section) => section.id);
+export const helpSectionIds = Object.freeze(
+  helpSections.map((section) => section.id),
+);
 
-export const defaultHelpSectionId = helpSections[0]!.id;
+export const defaultHelpSectionId = helpSections[0].id;
 
 export function getHelpNavItems(
   sections: readonly HelpSection[] = helpSections,
@@ -18,8 +20,9 @@ export function getHelpNavItems(
   }));
 }
 
-export function resolveHelpSection(activeId: string): HelpSection {
-  return (
-    helpSections.find((section) => section.id === activeId) ?? helpSections[0]!
-  );
+export function resolveHelpSection(
+  activeId: string,
+  sections: HelpSectionCollection = helpSections,
+): HelpSection {
+  return sections.find((section) => section.id === activeId) ?? sections[0];
 }

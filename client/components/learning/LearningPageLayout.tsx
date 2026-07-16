@@ -44,6 +44,8 @@ export function LearningPageLayout({
   title: string;
 }) {
   const contentRef = React.useRef<HTMLElement | null>(null);
+  const activeLabel =
+    navItems.find((item) => item.id === activeId)?.label ?? navTitle;
 
   const handleNavChange = React.useCallback(
     (id: string) => {
@@ -76,10 +78,7 @@ export function LearningPageLayout({
 
           <div className="grid min-w-0 gap-5 lg:grid-cols-[224px_minmax(0,1fr)] lg:items-start">
             <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
-              <section
-                className={cn("rounded-xl p-3", styles.navPanel)}
-                aria-label={navTitle}
-              >
+              <div className={cn("rounded-xl p-3", styles.navPanel)}>
                 <div
                   className={cn(
                     "mb-3 flex items-center gap-2 px-2",
@@ -140,11 +139,12 @@ export function LearningPageLayout({
                     })}
                   </div>
                 </nav>
-              </section>
+              </div>
             </aside>
 
             <section
               ref={contentRef}
+              aria-label={`${activeLabel} content`}
               className={cn(
                 "min-w-0 scroll-mt-6 rounded-xl",
                 LEARNING_FOCUS_VISIBLE,
@@ -245,70 +245,6 @@ export function QuestionCard({
         </div>
       </div>
     </article>
-  );
-}
-
-export function LearningActionPanel({
-  actionLabel,
-  children,
-  icon: Icon,
-  onAction,
-  status,
-  title,
-}: {
-  actionLabel: string;
-  children: React.ReactNode;
-  icon?: LearningIcon;
-  onAction: () => void;
-  status?: string;
-  title: string;
-}) {
-  return (
-    <section
-      className={cn("rounded-xl p-5 text-center sm:p-6", styles.actionPanel)}
-    >
-      {Icon ? (
-        <span
-          className={cn(
-            "mx-auto mb-3 grid h-10 w-10 place-items-center rounded-md",
-            styles.actionIcon,
-          )}
-          aria-hidden="true"
-        >
-          <Icon sx={{ fontSize: 20 }} />
-        </span>
-      ) : null}
-      <h2 className={cn("text-white", fitType.sectionTitle)}>{title}</h2>
-      <p
-        className={cn(
-          "mx-auto mt-2 max-w-[36rem] text-pretty",
-          fitType.body,
-          fitText.body,
-        )}
-      >
-        {children}
-      </p>
-      <button
-        type="button"
-        onClick={onAction}
-        className={cn(
-          "mt-5 inline-flex min-h-[42px] touch-manipulation items-center justify-center rounded-lg px-4",
-          fitType.control,
-          styles.actionButton,
-          LEARNING_FOCUS_VISIBLE,
-        )}
-      >
-        {actionLabel}
-      </button>
-      {status ? (
-        <p
-          className={cn("mt-4", fitType.control, fitText.info)}
-          aria-live="polite"
-        >
-          {status}
-        </p>
-      ) : null}
-    </section>
   );
 }
 
