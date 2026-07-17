@@ -104,10 +104,13 @@ export function MarketNewsRightRail({
         </div>
         {watchlistLoading ? (
           <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
-            Loading saved tickers...
+            Loading saved tickers…
           </p>
         ) : watchlistError ? (
-          <p className={cn("mt-3 text-[#ff9bb0]", fitType.bodySm)} role="status">
+          <p
+            className={cn("mt-3 text-[#ff9bb0]", fitType.bodySm)}
+            role="status"
+          >
             {watchlistError}
           </p>
         ) : !authenticated ? (

@@ -155,19 +155,21 @@ describe("ProfileMain account-scoped dialog drafts", () => {
         onClose,
         onSubmit,
         show,
+        submitLabel,
         title,
       }: {
         children: React.ReactNode;
         onClose: () => void;
         onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
         show: boolean;
+        submitLabel: string;
         title: string;
       }) =>
         show ? (
           <section aria-label={title}>
             <form onSubmit={onSubmit}>
               {children}
-              <button type="submit">Submit dialog</button>
+              <button type="submit">{submitLabel}</button>
             </form>
             <button type="button" onClick={onClose}>
               Close dialog
@@ -381,6 +383,39 @@ describe("ProfileMain account-scoped dialog drafts", () => {
       renderer!.root.findByProps({ id: "profile-dialog-confirm-password" })
         .props.error,
     ).toBe("New password and confirmation do not match.");
+    renderer!.unmount();
+  });
+
+  it("uses the shared single-character ellipsis for pending dialog actions", () => {
+    mockProfile = buildProfile({
+      savingContact: true,
+      savingDetails: true,
+      updatingPassword: true,
+    });
+    let renderer: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(<ProfileMain />);
+    });
+
+    for (const [openLabel, pendingLabel] of [
+      ["Open identity", "Saving…"],
+      ["Open email", "Saving…"],
+      ["Open phone", "Saving…"],
+      ["Open password", "Updating…"],
+    ]) {
+      act(() =>
+        renderer!.root.findByProps({ children: openLabel }).props.onClick(),
+      );
+      expect(
+        renderer!.root.findByProps({ children: pendingLabel }),
+      ).toBeTruthy();
+      act(() =>
+        renderer!.root
+          .findByProps({ children: "Close dialog" })
+          .props.onClick(),
+      );
+    }
+
     renderer!.unmount();
   });
 

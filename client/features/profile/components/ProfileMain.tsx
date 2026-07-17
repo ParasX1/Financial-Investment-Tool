@@ -311,7 +311,7 @@ export function ProfileMain() {
       <ProfileEditDialog
         show={dialogIsCurrent && activeDialog === "identity"}
         title="Edit profile"
-        submitLabel={profile.savingDetails ? "Saving..." : "Save identity"}
+        submitLabel={profile.savingDetails ? "Saving…" : "Save identity"}
         disabled={profile.savingDetails}
         onClose={closeDialog}
         onSubmit={saveIdentity}
@@ -368,7 +368,7 @@ export function ProfileMain() {
         show={dialogIsCurrent && activeDialog === "email"}
         title="Change email"
         description="Email changes are confirmed from your inbox before becoming active."
-        submitLabel={profile.savingContact ? "Saving..." : "Save email"}
+        submitLabel={profile.savingContact ? "Saving…" : "Save email"}
         disabled={profile.savingContact}
         onClose={closeDialog}
         onSubmit={saveEmail}
@@ -401,7 +401,7 @@ export function ProfileMain() {
         show={dialogIsCurrent && activeDialog === "phone"}
         title="Update phone"
         description="This is a contact number for account support. It is not used as a sign-in method."
-        submitLabel={profile.savingContact ? "Saving..." : "Save phone"}
+        submitLabel={profile.savingContact ? "Saving…" : "Save phone"}
         disabled={profile.savingContact}
         onClose={closeDialog}
         onSubmit={savePhone}
@@ -429,9 +429,7 @@ export function ProfileMain() {
         show={dialogIsCurrent && activeDialog === "password"}
         title="Change password"
         description="Update this account password."
-        submitLabel={
-          profile.updatingPassword ? "Updating..." : "Update password"
-        }
+        submitLabel={profile.updatingPassword ? "Updating…" : "Update password"}
         disabled={profile.updatingPassword}
         onClose={closeDialog}
         onSubmit={savePassword}

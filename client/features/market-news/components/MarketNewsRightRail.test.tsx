@@ -117,4 +117,30 @@ describe("MarketNewsRightRail", () => {
     expect(html).toContain("Saved tickers could not be loaded");
     expect(html).not.toContain("No watchlist tickers are linked");
   });
+
+  it("uses the shared single-character ellipsis while saved tickers load", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsRightRail
+        authenticated
+        lookupDraft=""
+        railSummary={{
+          mentionedTickers: [],
+          totalLinkedStoryCount: 0,
+          watchlistHitCount: 0,
+          watchlistStoryCount: 0,
+          watchlistTickers: [],
+        }}
+        selectedTicker={null}
+        watchlistError={null}
+        watchlistLoading
+        watchlistSymbols={[]}
+        onLookupDraftChange={() => undefined}
+        onQuoteReferenceChange={() => undefined}
+        onTickerNewsRequest={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Loading saved tickers…");
+    expect(html).not.toContain("Loading saved tickers...");
+  });
 });
