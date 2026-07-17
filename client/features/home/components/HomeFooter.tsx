@@ -5,10 +5,12 @@ import styles from "../styles/home.module.css";
 
 export function HomeFooter({
   groups,
+  loading,
   signedIn,
   onSignIn,
 }: {
-  groups: HomeFooterGroup[];
+  groups: readonly HomeFooterGroup[];
+  loading: boolean;
   signedIn: boolean;
   onSignIn: () => void;
 }) {
@@ -16,7 +18,9 @@ export function HomeFooter({
     <footer className={styles.footer}>
       <div className={styles.footerBrand}>
         <FitLogo className={styles.footerLogo} decorative size="small" />
-        <p>Financial Investment Tool for modern portfolio management.</p>
+        <p>
+          Portfolio analytics, market research, and learning tools in one place.
+        </p>
       </div>
 
       <div className={styles.footerGroups}>
@@ -54,6 +58,7 @@ export function HomeFooter({
             <button
               type="button"
               className={styles.footerLink}
+              disabled={loading}
               onClick={onSignIn}
             >
               Sign in

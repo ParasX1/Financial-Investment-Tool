@@ -5,11 +5,13 @@ import type { HomeRouteLink } from "../types";
 import styles from "../styles/home.module.css";
 
 export function HomeProductSection({
+  authLoading,
   routes,
   signedIn,
   onRouteSelect,
 }: {
-  routes: HomeRouteLink[];
+  authLoading: boolean;
+  routes: readonly HomeRouteLink[];
   signedIn: boolean;
   onRouteSelect: (route: HomeRouteLink) => void;
 }) {
@@ -21,7 +23,7 @@ export function HomeProductSection({
     >
       <div className={styles.sectionIntro}>
         <p className={styles.eyebrow}>Product</p>
-        <h2 id="home-product-title">Powerful features for modern investors.</h2>
+        <h2 id="home-product-title">Practical tools for learning investors.</h2>
       </div>
 
       <div className={styles.routeGrid}>
@@ -71,6 +73,7 @@ export function HomeProductSection({
               type="button"
               className={styles.routeTile}
               aria-label={`${route.label} requires sign in`}
+              disabled={authLoading}
               onClick={() => onRouteSelect(route)}
             >
               {tileContent}

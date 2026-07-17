@@ -1,24 +1,29 @@
 import type { SvgIconComponent } from "@mui/icons-material";
 
+export type HomeEntryDestination =
+  | "/dashboardView"
+  | "/MarketNews"
+  | "/Community";
+
 export type HomeRouteLink = {
-  description: string;
-  gated?: boolean;
-  highlights?: string[];
-  href: string;
-  icon?: SvgIconComponent;
-  label: string;
+  readonly description: string;
+  readonly gated?: boolean;
+  readonly highlights?: readonly string[];
+  readonly href: HomeEntryDestination;
+  readonly icon?: SvgIconComponent;
+  readonly label: string;
 };
 
 export type HomeFooterGroup = {
-  items: Array<{
-    href: string;
-    label: string;
+  readonly items: ReadonlyArray<{
+    readonly href: string;
+    readonly label: string;
   }>;
-  title: string;
+  readonly title: string;
 };
 
 export type HomeExperiencePoint = {
-  description: string;
-  icon: SvgIconComponent;
-  label: string;
+  readonly description: string;
+  readonly icon: SvgIconComponent;
+  readonly label: string;
 };

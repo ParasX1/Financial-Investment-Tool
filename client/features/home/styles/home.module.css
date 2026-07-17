@@ -98,7 +98,7 @@
   color: #f7f9ff;
 }
 
-.footerLink:hover {
+.footerLink:not(:disabled):hover {
   background: var(--home-brand-wash);
   color: #ffffff;
   text-decoration: none;
@@ -143,8 +143,8 @@
   color: #ffffff;
 }
 
-.navPrimary:hover,
-.primaryButton:hover {
+.navPrimary:not(:disabled):hover,
+.primaryButton:not(:disabled):hover {
   background: var(--home-primary-gradient-hover);
 }
 
@@ -155,7 +155,7 @@
   color: #dce4ff;
 }
 
-.navSecondary:hover,
+.navSecondary:not(:disabled):hover,
 .secondaryButton:hover {
   border-color: var(--home-brand-border-hover);
   background: var(--home-brand-fill-hover);
@@ -163,9 +163,13 @@
 }
 
 .navPrimary:disabled,
-.navSecondary:disabled {
+.navSecondary:disabled,
+.primaryButton:disabled,
+.routeTile:disabled,
+.footerLink:disabled {
   cursor: not-allowed;
   opacity: 0.52;
+  transform: none;
 }
 
 .brandButton:focus-visible,
@@ -190,8 +194,9 @@
   min-width: 0;
 }
 
-.page:focus {
-  outline: none;
+.page:focus-visible {
+  outline: 2px solid var(--home-focus);
+  outline-offset: -2px;
 }
 
 .hero {
@@ -221,6 +226,11 @@
   inset: 0;
   z-index: -2;
   background:
+    radial-gradient(
+      circle at 20% 0%,
+      color-mix(in srgb, var(--home-brand-glow) 36%, transparent),
+      transparent 34rem
+    ),
     linear-gradient(
       90deg,
       rgba(0, 0, 0, 0.84) 0%,
@@ -402,7 +412,7 @@
   color: #dce4ff;
 }
 
-.routeTile:hover {
+.routeTile:not(:disabled):hover {
   border-color: var(--home-brand-border);
   background: var(--home-panel-soft);
   transform: translateY(-1px);
@@ -824,7 +834,7 @@
   .secondaryButton:active,
   .navPrimary:active,
   .navSecondary:active,
-  .routeTile:hover {
+  .routeTile:not(:disabled):hover {
     transform: none;
   }
 }

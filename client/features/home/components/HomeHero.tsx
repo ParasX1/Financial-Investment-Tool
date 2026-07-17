@@ -6,11 +6,13 @@ import { homeHeroActions } from "../data/homeContent";
 import styles from "../styles/home.module.css";
 
 export function HomeHero({
+  authLoading,
   signedIn,
-  onOpenWorkspace,
+  onSignIn,
 }: {
+  authLoading: boolean;
   signedIn: boolean;
-  onOpenWorkspace: () => void;
+  onSignIn: () => void;
 }) {
   return (
     <section id="top" className={styles.hero} aria-labelledby="home-hero-title">
@@ -40,7 +42,8 @@ export function HomeHero({
             <button
               type="button"
               className={styles.primaryButton}
-              onClick={onOpenWorkspace}
+              disabled={authLoading}
+              onClick={onSignIn}
             >
               {homeHeroActions.primary}
               <KeyboardArrowRightRoundedIcon

@@ -5,11 +5,13 @@ import { homeCta } from "../data/homeContent";
 import styles from "../styles/home.module.css";
 
 export function HomeCtaSection({
+  authLoading,
   signedIn,
-  onOpenWorkspace,
+  onCreateAccount,
 }: {
+  authLoading: boolean;
   signedIn: boolean;
-  onOpenWorkspace: () => void;
+  onCreateAccount: () => void;
 }) {
   return (
     <section className={styles.ctaSection} aria-labelledby="home-cta-title">
@@ -26,7 +28,8 @@ export function HomeCtaSection({
           <button
             type="button"
             className={styles.primaryButton}
-            onClick={onOpenWorkspace}
+            disabled={authLoading}
+            onClick={onCreateAccount}
           >
             {homeCta.primarySignedOut}
             <KeyboardArrowRightRoundedIcon sx={{ fontSize: 18 }} />

@@ -44,9 +44,7 @@ describe("site-wide page background contract", () => {
   it("defines the Top Picks glow once as the shared page background token", () => {
     const globals = readClientSource("styles/globals.css");
     const tokenDefinitions = globals.match(/--fit-page-background\s*:/g) ?? [];
-    const tokenMatch = globals.match(
-      /--fit-page-background:\s*([\s\S]*?);/,
-    );
+    const tokenMatch = globals.match(/--fit-page-background:\s*([\s\S]*?);/);
 
     expect(tokenDefinitions).toHaveLength(1);
     expect(tokenMatch).not.toBeNull();
@@ -88,12 +86,8 @@ describe("site-wide page background contract", () => {
     const primitives = readClientSource("components/shared/uiPrimitives.ts");
     const pageShell = readClientSource("components/shared/FitPageShell.tsx");
 
-    expect(primitives).toContain(
-      'page: "fit-page-background text-white"',
-    );
-    expect(pageShell).toContain(
-      "background: var(--fit-page-background);",
-    );
+    expect(primitives).toContain('page: "fit-page-background text-white"');
+    expect(pageShell).toContain("background: var(--fit-page-background);");
   });
 
   it.each([
@@ -106,11 +100,14 @@ describe("site-wide page background contract", () => {
     expect(mainTag).toContain("var(--fit-page-background)");
   });
 
-  it("uses the shared background on the standalone Home shell", () => {
+  it("uses the shared background and glow on the standalone Home shell", () => {
     const homeStyles = readClientSource("features/home/styles/home.module.css");
 
     expect(cssBlock(homeStyles, ".shell")).toContain(
       "background: var(--fit-page-background);",
+    );
+    expect(cssBlock(homeStyles, ".heroShade")).toContain(
+      "var(--home-brand-glow)",
     );
   });
 
@@ -147,7 +144,7 @@ describe("site-wide page background contract", () => {
   it("binds every shared-shell route to its tested page canvas", () => {
     const guide = readClientSource("features/guide/screens/GuideScreen.tsx");
     const help = readClientSource("features/help/screens/HelpScreen.tsx");
-    const homeMain = readClientSource("features/home/components/HomeMain.tsx");
+    const homeScreen = readClientSource("features/home/screens/HomeScreen.tsx");
     const communityLayout = readClientSource(
       "features/community/components/CommunityLayout.tsx",
     );
@@ -168,7 +165,7 @@ describe("site-wide page background contract", () => {
       "features/watchlist/components/WatchlistMain.tsx",
     );
 
-    expect(homeMain).toContain("className={styles.shell}");
+    expect(homeScreen).toContain("className={styles.shell}");
     expect(guide).toContain("<LearningPageLayout");
     expect(help).toContain("<LearningPageLayout");
     expect(learningLayout).toContain("<FitPageShell");

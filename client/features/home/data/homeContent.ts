@@ -22,14 +22,13 @@ export const homeHeroActions = {
 };
 
 export const homeCta = {
-  body:
-    "Analyze markets, optimize portfolios, and keep the conversation close to the decision.",
+  body: "Analyze markets, optimize portfolios, and keep the conversation close to the decision.",
   primarySignedIn: "Open dashboard",
   primarySignedOut: "Start free today",
   title: "Ready to get FIT?",
 } as const;
 
-export const homeRouteLinks: HomeRouteLink[] = [
+export const homeRouteLinks = [
   {
     description:
       "Analyze allocation, performance, and downside exposure without leaving the dashboard.",
@@ -69,17 +68,16 @@ export const homeRouteLinks: HomeRouteLink[] = [
     icon: GroupsRoundedIcon,
     label: "Community",
   },
-];
+] as const satisfies readonly HomeRouteLink[];
 
-export const homeExperiencePoints: HomeExperiencePoint[] = [
+export const homeExperiencePoints = [
   {
     description: "Risk and return in the same view.",
     icon: AutoGraphRoundedIcon,
     label: "Portfolio clarity",
   },
   {
-    description:
-      "Headlines, ticker context, and watchlists together.",
+    description: "Headlines, ticker context, and watchlists together.",
     icon: NewspaperRoundedIcon,
     label: "Market context",
   },
@@ -93,9 +91,9 @@ export const homeExperiencePoints: HomeExperiencePoint[] = [
     icon: MenuBookRoundedIcon,
     label: "Metric meaning",
   },
-];
+] as const satisfies readonly HomeExperiencePoint[];
 
-export const homeFooterGroups: HomeFooterGroup[] = [
+export const homeFooterGroups = [
   {
     items: [
       { href: "#product", label: "Features" },
@@ -110,4 +108,4 @@ export const homeFooterGroups: HomeFooterGroup[] = [
     ],
     title: "Learn",
   },
-];
+] as const satisfies readonly HomeFooterGroup[];

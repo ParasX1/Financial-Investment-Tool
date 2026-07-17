@@ -8,7 +8,7 @@ import styles from "../styles/home.module.css";
 export function HomeExperienceSection({
   points,
 }: {
-  points: HomeExperiencePoint[];
+  points: readonly HomeExperiencePoint[];
 }) {
   return (
     <section
