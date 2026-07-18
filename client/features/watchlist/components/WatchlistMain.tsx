@@ -6,8 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import ModalLogin from "@/components/Modal/ModalLogin";
-import ModalSignUp from "@/components/Modal/ModalSignUp";
+import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
 import {
@@ -60,8 +59,7 @@ function formatRefreshTime(value: Date | null) {
 
 export function WatchlistMain() {
   const watchlist = useWatchlistController();
-  const [showLogin, setShowLogin] = React.useState(false);
-  const [showSignUp, setShowSignUp] = React.useState(false);
+  const authDialog = useAuthDialog();
   const [addQuery, setAddQuery] = React.useState("");
   const [activeSuggestion, setActiveSuggestion] = React.useState(-1);
   const [suggestionsDismissed, setSuggestionsDismissed] = React.useState(false);
@@ -312,7 +310,10 @@ export function WatchlistMain() {
           ) : null}
 
           {watchlist.authLoading ? <WatchlistLoadingState /> : !watchlist.authenticated ? (
-            <WatchlistSignedOut onSignIn={() => setShowLogin(true)} onCreateAccount={() => setShowSignUp(true)} />
+            <WatchlistSignedOut
+              onSignIn={() => authDialog.openSignIn("/Watchlist")}
+              onCreateAccount={() => authDialog.openSignUp("/Watchlist")}
+            />
           ) : watchlist.loading ? <WatchlistLoadingState /> : watchlist.loadError ? (
             <WatchlistLoadError message={watchlist.loadError} onRetry={() => void watchlist.retry()} />
           ) : !watchlist.items.length ? <WatchlistEmptyState /> : (
@@ -414,8 +415,7 @@ export function WatchlistMain() {
         </DialogActions>
       </Dialog>
 
-      <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} redirectTo="/Watchlist" onShowSignUp={() => { setShowLogin(false); setShowSignUp(true); }} />
-      <ModalSignUp show={showSignUp} onHide={() => setShowSignUp(false)} redirectTo="/Watchlist" setLogin={(open) => { setShowSignUp(false); setShowLogin(open); }} />
+      <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
     </FitPageShell>
   );
 }

@@ -10,8 +10,6 @@ import {
     Button as NextUIButton,
     Spacer,
 } from '@nextui-org/react';
-import ModalLogin from '@/components/Modal/ModalLogin';
-import ModalSignUp from '@/components/Modal/ModalSignUp';
 import CardComponent from '@/components/CardComponent';
 import { Box, Autocomplete, TextField, Chip, Tooltip, Typography, InputAdornment, Button, IconButton} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';

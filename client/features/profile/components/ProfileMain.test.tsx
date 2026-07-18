@@ -71,46 +71,34 @@ describe("ProfileMain account-scoped dialog drafts", () => {
     jest.doMock("../hooks/useProfileController", () => ({
       useProfileController: () => mockProfile,
     }));
-    jest.doMock(
-      "@/components/Modal/ModalLogin",
-      () =>
-        function MockLogin({
+    jest.doMock("@/features/auth", () => {
+      const actual = jest.requireActual<typeof import("@/features/auth")>(
+        "@/features/auth",
+      );
+
+      return {
+        ...actual,
+        AuthDialog: ({
+          initialMode,
           onHide,
-          onShowSignUp,
+          redirectTo,
           show,
         }: {
+          initialMode: string;
           onHide: () => void;
-          onShowSignUp: () => void;
+          redirectTo: string;
           show: boolean;
-        }) {
-          return show ? (
-            <section aria-label="Login modal">
-              <button onClick={onShowSignUp}>Switch to sign up</button>
-              <button onClick={onHide}>Close login</button>
-            </section>
-          ) : null;
-        },
-    );
-    jest.doMock(
-      "@/components/Modal/ModalSignUp",
-      () =>
-        function MockSignUp({
-          onHide,
-          setLogin,
-          show,
-        }: {
-          onHide: () => void;
-          setLogin: (show: boolean) => void;
-          show: boolean;
-        }) {
-          return show ? (
-            <section aria-label="Sign-up modal">
-              <button onClick={() => setLogin(true)}>Switch to login</button>
-              <button onClick={onHide}>Close sign up</button>
-            </section>
-          ) : null;
-        },
-    );
+        }) => show ? (
+          <section
+            aria-label="Auth dialog"
+            data-mode={initialMode}
+            data-redirect-to={redirectTo}
+          >
+            <button onClick={onHide}>Close auth</button>
+          </section>
+        ) : null,
+      };
+    });
     jest.doMock("@/components/shared/FitPageHeader", () => ({
       FitPageHeader: () => null,
     }));
@@ -432,25 +420,23 @@ describe("ProfileMain account-scoped dialog drafts", () => {
     act(() =>
       renderer!.root.findByProps({ children: "Sign in" }).props.onClick(),
     );
-    expect(
-      renderer!.root.findAllByProps({ "aria-label": "Login modal" }),
-    ).toHaveLength(1);
+    expect(renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props)
+      .toMatchObject({
+        "data-mode": "sign-in",
+        "data-redirect-to": "/Profile",
+      });
+    act(() =>
+      renderer!.root.findByProps({ children: "Close auth" }).props.onClick(),
+    );
     act(() =>
       renderer!.root
-        .findByProps({ children: "Switch to sign up" })
+        .findByProps({ children: "Create account" })
         .props.onClick(),
     );
-    expect(
-      renderer!.root.findAllByProps({ "aria-label": "Sign-up modal" }),
-    ).toHaveLength(1);
-    act(() =>
-      renderer!.root
-        .findByProps({ children: "Switch to login" })
-        .props.onClick(),
-    );
-    act(() =>
-      renderer!.root.findByProps({ children: "Close login" }).props.onClick(),
-    );
+    expect(renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props[
+      "data-mode"
+    ]).toBe("sign-up");
+    act(() => renderer!.root.findByProps({ children: "Close auth" }).props.onClick());
 
     mockProfile = buildProfile({
       authLoading: true,

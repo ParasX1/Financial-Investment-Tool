@@ -81,40 +81,38 @@ describe("WatchlistMain interactions", () => {
           "Close monitor",
         ),
       ),
-    }));    jest.doMock("@/components/Modal/ModalLogin", () => ({
-      __esModule: true,
-      default: ({
-        onHide,
-        onShowSignUp,
-        show,
-      }: {
-        onHide: () => void;
-        onShowSignUp: () => void;
-        show: boolean;
-      }) => show ? React.createElement(
-        "div",
-        { "data-testid": "login-modal" },
-        React.createElement("button", { "data-testid": "close-login", onClick: onHide }),
-        React.createElement("button", { "data-testid": "switch-to-signup", onClick: onShowSignUp }),
-      ) : null,
     }));
-    jest.doMock("@/components/Modal/ModalSignUp", () => ({
-      __esModule: true,
-      default: ({
-        onHide,
-        setLogin,
-        show,
-      }: {
-        onHide: () => void;
-        setLogin: (open: boolean) => void;
-        show: boolean;
-      }) => show ? React.createElement(
-        "div",
-        { "data-testid": "signup-modal" },
-        React.createElement("button", { "data-testid": "close-signup", onClick: onHide }),
-        React.createElement("button", { "data-testid": "switch-to-login", onClick: () => setLogin(true) }),
-      ) : null,
-    }));
+    jest.doMock("@/features/auth", () => {
+      const actual = jest.requireActual<typeof import("@/features/auth")>(
+        "@/features/auth",
+      );
+
+      return {
+        ...actual,
+        AuthDialog: ({
+          initialMode,
+          onHide,
+          redirectTo,
+          show,
+        }: {
+          initialMode: string;
+          onHide: () => void;
+          redirectTo: string;
+          show: boolean;
+        }) => show ? React.createElement(
+          "div",
+          {
+            "data-mode": initialMode,
+            "data-redirect-to": redirectTo,
+            "data-testid": "auth-modal",
+          },
+          React.createElement("button", {
+            "data-testid": "close-auth",
+            onClick: onHide,
+          }),
+        ) : null,
+      };
+    });
     jest.doMock("@mui/material", () => ({
       Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
         open ? React.createElement("div", null, children) : null,
@@ -160,7 +158,7 @@ describe("WatchlistMain interactions", () => {
     };
   });
 
-  it("renders signed-out recovery actions and opens both account modals", () => {
+  it("renders signed-out recovery actions and opens both auth modes", () => {
     let renderer: ReactTestRenderer;
     act(() => {
       renderer = TestRenderer.create(<WatchlistMain />);
@@ -170,9 +168,17 @@ describe("WatchlistMain interactions", () => {
     const create = buttons.find((button) => button.children.includes("Create account"));
 
     act(() => signIn!.props.onClick());
-    expect(renderer!.root.findByProps({ "data-testid": "login-modal" })).toBeTruthy();
+    expect(renderer!.root.findByProps({ "data-testid": "auth-modal" }).props)
+      .toMatchObject({
+        "data-mode": "sign-in",
+        "data-redirect-to": "/Watchlist",
+      });
     act(() => create!.props.onClick());
-    expect(renderer!.root.findByProps({ "data-testid": "signup-modal" })).toBeTruthy();
+    expect(renderer!.root.findByProps({ "data-testid": "auth-modal" }).props)
+      .toMatchObject({
+        "data-mode": "sign-up",
+        "data-redirect-to": "/Watchlist",
+      });
     renderer!.unmount();
   });
 
@@ -493,13 +499,19 @@ describe("WatchlistMain interactions", () => {
     act(() => renderer!.root.findAllByType("button").find((button) =>
       button.children.includes("Sign in"),
     )!.props.onClick());
-    act(() => renderer!.root.findByProps({ "data-testid": "switch-to-signup" }).props.onClick());
-    expect(renderer!.root.findAllByProps({ "data-testid": "login-modal" })).toHaveLength(0);
-    expect(renderer!.root.findByProps({ "data-testid": "signup-modal" })).toBeTruthy();
-    act(() => renderer!.root.findByProps({ "data-testid": "switch-to-login" }).props.onClick());
-    expect(renderer!.root.findByProps({ "data-testid": "login-modal" })).toBeTruthy();
-    act(() => renderer!.root.findByProps({ "data-testid": "close-login" }).props.onClick());
-    expect(renderer!.root.findAllByProps({ "data-testid": "login-modal" })).toHaveLength(0);
+    expect(renderer!.root.findByProps({ "data-testid": "auth-modal" }).props[
+      "data-mode"
+    ]).toBe("sign-in");
+    act(() => renderer!.root.findByProps({ "data-testid": "close-auth" }).props.onClick());
+    expect(renderer!.root.findAllByProps({ "data-testid": "auth-modal" })).toHaveLength(0);
+    act(() => renderer!.root.findAllByType("button").find((button) =>
+      button.children.includes("Create account"),
+    )!.props.onClick());
+    expect(renderer!.root.findByProps({ "data-testid": "auth-modal" }).props[
+      "data-mode"
+    ]).toBe("sign-up");
+    act(() => renderer!.root.findByProps({ "data-testid": "close-auth" }).props.onClick());
+    expect(renderer!.root.findAllByProps({ "data-testid": "auth-modal" })).toHaveLength(0);
     renderer!.unmount();
   });
 });

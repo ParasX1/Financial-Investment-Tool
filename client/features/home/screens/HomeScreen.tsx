@@ -2,9 +2,8 @@
 import * as React from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import ModalLogin from "@/components/Modal/ModalLogin";
-import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
+import { AuthDialog } from "@/features/auth";
 import {
   homeExperiencePoints,
   homeFooterGroups,
@@ -36,8 +35,6 @@ export function HomeScreenView({
     redirectTo,
     selectRoute,
     signedIn,
-    switchToLogin,
-    switchToSignUp,
   } = controller;
 
   return (
@@ -84,23 +81,10 @@ export function HomeScreenView({
           onSignIn={() => openLogin()}
         />
 
-        <ModalLogin
+        <AuthDialog
+          initialMode={authDialog === "signup" ? "sign-up" : "sign-in"}
           redirectTo={redirectTo}
-          show={authDialog === "login"}
-          onShowSignUp={switchToSignUp}
-          onHide={closeAuthDialog}
-        />
-        <ModalSignUp
-          redirectTo={redirectTo}
-          show={authDialog === "signup"}
-          setLogin={(nextShowLogin) => {
-            if (nextShowLogin) {
-              switchToLogin();
-              return;
-            }
-
-            closeAuthDialog();
-          }}
+          show={authDialog !== null}
           onHide={closeAuthDialog}
         />
       </div>

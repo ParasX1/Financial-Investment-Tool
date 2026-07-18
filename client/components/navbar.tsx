@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 // import BoltIcon from "@mui/icons-material/Bolt";
-import ModalLogin from "@/components/Modal/ModalLogin";
-import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
+import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { FitLogo } from "@/components/shared/FitLogo";
 import { useRouter } from "next/navigation";
 
@@ -19,8 +18,7 @@ interface NavbarProps {
 
 export function Navbar({ items }: NavbarProps) {
     const { user, loading, signOut } = useAuth()
-    const [showSignUp, setShowSignUp] = useState(false)
-    const [showLogIn, setShowLogIn] = useState(false)
+    const authDialog = useAuthDialog()
     const router = useRouter()
 
     const [visible, setVisible] = useState(true)
@@ -115,14 +113,14 @@ export function Navbar({ items }: NavbarProps) {
                                 <Button
                                     color="inherit"
                                     disabled={loading}
-                                    onClick={() => setShowLogIn(true)}
+                                    onClick={() => authDialog.openSignIn()}
                                 >
                                     Sign In
                                 </Button>
                                 <Button
                                     variant="contained"
                                     disabled={loading}
-                                    onClick={() => setShowSignUp(true)}
+                                    onClick={() => authDialog.openSignUp()}
                                     sx={{
                                         background: 'var(--fit-color-brand-gradient)',
                                         color: 'white',
@@ -138,8 +136,7 @@ export function Navbar({ items }: NavbarProps) {
                 </Toolbar>
             </AppBar>
 
-            <ModalLogin show={showLogIn} onHide={() => setShowLogIn(false)} />
-            <ModalSignUp show={showSignUp} onHide={() => setShowSignUp(false)} setLogin={setShowLogIn} />
+            <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
         </>
     )
 }

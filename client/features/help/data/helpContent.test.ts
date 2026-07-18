@@ -14,7 +14,7 @@ describe("helpContent", () => {
   it("describes account access without unsupported security guarantees", () => {
     const copy = sectionCopy("login-signup");
 
-    expect(copy).toMatch(/Start free today.*Create an account/i);
+    expect(copy).toMatch(/Start free today.*Create account/i);
     expect(copy).toMatch(/confirmation email may be required/i);
     expect(copy).toMatch(/Google OAuth/i);
     expect(copy).toMatch(/Supabase Auth/i);

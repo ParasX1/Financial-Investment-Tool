@@ -57,23 +57,19 @@ describe("useHomeEntryController", () => {
     navigate.mockResolvedValue(true);
   });
 
-  it("preserves a gated destination while switching auth dialogs", () => {
+  it("preserves a gated destination while closing and reopening auth", () => {
     const harness = renderController({});
 
     act(() => harness.latest.selectRoute(marketNewsRoute));
     expect(harness.latest.authDialog).toBe("login");
     expect(harness.latest.redirectTo).toBe("/MarketNews");
 
-    act(() => harness.latest.switchToSignUp());
-    expect(harness.latest.authDialog).toBe("signup");
-    expect(harness.latest.redirectTo).toBe("/MarketNews");
-
     act(() => harness.latest.closeAuthDialog());
     expect(harness.latest.authDialog).toBeNull();
     expect(harness.latest.redirectTo).toBe("/MarketNews");
 
-    act(() => harness.latest.switchToLogin());
-    expect(harness.latest.authDialog).toBe("login");
+    act(() => harness.latest.openSignUp("/MarketNews"));
+    expect(harness.latest.authDialog).toBe("signup");
     expect(harness.latest.redirectTo).toBe("/MarketNews");
     expect(navigate).not.toHaveBeenCalled();
 

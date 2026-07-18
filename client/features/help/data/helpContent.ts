@@ -18,17 +18,17 @@ export const helpSections = Object.freeze([
       {
         question: "How do I create an account?",
         answer:
-          "On the Home page, select Sign in or Start free today, then choose Create an account in the sign-in dialog. Enter your name, email, and password, or continue with Google. A confirmation email may be required before email and password sign-in, depending on the authentication configuration.",
+          "On the Home page, select Sign in or Start free today, then choose Create account in the account dialog. Enter your name, email, and password, or continue with Google. A confirmation email may be required before email and password sign-in, depending on the authentication configuration.",
       },
       {
         question: "How do I log in?",
         answer:
-          "Select Sign in, then enter your email and password or choose Log in with Google. The destination depends on where you opened the dialog; most general sign-in entry points open the Portfolio dashboard.",
+          "Select Sign in, then enter your email and password or choose Continue with Google. FIT returns you to the page where you opened the account dialog.",
       },
       {
         question: "Can I use social login?",
         answer:
-          "Yes. FIT supports Google OAuth for both sign-up and sign-in through the Google button in the account dialogs.",
+          "Yes. FIT supports Google OAuth for both sign-up and sign-in through the Google button in the shared account dialog.",
       },
       {
         question: "How is account access handled?",

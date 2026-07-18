@@ -80,20 +80,6 @@ export function useHomeEntryController({
     [authLoading, navigate, signedIn],
   );
 
-  const switchToLogin = React.useCallback(() => {
-    setEntryState((current) => ({
-      ...current,
-      authDialog: "login",
-    }));
-  }, []);
-
-  const switchToSignUp = React.useCallback(() => {
-    setEntryState((current) => ({
-      ...current,
-      authDialog: "signup",
-    }));
-  }, []);
-
   const closeAuthDialog = React.useCallback(() => {
     setEntryState((current) => ({
       ...current,
@@ -110,7 +96,5 @@ export function useHomeEntryController({
     redirectTo: entryState.redirectTo,
     selectRoute,
     signedIn,
-    switchToLogin,
-    switchToSignUp,
   };
 }

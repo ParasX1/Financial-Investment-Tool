@@ -1,6 +1,5 @@
 import * as React from "react";
-import ModalLogin from "@/components/Modal/ModalLogin";
-import ModalSignUp from "@/components/Modal/ModalSignUp";
+import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
@@ -30,8 +29,7 @@ const messageToneClass = {
 
 export function ProfileMain() {
   const profile = useProfileController();
-  const [showLogin, setShowLogin] = React.useState(false);
-  const [showSignUp, setShowSignUp] = React.useState(false);
+  const authDialog = useAuthDialog();
   const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>(null);
   const [dialogOwnerUserId, setDialogOwnerUserId] = React.useState<
     string | null
@@ -237,7 +235,7 @@ export function ProfileMain() {
                           styles.buttonPrimary,
                           FIT_FOCUS_VISIBLE,
                         )}
-                        onClick={() => setShowLogin(true)}
+                        onClick={() => authDialog.openSignIn("/Profile")}
                       >
                         Sign in
                       </button>
@@ -248,7 +246,7 @@ export function ProfileMain() {
                           styles.buttonSecondary,
                           FIT_FOCUS_VISIBLE,
                         )}
-                        onClick={() => setShowSignUp(true)}
+                        onClick={() => authDialog.openSignUp("/Profile")}
                       >
                         Create account
                       </button>
@@ -480,24 +478,7 @@ export function ProfileMain() {
         </div>
       </ProfileEditDialog>
 
-      <ModalLogin
-        redirectTo="/Profile"
-        show={showLogin}
-        onShowSignUp={() => {
-          setShowLogin(false);
-          setShowSignUp(true);
-        }}
-        onHide={() => setShowLogin(false)}
-      />
-      <ModalSignUp
-        redirectTo="/Profile"
-        show={showSignUp}
-        setLogin={(nextShowLogin) => {
-          setShowSignUp(false);
-          setShowLogin(nextShowLogin);
-        }}
-        onHide={() => setShowSignUp(false)}
-      />
+      <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
     </FitPageShell>
   );
 }

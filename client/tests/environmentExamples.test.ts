@@ -14,7 +14,7 @@ describe("environment example contracts", () => {
       "NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url",
     );
     expect(example).toContain(
-      "NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_publishable_key",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key",
     );
     expect(example).not.toContain("NEXT_PUBLIC_ANON=");
     expect(example).not.toMatch(/https:\/\/[a-z]{20}\.supabase\.co/i);
@@ -29,5 +29,14 @@ describe("environment example contracts", () => {
     expect(example).toContain("SUPABASE_URL=your_supabase_project_url");
     expect(example).toContain("SUPABASE_KEY=your_supabase_publishable_key");
     expect(example).not.toMatch(/sb_publishable_[A-Za-z0-9_-]+/);
+  });
+
+  it("allows local auth callbacks to return to any application route", () => {
+    const config = readText(
+      path.join(repositoryRoot, "supabase", "config.toml"),
+    );
+
+    expect(config).toContain('"http://localhost:3000/**"');
+    expect(config).toContain('"http://127.0.0.1:3000/**"');
   });
 });

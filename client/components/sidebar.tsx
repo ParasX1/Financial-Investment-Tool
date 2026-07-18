@@ -17,7 +17,7 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import "boxicons/css/boxicons.min.css";
 import { useAuth } from "@/components/authContext";
-import ModalLogin from "@/components/Modal/ModalLogin";
+import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { FitLogo } from "@/components/shared/FitLogo";
 import { fitNav } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, fitType } from "@/components/shared/uiPrimitives";
@@ -291,7 +291,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [initialSidebarSnapshot] = useState(getInitialSidebarSnapshot);
   const [expanded, setExpanded] = useState(initialSidebarSnapshot.expanded);
   const [showLabel, setShowLabel] = useState(initialSidebarSnapshot.showLabel);
-  const [showLogin, setShowLogin] = useState(false);
+  const authDialog = useAuthDialog();
   const [compact, setCompact] = useState(initialSidebarSnapshot.compact);
   const [canHoverExpand, setCanHoverExpand] = useState(
     initialSidebarSnapshot.canHoverExpand,
@@ -482,10 +482,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }, CLOSE_DELAY_MS);
   }
 
-  function openLogin() {
-    setShowLogin(true);
-  }
-
   function handleBlur(event: React.FocusEvent<HTMLElement>) {
     if (pointerInteractionRef.current || navigationInteractionRef.current)
       return;
@@ -580,7 +576,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           locked={locked}
           onNavigate={rememberNavigationInteraction}
           showLabel={showLabel}
-          onLockedSelect={openLogin}
+          onLockedSelect={() => authDialog.openSignIn(item.href)}
         />
       </li>
     );
@@ -756,7 +752,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   locked={false}
                   onNavigate={rememberNavigationInteraction}
                   showLabel={showLabel}
-                  onLockedSelect={openLogin}
+                  onLockedSelect={() => authDialog.openSignIn("/")}
                 />
               </li>
             </ul>
@@ -764,7 +760,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </aside>
 
-      <ModalLogin show={showLogin} onHide={() => setShowLogin(false)} />
+      <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
     </>
   );
 };

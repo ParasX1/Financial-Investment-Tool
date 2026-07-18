@@ -24,8 +24,6 @@ function buildController(overrides: Record<string, unknown> = {}) {
     redirectTo: "/dashboardView",
     selectRoute: jest.fn<any>(),
     signedIn: false,
-    switchToLogin: jest.fn<any>(),
-    switchToSignUp: jest.fn<any>(),
     ...overrides,
   };
 }
@@ -69,57 +67,18 @@ beforeAll(async () => {
         );
       },
   );
-  jest.doMock(
-    "@/components/Modal/ModalLogin",
-    () =>
-      function MockLogin({
-        onHide,
-        onShowSignUp,
-        redirectTo,
-        show,
-      }: {
-        onHide: () => void;
-        onShowSignUp: () => void;
-        redirectTo: string;
-        show: boolean;
-      }) {
-        return show ? (
-          <section aria-label="Login modal" data-redirect-to={redirectTo}>
-            <button onClick={onShowSignUp}>Switch to sign up</button>
-            <button onClick={onHide}>Close login</button>
-          </section>
-        ) : null;
-      },
-  );
-  jest.doMock(
-    "@/components/Modal/ModalSignUp",
-    () =>
-      function MockSignUp({
-        onHide,
-        redirectTo,
-        setLogin,
-        show,
-      }: {
-        onHide: () => void;
-        redirectTo: string;
-        setLogin: (show: boolean) => void;
-        show: boolean;
-      }) {
-        return show ? (
-          <section aria-label="Sign-up modal" data-redirect-to={redirectTo}>
-            <button
-              onClick={() => {
-                onHide();
-                setLogin(true);
-              }}
-            >
-              Switch to login
-            </button>
-            <button onClick={onHide}>Close sign up</button>
-          </section>
-        ) : null;
-      },
-  );
+  jest.doMock("@/features/auth", () => ({
+    AuthDialog: ({ initialMode, onHide, redirectTo, show }: any) =>
+      show ? (
+        <section
+          aria-label="Auth dialog"
+          data-mode={initialMode}
+          data-redirect-to={redirectTo}
+        >
+          <button onClick={onHide}>Close auth</button>
+        </section>
+      ) : null,
+  }));
 
   ({ HomeScreenView } = await import("./HomeScreen"));
 });
@@ -166,16 +125,18 @@ describe("HomeScreenView", () => {
       )?.props.content,
     ).toBe(homeMetadata.themeColor);
     expect(
-      renderer.root.findAllByProps({ "aria-label": "Login modal" }),
+      renderer.root.findAllByProps({ "aria-label": "Auth dialog" }),
     ).toHaveLength(1);
     expect(
-      renderer.root.findByProps({ "aria-label": "Login modal" }).props[
+      renderer.root.findByProps({ "aria-label": "Auth dialog" }).props[
         "data-redirect-to"
       ],
     ).toBe("/MarketNews");
     expect(
-      renderer.root.findAllByProps({ "aria-label": "Sign-up modal" }),
-    ).toHaveLength(0);
+      renderer.root.findByProps({ "aria-label": "Auth dialog" }).props[
+        "data-mode"
+      ],
+    ).toBe("sign-in");
 
     act(() => renderer.unmount());
   });
@@ -208,7 +169,7 @@ describe("HomeScreenView", () => {
     act(() => renderer.unmount());
   });
 
-  it("matches the sign-up modal close-then-login transition", () => {
+  it("opens the unified dialog in create-account mode", () => {
     mockController = buildController({ authDialog: "signup" });
     let renderer!: ReactTestRenderer;
     act(() => {
@@ -217,17 +178,12 @@ describe("HomeScreenView", () => {
       );
     });
 
-    act(() => {
-      renderer.root
-        .findByProps({ children: "Switch to login" })
-        .props.onClick();
+    expect(renderer.root.findByProps({ "aria-label": "Auth dialog" }).props).toMatchObject({
+      "data-mode": "sign-up",
+      "data-redirect-to": "/dashboardView",
     });
-
+    act(() => renderer.root.findByProps({ children: "Close auth" }).props.onClick());
     expect(mockController.closeAuthDialog).toHaveBeenCalledTimes(1);
-    expect(mockController.switchToLogin).toHaveBeenCalledTimes(1);
-    expect(
-      mockController.closeAuthDialog.mock.invocationCallOrder[0],
-    ).toBeLessThan(mockController.switchToLogin.mock.invocationCallOrder[0]);
 
     act(() => renderer.unmount());
   });
