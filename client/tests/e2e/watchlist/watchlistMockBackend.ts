@@ -1,6 +1,6 @@
 import type { Page, Route } from "@playwright/test";
 
-const PROJECT_URL = "https://egjnhetinyoyrhbetbxi.supabase.co";
+const PROJECT_URL = "https://watchlist-e2e.supabase.co";
 const TEST_USER_ID = "11111111-1111-4111-8111-111111111111";
 
 type WatchlistRow = {
@@ -54,7 +54,7 @@ export async function installWatchlistMockBackend(
   await page.addInitScript(
     ({ now, userId }) => {
       window.localStorage.setItem(
-        "sb-egjnhetinyoyrhbetbxi-auth-token",
+        "sb-watchlist-e2e-auth-token",
         JSON.stringify({
           access_token: "watchlist-e2e-access-token",
           expires_at: Math.floor(Date.now() / 1000) + 3600,

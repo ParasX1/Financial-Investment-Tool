@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import os
 import traceback
 from .metrics import (
     fetch_stock_data,
@@ -15,21 +16,25 @@ from .metrics import (
     calculate_efficient_frontier
 )
 
+from .supabase_client import (
+    SupabaseConfigurationError,
+    get_supabase_client,
+)
 
-from supabase import create_client, Client
 
-def create_app():
+def create_app(test_config=None, supabase_client=None):
     # app instance
     app = Flask(__name__)
+    app.config.from_mapping(
+        SUPABASE_URL=os.getenv("SUPABASE_URL"),
+        SUPABASE_KEY=os.getenv("SUPABASE_KEY"),
+    )
     app.config.from_prefixed_env()
+    if test_config is not None:
+        app.config.update(test_config)
+    if supabase_client is not None:
+        app.extensions["supabase"] = supabase_client
     CORS(app)
-
-    # supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
-
-    SUPABASE_URL = "https://egjnhetinyoyrhbetbxi.supabase.co"
-    SUPABASE_KEY = "sb_publishable_XKRo3ReKDr3s3cZM5zbjMQ_VyQLJFaC"
-
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
     # These routes trusted a caller-supplied user id and accessed Users with a
@@ -59,15 +64,25 @@ def create_app():
         #     ]
         # print(stock_data_json)
         
-        response = (
-            supabase.table("stock_data")
-            .select("MSFT")
-            .execute()
-        )
-        
-        # print(response)
-        data = response.data
-        return(data)
+        try:
+            supabase = get_supabase_client(app)
+        except SupabaseConfigurationError:
+            return jsonify({
+                "error": "Market data service is not configured."
+            }), 503
+
+        try:
+            response = (
+                supabase.table("stock_data")
+                .select("MSFT")
+                .execute()
+            )
+            return jsonify(response.data)
+        except Exception:
+            traceback.print_exc()
+            return jsonify({
+                "error": "Market data is temporarily unavailable."
+            }), 502
         # return jsonify(fixed_data)
         # return jsonify(stock_data_json)
 

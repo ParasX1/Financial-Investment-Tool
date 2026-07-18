@@ -3,6 +3,9 @@ import next from "next";
 
 const hostname = "127.0.0.1";
 const port = 3000;
+process.env.NEXT_PUBLIC_SUPABASE_URL ??=
+  "https://watchlist-e2e.supabase.co";
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= "watchlist-e2e-anon-key";
 const app = next({ dev: true, hostname, port });
 const handle = app.getRequestHandler();
 
