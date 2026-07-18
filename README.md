@@ -42,6 +42,8 @@ python -m src.server
 
 The backend can start without Supabase configuration. Routes that need
 Supabase return a configuration error until those values are provided.
+Exploratory analysis notebooks live in `server/notebooks`; they are not part
+of the Flask runtime source.
 
 ## Testing
 
