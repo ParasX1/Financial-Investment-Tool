@@ -33,9 +33,10 @@ to compile and host the frontend locally.
 We use flask to run our backend.
 Use `server/.env.example` as the configuration checklist and provide its
 values through your shell or deployment environment. Then, in the `server`
-folder, use:
+folder, install the backend development dependencies and run the app:
 
 ```
+python -m pip install -r requirements-dev.txt
 python -m src.server
 ```
 
