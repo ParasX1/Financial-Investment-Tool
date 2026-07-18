@@ -27,6 +27,9 @@ to compile and host the frontend locally.
 2. Add the browser-safe Supabase values and any server-only news API keys.
 3. Run `npm run dev`.
 
+Use `client/assets` for images imported by source files. Reserve
+`client/public/assets` for files that must be addressed by a public URL; do
+not keep duplicate copies unless both access modes are active.
 
 **Backend**
 
