@@ -7,13 +7,15 @@ const COMMENT_SELECT =
 const COMMENT_SELECT_WITHOUT_IMAGE_PATH =
   "id, post_id, user_name, body, image_url, created_at, author_id";
 const POST_SELECT =
+  "id, title, body, tags, post_type, time_frame, symbol, source_url, image_url, image_path, votes, created_at, author_id";
+const POST_SELECT_WITHOUT_CONTEXT =
   "id, title, body, tags, image_url, image_path, votes, created_at, author_id";
 const POST_SELECT_WITHOUT_IMAGE_PATH =
-  "id, title, body, tags, image_url, votes, created_at, author_id";
+  "id, title, body, tags, post_type, time_frame, symbol, source_url, image_url, votes, created_at, author_id";
 const POST_SELECT_WITHOUT_IMAGE =
-  "id, title, body, tags, votes, created_at, author_id";
+  "id, title, body, tags, post_type, time_frame, symbol, source_url, votes, created_at, author_id";
 const POST_SELECT_WITHOUT_TAGS =
-  "id, title, body, votes, created_at, author_id";
+  "id, title, body, post_type, time_frame, symbol, source_url, votes, created_at, author_id";
 const LEGACY_POST_SELECT = "id, title, votes, created_at, author_id";
 
 type CommunityQueryResult<T> = {
@@ -65,10 +67,23 @@ function isMissingColumn(error: unknown, columnName: string) {
 
 function isMissingExpectedPostColumn(error: unknown) {
   return (
+    isMissingColumn(error, "post_type") ||
+    isMissingColumn(error, "time_frame") ||
+    isMissingColumn(error, "symbol") ||
+    isMissingColumn(error, "source_url") ||
     isMissingColumn(error, "image_path") ||
     isMissingColumn(error, "image_url") ||
     isMissingColumn(error, "tags") ||
     isMissingColumn(error, "body")
+  );
+}
+
+function isMissingResearchContextColumn(error: unknown) {
+  return (
+    isMissingColumn(error, "post_type") ||
+    isMissingColumn(error, "time_frame") ||
+    isMissingColumn(error, "symbol") ||
+    isMissingColumn(error, "source_url")
   );
 }
 
@@ -80,6 +95,7 @@ export async function loadCommunityPostRows(db: SupabaseClient) {
   const selects = [
     POST_SELECT,
     POST_SELECT_WITHOUT_IMAGE_PATH,
+    POST_SELECT_WITHOUT_CONTEXT,
     POST_SELECT_WITHOUT_IMAGE,
     POST_SELECT_WITHOUT_TAGS,
     LEGACY_POST_SELECT,
@@ -219,6 +235,10 @@ export async function insertCommunityPostRow(
       title: postDraft.title,
       body: postDraft.body,
       tags: postDraft.tags,
+      post_type: postDraft.postType,
+      time_frame: postDraft.timeFrame,
+      symbol: postDraft.symbol,
+      source_url: postDraft.sourceUrl,
       image_url: postDraft.imageUrl,
       image_path: postDraft.imagePath,
       author_id: uid,
@@ -231,10 +251,24 @@ export async function insertCommunityPostRow(
         title: postDraft.title,
         body: postDraft.body,
         tags: postDraft.tags,
+        post_type: postDraft.postType,
+        time_frame: postDraft.timeFrame,
+        symbol: postDraft.symbol,
+        source_url: postDraft.sourceUrl,
         image_url: postDraft.imageUrl,
         author_id: uid,
       },
       select: POST_SELECT_WITHOUT_IMAGE_PATH,
+    },
+    {
+      values: {
+        title: postDraft.title,
+        body: postDraft.body,
+        tags: postDraft.tags,
+        image_url: postDraft.imageUrl,
+        author_id: uid,
+      },
+      select: POST_SELECT_WITHOUT_CONTEXT,
     },
     {
       values: {
@@ -264,6 +298,11 @@ export async function insertCommunityPostRow(
   const attempts = hasImage
     ? [fullSchemaAttempt]
     : [fullSchemaAttempt, ...legacyAttempts];
+  const hasExplicitResearchContext =
+    postDraft.postType !== "discussion" ||
+    Boolean(
+      postDraft.timeFrame || postDraft.symbol || postDraft.sourceUrl,
+    );
 
   for (const attempt of attempts) {
     const { data: row, error } = (await db
@@ -272,6 +311,14 @@ export async function insertCommunityPostRow(
       .select(attempt.select)
       .single()) as CommunityQueryResult<DBPost>;
 
+    if (
+      hasExplicitResearchContext &&
+      isMissingResearchContextColumn(error)
+    ) {
+      throw new Error(
+        "A Community database update is required before this research context can be published.",
+      );
+    }
     if (isMissingExpectedPostColumn(error)) continue;
     if (error) throw error;
     if (row) return row;

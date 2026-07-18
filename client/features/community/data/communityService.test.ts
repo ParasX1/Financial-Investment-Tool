@@ -169,6 +169,10 @@ describe("Community delete image cleanup", () => {
         table: "post_likes",
         result: { data: [], error: null },
       },
+      {
+        table: "post_saves",
+        result: { data: [], error: null },
+      },
     ]);
 
     const result = await loadCommunityData(db, "user-1");
@@ -187,7 +191,12 @@ describe("Community delete image cleanup", () => {
 
     const result = await loadCommunityData(db, "user-1");
 
-    expect(result).toEqual({ posts: [], comments: [], likedPostIds: [] });
+    expect(result).toEqual({
+      posts: [],
+      comments: [],
+      likedPostIds: [],
+      savedPostIds: [],
+    });
   });
 
   it("removes a deleted comment image from storage", async () => {

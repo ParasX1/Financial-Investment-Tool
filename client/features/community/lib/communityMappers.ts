@@ -1,5 +1,11 @@
 // File purpose: Maps database and local draft records into Community UI post and comment models.
 import { createCommunityId } from "./id";
+import {
+  normalizeCommunityPostType,
+  normalizeCommunitySourceUrl,
+  normalizeCommunitySymbol,
+  normalizeCommunityTimeFrame,
+} from "./communityPostMetadata";
 import type {
   CommentRow,
   CommentUI,
@@ -75,6 +81,10 @@ export function postFromRow(
     time: toRelativeTime(row.created_at),
     sortTime: new Date(row.created_at).getTime(),
     tags: savedTags ?? inferTags(`${title} ${body}`),
+    postType: normalizeCommunityPostType(row.post_type),
+    timeFrame: normalizeCommunityTimeFrame(row.time_frame),
+    symbol: normalizeCommunitySymbol(row.symbol),
+    sourceUrl: normalizeCommunitySourceUrl(row.source_url),
     imageUrl: row.image_url ?? undefined,
     imagePath: row.image_path ?? undefined,
     commentCount: 0,
@@ -119,6 +129,10 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
     time: "just now",
     sortTime: Date.now(),
     tags: copy.tags,
+    postType: copy.postType,
+    timeFrame: copy.timeFrame,
+    symbol: copy.symbol,
+    sourceUrl: copy.sourceUrl,
     imageUrl: draft.imageUrl ?? undefined,
     imagePath: draft.imagePath ?? undefined,
     commentCount: 0,

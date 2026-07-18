@@ -6,6 +6,22 @@ export type CommunityFeedView =
   | "liked"
   | "commented";
 
+export type CommunityPostType =
+  | "question"
+  | "analysis"
+  | "news"
+  | "portfolio"
+  | "discussion";
+
+export type CommunityTimeFrame = "short" | "medium" | "long";
+
+export type CommunityReportReason =
+  | "spam_or_scam"
+  | "misleading_financial_claim"
+  | "market_manipulation"
+  | "harassment"
+  | "other";
+
 export type CommunityFeedCounts = Record<CommunityFeedView, number>;
 
 export type CommunityTopTimeRange =
@@ -20,16 +36,30 @@ export type DiscussionDraft = {
   title: string;
   body: string;
   tags: string[];
+  postType: CommunityPostType | "";
+  timeFrame: CommunityTimeFrame | "";
+  symbol: string;
+  sourceUrl: string;
   imageFile: File | null;
   imagePreviewUrl: string | null;
 };
 
 export type DiscussionDraftField = "title" | "body";
 
+export type DiscussionDraftMetadataField =
+  | "postType"
+  | "timeFrame"
+  | "symbol"
+  | "sourceUrl";
+
 export type DiscussionPostInput = {
   title: string;
   body: string;
   tags: string[];
+  postType: CommunityPostType;
+  timeFrame: CommunityTimeFrame | null;
+  symbol: string | null;
+  sourceUrl: string | null;
   imageUrl?: string | null;
   imagePath?: string | null;
 };
@@ -44,6 +74,10 @@ export type SeedPost = {
   time: string;
   sortTime: number;
   tags: string[];
+  postType?: CommunityPostType;
+  timeFrame?: CommunityTimeFrame | null;
+  symbol?: string | null;
+  sourceUrl?: string | null;
   imageUrl?: string | null;
   imagePath?: string | null;
   commentCount: number;
@@ -55,6 +89,10 @@ export type DBPost = {
   title: string;
   body?: string | null;
   tags?: string[] | null;
+  post_type?: string | null;
+  time_frame?: string | null;
+  symbol?: string | null;
+  source_url?: string | null;
   image_url?: string | null;
   image_path?: string | null;
   votes: number;

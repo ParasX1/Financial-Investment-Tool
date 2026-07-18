@@ -7,6 +7,10 @@ const EMPTY_DRAFT: DiscussionDraft = {
   title: "",
   body: "",
   tags: [],
+  postType: "",
+  timeFrame: "",
+  symbol: "",
+  sourceUrl: "",
   imageFile: null,
   imagePreviewUrl: null,
 };
@@ -48,6 +52,12 @@ export function useCommunityOwnedDraft(ownerKey: string) {
     },
     [draftState.setDraftField, mayEditCurrentDraft],
   );
+  const setDraftMetadataField = React.useCallback(
+    (...args: Parameters<typeof draftState.setDraftMetadataField>) => {
+      if (mayEditCurrentDraft()) draftState.setDraftMetadataField(...args);
+    },
+    [draftState.setDraftMetadataField, mayEditCurrentDraft],
+  );
   const toggleDraftTag = React.useCallback(
     (...args: Parameters<typeof draftState.toggleDraftTag>) => {
       if (mayEditCurrentDraft()) draftState.toggleDraftTag(...args);
@@ -70,6 +80,7 @@ export function useCommunityOwnedDraft(ownerKey: string) {
   return {
     draft: ownerMatches ? draftState.draft : EMPTY_DRAFT,
     setDraftField,
+    setDraftMetadataField,
     toggleDraftTag,
     clearDraftTags,
     setDraftImage,

@@ -1,6 +1,10 @@
-// File purpose: Manages create-post draft text, tags, attached image preview, and draft reset behavior.
+// File purpose: Manages create-post draft text, metadata, tags, attached image preview, and draft reset behavior.
 import * as React from "react";
-import type { DiscussionDraft, DiscussionDraftField } from "../types";
+import type {
+  DiscussionDraft,
+  DiscussionDraftField,
+  DiscussionDraftMetadataField,
+} from "../types";
 import {
   MAX_DISCUSSION_TAGS,
   getDefaultSelectedTags,
@@ -11,6 +15,10 @@ const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
   title: "",
   body: "",
   tags: [],
+  postType: "",
+  timeFrame: "",
+  symbol: "",
+  sourceUrl: "",
   imageFile: null,
   imagePreviewUrl: null,
 };
@@ -35,6 +43,13 @@ export function useCommunityDraft() {
         if (tagsEditedRef.current) return next;
         return { ...next, tags: getDefaultSelectedTags(next) };
       });
+    },
+    [],
+  );
+
+  const setDraftMetadataField = React.useCallback(
+    (field: DiscussionDraftMetadataField, value: string) => {
+      setDraft((previous) => ({ ...previous, [field]: value }));
     },
     [],
   );
@@ -106,6 +121,7 @@ export function useCommunityDraft() {
   return {
     draft,
     setDraftField,
+    setDraftMetadataField,
     toggleDraftTag,
     clearDraftTags,
     setDraftImage,

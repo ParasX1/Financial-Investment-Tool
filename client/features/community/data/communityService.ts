@@ -7,6 +7,7 @@ import {
   deleteCommunityCommentRow,
   deleteCommunityPostRow,
   insertCommunityCommentRow,
+  insertCommunityPostReportRow,
   insertCommunityPostRow,
   isMissingAuthorIdColumn,
   loadCommentImagePathRowsForPost,
@@ -14,12 +15,27 @@ import {
   loadCommunityPostRows,
   selectCommentDeleteContext,
   selectLikedPostRows,
+  selectSavedPostRows,
   selectPostDeleteContext,
   setCommunityPostLikeValue,
+  setCommunityPostSavedValue,
   type CommentDeleteContext,
 } from "./communityRepository";
 import { removeCommunityImages, uniqueImagePaths } from "./communityStorage";
-import type { CommentEntry, DiscussionPostInput, PostUI } from "../types";
+import type {
+  CommentEntry,
+  CommunityReportReason,
+  DiscussionPostInput,
+  PostUI,
+} from "../types";
+
+const COMMUNITY_REPORT_REASONS = new Set<CommunityReportReason>([
+  "spam_or_scam",
+  "misleading_financial_claim",
+  "market_manipulation",
+  "harassment",
+  "other",
+]);
 
 async function getSessionUserId(db: SupabaseClient) {
   const { data } = await db.auth.getSession();
@@ -38,8 +54,10 @@ export async function loadCommunityData(
   posts: PostUI[];
   comments: CommentEntry[];
   likedPostIds: string[];
+  savedPostIds: string[];
   commentsError?: string;
   likesError?: string;
+  savesError?: string;
 }> {
   const activeUserId =
     currentUserId === undefined ? await getSessionUserId(db) : currentUserId;
@@ -54,14 +72,17 @@ export async function loadCommunityData(
   const posts: PostUI[] = dbPosts;
 
   if (!dbPosts.length) {
-    return { posts, comments: [], likedPostIds: [] };
+    return { posts, comments: [], likedPostIds: [], savedPostIds: [] };
   }
 
   const postIds = dbPosts.map((post) => post.id);
   const commentsQuery = await loadCommunityCommentRows(db, postIds);
 
   const { data: allComments, error: commentsError } = commentsQuery;
-  const likedPostIds = await loadLikedPostIds(db, postIds, activeUserId);
+  const [likedPostIds, savedPostIds] = await Promise.all([
+    loadLikedPostIds(db, postIds, activeUserId),
+    loadSavedPostIds(db, postIds, activeUserId),
+  ]);
 
   if (commentsError) {
     console.error(
@@ -72,8 +93,10 @@ export async function loadCommunityData(
       posts,
       comments: [],
       likedPostIds: likedPostIds.ids,
+      savedPostIds: savedPostIds.ids,
       commentsError: "Posts loaded, but comments could not be loaded.",
       likesError: likedPostIds.error,
+      savesError: savedPostIds.error,
     };
   }
 
@@ -84,7 +107,9 @@ export async function loadCommunityData(
       comment: commentFromRow(row, activeUserId),
     })),
     likedPostIds: likedPostIds.ids,
+    savedPostIds: savedPostIds.ids,
     likesError: likedPostIds.error,
+    savesError: savedPostIds.error,
   };
 }
 
@@ -122,6 +147,35 @@ async function loadLikedPostIds(
     return {
       ids: [] as string[],
       error: "Posts loaded, but saved like state could not be loaded.",
+    };
+  }
+
+  return { ids: (data ?? []).map((row) => row.post_id) };
+}
+
+async function loadSavedPostIds(
+  db: SupabaseClient,
+  postIds: string[],
+  currentUserId: string | null,
+) {
+  if (!currentUserId || !postIds.length) {
+    return { ids: [] as string[] };
+  }
+
+  const { data, error } = await selectSavedPostRows(
+    db,
+    postIds,
+    currentUserId,
+  );
+
+  if (error) {
+    console.error(
+      "load saves failed:",
+      getErrorMessage(error, "Unknown saved-posts load error."),
+    );
+    return {
+      ids: [] as string[],
+      error: "Posts loaded, but saved discussions could not be loaded.",
     };
   }
 
@@ -263,4 +317,60 @@ export async function setCommunityPostLike(
   liked: boolean,
 ) {
   return setCommunityPostLikeValue(db, postId, liked);
+}
+
+export async function setCommunityPostSaved(
+  db: SupabaseClient,
+  postId: string,
+  saved: boolean,
+  expectedUserId: string,
+) {
+  const activeUserId = requireSessionUserId(
+    await getSessionUserId(db),
+    "save a discussion",
+  );
+  if (activeUserId !== expectedUserId) {
+    throw new Error("Your session changed. Please try again.");
+  }
+  if (!postId.trim()) throw new Error("Choose a discussion to save.");
+
+  await setCommunityPostSavedValue(
+    db,
+    postId,
+    activeUserId,
+    saved,
+  );
+}
+
+export async function reportCommunityPost(
+  db: SupabaseClient,
+  input: {
+    postId: string;
+    reason: CommunityReportReason;
+    details?: string | null;
+    expectedUserId: string;
+  },
+) {
+  const activeUserId = requireSessionUserId(
+    await getSessionUserId(db),
+    "report a discussion",
+  );
+  if (activeUserId !== input.expectedUserId) {
+    throw new Error("Your session changed. Please try again.");
+  }
+  if (!input.postId.trim()) throw new Error("Choose a discussion to report.");
+  if (!COMMUNITY_REPORT_REASONS.has(input.reason)) {
+    throw new Error("Choose a valid report reason.");
+  }
+
+  const details = input.details?.trim() || null;
+  if (details && details.length > 500) {
+    throw new Error("Report details must be 500 characters or fewer.");
+  }
+
+  await insertCommunityPostReportRow(db, {
+    postId: input.postId,
+    reason: input.reason,
+    details,
+  });
 }
