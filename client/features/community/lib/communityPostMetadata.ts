@@ -1,8 +1,5 @@
 // File purpose: Validates explicit, author-selected Community research context.
-import type {
-  CommunityPostType,
-  CommunityTimeFrame,
-} from "../types";
+import type { CommunityPostType, CommunityTimeFrame } from "../types";
 
 const POST_TYPE_LABELS: Record<CommunityPostType, string> = {
   analysis: "Analysis",
@@ -83,4 +80,28 @@ export function getCommunityTimeFrameLabel(
   timeFrame: CommunityTimeFrame | null,
 ): string | null {
   return timeFrame ? TIME_FRAME_LABELS[timeFrame] : null;
+}
+
+export function validateCommunityResearchDraft(input: {
+  postType: unknown;
+  symbol: unknown;
+  sourceUrl: unknown;
+}): string | null {
+  if (
+    !input.postType ||
+    normalizeCommunityPostType(input.postType) !== input.postType
+  ) {
+    return "Choose a post type.";
+  }
+  if (typeof input.symbol === "string" && input.symbol.trim()) {
+    if (!normalizeCommunitySymbol(input.symbol)) {
+      return "Enter a valid ticker, such as CBA.AX or NVDA.";
+    }
+  }
+  if (typeof input.sourceUrl === "string" && input.sourceUrl.trim()) {
+    if (!normalizeCommunitySourceUrl(input.sourceUrl)) {
+      return "Enter a valid http or https source URL.";
+    }
+  }
+  return null;
 }

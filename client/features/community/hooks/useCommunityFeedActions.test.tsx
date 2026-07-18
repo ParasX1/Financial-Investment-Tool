@@ -43,6 +43,7 @@ function createDependencies(): CommunityFeedActionDependencies {
     deletePost: jest.fn<any>(),
     removeImage: jest.fn<any>().mockResolvedValue(undefined),
     setPostLike: jest.fn<any>(),
+    setPostSaved: jest.fn<any>(),
     uploadCommentImage: jest.fn<any>(),
   };
 }

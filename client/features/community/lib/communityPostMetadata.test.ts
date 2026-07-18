@@ -5,6 +5,7 @@ import {
   normalizeCommunitySourceUrl,
   normalizeCommunitySymbol,
   normalizeCommunityTimeFrame,
+  validateCommunityResearchDraft,
 } from "./communityPostMetadata";
 import { normalizeDiscussionDraft } from "./communityDraft";
 
@@ -58,5 +59,36 @@ describe("Community post metadata", () => {
       symbol: "CBA.AX",
       sourceUrl: "https://www.asx.com.au/announcement",
     });
+  });
+
+  it("explains invalid explicit context instead of silently dropping it", () => {
+    expect(
+      validateCommunityResearchDraft({
+        postType: "",
+        symbol: "",
+        sourceUrl: "",
+      }),
+    ).toBe("Choose a post type.");
+    expect(
+      validateCommunityResearchDraft({
+        postType: "analysis",
+        symbol: "not a ticker",
+        sourceUrl: "",
+      }),
+    ).toBe("Enter a valid ticker, such as CBA.AX or NVDA.");
+    expect(
+      validateCommunityResearchDraft({
+        postType: "news",
+        symbol: "NVDA",
+        sourceUrl: "javascript:alert(1)",
+      }),
+    ).toBe("Enter a valid http or https source URL.");
+    expect(
+      validateCommunityResearchDraft({
+        postType: "question",
+        symbol: "",
+        sourceUrl: "",
+      }),
+    ).toBeNull();
   });
 });

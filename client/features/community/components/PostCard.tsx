@@ -1,28 +1,28 @@
 // File purpose: Renders a single discussion card with markdown content, tags, comments, likes, and delete actions.
 import * as React from "react";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
+import BookmarkRoundedIcon from "@mui/icons-material/BookmarkRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
 import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import Link from "next/link";
+import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
 import communityStyles from "../styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
+import { getCommunityPostSignals } from "../lib/communitySignals";
 import {
-  getCommunityPostSignals,
-  type CommunitySignalTone,
-} from "../lib/communitySignals";
+  getCommunityTimeFrameLabel,
+  normalizeCommunitySourceUrl,
+} from "../lib/communityPostMetadata";
 import { bodyContainsImageUrl } from "../lib/markdownEditor";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
 import { ExpandableText } from "./ExpandableText";
-
-function signalToneClass(tone: CommunitySignalTone) {
-  if (tone === "positive") return communityStyles.signalTonePositive;
-  if (tone === "warning") return communityStyles.signalToneWarning;
-  if (tone === "info") return communityStyles.signalToneInfo;
-  return communityStyles.signalToneNeutral;
-}
 
 export function PostCard({
   post,
@@ -30,6 +30,8 @@ export function PostCard({
   count,
   liked,
   likeBusy,
+  saved,
+  saveBusy,
   onAddComment,
   canDeletePost,
   canDeleteComment,
@@ -37,12 +39,16 @@ export function PostCard({
   onDeleteComment,
   onDeletePost,
   onToggleLike,
+  onToggleSave,
+  onReport,
 }: {
   post: PostUI;
   comments: CommentUI[];
   count: number;
   liked: boolean;
   likeBusy: boolean;
+  saved: boolean;
+  saveBusy: boolean;
   canDeletePost: boolean;
   canDeleteComment: (comment: CommentUI) => boolean;
   canAttachCommentImage: boolean;
@@ -50,6 +56,8 @@ export function PostCard({
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost?: (postId: string) => Promise<void> | void;
   onToggleLike: (postId: string) => Promise<void> | void;
+  onToggleSave: (postId: string) => Promise<void> | void;
+  onReport: (postId: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -60,17 +68,24 @@ export function PostCard({
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
+  const primaryTicker = signals.tickers[0]?.replace(/^\$/, "") ?? null;
+  const timeFrameLabel = getCommunityTimeFrameLabel(post.timeFrame ?? null);
+  const sourceHref = normalizeCommunitySourceUrl(post.sourceUrl);
   const tickerBadges = signals.tickers.map((ticker) => (
-    <span
+    <Link
       key={ticker}
+      href={getMarketNewsRouteHref({
+        tickerSymbol: ticker.replace(/^\$/, ""),
+      })}
       className={cn(
         communityStyles.signalBadge,
         communityStyles.signalBadgeTicker,
         communityStyles.wrapAnywhere,
+        FOCUS_VISIBLE,
       )}
     >
       {ticker}
-    </span>
+    </Link>
   ));
   const topicBadges = signals.topicLabels
     .filter((topic) => topic !== signals.primaryLabel)
@@ -177,11 +192,11 @@ export function PostCard({
 
         <aside
           className={communityStyles.postMetaRail}
-          aria-label={`Actions and signals for ${post.title}`}
+          aria-label={`Actions and context for ${post.title}`}
         >
           <div className={communityStyles.postRailHeader}>
             <div>
-              <p className={communityStyles.postRailLabel}>Signals</p>
+              <p className={communityStyles.postRailLabel}>Post type</p>
               <p className={communityStyles.postRailTitle}>
                 {signals.primaryLabel}
               </p>
@@ -218,26 +233,53 @@ export function PostCard({
             </p>
           )}
 
-          <dl className={communityStyles.postSignalGrid}>
-            <div>
-              <dt>Horizon</dt>
-              <dd className={signalToneClass(signals.horizon.tone)}>
-                {signals.horizon.label}
-              </dd>
-            </div>
-            <div>
-              <dt>Evidence</dt>
-              <dd className={signalToneClass(signals.evidence.tone)}>
-                {signals.evidence.label}
-              </dd>
-            </div>
-          </dl>
-
           {signals.sourceCount ? (
             <p className={communityStyles.postSourceLine}>
-              {signals.sourceCount.toLocaleString()} linked{" "}
+              {signals.sourceCount.toLocaleString()}{" "}
               {signals.sourceCount === 1 ? "source" : "sources"}
+              {signals.sourceDomains.length
+                ? ` · ${signals.sourceDomains.slice(0, 2).join(" · ")}`
+                : ""}
             </p>
+          ) : null}
+
+          {timeFrameLabel ? (
+            <p className={communityStyles.postSourceLine}>
+              Time frame · {timeFrameLabel}
+            </p>
+          ) : null}
+
+          {sourceHref ? (
+            <a
+              href={sourceHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                fitType.control,
+                FOCUS_VISIBLE,
+              )}
+            >
+              <OpenInNewRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              <span>Open source</span>
+            </a>
+          ) : null}
+
+          {primaryTicker ? (
+            <Link
+              href={getMarketNewsRouteHref({
+                tickerSymbol: primaryTicker,
+              })}
+              className={cn(
+                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                fitType.control,
+                FOCUS_VISIBLE,
+              )}
+              aria-label={`View market news for ${primaryTicker}`}
+            >
+              <OpenInNewRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              <span>View market news</span>
+            </Link>
           ) : null}
 
           <div className={communityStyles.postEngagementGrid}>
@@ -292,6 +334,47 @@ export function PostCard({
               <span className="tabular-nums" aria-live="polite">
                 {formattedVotes}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onToggleSave(post.id)}
+              disabled={saveBusy}
+              className={cn(
+                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] transition-colors",
+                fitType.control,
+                saved
+                  ? "bg-[#171b4a] text-[#cfd8ff]"
+                  : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                saveBusy ? "cursor-wait opacity-70" : "",
+                FOCUS_VISIBLE,
+              )}
+              aria-pressed={saved}
+              aria-label={`${saved ? "Remove saved" : "Save"} discussion`}
+            >
+              {saved ? (
+                <BookmarkRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              ) : (
+                <BookmarkBorderRoundedIcon
+                  sx={{ fontSize: 18 }}
+                  aria-hidden="true"
+                />
+              )}
+              <span>{saved ? "Saved" : "Save"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onReport(post.id)}
+              className={cn(
+                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                fitType.control,
+                FOCUS_VISIBLE,
+              )}
+              aria-label="Report discussion"
+            >
+              <FlagOutlinedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              <span>Report</span>
             </button>
           </div>
         </aside>

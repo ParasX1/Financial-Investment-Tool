@@ -25,13 +25,37 @@ import {
   type TextSelection,
 } from "../lib/markdownEditor";
 import {
+  getCommunityPostTypeLabel,
+  getCommunityTimeFrameLabel,
+} from "../lib/communityPostMetadata";
+import {
   getSmartTagSuggestions,
   mergeSelectedTagSuggestions,
 } from "../lib/smartTags";
-import type { DiscussionDraft, DiscussionDraftField } from "../types";
+import type {
+  CommunityPostType,
+  CommunityTimeFrame,
+  DiscussionDraft,
+  DiscussionDraftField,
+  DiscussionDraftMetadataField,
+} from "../types";
 import { validateCommunityImage } from "../lib/communityValidation";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
+
+const COMMUNITY_POST_TYPE_OPTIONS: CommunityPostType[] = [
+  "question",
+  "analysis",
+  "news",
+  "portfolio",
+  "discussion",
+];
+
+const COMMUNITY_TIME_FRAME_OPTIONS: CommunityTimeFrame[] = [
+  "short",
+  "medium",
+  "long",
+];
 
 const toolbarActions: Array<{
   command: MarkdownCommand;
@@ -69,6 +93,7 @@ export function CommunityComposer({
   creating,
   canAttachImage,
   onDraftChange,
+  onDraftMetadataChange,
   onClearTags,
   onDraftImageChange,
   onToggleTag,
@@ -79,6 +104,10 @@ export function CommunityComposer({
   creating: boolean;
   canAttachImage: boolean;
   onDraftChange: (field: DiscussionDraftField, value: string) => void;
+  onDraftMetadataChange: (
+    field: DiscussionDraftMetadataField,
+    value: string,
+  ) => void;
   onClearTags: () => void;
   onDraftImageChange: (file: File | null) => void;
   onToggleTag: (tag: string) => void;
@@ -96,7 +125,7 @@ export function CommunityComposer({
   const [linkText, setLinkText] = React.useState("");
   const [linkUrl, setLinkUrl] = React.useState("");
   const [linkError, setLinkError] = React.useState<string | null>(null);
-  const canSubmit = Boolean(draft.title.trim());
+  const canSubmit = Boolean(draft.title.trim() && draft.postType);
   const attachImageLabel = canAttachImage
     ? "Insert image"
     : "Sign in to insert images";
@@ -281,6 +310,98 @@ export function CommunityComposer({
               "disabled:cursor-not-allowed disabled:opacity-60",
             )}
           />
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,14rem)_minmax(0,12rem)_minmax(0,12rem)_minmax(0,1fr)]">
+            <label className={cn(fitType.eyebrow, fitText.label)}>
+              Post type
+              <select
+                value={draft.postType}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("postType", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                <option value="">Choose a type</option>
+                {COMMUNITY_POST_TYPE_OPTIONS.map((postType) => (
+                  <option key={postType} value={postType}>
+                    {getCommunityPostTypeLabel(postType)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={cn(fitType.eyebrow, fitText.label)}>
+              Time frame (optional)
+              <select
+                value={draft.timeFrame}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("timeFrame", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                <option value="">Not specified</option>
+                {COMMUNITY_TIME_FRAME_OPTIONS.map((timeFrame) => (
+                  <option key={timeFrame} value={timeFrame}>
+                    {getCommunityTimeFrameLabel(timeFrame)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={cn(fitType.eyebrow, fitText.label)}>
+              Ticker
+              <input
+                value={draft.symbol}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("symbol", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+                placeholder="CBA.AX or NVDA"
+              />
+            </label>
+
+            <label
+              className={cn(
+                fitType.eyebrow,
+                fitText.label,
+                "md:col-span-2 xl:col-span-1",
+              )}
+            >
+              Source URL
+              <input
+                value={draft.sourceUrl}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("sourceUrl", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+                placeholder="https://example.com/research"
+              />
+            </label>
+          </div>
 
           <div
             className={cn(
@@ -542,6 +663,13 @@ export function CommunityComposer({
           {creating ? "Posting…" : "Post"}
         </button>
       </div>
+
+      {!draft.postType ? (
+        <p className={cn("mt-[12px] text-[#8d95a6]", fitType.bodySm)}>
+          Choose a post type so readers know whether this is a question, news
+          discussion, portfolio review, or analysis.
+        </p>
+      ) : null}
 
       {attachmentError ? (
         <p

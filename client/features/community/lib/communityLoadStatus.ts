@@ -2,9 +2,13 @@
 export function getCommunityLoadErrorMessage({
   commentsError,
   likesError,
+  savesError,
 }: {
   commentsError?: string;
   likesError?: string;
+  savesError?: string;
 }) {
-  return [commentsError, likesError].filter(Boolean).join(" ") || null;
+  return (
+    [commentsError, likesError, savesError].filter(Boolean).join(" ") || null
+  );
 }

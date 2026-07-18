@@ -134,6 +134,7 @@ export function CommunityCreateScreen({
         creating={community.creating}
         canAttachImage={Boolean(supabase && community.currentUserId)}
         onDraftChange={community.setDraftField}
+        onDraftMetadataChange={community.setDraftMetadataField}
         onClearTags={community.clearDraftTags}
         onDraftImageChange={community.setDraftImage}
         onToggleTag={community.toggleDraftTag}

@@ -1,88 +1,80 @@
-// File purpose: Tests investor-facing Community signal extraction and scoring helpers.
+// File purpose: Tests neutral Community context extraction and engagement-based ranking helpers.
 import { createLocalPost } from "./communityMappers";
 import {
   getCommunityPostSignals,
   getCommunitySignalScore,
 } from "./communitySignals";
 
-describe("Community investment signals", () => {
-  it("extracts tickers, setup type, horizon, and source strength from a post", () => {
+describe("Community post context", () => {
+  it("extracts explicit beginner-facing context without inferring quality labels", () => {
     const post = createLocalPost({
-      title: "NVDA earnings setup for next quarter",
-      body: "Source: https://example.com/nvda-earnings I am looking for a swing setup after guidance.",
-      tags: ["Earnings", "$NVDA", "Strategy"],
+      title: "NVDA earnings review",
+      body: "I am comparing guidance against this filing https://www.sec.gov/Archives/example.",
+      tags: ["Earnings", "$NVDA"],
+      postType: "analysis",
+      timeFrame: null,
+      symbol: "NVDA",
+      sourceUrl: "https://www.nasdaq.com/articles/nvda",
     });
 
     const signals = getCommunityPostSignals(post);
 
     expect(signals.tickers).toEqual(["$NVDA"]);
-    expect(signals.primaryLabel).toBe("Earnings watch");
-    expect(signals.horizon.label).toBe("Swing");
-    expect(signals.evidence.label).toBe("Source-backed");
-    expect(signals.sourceCount).toBe(1);
+    expect(signals.primaryLabel).toBe("Analysis");
+    expect(signals.sourceCount).toBe(2);
+    expect(signals.sourceDomains).toEqual(
+      expect.arrayContaining(["sec.gov", "nasdaq.com"]),
+    );
   });
 
-  it("keeps tagless posts useful without showing a noisy empty tag state", () => {
+  it("keeps posts neutral when no ticker or source was added", () => {
     const post = createLocalPost({
-      title: "How should I size this position?",
-      body: "I am weighing portfolio risk before adding more exposure.",
+      title: "How should I size an NVDA position?",
+      body: "I mention earnings, but I did not add research context.",
       tags: [],
+      postType: "question",
+      timeFrame: null,
+      symbol: null,
+      sourceUrl: null,
     });
 
     const signals = getCommunityPostSignals(post);
 
     expect(signals.tickers).toEqual([]);
+    expect(signals.topicLabels).toEqual([]);
     expect(signals.primaryLabel).toBe("Question");
-    expect(signals.topicLabels).toEqual(expect.arrayContaining(["Risk"]));
-    expect(signals.emptySignalLabel).toBe("General discussion");
+    expect(signals.emptySignalLabel).toBe("No ticker or source added");
   });
 
-  it("scores ticker-linked sourced posts above low-signal posts with similar votes", () => {
-    const sourcedTickerPost = createLocalPost({
-      title: "TSLA delivery catalyst with source",
-      body: "Breaking news from https://example.com/tesla-deliveries could change sentiment this week.",
-      tags: ["News", "$TSLA"],
+  it("does not let ticker or source metadata outrank similar engagement on its own", () => {
+    const contextRichPost = createLocalPost({
+      title: "TSLA delivery note",
+      body: "Source: https://example.com/tesla-deliveries",
+      tags: ["$TSLA"],
+      postType: "news",
+      timeFrame: null,
+      symbol: "TSLA",
+      sourceUrl: "https://www.reuters.com/example",
     });
     const genericPost = createLocalPost({
       title: "General market thought",
       body: "Open for broad discussion.",
       tags: [],
+      postType: "discussion",
+      timeFrame: null,
+      symbol: null,
+      sourceUrl: null,
     });
 
     expect(
-      getCommunitySignalScore(sourcedTickerPost, {
+      getCommunitySignalScore(contextRichPost, {
         commentCount: 3,
-        now: sourcedTickerPost.sortTime + 1,
+        now: contextRichPost.sortTime + 1,
       }),
-    ).toBeGreaterThan(
+    ).toBe(
       getCommunitySignalScore(genericPost, {
         commentCount: 3,
-        now: sourcedTickerPost.sortTime + 1,
-      }),
-    );
-  });
-
-  it("does not let an arbitrary URL alone boost top ranking", () => {
-    const sourceOnlyPost = createLocalPost({
-      title: "General market thought",
-      body: "I found this link https://example.com/no-context useful.",
-      tags: [],
-    });
-    const genericPost = createLocalPost({
-      title: "General market thought",
-      body: "Open for broad discussion.",
-      tags: [],
-    });
-
-    expect(
-      getCommunitySignalScore(sourceOnlyPost, {
-        commentCount: 0,
-        now: sourceOnlyPost.sortTime + 1,
-      }),
-    ).toBeLessThanOrEqual(
-      getCommunitySignalScore(genericPost, {
-        commentCount: 0,
-        now: sourceOnlyPost.sortTime + 1,
+        now: contextRichPost.sortTime + 1,
       }),
     );
   });

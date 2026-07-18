@@ -15,7 +15,7 @@ export const COMMUNITY_FEED_NAV_ITEMS: Array<{
   {
     id: "top",
     label: "Top",
-    description: "Signal-weighted discussions",
+    description: "Most active discussions",
   },
   {
     id: "new",
@@ -26,6 +26,11 @@ export const COMMUNITY_FEED_NAV_ITEMS: Array<{
     id: "my-posts",
     label: "My Posts",
     description: "Discussions you created",
+  },
+  {
+    id: "saved",
+    label: "Saved",
+    description: "Discussions you want to revisit",
   },
   {
     id: "liked",

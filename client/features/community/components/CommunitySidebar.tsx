@@ -4,6 +4,7 @@ import AccessibilityNewRoundedIcon from "@mui/icons-material/AccessibilityNewRou
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import AllInclusiveRoundedIcon from "@mui/icons-material/AllInclusiveRounded";
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
@@ -36,6 +37,7 @@ const navIcons: Record<CommunityFeedView, typeof TrendingUpRoundedIcon> = {
   top: TrendingUpRoundedIcon,
   new: NewReleasesOutlinedIcon,
   "my-posts": PersonOutlineRoundedIcon,
+  saved: BookmarkBorderRoundedIcon,
   liked: FavoriteBorderRoundedIcon,
   commented: ModeCommentOutlinedIcon,
 };

@@ -7,6 +7,7 @@ import {
   uploadPostImage,
 } from "../data/communityStorage";
 import { normalizeDiscussionDraft } from "../lib/communityDraft";
+import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
 import { createLocalPost } from "../lib/communityMappers";
 import { replaceDraftImageMarkers } from "../lib/markdownEditor";
 import {
@@ -93,6 +94,15 @@ export function useCommunityCreateActions(
   }, [sessionKey]);
 
   const handleCreatePost = React.useCallback(async () => {
+    const researchContextError = validateCommunityResearchDraft(draft);
+    if (researchContextError) {
+      pushFeedback({
+        tone: "error",
+        title: "Check research context",
+        message: researchContextError,
+      });
+      return false;
+    }
     const nextDraft = normalizeDiscussionDraft(draft);
     if (!nextDraft.title || creatingRef.current) return false;
 

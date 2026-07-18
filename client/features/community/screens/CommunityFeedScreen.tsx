@@ -11,6 +11,7 @@ import { FeedbackStack, CommunityNotice } from "../components/CommunityFeedback"
 import { CommunityLayout } from "../components/CommunityLayout";
 import { CommunityToolbar } from "../components/CommunityToolbar";
 import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
+import { ReportPostDialog } from "../components/ReportPostDialog";
 
 export function CommunityFeedScreen({
   supabase,
@@ -124,12 +125,16 @@ export function CommunityFeedScreen({
           hasLoadedPosts={community.hasLoadedPosts}
           likedPostIds={community.likedPostIds}
           likingPostIds={community.likingPostIds}
+          savedPostIds={community.savedPostIds}
+          savingPostIds={community.savingPostIds}
           loadError={community.loadError}
           loading={community.loadingCommunity}
           onAddComment={community.handleAddComment}
           onDeleteComment={community.requestDeleteComment}
           onDeletePost={community.requestDeletePost}
           onToggleLike={community.handleToggleLike}
+          onToggleSave={community.handleToggleSave}
+          onReport={community.requestReport}
           posts={community.filteredPosts}
           query={community.query}
           view={community.feedView}
@@ -141,6 +146,12 @@ export function CommunityFeedScreen({
         busy={community.deleting}
         onCancel={community.cancelPendingDelete}
         onConfirm={community.confirmPendingDelete}
+      />
+      <ReportPostDialog
+        postId={community.pendingReportPostId}
+        busy={community.reporting}
+        onCancel={community.cancelReport}
+        onSubmit={community.submitReport}
       />
     </>
   );

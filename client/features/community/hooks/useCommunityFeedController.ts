@@ -4,6 +4,7 @@ import { useCommunityData } from "./useCommunityData";
 import { useCommunityFeedback } from "./useCommunityFeedback";
 import { useCommunityFeedActions } from "./useCommunityFeedActions";
 import { useCommunityNavigationState } from "./useCommunityNavigationState";
+import { useCommunityReportActions } from "./useCommunityReportActions";
 import { useCommunitySession } from "./useCommunitySession";
 
 export function useCommunityFeedController(supabase: SupabaseClient | null) {
@@ -27,9 +28,17 @@ export function useCommunityFeedController(supabase: SupabaseClient | null) {
     likedPostIds: communityData.likedPostIds,
     posts: communityData.posts,
     pushFeedback: feedbackState.pushFeedback,
+    savedPostIds: communityData.savedPostIds,
     sessionKey: session.sessionKey,
     setLikedPostIds: communityData.setLikedPostIds,
+    setSavedPostIds: communityData.setSavedPostIds,
     setPosts: communityData.setPosts,
+    supabase,
+  });
+  const reportActions = useCommunityReportActions({
+    currentUserId: session.currentUserId,
+    pushFeedback: feedbackState.pushFeedback,
+    sessionKey: session.sessionKey,
     supabase,
   });
 
@@ -37,6 +46,7 @@ export function useCommunityFeedController(supabase: SupabaseClient | null) {
     ...navigation,
     ...feedbackState,
     ...feedActions,
+    ...reportActions,
     canDeleteComment: communityData.canDeleteComment,
     canDeletePost: communityData.canDeletePost,
     commentsState: communityData.commentsState,
@@ -45,6 +55,7 @@ export function useCommunityFeedController(supabase: SupabaseClient | null) {
     filteredPosts: communityData.filteredPosts,
     hasLoadedPosts: communityData.posts.length > 0,
     likedPostIds: communityData.likedPostIds,
+    savedPostIds: communityData.savedPostIds,
     loadError: communityData.loadError,
     loadingCommunity: communityData.loadingCommunity,
   };

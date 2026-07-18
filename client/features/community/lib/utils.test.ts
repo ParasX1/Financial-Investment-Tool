@@ -33,6 +33,9 @@ describe("Community post mapping", () => {
       {
         ...baseRow,
         tags: [" Strategy ", "$nvda"],
+        post_type: "analysis",
+        symbol: " nvda ",
+        source_url: " https://www.sec.gov/Archives/example ",
         image_url: "https://example.com/post.png",
         image_path: "posts/post.png",
       } as DBPost,
@@ -40,6 +43,9 @@ describe("Community post mapping", () => {
     );
 
     expect(post.tags).toEqual(["Strategy", "$NVDA"]);
+    expect(post.postType).toBe("analysis");
+    expect(post.symbol).toBe("NVDA");
+    expect(post.sourceUrl).toBe("https://www.sec.gov/Archives/example");
     expect(post.imageUrl).toBe("https://example.com/post.png");
     expect((post as any).imagePath).toBe("posts/post.png");
   });
@@ -94,6 +100,10 @@ describe("Community post mapping", () => {
       title: "NVDA earnings risk",
       body: "Looking at Nvidia guidance and downside risk.",
       tags: [],
+      postType: "discussion",
+      timeFrame: null,
+      symbol: null,
+      sourceUrl: null,
       imageUrl: "blob:http://localhost/local-post-image",
     });
 
@@ -107,11 +117,19 @@ describe("Community post mapping", () => {
         title: "  TSLA earnings   idea ",
         body: " Looking at implied volatility. ",
         tags: ["$tsla", "Risk", "Risk", "<bad>"],
+        postType: "analysis",
+        timeFrame: "medium",
+        symbol: " tsla ",
+        sourceUrl: " https://example.com/research ",
       }),
     ).toEqual({
       title: "TSLA earnings idea",
       body: "Looking at implied volatility.",
       tags: ["$TSLA", "Risk"],
+      postType: "analysis",
+      timeFrame: "medium",
+      symbol: "TSLA",
+      sourceUrl: "https://example.com/research",
     });
   });
 
@@ -281,7 +299,7 @@ describe("Community feed filtering", () => {
     ]);
   });
 
-  it("promotes stronger investment signals when top posts have similar engagement", () => {
+  it("keeps top ranking tied to engagement when posts have similar context", () => {
     const now = new Date("2026-05-20T12:00:00Z").getTime();
     const visible = getVisibleCommunityPosts({
       posts: [
@@ -291,15 +309,19 @@ describe("Community feed filtering", () => {
           title: "General discussion",
           body: "Open for broad community discussion.",
           tags: [],
+          postType: "discussion",
           votes: 10,
           sortTime: now,
         },
         {
           ...posts[1],
-          id: "signal",
-          title: "TSLA delivery catalyst",
+          id: "context",
+          title: "TSLA delivery note",
           body: "Source: https://example.com/tsla Delivery data could move the stock this week.",
           tags: ["News", "$TSLA"],
+          postType: "news",
+          symbol: "TSLA",
+          sourceUrl: "https://www.reuters.com/example",
           votes: 10,
           sortTime: now,
         },
@@ -312,7 +334,7 @@ describe("Community feed filtering", () => {
       currentUserId: "user-1",
     });
 
-    expect(visible.map((post) => post.id)).toEqual(["signal", "generic"]);
+    expect(visible.map((post) => post.id)).toEqual(["generic", "context"]);
   });
 
   it("keeps top ranking stable across viewer-specific liked state", () => {
@@ -358,18 +380,21 @@ describe("Community feed filtering", () => {
     expect(likedSecond).toEqual(unliked);
   });
 
-  it("matches search against derived investor signals", () => {
+  it("matches search against explicit source domains and symbols", () => {
     const visible = getVisibleCommunityPosts({
       posts: [
         {
           ...posts[0],
           id: "source-backed",
           title: "Delivery catalyst",
-          body: "Source: https://example.com/tsla Tesla delivery data could move the stock.",
+          body: "Tesla delivery data could move the stock.",
           tags: [],
+          postType: "news",
+          symbol: "TSLA",
+          sourceUrl: "https://www.sec.gov/example",
         },
       ],
-      query: "source-backed",
+      query: "sec.gov",
       view: "new",
       likedPostIds: new Set(),
       commentsState,
@@ -474,6 +499,7 @@ describe("Community feed filtering", () => {
       posts,
       query: "",
       likedPostIds: new Set(["post-2"]),
+      savedPostIds: new Set(["post-1"]),
       commentsState,
       currentUserId: "user-1",
     };
@@ -489,6 +515,11 @@ describe("Community feed filtering", () => {
       ),
     ).toEqual(["post-2"]);
     expect(
+      getVisibleCommunityPosts({ ...base, view: "saved" }).map(
+        (post) => post.id,
+      ),
+    ).toEqual(["post-1"]);
+    expect(
       getVisibleCommunityPosts({ ...base, view: "commented" }).map(
         (post) => post.id,
       ),
@@ -500,6 +531,7 @@ describe("Community feed filtering", () => {
       getCommunityFeedCounts({
         posts,
         likedPostIds: new Set(["post-2"]),
+        savedPostIds: new Set(["post-1"]),
         commentsState,
         currentUserId: "user-1",
       }),
@@ -507,6 +539,7 @@ describe("Community feed filtering", () => {
       top: 3,
       new: 3,
       "my-posts": 2,
+      saved: 1,
       liked: 1,
       commented: 1,
     });

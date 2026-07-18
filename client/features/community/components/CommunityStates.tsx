@@ -48,6 +48,10 @@ const emptyCopy: Record<CommunityFeedView, { title: string; body: string }> = {
     title: "You have not posted any discussions yet.",
     body: "Create a discussion and it will show up here.",
   },
+  saved: {
+    title: "No saved discussions yet.",
+    body: "Save a discussion to keep it in this view.",
+  },
   liked: {
     title: "No liked discussions yet.",
     body: "Like a discussion to keep it in this view.",

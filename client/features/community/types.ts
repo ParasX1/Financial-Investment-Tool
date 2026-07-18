@@ -3,6 +3,7 @@ export type CommunityFeedView =
   | "top"
   | "new"
   | "my-posts"
+  | "saved"
   | "liked"
   | "commented";
 

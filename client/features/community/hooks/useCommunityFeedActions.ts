@@ -6,6 +6,7 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
   setCommunityPostLike,
+  setCommunityPostSaved,
 } from "../data/communityService";
 import {
   removeCommunityImage,
@@ -28,6 +29,7 @@ export type CommunityFeedActionDependencies = {
   deletePost: typeof deleteCommunityPost;
   removeImage: typeof removeCommunityImage;
   setPostLike: typeof setCommunityPostLike;
+  setPostSaved: typeof setCommunityPostSaved;
   uploadCommentImage: typeof uploadCommentImage;
 };
 
@@ -40,6 +42,7 @@ const defaultCommunityFeedActionDependencies: CommunityFeedActionDependencies =
     deletePost: deleteCommunityPost,
     removeImage: removeCommunityImage,
     setPostLike: setCommunityPostLike,
+    setPostSaved: setCommunityPostSaved,
     uploadCommentImage,
   };
 
@@ -70,8 +73,10 @@ export function useCommunityFeedActions(
     likedPostIds,
     posts,
     pushFeedback,
+    savedPostIds,
     sessionKey,
     setLikedPostIds,
+    setSavedPostIds,
     setPosts,
     supabase,
   }: {
@@ -83,8 +88,10 @@ export function useCommunityFeedActions(
     likedPostIds: Set<string>;
     posts: PostUI[];
     pushFeedback: PushFeedback;
+    savedPostIds?: Set<string>;
     sessionKey: string;
     setLikedPostIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+    setSavedPostIds?: React.Dispatch<React.SetStateAction<Set<string>>>;
     setPosts: React.Dispatch<React.SetStateAction<PostUI[]>>;
     supabase: SupabaseClient | null;
   },
@@ -96,13 +103,25 @@ export function useCommunityFeedActions(
   const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(
     () => new Set(),
   );
+  const [savingPostIds, setSavingPostIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const committedSessionKeyRef = React.useRef(sessionKey);
   const inFlightLikeTokensRef = React.useRef(new Map<string, symbol>());
+  const inFlightSaveTokensRef = React.useRef(new Map<string, symbol>());
+  const activeSavedPostIds = savedPostIds ?? new Set<string>();
+  const updateSavedPostIds =
+    setSavedPostIds ??
+    (() => {
+      return;
+    });
 
   useCommittedLayoutEffect(() => {
     committedSessionKeyRef.current = sessionKey;
     inFlightLikeTokensRef.current.clear();
+    inFlightSaveTokensRef.current.clear();
     setLikingPostIds(new Set());
+    setSavingPostIds(new Set());
     setPendingDelete(null);
     setDeleting(false);
   }, [sessionKey]);
@@ -130,6 +149,12 @@ export function useCommunityFeedActions(
         next.delete(postId);
         return next;
       });
+      updateSavedPostIds((previous) => {
+        if (!previous.has(postId)) return previous;
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
+      });
       return;
     }
 
@@ -146,6 +171,11 @@ export function useCommunityFeedActions(
       setPosts((previous) => previous.filter((post) => post.id !== postId));
       dispatchComments({ type: "removePost", postId });
       setLikedPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
+      });
+      updateSavedPostIds((previous) => {
         const next = new Set(previous);
         next.delete(postId);
         return next;
@@ -347,6 +377,81 @@ export function useCommunityFeedActions(
     }
   }
 
+  async function handleToggleSave(postId: string) {
+    const target = posts.find((post) => post.id === postId);
+    if (!target || inFlightSaveTokensRef.current.has(postId)) return;
+
+    if (target.fromDB && supabase && !currentUserId) {
+      pushFeedback({
+        tone: "info",
+        title: "Sign in to save discussions",
+        message:
+          "Saved discussions are private to your account so you can revisit them later.",
+      });
+      return;
+    }
+
+    const startedSessionKey = committedSessionKeyRef.current;
+    const requestToken = Symbol(postId);
+    const wasSaved = activeSavedPostIds.has(postId);
+    inFlightSaveTokensRef.current.set(postId, requestToken);
+    setSavingPostIds((previous) => new Set(previous).add(postId));
+    updateSavedPostIds((previous) => {
+      const next = new Set(previous);
+      if (wasSaved) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+
+    if (!target.fromDB || !supabase) {
+      if (inFlightSaveTokensRef.current.get(postId) === requestToken) {
+        inFlightSaveTokensRef.current.delete(postId);
+      }
+      setSavingPostIds((previous) => {
+        const next = new Set(previous);
+        next.delete(postId);
+        return next;
+      });
+      return;
+    }
+
+    try {
+      await dependencies.setPostSaved(
+        supabase,
+        postId,
+        !wasSaved,
+        currentUserId!,
+      );
+    } catch {
+      if (!isSessionCurrent(startedSessionKey)) return;
+
+      updateSavedPostIds((previous) => {
+        const next = new Set(previous);
+        if (wasSaved) next.add(postId);
+        else next.delete(postId);
+        return next;
+      });
+      pushFeedback({
+        tone: "error",
+        title: "Save was not updated",
+        message: "Could not update saved discussions.",
+      });
+    } finally {
+      const ownsCurrentLock =
+        inFlightSaveTokensRef.current.get(postId) === requestToken;
+      if (ownsCurrentLock) {
+        inFlightSaveTokensRef.current.delete(postId);
+      }
+      if (ownsCurrentLock && isSessionCurrent(startedSessionKey)) {
+        setSavingPostIds((previous) => {
+          const next = new Set(previous);
+          next.delete(postId);
+          return next;
+        });
+      }
+    }
+  }
+
   function requestDeletePost(postId: string) {
     const target = posts.find((post) => post.id === postId);
     if (!target) return;
@@ -401,7 +506,9 @@ export function useCommunityFeedActions(
     deleting,
     handleAddComment,
     handleToggleLike,
+    handleToggleSave,
     likingPostIds,
+    savingPostIds,
     pendingDelete,
     requestDeleteComment,
     requestDeletePost,

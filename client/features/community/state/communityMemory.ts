@@ -11,6 +11,7 @@ import { commentsReducer, createCommentsState } from "./commentsReducer";
 export type CommunityMemoryCache = {
   posts: PostUI[];
   likedPostIds: string[];
+  savedPostIds: string[];
   commentsState: CommentsState;
   ownerKey: string;
 };
@@ -43,6 +44,7 @@ export function rememberLocalCommunityPost(post: PostUI) {
     ({
       posts: [...DEMO_POSTS],
       likedPostIds: [],
+      savedPostIds: [],
       commentsState: createCommentsState(DEMO_POSTS),
       ownerKey: "demo",
     } satisfies CommunityMemoryCache);

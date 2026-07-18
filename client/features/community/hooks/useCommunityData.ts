@@ -28,6 +28,7 @@ import type {
 type CommunityResource = {
   commentsState: CommentsState;
   likedPostIds: Set<string>;
+  savedPostIds: Set<string>;
   posts: PostUI[];
 };
 
@@ -51,6 +52,7 @@ const defaultCommunityDataDependencies: CommunityDataDependencies = {
 const EMPTY_RESOURCE: CommunityResource = {
   commentsState: createCommentsState([]),
   likedPostIds: new Set(),
+  savedPostIds: new Set(),
   posts: [],
 };
 
@@ -61,6 +63,7 @@ function createDemoResource(): CommunityResource {
   return {
     commentsState: createCommentsState(DEMO_POSTS),
     likedPostIds: new Set(),
+    savedPostIds: new Set(),
     posts: [...DEMO_POSTS],
   };
 }
@@ -69,6 +72,7 @@ function createCachedResource(cache: CommunityMemoryCache): CommunityResource {
   return {
     commentsState: cache.commentsState,
     likedPostIds: new Set(cache.likedPostIds),
+    savedPostIds: new Set(cache.savedPostIds),
     posts: cache.posts,
   };
 }
@@ -79,6 +83,7 @@ function createLoadedResource(
   return {
     commentsState: createCommentsState(result.posts, result.comments),
     likedPostIds: new Set(result.likedPostIds),
+    savedPostIds: new Set(result.savedPostIds),
     posts: result.posts,
   };
 }
@@ -189,6 +194,19 @@ export function useCommunityData(
     [updateCurrentResource],
   );
 
+  const setSavedPostIds = React.useCallback<
+    React.Dispatch<React.SetStateAction<Set<string>>>
+  >(
+    (update) => {
+      updateCurrentResource((current) => ({
+        ...current,
+        savedPostIds:
+          typeof update === "function" ? update(current.savedPostIds) : update,
+      }));
+    },
+    [updateCurrentResource],
+  );
+
   const dispatchComments = React.useCallback<React.Dispatch<CommentsAction>>(
     (action) => {
       updateCurrentResource((current) => ({
@@ -207,6 +225,7 @@ export function useCommunityData(
     rememberCommunityData({
       posts: state.resource.posts,
       likedPostIds: Array.from(state.resource.likedPostIds),
+      savedPostIds: Array.from(state.resource.savedPostIds),
       commentsState: state.resource.commentsState,
       ownerKey,
     });
@@ -234,6 +253,7 @@ export function useCommunityData(
           error: getCommunityLoadErrorMessage({
             commentsError: result.commentsError,
             likesError: result.likesError,
+            savesError: result.savesError,
           }),
           loading: false,
           ownerKey,
@@ -279,6 +299,7 @@ export function useCommunityData(
         view: feedView,
         topTimeRange,
         likedPostIds: resource.likedPostIds,
+        savedPostIds: resource.savedPostIds,
         commentsState: resource.commentsState,
         currentUserId,
       }),
@@ -290,6 +311,7 @@ export function useCommunityData(
       getCommunityFeedCounts({
         posts: resource.posts,
         likedPostIds: resource.likedPostIds,
+        savedPostIds: resource.savedPostIds,
         commentsState: resource.commentsState,
         currentUserId,
       }),
@@ -324,11 +346,13 @@ export function useCommunityData(
     feedCounts,
     filteredPosts,
     likedPostIds: resource.likedPostIds,
+    savedPostIds: resource.savedPostIds,
     loadError: stateIsCurrent ? state.error : null,
     loadingCommunity:
       !stateIsCurrent || (state.loading && resource.posts.length === 0),
     posts: resource.posts,
     setLikedPostIds,
+    setSavedPostIds,
     setPosts,
   };
 }

@@ -61,6 +61,7 @@ function createDependencies(): CommunityFeedActionDependencies {
     deletePost: jest.fn<any>(),
     removeImage: jest.fn<any>().mockResolvedValue(undefined),
     setPostLike: jest.fn<any>(),
+    setPostSaved: jest.fn<any>(),
     uploadCommentImage: jest.fn<any>(),
   };
 }
@@ -72,6 +73,7 @@ type HarnessOptions = {
   dependencies: CommunityFeedActionDependencies;
   initialComments?: CommentEntry[];
   initialLikedPostIds?: string[];
+  initialSavedPostIds?: string[];
   initialPosts?: PostUI[];
   sessionKey?: string;
   supabase?: any;
@@ -87,6 +89,7 @@ async function renderHarness(options: HarnessOptions) {
     | (ReturnType<typeof useCommunityFeedActions> & {
         commentsState: ReturnType<typeof createCommentsState>;
         likedPostIds: Set<string>;
+        savedPostIds: Set<string>;
         posts: PostUI[];
       })
     | null = null;
@@ -96,6 +99,9 @@ async function renderHarness(options: HarnessOptions) {
     const [posts, setPosts] = React.useState(initialPosts);
     const [likedPostIds, setLikedPostIds] = React.useState(
       () => new Set(options.initialLikedPostIds ?? []),
+    );
+    const [savedPostIds, setSavedPostIds] = React.useState(
+      () => new Set(options.initialSavedPostIds ?? []),
     );
     const [commentsState, dispatchComments] = React.useReducer(
       commentsReducer,
@@ -111,15 +117,17 @@ async function renderHarness(options: HarnessOptions) {
         likedPostIds,
         posts,
         pushFeedback: (message) => feedback.push(message),
+        savedPostIds,
         sessionKey,
         setLikedPostIds,
+        setSavedPostIds,
         setPosts,
         supabase:
           options.supabase === undefined ? ({} as any) : options.supabase,
       },
       options.dependencies,
     );
-    latest = { ...actions, commentsState, likedPostIds, posts };
+    latest = { ...actions, commentsState, likedPostIds, savedPostIds, posts };
     return null;
   }
 
@@ -382,6 +390,53 @@ describe("useCommunityFeedActions behavior", () => {
       expect.objectContaining({
         tone: "info",
         title: "Sign in to like discussions",
+      }),
+    ]);
+    signedOut.renderer.unmount();
+  });
+
+  it("keeps saves private, optimistic, and reversible when persistence fails", async () => {
+    const dependencies = createDependencies();
+    (dependencies.setPostSaved as jest.Mock<any>).mockRejectedValue(
+      new Error("raw policy details"),
+    );
+    const signedIn = await renderHarness({ dependencies });
+
+    await act(async () => {
+      await signedIn.latest.handleToggleSave("post-1");
+    });
+
+    expect(dependencies.setPostSaved).toHaveBeenCalledWith(
+      expect.anything(),
+      "post-1",
+      true,
+      "user-a",
+    );
+    expect(signedIn.latest.savedPostIds.has("post-1")).toBe(false);
+    expect(signedIn.feedback).toEqual([
+      {
+        tone: "error",
+        title: "Save was not updated",
+        message: "Could not update saved discussions.",
+      },
+    ]);
+    signedIn.renderer.unmount();
+
+    const signedOutDependencies = createDependencies();
+    const signedOut = await renderHarness({
+      currentUserId: null,
+      dependencies: signedOutDependencies,
+      sessionKey: "signed-out",
+    });
+    await act(async () => {
+      await signedOut.latest.handleToggleSave("post-1");
+    });
+
+    expect(signedOutDependencies.setPostSaved).not.toHaveBeenCalled();
+    expect(signedOut.feedback).toEqual([
+      expect.objectContaining({
+        tone: "info",
+        title: "Sign in to save discussions",
       }),
     ]);
     signedOut.renderer.unmount();

@@ -221,6 +221,20 @@ export async function selectLikedPostRows(
   >;
 }
 
+export async function selectSavedPostRows(
+  db: SupabaseClient,
+  postIds: string[],
+  currentUserId: string,
+) {
+  return (await db
+    .from("post_saves")
+    .select("post_id")
+    .eq("user_id", currentUserId)
+    .in("post_id", postIds)) as CommunityQueryResult<
+    Array<{ post_id: string }>
+  >;
+}
+
 export async function insertCommunityPostRow(
   db: SupabaseClient,
   postDraft: DiscussionPostInput & {
@@ -300,9 +314,7 @@ export async function insertCommunityPostRow(
     : [fullSchemaAttempt, ...legacyAttempts];
   const hasExplicitResearchContext =
     postDraft.postType !== "discussion" ||
-    Boolean(
-      postDraft.timeFrame || postDraft.symbol || postDraft.sourceUrl,
-    );
+    Boolean(postDraft.timeFrame || postDraft.symbol || postDraft.sourceUrl);
 
   for (const attempt of attempts) {
     const { data: row, error } = (await db
@@ -311,10 +323,7 @@ export async function insertCommunityPostRow(
       .select(attempt.select)
       .single()) as CommunityQueryResult<DBPost>;
 
-    if (
-      hasExplicitResearchContext &&
-      isMissingResearchContextColumn(error)
-    ) {
+    if (hasExplicitResearchContext && isMissingResearchContextColumn(error)) {
       throw new Error(
         "A Community database update is required before this research context can be published.",
       );
@@ -422,4 +431,33 @@ export async function setCommunityPostLikeValue(
 
   if (error) throw error;
   return typeof data === "number" ? data : Number(data ?? 0);
+}
+
+export async function setCommunityPostSavedValue(
+  db: SupabaseClient,
+  postId: string,
+  currentUserId: string,
+  saved: boolean,
+) {
+  const query = saved
+    ? db.from("post_saves").insert({ post_id: postId })
+    : db
+        .from("post_saves")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", currentUserId);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function insertCommunityPostReportRow(
+  db: SupabaseClient,
+  input: { postId: string; reason: string; details: string | null },
+) {
+  const { error } = await db.from("post_reports").insert({
+    post_id: input.postId,
+    reason: input.reason,
+    details: input.details,
+  });
+  if (error) throw error;
 }

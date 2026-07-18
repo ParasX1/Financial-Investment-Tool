@@ -20,12 +20,16 @@ export function CommunityFeed({
   hasLoadedPosts,
   likedPostIds,
   likingPostIds,
+  savedPostIds,
+  savingPostIds,
   loadError,
   loading,
   onAddComment,
   onDeleteComment,
   onDeletePost,
   onToggleLike,
+  onToggleSave,
+  onReport,
   posts,
   query,
   view,
@@ -37,12 +41,16 @@ export function CommunityFeed({
   hasLoadedPosts: boolean;
   likedPostIds: Set<string>;
   likingPostIds: Set<string>;
+  savedPostIds: Set<string>;
+  savingPostIds: Set<string>;
   loadError: string | null;
   loading: boolean;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost: (postId: string) => Promise<void> | void;
   onToggleLike: (postId: string) => Promise<void> | void;
+  onToggleSave: (postId: string) => Promise<void> | void;
+  onReport: (postId: string) => void;
   posts: PostUI[];
   query: string;
   view: CommunityFeedView;
@@ -86,6 +94,8 @@ export function CommunityFeed({
                 count={commentsState.counts[post.id] ?? post.commentCount}
                 liked={likedPostIds.has(post.id)}
                 likeBusy={likingPostIds.has(post.id)}
+                saved={savedPostIds.has(post.id)}
+                saveBusy={savingPostIds.has(post.id)}
                 canDeletePost={mayDeletePost}
                 canDeleteComment={canDeleteComment}
                 canAttachCommentImage={canAttachCommentImage}
@@ -93,6 +103,8 @@ export function CommunityFeed({
                 onDeleteComment={onDeleteComment}
                 onDeletePost={mayDeletePost ? onDeletePost : undefined}
                 onToggleLike={onToggleLike}
+                onToggleSave={onToggleSave}
+                onReport={onReport}
               />
             );
           })

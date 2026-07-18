@@ -44,12 +44,13 @@ function matchesCommunitySearch(post: PostUI, query: string) {
     post.user,
     post.title,
     post.body,
+    post.symbol ?? "",
+    post.sourceUrl ?? "",
     ...post.tags,
     ...signals.tickers,
     ...signals.topicLabels,
     signals.primaryLabel,
-    signals.evidence.label,
-    signals.horizon.label,
+    ...signals.sourceDomains,
   ]
     .join(" ")
     .toLowerCase()
@@ -109,11 +110,13 @@ export function getTopTimeRangeCutoff(
 export function getCommunityFeedCounts({
   posts,
   likedPostIds,
+  savedPostIds,
   commentsState,
   currentUserId,
 }: {
   posts: PostUI[];
   likedPostIds: Set<string>;
+  savedPostIds: Set<string>;
   commentsState: CommentsState;
   currentUserId: string | null;
 }): CommunityFeedCounts {
@@ -122,6 +125,7 @@ export function getCommunityFeedCounts({
     new: posts.length,
     "my-posts": posts.filter((post) => isCurrentUserPost(post, currentUserId))
       .length,
+    saved: posts.filter((post) => savedPostIds.has(post.id)).length,
     liked: posts.filter((post) => likedPostIds.has(post.id)).length,
     commented: posts.filter((post) =>
       hasCurrentUserComment(post.id, commentsState, currentUserId),
@@ -136,6 +140,7 @@ export function getVisibleCommunityPosts({
   topTimeRange = "all-time",
   now = Date.now(),
   likedPostIds,
+  savedPostIds,
   commentsState,
   currentUserId,
 }: {
@@ -145,6 +150,7 @@ export function getVisibleCommunityPosts({
   topTimeRange?: CommunityTopTimeRange;
   now?: number;
   likedPostIds: Set<string>;
+  savedPostIds: Set<string>;
   commentsState: CommentsState;
   currentUserId: string | null;
 }) {
@@ -159,6 +165,10 @@ export function getVisibleCommunityPosts({
 
     if (view === "liked") {
       return likedPostIds.has(post.id);
+    }
+
+    if (view === "saved") {
+      return savedPostIds.has(post.id);
     }
 
     if (view === "commented") {
