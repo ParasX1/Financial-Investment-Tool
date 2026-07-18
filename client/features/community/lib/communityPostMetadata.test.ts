@@ -85,6 +85,14 @@ describe("Community post metadata", () => {
     ).toBe("Enter a valid http or https source URL.");
     expect(
       validateCommunityResearchDraft({
+        postType: "analysis",
+        timeFrame: "day-trade",
+        symbol: "NVDA",
+        sourceUrl: "",
+      }),
+    ).toBe("Choose a valid time frame or leave it blank.");
+    expect(
+      validateCommunityResearchDraft({
         postType: "question",
         symbol: "",
         sourceUrl: "",

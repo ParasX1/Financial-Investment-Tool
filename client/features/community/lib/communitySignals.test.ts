@@ -1,8 +1,10 @@
 // File purpose: Tests neutral Community context extraction and engagement-based ranking helpers.
 import { createLocalPost } from "./communityMappers";
 import {
+  countCommunitySources,
   getCommunityPostSignals,
   getCommunitySignalScore,
+  getCommunitySourceDomains,
 } from "./communitySignals";
 
 describe("Community post context", () => {
@@ -77,5 +79,41 @@ describe("Community post context", () => {
         now: contextRichPost.sortTime + 1,
       }),
     );
+  });
+
+  it("deduplicates valid sources and applies only engagement recency bands", () => {
+    const basePost = createLocalPost({
+      title: "Source check",
+      body: "https://www.example.com/research https://www.example.com/research",
+      tags: [],
+      postType: "discussion",
+      timeFrame: null,
+      symbol: null,
+      sourceUrl: "https://www.example.com/research",
+    });
+    const post = {
+      ...basePost,
+      body: `${basePost.body} https://[broken]`,
+      votes: 0,
+      commentCount: 0,
+    };
+
+    expect(countCommunitySources(post)).toBe(2);
+    expect(getCommunitySourceDomains(post)).toEqual(["example.com"]);
+    expect(
+      getCommunitySignalScore(post, {
+        now: post.sortTime + 2 * 60 * 60 * 1000,
+      }),
+    ).toBe(6);
+    expect(
+      getCommunitySignalScore(post, {
+        now: post.sortTime + 30 * 60 * 60 * 1000,
+      }),
+    ).toBe(3);
+    expect(
+      getCommunitySignalScore(post, {
+        now: post.sortTime + 200 * 60 * 60 * 1000,
+      }),
+    ).toBe(0);
   });
 });

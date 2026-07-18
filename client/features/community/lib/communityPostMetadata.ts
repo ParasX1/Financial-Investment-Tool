@@ -84,6 +84,7 @@ export function getCommunityTimeFrameLabel(
 
 export function validateCommunityResearchDraft(input: {
   postType: unknown;
+  timeFrame?: unknown;
   symbol: unknown;
   sourceUrl: unknown;
 }): string | null {
@@ -92,6 +93,9 @@ export function validateCommunityResearchDraft(input: {
     normalizeCommunityPostType(input.postType) !== input.postType
   ) {
     return "Choose a post type.";
+  }
+  if (input.timeFrame && !normalizeCommunityTimeFrame(input.timeFrame)) {
+    return "Choose a valid time frame or leave it blank.";
   }
   if (typeof input.symbol === "string" && input.symbol.trim()) {
     if (!normalizeCommunitySymbol(input.symbol)) {

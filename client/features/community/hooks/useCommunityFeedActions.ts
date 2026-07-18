@@ -88,10 +88,10 @@ export function useCommunityFeedActions(
     likedPostIds: Set<string>;
     posts: PostUI[];
     pushFeedback: PushFeedback;
-    savedPostIds?: Set<string>;
+    savedPostIds: Set<string>;
     sessionKey: string;
     setLikedPostIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-    setSavedPostIds?: React.Dispatch<React.SetStateAction<Set<string>>>;
+    setSavedPostIds: React.Dispatch<React.SetStateAction<Set<string>>>;
     setPosts: React.Dispatch<React.SetStateAction<PostUI[]>>;
     supabase: SupabaseClient | null;
   },
@@ -109,12 +109,6 @@ export function useCommunityFeedActions(
   const committedSessionKeyRef = React.useRef(sessionKey);
   const inFlightLikeTokensRef = React.useRef(new Map<string, symbol>());
   const inFlightSaveTokensRef = React.useRef(new Map<string, symbol>());
-  const activeSavedPostIds = savedPostIds ?? new Set<string>();
-  const updateSavedPostIds =
-    setSavedPostIds ??
-    (() => {
-      return;
-    });
 
   useCommittedLayoutEffect(() => {
     committedSessionKeyRef.current = sessionKey;
@@ -149,7 +143,7 @@ export function useCommunityFeedActions(
         next.delete(postId);
         return next;
       });
-      updateSavedPostIds((previous) => {
+      setSavedPostIds((previous) => {
         if (!previous.has(postId)) return previous;
         const next = new Set(previous);
         next.delete(postId);
@@ -175,7 +169,7 @@ export function useCommunityFeedActions(
         next.delete(postId);
         return next;
       });
-      updateSavedPostIds((previous) => {
+      setSavedPostIds((previous) => {
         const next = new Set(previous);
         next.delete(postId);
         return next;
@@ -393,10 +387,10 @@ export function useCommunityFeedActions(
 
     const startedSessionKey = committedSessionKeyRef.current;
     const requestToken = Symbol(postId);
-    const wasSaved = activeSavedPostIds.has(postId);
+    const wasSaved = savedPostIds.has(postId);
     inFlightSaveTokensRef.current.set(postId, requestToken);
     setSavingPostIds((previous) => new Set(previous).add(postId));
-    updateSavedPostIds((previous) => {
+    setSavedPostIds((previous) => {
       const next = new Set(previous);
       if (wasSaved) next.delete(postId);
       else next.add(postId);
@@ -425,7 +419,7 @@ export function useCommunityFeedActions(
     } catch {
       if (!isSessionCurrent(startedSessionKey)) return;
 
-      updateSavedPostIds((previous) => {
+      setSavedPostIds((previous) => {
         const next = new Set(previous);
         if (wasSaved) next.add(postId);
         else next.delete(postId);

@@ -62,6 +62,7 @@ describe("useCommunityFeedActions", () => {
     function Probe() {
       const [posts, setPosts] = React.useState<PostUI[]>([]);
       const [likedPostIds, setLikedPostIds] = React.useState(new Set<string>());
+      const [savedPostIds, setSavedPostIds] = React.useState(new Set<string>());
       const [commentsState, dispatchComments] = React.useReducer(
         commentsReducer,
         createCommentsState([]),
@@ -76,8 +77,10 @@ describe("useCommunityFeedActions", () => {
           likedPostIds,
           posts,
           pushFeedback: (message) => feedback.push(message),
+          savedPostIds,
           sessionKey: "user:user-a",
           setLikedPostIds,
+          setSavedPostIds,
           setPosts,
           supabase: {} as any,
         },
@@ -115,6 +118,7 @@ describe("useCommunityFeedActions", () => {
     function Probe() {
       const [posts, setPosts] = React.useState<PostUI[]>([post()]);
       const [likedPostIds, setLikedPostIds] = React.useState(new Set<string>());
+      const [savedPostIds, setSavedPostIds] = React.useState(new Set<string>());
       const [commentsState, dispatchComments] = React.useReducer(
         commentsReducer,
         createCommentsState(posts),
@@ -129,8 +133,10 @@ describe("useCommunityFeedActions", () => {
           likedPostIds,
           posts,
           pushFeedback: (message) => feedback.push(message),
+          savedPostIds,
           sessionKey: "user:user-a",
           setLikedPostIds,
+          setSavedPostIds,
           setPosts,
           supabase: {} as any,
         },
@@ -183,6 +189,7 @@ describe("useCommunityFeedActions", () => {
     function Probe() {
       const [posts, setPosts] = React.useState<PostUI[]>([post()]);
       const [likedPostIds, setLikedPostIds] = React.useState(new Set<string>());
+      const [savedPostIds, setSavedPostIds] = React.useState(new Set<string>());
       const [commentsState, dispatchComments] = React.useReducer(
         commentsReducer,
         createCommentsState(posts),
@@ -197,8 +204,10 @@ describe("useCommunityFeedActions", () => {
           likedPostIds,
           posts,
           pushFeedback: jest.fn(),
+          savedPostIds,
           sessionKey,
           setLikedPostIds,
+          setSavedPostIds,
           setPosts,
           supabase: {} as any,
         },

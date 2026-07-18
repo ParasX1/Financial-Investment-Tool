@@ -41,6 +41,26 @@ function renderHarness({
 }
 
 describe("useCommunityReportActions", () => {
+  it("keeps demo mode read-only and ignores incomplete report requests", async () => {
+    const demo = renderHarness({ supabase: null });
+    act(() => demo.latest.requestReport("post-1"));
+    expect(demo.feedback).toEqual([
+      expect.objectContaining({
+        title: "Reporting is unavailable in demo mode",
+      }),
+    ]);
+    demo.renderer.unmount();
+
+    const live = renderHarness();
+    act(() => live.latest.requestReport(""));
+    await act(async () => {
+      await live.latest.submitReport("other", "unused");
+    });
+    expect(live.latest.pendingReportPostId).toBeNull();
+    expect(live.reportPost).not.toHaveBeenCalled();
+    live.renderer.unmount();
+  });
+
   it("requires an authenticated remote account before opening a report", () => {
     const harness = renderHarness({ currentUserId: null });
 
@@ -106,6 +126,36 @@ describe("useCommunityReportActions", () => {
         message: "Could not submit this report. Please try again.",
       },
     ]);
+    harness.renderer.unmount();
+  });
+
+  it("cancels an idle report and deduplicates an in-flight submission", async () => {
+    let resolve!: () => void;
+    const pending = new Promise<void>((nextResolve) => {
+      resolve = nextResolve;
+    });
+    const harness = renderHarness({
+      reportPost: jest.fn<any>().mockReturnValue(pending),
+    });
+
+    act(() => harness.latest.requestReport("post-1"));
+    act(() => harness.latest.cancelReport());
+    expect(harness.latest.pendingReportPostId).toBeNull();
+
+    act(() => harness.latest.requestReport("post-1"));
+    let firstSubmission!: Promise<void>;
+    act(() => {
+      firstSubmission = harness.latest.submitReport("other", "context");
+      void harness.latest.submitReport("other", "duplicate");
+    });
+    expect(harness.reportPost).toHaveBeenCalledTimes(1);
+    expect(harness.latest.reporting).toBe(true);
+
+    await act(async () => {
+      resolve();
+      await firstSubmission;
+    });
+    expect(harness.latest.reporting).toBe(false);
     harness.renderer.unmount();
   });
 });
