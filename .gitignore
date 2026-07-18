@@ -27,6 +27,7 @@ node_modules/
 
 # Next.js build output
 /client/.next/
+/client/.swc/
 .next/
 out/
 .vercel/
@@ -34,6 +35,7 @@ out/
 coverage/
 client/playwright-report/
 client/test-results/
+/client/next-env.d.ts
 *.tsbuildinfo
 
 client/.idea
