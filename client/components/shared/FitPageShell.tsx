@@ -25,6 +25,7 @@ export function FitPageShell({
         }
 
         html {
+          background-color: var(--fit-color-page-bg) !important;
           scrollbar-gutter: stable;
         }
 

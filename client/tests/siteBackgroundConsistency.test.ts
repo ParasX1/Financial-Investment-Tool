@@ -88,6 +88,9 @@ describe("site-wide page background contract", () => {
 
     expect(primitives).toContain('page: "fit-page-background text-white"');
     expect(pageShell).toContain("background: var(--fit-page-background);");
+    expect(pageShell).toContain(
+      "background-color: var(--fit-color-page-bg) !important;",
+    );
   });
 
   it.each([
