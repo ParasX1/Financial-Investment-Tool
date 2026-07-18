@@ -76,7 +76,7 @@ describe("WatchlistMarketMonitorView", () => {
     expect(markup).toContain("Prices 15s · chart 30s");
     expect(markup).toContain("Data may be delayed");
     expect(markup).toContain("1-minute snapshots");
-    expect(markup).toContain("/MarketNews?q=CBA.AX");
+    expect(markup).toContain("/MarketNews?quote=CBA.AX");
     expect(markup).not.toContain("Focused 1D monitor");
     expect(markup).not.toContain("Follow one saved idea");
     expect(markup).not.toContain(">Live<");

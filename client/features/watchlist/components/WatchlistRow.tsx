@@ -5,6 +5,7 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import Link from "next/link";
+import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import styles from "../styles/watchlist.module.css";
@@ -142,7 +143,9 @@ export function WatchlistRow({
           <ShowChartRoundedIcon fontSize="small" aria-hidden="true" />
         </button>
         <Link
-          href={`/MarketNews?q=${encodeURIComponent(item.symbol)}`}
+          href={getMarketNewsRouteHref({
+            tickerSymbol: item.symbol,
+          })}
           className={cn(styles.iconAction, FIT_FOCUS_VISIBLE)}
           aria-label={`View news for ${item.symbol}`}
           title="View related news"

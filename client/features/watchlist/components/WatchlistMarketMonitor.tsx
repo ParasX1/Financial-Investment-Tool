@@ -2,6 +2,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import Link from "next/link";
+import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
 import {
   MarketLineChart,
   useMarketChart,
@@ -213,7 +214,9 @@ export function WatchlistMarketMonitorView({
           </div>
 
           <Link
-            href={"/MarketNews?q=" + encodeURIComponent(item.symbol)}
+            href={getMarketNewsRouteHref({
+              tickerSymbol: item.symbol,
+            })}
             className={cn(
               styles.monitorNewsLink,
               FIT_FOCUS_VISIBLE,
