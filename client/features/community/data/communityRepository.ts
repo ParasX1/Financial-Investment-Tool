@@ -1,13 +1,20 @@
 // File purpose: Encapsulates Community Supabase table queries, schema fallback reads, inserts, deletes, and like RPC calls.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommentRow, DBPost, DiscussionPostInput } from "../types";
+import {
+  normalizeCommunityTickers,
+  validateCommunityTickers,
+} from "../lib/communityTickers";
+
+const CREATE_POST_WITH_TICKERS_RPC = "create_community_post_with_tickers";
 
 const COMMENT_SELECT =
   "id, post_id, user_name, body, image_url, image_path, created_at, author_id";
 const COMMENT_SELECT_WITHOUT_IMAGE_PATH =
   "id, post_id, user_name, body, image_url, created_at, author_id";
-const POST_SELECT =
+const POST_SELECT_WITHOUT_TICKERS =
   "id, title, body, tags, post_type, time_frame, symbol, source_url, image_url, image_path, votes, created_at, author_id";
+const POST_SELECT = `${POST_SELECT_WITHOUT_TICKERS}, post_tickers(symbol, position)`;
 const POST_SELECT_WITHOUT_CONTEXT =
   "id, title, body, tags, image_url, image_path, votes, created_at, author_id";
 const POST_SELECT_WITHOUT_IMAGE_PATH =
@@ -67,6 +74,7 @@ function isMissingColumn(error: unknown, columnName: string) {
 
 function isMissingExpectedPostColumn(error: unknown) {
   return (
+    isMissingPostTickersRelation(error) ||
     isMissingColumn(error, "post_type") ||
     isMissingColumn(error, "time_frame") ||
     isMissingColumn(error, "symbol") ||
@@ -75,6 +83,32 @@ function isMissingExpectedPostColumn(error: unknown) {
     isMissingColumn(error, "image_url") ||
     isMissingColumn(error, "tags") ||
     isMissingColumn(error, "body")
+  );
+}
+
+function isMissingPostTickersRelation(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const details = error as { code?: string; message?: string };
+  const message = details.message?.toLowerCase() ?? "";
+  return (
+    message.includes("post_tickers") &&
+    (details.code === "PGRST200" ||
+      details.code === "PGRST205" ||
+      message.includes("relationship") ||
+      message.includes("schema cache"))
+  );
+}
+
+function isMissingAtomicCreateFunction(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const details = error as { code?: string; message?: string };
+  const message = details.message?.toLowerCase() ?? "";
+  return (
+    message.includes(CREATE_POST_WITH_TICKERS_RPC) &&
+    (details.code === "PGRST202" ||
+      details.code === "42883" ||
+      message.includes("schema cache") ||
+      message.includes("could not find"))
   );
 }
 
@@ -92,15 +126,25 @@ function isMissingExpectedCommentColumn(error: unknown) {
 }
 
 export async function loadCommunityPostRows(db: SupabaseClient) {
+  const initialResult = (await db
+    .from("posts")
+    .select(POST_SELECT)
+    .order("created_at", { ascending: false })) as CommunityQueryResult<
+    DBPost[]
+  >;
+  if (!isMissingExpectedPostColumn(initialResult.error)) return initialResult;
+
   const selects = [
-    POST_SELECT,
+    ...(isMissingPostTickersRelation(initialResult.error)
+      ? [POST_SELECT_WITHOUT_TICKERS]
+      : []),
     POST_SELECT_WITHOUT_IMAGE_PATH,
     POST_SELECT_WITHOUT_CONTEXT,
     POST_SELECT_WITHOUT_IMAGE,
     POST_SELECT_WITHOUT_TAGS,
     LEGACY_POST_SELECT,
   ];
-  let latestResult: CommunityQueryResult<DBPost[]> | null = null;
+  let latestResult = initialResult;
 
   for (const columns of selects) {
     latestResult = (await db
@@ -113,7 +157,7 @@ export async function loadCommunityPostRows(db: SupabaseClient) {
     if (!isMissingExpectedPostColumn(latestResult.error)) return latestResult;
   }
 
-  return latestResult!;
+  return latestResult;
 }
 
 export async function loadCommunityCommentRows(
@@ -243,6 +287,48 @@ export async function insertCommunityPostRow(
   },
   uid: string,
 ) {
+  const requestedTickers =
+    postDraft.tickers ?? (postDraft.symbol ? [postDraft.symbol] : []);
+  const tickerValidationError = validateCommunityTickers(requestedTickers);
+  if (tickerValidationError) throw new Error(tickerValidationError);
+  const tickers = normalizeCommunityTickers(requestedTickers);
+
+  if (typeof db.rpc === "function") {
+    const atomicResult = (await db.rpc(CREATE_POST_WITH_TICKERS_RPC, {
+      p_title: postDraft.title,
+      p_body: postDraft.body,
+      p_tags: postDraft.tags,
+      p_post_type: postDraft.postType,
+      p_time_frame: postDraft.timeFrame,
+      p_tickers: tickers,
+      p_source_url: postDraft.sourceUrl,
+      p_image_url: postDraft.imageUrl,
+      p_image_path: postDraft.imagePath,
+    })) as CommunityQueryResult<DBPost | DBPost[]>;
+    const atomicRow = Array.isArray(atomicResult.data)
+      ? atomicResult.data[0]
+      : atomicResult.data;
+
+    if (!atomicResult.error && atomicRow) {
+      return {
+        ...atomicRow,
+        post_tickers: tickers.map((symbol, position) => ({ symbol, position })),
+      };
+    }
+    if (!atomicResult.error) {
+      throw new Error("Could not create the Community post transaction.");
+    }
+    if (!isMissingAtomicCreateFunction(atomicResult.error)) {
+      throw atomicResult.error;
+    }
+  }
+
+  if (tickers.length > 1) {
+    throw new Error(
+      "A Community database update is required before multiple tickers can be published.",
+    );
+  }
+
   const hasImage = Boolean(postDraft.imageUrl || postDraft.imagePath);
   const fullSchemaAttempt: CommunityInsertAttempt = {
     values: {
@@ -257,7 +343,7 @@ export async function insertCommunityPostRow(
       image_path: postDraft.imagePath,
       author_id: uid,
     },
-    select: POST_SELECT,
+    select: POST_SELECT_WITHOUT_TICKERS,
   };
   const legacyAttempts: CommunityInsertAttempt[] = [
     {

@@ -9,7 +9,8 @@ const EMPTY_DRAFT: DiscussionDraft = {
   tags: [],
   postType: "",
   timeFrame: "",
-  symbol: "",
+  tickers: [],
+  tickerInput: "",
   sourceUrl: "",
   imageFile: null,
   imagePreviewUrl: null,
@@ -64,6 +65,12 @@ export function useCommunityOwnedDraft(ownerKey: string) {
     },
     [draftState.toggleDraftTag, mayEditCurrentDraft],
   );
+  const setDraftTickers = React.useCallback(
+    (...args: Parameters<typeof draftState.setDraftTickers>) => {
+      if (mayEditCurrentDraft()) draftState.setDraftTickers(...args);
+    },
+    [draftState.setDraftTickers, mayEditCurrentDraft],
+  );
   const clearDraftTags = React.useCallback(() => {
     if (mayEditCurrentDraft()) draftState.clearDraftTags();
   }, [draftState.clearDraftTags, mayEditCurrentDraft]);
@@ -81,6 +88,7 @@ export function useCommunityOwnedDraft(ownerKey: string) {
     draft: ownerMatches ? draftState.draft : EMPTY_DRAFT,
     setDraftField,
     setDraftMetadataField,
+    setDraftTickers,
     toggleDraftTag,
     clearDraftTags,
     setDraftImage,

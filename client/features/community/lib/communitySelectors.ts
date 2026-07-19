@@ -45,6 +45,7 @@ function matchesCommunitySearch(post: PostUI, query: string) {
     post.title,
     post.body,
     post.symbol ?? "",
+    ...(post.tickers ?? []),
     post.sourceUrl ?? "",
     ...post.tags,
     ...signals.tickers,

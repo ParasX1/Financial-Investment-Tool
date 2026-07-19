@@ -10,6 +10,7 @@ import {
   getDefaultSelectedTags,
   normalizeSelectedTags,
 } from "../lib/smartTags";
+import { normalizeCommunityTickers } from "../lib/communityTickers";
 
 const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
   title: "",
@@ -17,7 +18,8 @@ const EMPTY_DISCUSSION_DRAFT: DiscussionDraft = {
   tags: [],
   postType: "",
   timeFrame: "",
-  symbol: "",
+  tickers: [],
+  tickerInput: "",
   sourceUrl: "",
   imageFile: null,
   imagePreviewUrl: null,
@@ -53,6 +55,13 @@ export function useCommunityDraft() {
     },
     [],
   );
+
+  const setDraftTickers = React.useCallback((tickers: string[]) => {
+    setDraft((previous) => ({
+      ...previous,
+      tickers: normalizeCommunityTickers(tickers),
+    }));
+  }, []);
 
   const toggleDraftTag = React.useCallback((tag: string) => {
     tagsEditedRef.current = true;
@@ -122,6 +131,7 @@ export function useCommunityDraft() {
     draft,
     setDraftField,
     setDraftMetadataField,
+    setDraftTickers,
     toggleDraftTag,
     clearDraftTags,
     setDraftImage,

@@ -29,6 +29,7 @@ import {
   getCommunityTimeFrameLabel,
 } from "../lib/communityPostMetadata";
 import {
+  detectTickerTags,
   getSmartTagSuggestions,
   mergeSelectedTagSuggestions,
 } from "../lib/smartTags";
@@ -41,6 +42,7 @@ import type {
 } from "../types";
 import { validateCommunityImage } from "../lib/communityValidation";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
+import { CommunityTickerField } from "./CommunityTickerField";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 const COMMUNITY_POST_TYPE_OPTIONS: CommunityPostType[] = [
@@ -94,6 +96,7 @@ export function CommunityComposer({
   canAttachImage,
   onDraftChange,
   onDraftMetadataChange,
+  onDraftTickersChange,
   onClearTags,
   onDraftImageChange,
   onToggleTag,
@@ -108,6 +111,7 @@ export function CommunityComposer({
     field: DiscussionDraftMetadataField,
     value: string,
   ) => void;
+  onDraftTickersChange: (tickers: string[]) => void;
   onClearTags: () => void;
   onDraftImageChange: (file: File | null) => void;
   onToggleTag: (tag: string) => void;
@@ -130,8 +134,16 @@ export function CommunityComposer({
     ? "Insert image"
     : "Sign in to insert images";
   const smartTags = React.useMemo(() => getSmartTagSuggestions(draft), [draft]);
+  const suggestedTickers = React.useMemo(
+    () => detectTickerTags(draft).map((ticker) => ticker.replace(/^\$/, "")),
+    [draft],
+  );
   const visibleTags = React.useMemo(
-    () => mergeSelectedTagSuggestions(draft.tags, smartTags),
+    () =>
+      mergeSelectedTagSuggestions(
+        draft.tags,
+        smartTags.filter((tag) => tag.kind !== "ticker"),
+      ),
     [draft.tags, smartTags],
   );
 
@@ -311,7 +323,7 @@ export function CommunityComposer({
             )}
           />
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,14rem)_minmax(0,12rem)_minmax(0,12rem)_minmax(0,1fr)]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,14rem)_minmax(0,12rem)_minmax(18rem,1fr)_minmax(0,1fr)]">
             <label className={cn(fitType.eyebrow, fitText.label)}>
               Post type
               <select
@@ -360,23 +372,16 @@ export function CommunityComposer({
               </select>
             </label>
 
-            <label className={cn(fitType.eyebrow, fitText.label)}>
-              Ticker
-              <input
-                value={draft.symbol}
-                disabled={creating}
-                onChange={(event) =>
-                  onDraftMetadataChange("symbol", event.target.value)
-                }
-                className={cn(
-                  "mt-1 h-10 w-full px-3 normal-case",
-                  communityUi.field,
-                  communityStyles.inputBorder,
-                  "disabled:cursor-not-allowed disabled:opacity-60",
-                )}
-                placeholder="CBA.AX or NVDA"
-              />
-            </label>
+            <CommunityTickerField
+              disabled={creating}
+              input={draft.tickerInput}
+              suggestedTickers={suggestedTickers}
+              tickers={draft.tickers}
+              onInputChange={(value) =>
+                onDraftMetadataChange("tickerInput", value)
+              }
+              onTickersChange={onDraftTickersChange}
+            />
 
             <label
               className={cn(

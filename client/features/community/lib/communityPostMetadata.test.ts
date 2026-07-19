@@ -4,6 +4,7 @@ import {
   normalizeCommunityPostType,
   normalizeCommunitySourceUrl,
   normalizeCommunitySymbol,
+  normalizeCommunityTickers,
   normalizeCommunityTimeFrame,
   validateCommunityResearchDraft,
 } from "./communityPostMetadata";
@@ -17,6 +18,10 @@ describe("Community post metadata", () => {
     expect(normalizeCommunityTimeFrame("intraday")).toBeNull();
     expect(normalizeCommunitySymbol(" $cba.ax ")).toBe("CBA.AX");
     expect(normalizeCommunitySymbol("not a ticker")).toBeNull();
+    expect(normalizeCommunityTickers([" nvda ", "$msft", "NVDA"])).toEqual([
+      "NVDA",
+      "MSFT",
+    ]);
   });
 
   it("accepts only safe public web sources", () => {
@@ -47,7 +52,8 @@ describe("Community post metadata", () => {
         tags: ["Earnings"],
         postType: "analysis",
         timeFrame: "medium",
-        symbol: " cba.ax ",
+        tickers: [" cba.ax ", " nvda "],
+        tickerInput: "",
         sourceUrl: " https://www.asx.com.au/announcement ",
       }),
     ).toEqual({
@@ -56,6 +62,7 @@ describe("Community post metadata", () => {
       tags: ["Earnings"],
       postType: "analysis",
       timeFrame: "medium",
+      tickers: ["CBA.AX", "NVDA"],
       symbol: "CBA.AX",
       sourceUrl: "https://www.asx.com.au/announcement",
     });
@@ -72,14 +79,24 @@ describe("Community post metadata", () => {
     expect(
       validateCommunityResearchDraft({
         postType: "analysis",
-        symbol: "not a ticker",
+        tickers: ["not a ticker"],
+        tickerInput: "",
         sourceUrl: "",
       }),
-    ).toBe("Enter a valid ticker, such as CBA.AX or NVDA.");
+    ).toBe("Enter valid tickers, such as CBA.AX or NVDA.");
+    expect(
+      validateCommunityResearchDraft({
+        postType: "analysis",
+        tickers: ["NVDA", "MSFT", "CBA.AX", "BHP.AX", "TLS.AX"],
+        tickerInput: "",
+        sourceUrl: "",
+      }),
+    ).toBe("Add up to 4 tickers.");
     expect(
       validateCommunityResearchDraft({
         postType: "news",
-        symbol: "NVDA",
+        tickers: ["NVDA"],
+        tickerInput: "",
         sourceUrl: "javascript:alert(1)",
       }),
     ).toBe("Enter a valid http or https source URL.");
@@ -87,14 +104,16 @@ describe("Community post metadata", () => {
       validateCommunityResearchDraft({
         postType: "analysis",
         timeFrame: "day-trade",
-        symbol: "NVDA",
+        tickers: ["NVDA"],
+        tickerInput: "",
         sourceUrl: "",
       }),
     ).toBe("Choose a valid time frame or leave it blank.");
     expect(
       validateCommunityResearchDraft({
         postType: "question",
-        symbol: "",
+        tickers: [],
+        tickerInput: "",
         sourceUrl: "",
       }),
     ).toBeNull();

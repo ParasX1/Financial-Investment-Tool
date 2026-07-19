@@ -28,7 +28,8 @@ function createDraft(overrides: Partial<DiscussionDraft> = {}): DiscussionDraft 
     tags: ["Education"],
     postType: "question",
     timeFrame: "",
-    symbol: "",
+    tickers: [],
+    tickerInput: "",
     sourceUrl: "",
     imageFile: null,
     imagePreviewUrl: null,
@@ -305,6 +306,7 @@ describe("useCommunityCreateActions behavior", () => {
       expect.objectContaining({
         title: "A careful beginner question",
         body: "What evidence should I compare?",
+        tickers: [],
       }),
       "user-a",
     );

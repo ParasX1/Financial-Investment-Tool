@@ -16,6 +16,10 @@ import type {
 import { initials, toRelativeTime } from "./communityFormat";
 import { normalizeDiscussionDraft } from "./communityDraft";
 import { inferTags, normalizeSelectedTags } from "./smartTags";
+import {
+  mergeCommunityTickerSymbols,
+  normalizeCommunityTickers,
+} from "./communityTickers";
 
 export function splitPostCopy(raw: string) {
   const paragraphs = raw
@@ -65,6 +69,14 @@ export function postFromRow(
   const savedTags = Array.isArray(row.tags)
     ? normalizeSelectedTags(row.tags)
     : null;
+  const structuredTickers = normalizeCommunityTickers(
+    [...(row.post_tickers ?? [])]
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((ticker) => ticker.symbol),
+  );
+  const tickers = structuredTickers.length
+    ? structuredTickers
+    : mergeCommunityTickerSymbols([], row.symbol);
   const user = row.author_id
     ? row.author_id === currentUserId
       ? "You"
@@ -83,7 +95,8 @@ export function postFromRow(
     tags: savedTags ?? inferTags(`${title} ${body}`),
     postType: normalizeCommunityPostType(row.post_type),
     timeFrame: normalizeCommunityTimeFrame(row.time_frame),
-    symbol: normalizeCommunitySymbol(row.symbol),
+    tickers,
+    symbol: tickers[0] ?? normalizeCommunitySymbol(row.symbol),
     sourceUrl: normalizeCommunitySourceUrl(row.source_url),
     imageUrl: row.image_url ?? undefined,
     imagePath: row.image_path ?? undefined,
@@ -131,6 +144,7 @@ export function createLocalPost(draft: DiscussionPostInput): PostUI {
     tags: copy.tags,
     postType: copy.postType,
     timeFrame: copy.timeFrame,
+    tickers: copy.tickers,
     symbol: copy.symbol,
     sourceUrl: copy.sourceUrl,
     imageUrl: draft.imageUrl ?? undefined,

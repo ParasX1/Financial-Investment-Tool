@@ -68,7 +68,6 @@ export function PostCard({
   const commentLabel = `${count.toLocaleString()} ${
     count === 1 ? "comment" : "comments"
   }`;
-  const primaryTicker = signals.tickers[0]?.replace(/^\$/, "") ?? null;
   const timeFrameLabel = getCommunityTimeFrameLabel(post.timeFrame ?? null);
   const sourceHref = normalizeCommunitySourceUrl(post.sourceUrl);
   const tickerBadges = signals.tickers.map((ticker) => (
@@ -77,6 +76,8 @@ export function PostCard({
       href={getMarketNewsRouteHref({
         tickerSymbol: ticker.replace(/^\$/, ""),
       })}
+      aria-label={`View market news for ${ticker.replace(/^\$/, "")}`}
+      title={`View market news for ${ticker.replace(/^\$/, "")}`}
       className={cn(
         communityStyles.signalBadge,
         communityStyles.signalBadgeTicker,
@@ -263,23 +264,6 @@ export function PostCard({
               <OpenInNewRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
               <span>Open source</span>
             </a>
-          ) : null}
-
-          {primaryTicker ? (
-            <Link
-              href={getMarketNewsRouteHref({
-                tickerSymbol: primaryTicker,
-              })}
-              className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-                fitType.control,
-                FOCUS_VISIBLE,
-              )}
-              aria-label={`View market news for ${primaryTicker}`}
-            >
-              <OpenInNewRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
-              <span>View market news</span>
-            </Link>
           ) : null}
 
           <div className={communityStyles.postEngagementGrid}>

@@ -39,7 +39,8 @@ export type DiscussionDraft = {
   tags: string[];
   postType: CommunityPostType | "";
   timeFrame: CommunityTimeFrame | "";
-  symbol: string;
+  tickers: string[];
+  tickerInput: string;
   sourceUrl: string;
   imageFile: File | null;
   imagePreviewUrl: string | null;
@@ -50,7 +51,7 @@ export type DiscussionDraftField = "title" | "body";
 export type DiscussionDraftMetadataField =
   | "postType"
   | "timeFrame"
-  | "symbol"
+  | "tickerInput"
   | "sourceUrl";
 
 export type DiscussionPostInput = {
@@ -59,6 +60,7 @@ export type DiscussionPostInput = {
   tags: string[];
   postType: CommunityPostType;
   timeFrame: CommunityTimeFrame | null;
+  tickers: string[];
   symbol: string | null;
   sourceUrl: string | null;
   imageUrl?: string | null;
@@ -77,6 +79,7 @@ export type SeedPost = {
   tags: string[];
   postType?: CommunityPostType;
   timeFrame?: CommunityTimeFrame | null;
+  tickers?: string[];
   symbol?: string | null;
   sourceUrl?: string | null;
   imageUrl?: string | null;
@@ -93,6 +96,10 @@ export type DBPost = {
   post_type?: string | null;
   time_frame?: string | null;
   symbol?: string | null;
+  post_tickers?: Array<{
+    symbol?: string | null;
+    position?: number | null;
+  }> | null;
   source_url?: string | null;
   image_url?: string | null;
   image_path?: string | null;

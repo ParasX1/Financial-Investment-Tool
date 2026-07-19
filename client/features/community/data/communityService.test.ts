@@ -38,6 +38,7 @@ function createMockSupabase(
         delete: jest.fn(() => builder),
         eq: jest.fn(() => builder),
         in: jest.fn(() => builder),
+        insert: jest.fn(() => builder),
         order: jest.fn(() => builder),
         select: jest.fn(() => builder),
         single: jest.fn(async () => step.result),
@@ -71,6 +72,11 @@ describe("Community delete image cleanup", () => {
           title: "Unsigned discussion",
           body: "This should not be inserted remotely.",
           tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: [],
+          symbol: null,
+          sourceUrl: null,
         },
         "user-1",
       ),
@@ -96,11 +102,82 @@ describe("Community delete image cleanup", () => {
           title: "Stale discussion",
           body: "This must not be written as another account.",
           tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: [],
+          symbol: null,
+          sourceUrl: null,
         },
         "user-a",
       ),
     ).rejects.toThrow("Your session changed. Please try again.");
 
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects more than four tickers at the service boundary", async () => {
+    const { db } = createMockSupabase([]);
+
+    await expect(
+      createCommunityPost(
+        db,
+        {
+          title: "Too many tickers",
+          body: "This input should not be silently truncated.",
+          tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: ["AAPL", "MSFT", "NVDA", "NFLX", "TSLA"],
+          symbol: "AAPL",
+          sourceUrl: null,
+        },
+        "user-1",
+      ),
+    ).rejects.toThrow("Add up to 4 tickers.");
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("persists four tickers when the legacy symbol repeats the primary", async () => {
+    const postRow = {
+      id: "post-1",
+      title: "Four ticker comparison",
+      body: "Compare four companies.",
+      tags: [],
+      symbol: "AAPL",
+      votes: 0,
+      created_at: "2026-07-19T00:00:00.000Z",
+      author_id: "user-1",
+    };
+    const db = {
+      auth: {
+        getSession: jest.fn(async () => ({
+          data: { session: { user: { id: "user-1" } } },
+        })),
+      },
+      from: jest.fn(),
+      rpc: jest.fn(async () => ({ data: [postRow], error: null })),
+    } as any;
+
+    await expect(
+      createCommunityPost(
+        db,
+        {
+          title: "Four ticker comparison",
+          body: "Compare four companies.",
+          tags: [],
+          postType: "analysis",
+          timeFrame: null,
+          tickers: ["AAPL", "MSFT", "NVDA", "NFLX"],
+          symbol: "AAPL",
+          sourceUrl: null,
+        },
+        "user-1",
+      ),
+    ).resolves.toMatchObject({
+      tickers: ["AAPL", "MSFT", "NVDA", "NFLX"],
+      symbol: "AAPL",
+    });
     expect(db.from).not.toHaveBeenCalled();
   });
 

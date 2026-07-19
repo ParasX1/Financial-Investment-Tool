@@ -53,11 +53,40 @@ describe("PostCard", () => {
     expect(html).toContain("sec.gov");
     expect(html).toContain("Open source");
     expect(html).toContain('href="https://www.sec.gov/Archives/example"');
-    expect(html).toContain("/MarketNews?quote=NVDA");
     expect(html).not.toContain(">Signals<");
     expect(html).not.toContain(">Horizon<");
     expect(html).not.toContain(">Evidence<");
     expect(html).toContain("Save discussion");
     expect(html).toContain("Report discussion");
+  });
+
+  it("renders each explicit ticker as its own market news route without a generic catch-all link", () => {
+    const html = renderToStaticMarkup(
+      <PostCard
+        post={post({
+          tags: ["Analysis"],
+          tickers: ["NVDA", "NFLX"],
+          symbol: "NVDA",
+        })}
+        comments={[]}
+        count={0}
+        liked={false}
+        likeBusy={false}
+        saved={false}
+        saveBusy={false}
+        canDeletePost={false}
+        canDeleteComment={() => false}
+        canAttachCommentImage={true}
+        onAddComment={jest.fn<any>()}
+        onDeleteComment={jest.fn<any>()}
+        onToggleLike={jest.fn<any>()}
+        onToggleSave={jest.fn<any>()}
+        onReport={jest.fn<any>()}
+      />,
+    );
+
+    expect(html).toContain("/MarketNews?quote=NVDA");
+    expect(html).toContain("/MarketNews?quote=NFLX");
+    expect(html).not.toContain(">View market news<");
   });
 });

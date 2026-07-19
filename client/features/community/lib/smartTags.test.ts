@@ -78,13 +78,16 @@ describe("Community smart tag suggestions", () => {
     ).toEqual(expect.arrayContaining(["Risk", "Portfolio", "$MSFT"]));
   });
 
-  it("uses top suggestions as default selected tags", () => {
-    expect(
-      getDefaultSelectedTags({
-        title: "TSLA options risk before earnings",
-        body: "Looking at implied volatility and downside hedges.",
-        tags: [],
-      }),
-    ).toEqual(expect.arrayContaining(["Earnings", "Risk", "$TSLA"]));
+  it("keeps ticker suggestions out of topic defaults", () => {
+    const selectedTags = getDefaultSelectedTags({
+      title: "TSLA options risk before earnings",
+      body: "Looking at implied volatility and downside hedges.",
+      tags: [],
+    });
+
+    expect(selectedTags).toEqual(
+      expect.arrayContaining(["Earnings", "Risk", "Options"]),
+    );
+    expect(selectedTags).not.toContain("$TSLA");
   });
 });

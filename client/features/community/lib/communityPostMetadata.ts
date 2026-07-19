@@ -1,5 +1,13 @@
 // File purpose: Validates explicit, author-selected Community research context.
 import type { CommunityPostType, CommunityTimeFrame } from "../types";
+import {
+  normalizeCommunitySymbol,
+  normalizeCommunityTickers,
+  parseCommunityTickerInput,
+  validateCommunityTickers,
+} from "./communityTickers";
+
+export { normalizeCommunitySymbol, normalizeCommunityTickers };
 
 const POST_TYPE_LABELS: Record<CommunityPostType, string> = {
   analysis: "Analysis",
@@ -27,7 +35,6 @@ const COMMUNITY_TIME_FRAMES = new Set<CommunityTimeFrame>([
   "medium",
   "short",
 ]);
-const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.\-^=]{0,23}$/;
 const MAX_SOURCE_URL_LENGTH = 2048;
 
 export function normalizeCommunityPostType(value: unknown): CommunityPostType {
@@ -44,12 +51,6 @@ export function normalizeCommunityTimeFrame(
     COMMUNITY_TIME_FRAMES.has(value as CommunityTimeFrame)
     ? (value as CommunityTimeFrame)
     : null;
-}
-
-export function normalizeCommunitySymbol(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.trim().replace(/^\$/, "").toUpperCase();
-  return SYMBOL_PATTERN.test(normalized) ? normalized : null;
 }
 
 export function normalizeCommunitySourceUrl(value: unknown): string | null {
@@ -85,7 +86,9 @@ export function getCommunityTimeFrameLabel(
 export function validateCommunityResearchDraft(input: {
   postType: unknown;
   timeFrame?: unknown;
-  symbol: unknown;
+  tickers?: unknown;
+  tickerInput?: unknown;
+  symbol?: unknown;
   sourceUrl: unknown;
 }): string | null {
   if (
@@ -97,10 +100,17 @@ export function validateCommunityResearchDraft(input: {
   if (input.timeFrame && !normalizeCommunityTimeFrame(input.timeFrame)) {
     return "Choose a valid time frame or leave it blank.";
   }
-  if (typeof input.symbol === "string" && input.symbol.trim()) {
-    if (!normalizeCommunitySymbol(input.symbol)) {
-      return "Enter a valid ticker, such as CBA.AX or NVDA.";
-    }
+  const tickerValues = [
+    ...(Array.isArray(input.tickers) ? input.tickers : []),
+    ...(typeof input.tickerInput === "string"
+      ? input.tickerInput.split(/[\s,]+/).filter(Boolean)
+      : typeof input.symbol === "string" && input.symbol.trim()
+        ? parseCommunityTickerInput(input.symbol)
+        : []),
+  ];
+  const tickerError = validateCommunityTickers(tickerValues);
+  if (tickerError) {
+    return tickerError;
   }
   if (typeof input.sourceUrl === "string" && input.sourceUrl.trim()) {
     if (!normalizeCommunitySourceUrl(input.sourceUrl)) {

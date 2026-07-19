@@ -9,6 +9,11 @@ function createDraft(title = ""): DiscussionDraft {
     title,
     body: "",
     tags: [],
+    postType: "",
+    timeFrame: "",
+    tickers: [],
+    tickerInput: "",
+    sourceUrl: "",
     imageFile: null,
     imagePreviewUrl: null,
   };

@@ -57,6 +57,7 @@ const structuredDraft = {
   tags: ["Banking"],
   postType: "analysis" as const,
   timeFrame: "medium" as const,
+  tickers: ["CBA.AX", "NVDA"],
   symbol: "CBA.AX",
   sourceUrl: "https://www.asx.com.au/markets/company/cba",
   imageUrl: null,
@@ -64,6 +65,55 @@ const structuredDraft = {
 };
 
 describe("Community research repository", () => {
+  it("persists every ordered ticker while keeping the first on the legacy post row", async () => {
+    const postRow = {
+      id: "post-1",
+      title: structuredDraft.title,
+      votes: 0,
+      created_at: "2026-07-18T00:00:00.000Z",
+      author_id: "user-1",
+      symbol: "CBA.AX",
+    };
+    const db = {
+      from: jest.fn(),
+      rpc: jest.fn(async () => ({ data: [postRow], error: null })),
+    } as any;
+
+    await expect(
+      insertCommunityPostRow(db, structuredDraft, "user-1"),
+    ).resolves.toMatchObject({
+      id: "post-1",
+      post_tickers: [
+        { symbol: "CBA.AX", position: 0 },
+        { symbol: "NVDA", position: 1 },
+      ],
+    });
+
+    expect(db.rpc).toHaveBeenCalledWith(
+      "create_community_post_with_tickers",
+      expect.objectContaining({ p_tickers: ["CBA.AX", "NVDA"] }),
+    );
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("refuses multiple tickers before writing when the atomic RPC is unavailable", async () => {
+    const db = {
+      from: jest.fn(),
+      rpc: jest.fn(async () => ({
+        data: null,
+        error: {
+          code: "PGRST202",
+          message: "Could not find create_community_post_with_tickers",
+        },
+      })),
+    } as any;
+
+    await expect(
+      insertCommunityPostRow(db, structuredDraft, "user-1"),
+    ).rejects.toThrow(/database update/i);
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   it("does not silently discard explicit context on an older posts schema", async () => {
     const missingContext = {
       code: "42703",

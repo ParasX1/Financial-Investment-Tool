@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeDiscussionDraft } from "../lib/communityDraft";
 import { getErrorMessage } from "../lib/communityErrors";
 import { commentFromRow, postFromRow } from "../lib/communityMappers";
+import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
 import {
   deleteCommunityCommentRow,
   deleteCommunityPostRow,
@@ -162,11 +163,7 @@ async function loadSavedPostIds(
     return { ids: [] as string[] };
   }
 
-  const { data, error } = await selectSavedPostRows(
-    db,
-    postIds,
-    currentUserId,
-  );
+  const { data, error } = await selectSavedPostRows(db, postIds, currentUserId);
 
   if (error) {
     console.error(
@@ -194,6 +191,9 @@ export async function createCommunityPost(
   if (activeUserId !== authorId) {
     throw new Error("Your session changed. Please try again.");
   }
+  const researchContextError = validateCommunityResearchDraft(draft);
+  if (researchContextError) throw new Error(researchContextError);
+
   const postDraft = {
     ...normalizeDiscussionDraft(draft),
     imageUrl: draft.imageUrl ?? null,
@@ -334,12 +334,7 @@ export async function setCommunityPostSaved(
   }
   if (!postId.trim()) throw new Error("Choose a discussion to save.");
 
-  await setCommunityPostSavedValue(
-    db,
-    postId,
-    activeUserId,
-    saved,
-  );
+  await setCommunityPostSavedValue(db, postId, activeUserId, saved);
 }
 
 export async function reportCommunityPost(

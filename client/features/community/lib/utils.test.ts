@@ -50,6 +50,20 @@ describe("Community post mapping", () => {
     expect((post as any).imagePath).toBe("posts/post.png");
   });
 
+  it("maps ordered structured tickers and keeps the first as the legacy primary", () => {
+    const post = postFromRow({
+      ...baseRow,
+      symbol: "NVDA",
+      post_tickers: [
+        { symbol: "NFLX", position: 1 },
+        { symbol: "NVDA", position: 0 },
+      ],
+    });
+
+    expect(post.tickers).toEqual(["NVDA", "NFLX"]);
+    expect(post.symbol).toBe("NVDA");
+  });
+
   it("infers tags when saved tags are missing from legacy rows", () => {
     const post = postFromRow(
       {
@@ -102,6 +116,7 @@ describe("Community post mapping", () => {
       tags: [],
       postType: "discussion",
       timeFrame: null,
+      tickers: [],
       symbol: null,
       sourceUrl: null,
       imageUrl: "blob:http://localhost/local-post-image",
@@ -119,15 +134,17 @@ describe("Community post mapping", () => {
         tags: ["$tsla", "Risk", "Risk", "<bad>"],
         postType: "analysis",
         timeFrame: "medium",
-        symbol: " tsla ",
+        tickers: [" tsla ", "nvda"],
+        tickerInput: "",
         sourceUrl: " https://example.com/research ",
       }),
     ).toEqual({
       title: "TSLA earnings idea",
       body: "Looking at implied volatility.",
-      tags: ["$TSLA", "Risk"],
+      tags: ["Risk"],
       postType: "analysis",
       timeFrame: "medium",
+      tickers: ["TSLA", "NVDA"],
       symbol: "TSLA",
       sourceUrl: "https://example.com/research",
     });
@@ -187,6 +204,11 @@ describe("Discussion draft dirty state", () => {
     title: "",
     body: "",
     tags: [],
+    postType: "" as const,
+    timeFrame: "" as const,
+    tickers: [],
+    tickerInput: "",
+    sourceUrl: "",
     imageFile: null,
     imagePreviewUrl: null,
   };

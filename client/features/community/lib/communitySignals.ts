@@ -1,5 +1,6 @@
 // File purpose: Derives neutral Community post context for search, ranking, and UI without implying investment-quality judgments.
 import type { PostUI } from "../types";
+import { MAX_COMMUNITY_TICKERS } from "./communityTickers";
 import { getCommunityPostTypeLabel } from "./communityPostMetadata";
 
 export type CommunityPostSignals = {
@@ -53,9 +54,10 @@ export function getCommunitySourceDomains(post: PostUI) {
 export function getCommunityTickers(post: PostUI) {
   const persistedSymbol = post.symbol ? `$${post.symbol}` : null;
   return uniqueLabels([
+    ...(post.tickers ?? []).map((ticker) => `$${ticker}`),
     ...post.tags.filter((tag) => tag.startsWith("$")),
     ...(persistedSymbol ? [persistedSymbol] : []),
-  ]);
+  ]).slice(0, MAX_COMMUNITY_TICKERS);
 }
 
 function getCommunityTopicLabels(post: PostUI) {

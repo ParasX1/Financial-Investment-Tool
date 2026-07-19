@@ -15,13 +15,14 @@ describe("Community post context", () => {
       tags: ["Earnings", "$NVDA"],
       postType: "analysis",
       timeFrame: null,
+      tickers: ["NVDA", "NFLX"],
       symbol: "NVDA",
       sourceUrl: "https://www.nasdaq.com/articles/nvda",
     });
 
     const signals = getCommunityPostSignals(post);
 
-    expect(signals.tickers).toEqual(["$NVDA"]);
+    expect(signals.tickers).toEqual(["$NVDA", "$NFLX"]);
     expect(signals.primaryLabel).toBe("Analysis");
     expect(signals.sourceCount).toBe(2);
     expect(signals.sourceDomains).toEqual(
@@ -36,6 +37,7 @@ describe("Community post context", () => {
       tags: [],
       postType: "question",
       timeFrame: null,
+      tickers: [],
       symbol: null,
       sourceUrl: null,
     });
@@ -55,6 +57,7 @@ describe("Community post context", () => {
       tags: ["$TSLA"],
       postType: "news",
       timeFrame: null,
+      tickers: ["TSLA"],
       symbol: "TSLA",
       sourceUrl: "https://www.reuters.com/example",
     });
@@ -64,6 +67,7 @@ describe("Community post context", () => {
       tags: [],
       postType: "discussion",
       timeFrame: null,
+      tickers: [],
       symbol: null,
       sourceUrl: null,
     });
@@ -88,6 +92,7 @@ describe("Community post context", () => {
       tags: [],
       postType: "discussion",
       timeFrame: null,
+      tickers: [],
       symbol: null,
       sourceUrl: "https://www.example.com/research",
     });

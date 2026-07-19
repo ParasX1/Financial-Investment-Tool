@@ -308,9 +308,9 @@ export function normalizeSelectedTags(
 }
 
 export function getDefaultSelectedTags(input: string | DiscussionDraft) {
-  return getSmartTagSuggestions(input, MAX_DISCUSSION_TAGS).map(
-    (suggestion) => suggestion.label,
-  );
+  return getSmartTagSuggestions(input, MAX_DISCUSSION_TAGS)
+    .filter((suggestion) => suggestion.kind !== "ticker")
+    .map((suggestion) => suggestion.label);
 }
 
 export function mergeSelectedTagSuggestions(

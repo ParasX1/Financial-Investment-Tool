@@ -1,9 +1,10 @@
 // File purpose: Normalizes discussion drafts and checks whether draft content should block navigation.
-import type {
-  DiscussionDraft,
-  DiscussionPostInput,
-} from "../types";
+import type { DiscussionDraft, DiscussionPostInput } from "../types";
 import { normalizeSelectedTags } from "./smartTags";
+import {
+  normalizeCommunityTickers,
+  parseCommunityTickerInput,
+} from "./communityTickers";
 import {
   normalizeCommunityPostType,
   normalizeCommunitySourceUrl,
@@ -12,24 +13,32 @@ import {
 } from "./communityPostMetadata";
 
 export function normalizeDiscussionDraft(
-  draft: Pick<DiscussionDraft, "title" | "body" | "tags"> &
-    {
-      postType?: DiscussionDraft["postType"] | null;
-      timeFrame?: DiscussionDraft["timeFrame"] | null;
-      symbol?: DiscussionDraft["symbol"] | null;
-      sourceUrl?: DiscussionDraft["sourceUrl"] | null;
-    },
+  draft: Pick<DiscussionDraft, "title" | "body" | "tags"> & {
+    postType?: DiscussionDraft["postType"] | null;
+    timeFrame?: DiscussionDraft["timeFrame"] | null;
+    tickers?: DiscussionDraft["tickers"] | null;
+    tickerInput?: DiscussionDraft["tickerInput"] | null;
+    symbol?: string | null;
+    sourceUrl?: DiscussionDraft["sourceUrl"] | null;
+  },
 ): DiscussionPostInput {
   const title = draft.title.trim().replace(/\s+/g, " ");
   const body = draft.body.trim();
+  const tickers = normalizeCommunityTickers([
+    ...(draft.tickers ?? []),
+    ...parseCommunityTickerInput(draft.tickerInput ?? draft.symbol ?? ""),
+  ]);
 
   return {
     title,
     body,
-    tags: normalizeSelectedTags(draft.tags),
+    tags: normalizeSelectedTags(draft.tags).filter(
+      (tag) => !tag.startsWith("$"),
+    ),
     postType: normalizeCommunityPostType(draft.postType),
     timeFrame: normalizeCommunityTimeFrame(draft.timeFrame),
-    symbol: normalizeCommunitySymbol(draft.symbol),
+    tickers,
+    symbol: tickers[0] ?? normalizeCommunitySymbol(draft.symbol),
     sourceUrl: normalizeCommunitySourceUrl(draft.sourceUrl),
   };
 }
@@ -41,7 +50,8 @@ export function isDiscussionDraftDirty(draft: DiscussionDraft) {
       draft.tags.length ||
       (draft.postType && draft.postType !== "discussion") ||
       draft.timeFrame ||
-      draft.symbol?.trim() ||
+      draft.tickers?.length ||
+      draft.tickerInput?.trim() ||
       draft.sourceUrl?.trim() ||
       draft.imageFile,
   );

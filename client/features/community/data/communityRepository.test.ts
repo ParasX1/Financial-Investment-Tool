@@ -74,6 +74,35 @@ function createRepositoryClient(steps: QueryStep[]) {
 }
 
 describe("Community repository", () => {
+  it("falls back when the post tickers relationship has not been migrated yet", async () => {
+    const relationMissing = {
+      code: "PGRST200",
+      message: "Could not find a relationship between posts and post_tickers",
+    };
+    const livePost = {
+      id: "post-1",
+      title: "Legacy ticker post",
+      symbol: "NVDA",
+      votes: 1,
+      created_at: "2026-05-01T00:00:00.000Z",
+      author_id: "user-1",
+    };
+    const { db, calls } = createRepositoryClient([
+      { table: "posts", result: { data: null, error: relationMissing } },
+      { table: "posts", result: { data: [livePost], error: null } },
+    ]);
+
+    await expect(loadCommunityPostRows(db)).resolves.toEqual({
+      data: [livePost],
+      error: null,
+    });
+    const selects = calls
+      .filter((call) => call.method === "select")
+      .map((call) => String(call.value));
+    expect(selects[0]).toContain("post_tickers");
+    expect(selects[1]).not.toContain("post_tickers");
+  });
+
   it("falls back to legacy post selects when a newer column is missing", async () => {
     const livePost = {
       id: "post-1",
@@ -128,6 +157,11 @@ describe("Community repository", () => {
         title: "Text only",
         body: "Body",
         tags: [],
+        postType: "discussion",
+        timeFrame: null,
+        tickers: [],
+        symbol: null,
+        sourceUrl: null,
         imageUrl: null,
         imagePath: null,
       },
@@ -158,6 +192,11 @@ describe("Community repository", () => {
           title: "Image post",
           body: "Body",
           tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: [],
+          symbol: null,
+          sourceUrl: null,
           imageUrl: "https://cdn.example.com/post.png",
           imagePath: "posts/post.png",
         },
