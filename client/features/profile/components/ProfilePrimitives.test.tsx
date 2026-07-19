@@ -3,6 +3,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import TestRenderer, { act } from "react-test-renderer";
 import { ProfileField } from "./ProfileField";
 import { ProfileSettingRow } from "./ProfileSettingRow";
+import styles from "../styles/profile.module.css";
 
 function TestIcon() {
   return <svg aria-label="Test icon" />;
@@ -56,6 +57,38 @@ describe("profile form primitives", () => {
     act(() => buttons[1].props.onClick());
     expect(onSecondaryAction).toHaveBeenCalledTimes(1);
     expect(onAction).toHaveBeenCalledTimes(1);
+    renderer.unmount();
+  });
+
+  it("groups the label, value, and helper copy into one readable content block", () => {
+    const renderer = TestRenderer.create(
+      <ProfileSettingRow
+        description="Confirm from inbox."
+        icon={TestIcon}
+        label="Email"
+        status="Pending"
+        statusTone="warning"
+        value="student@example.com"
+        actionLabel="Change"
+        onAction={jest.fn()}
+      />,
+    );
+
+    const content = renderer.root.findByProps({
+      className: styles.settingContent,
+    });
+
+    expect(
+      content.findByProps({ className: styles.settingLabel }).children.join(""),
+    ).toBe("Email");
+    expect(
+      content.findByProps({ className: styles.settingValue }).children.join(""),
+    ).toBe("student@example.com");
+    expect(
+      content
+        .findByProps({ className: styles.settingDescription })
+        .children.join(""),
+    ).toBe("Confirm from inbox.");
     renderer.unmount();
   });
 });

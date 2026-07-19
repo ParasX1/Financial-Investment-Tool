@@ -41,7 +41,7 @@ export function ProfileSettingRow({
         <Icon sx={{ fontSize: 20 }} />
       </div>
 
-      <div className={styles.settingMeta}>
+      <div className={styles.settingContent}>
         <div className={styles.settingHeading}>
           <span className={styles.settingLabel}>{label}</span>
           {status ? (
@@ -56,11 +56,11 @@ export function ProfileSettingRow({
             </span>
           ) : null}
         </div>
+        <div className={styles.settingValue}>{value}</div>
         {description ? (
           <p className={styles.settingDescription}>{description}</p>
         ) : null}
       </div>
-      <div className={styles.settingValue}>{value}</div>
 
       {hasPrimaryAction || hasSecondaryAction ? (
         <div className={styles.settingActions}>

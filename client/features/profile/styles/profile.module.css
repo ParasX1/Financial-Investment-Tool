@@ -504,6 +504,7 @@
 .settingsGrid {
   display: grid;
   min-width: 0;
+  align-items: start;
   gap: 1rem;
 }
 
@@ -560,8 +561,10 @@
   color: #dbe4ff;
 }
 
-.settingMeta {
+.settingContent {
+  display: grid;
   min-width: 0;
+  gap: 0.2rem;
 }
 
 .settingHeading {
@@ -580,7 +583,6 @@
 }
 
 .settingValue {
-  grid-column: 2;
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--profile-copy);
@@ -590,7 +592,7 @@
 }
 
 .settingDescription {
-  margin-top: 0.28rem;
+  margin: 0;
   color: var(--profile-muted);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-medium);
@@ -603,6 +605,7 @@
   min-width: 0;
   flex-wrap: wrap;
   gap: 0.55rem;
+  justify-self: end;
 }
 
 .rowAction {
@@ -853,13 +856,10 @@
 
   .settingActions {
     grid-column: 3;
-    grid-row: 1 / span 2;
+    grid-row: 1;
+    align-self: center;
     align-items: center;
     justify-content: flex-end;
-  }
-
-  .settingValue {
-    grid-column: 2;
   }
 }
 
