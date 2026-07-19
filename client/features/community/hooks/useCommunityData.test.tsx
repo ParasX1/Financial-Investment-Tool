@@ -357,4 +357,98 @@ describe("useCommunityData account-scoped resource", () => {
     });
     expect(unsubscribeB).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps the loaded Top order stable while engagement counters update", async () => {
+    const leader = {
+      ...post("leader", "user-b"),
+      votes: 10,
+      sortTime: 200,
+    };
+    const reading = {
+      ...post("reading", "user-c"),
+      votes: 9,
+      sortTime: 100,
+    };
+    const dependencies: CommunityDataDependencies = {
+      load: jest.fn<any>(() => Promise.resolve(result([leader, reading]))),
+      subscribeToCommentInserts: jest.fn<any>(() => jest.fn()),
+    };
+    const supabase = {} as any;
+    let latest: ReturnType<typeof useCommunityData> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useCommunityData(
+        {
+          authLoading: false,
+          currentUserId: "user-a",
+          feedView: "top",
+          query: "",
+          supabase,
+          topTimeRange: "all-time",
+        },
+        dependencies,
+      );
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    expect(latest!.filteredPosts.map((item) => item.id)).toEqual([
+      "leader",
+      "reading",
+    ]);
+
+    await act(async () => {
+      latest!.setPosts((posts) =>
+        posts.map((item) =>
+          item.id === "reading" ? { ...item, votes: 100 } : item,
+        ),
+      );
+      latest!.dispatchComments({
+        type: "addComment",
+        postId: "reading",
+        comment: {
+          id: "new-comment",
+          user: "You",
+          text: "I am still reading this discussion.",
+          createdAt: new Date().toISOString(),
+          authorId: "user-a",
+          fromDB: true,
+        },
+      });
+    });
+
+    expect(latest!.filteredPosts.map((item) => item.id)).toEqual([
+      "leader",
+      "reading",
+    ]);
+    expect(latest!.filteredPosts[1].votes).toBe(100);
+    expect(latest!.commentsState.counts.reading).toBe(1);
+
+    await act(async () => {
+      latest!.setPosts((posts) => [
+        { ...post("newly-active", "user-d"), votes: 1_000 },
+        ...posts,
+      ]);
+    });
+    expect(latest!.filteredPosts.map((item) => item.id)).toEqual([
+      "leader",
+      "reading",
+      "newly-active",
+    ]);
+
+    await act(async () => {
+      latest!.setPosts((posts) =>
+        posts.filter((item) => item.id !== "leader"),
+      );
+    });
+    expect(latest!.filteredPosts.map((item) => item.id)).toEqual([
+      "reading",
+      "newly-active",
+    ]);
+    renderer!.unmount();
+  });
 });

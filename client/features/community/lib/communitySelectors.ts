@@ -134,6 +134,38 @@ export function getCommunityFeedCounts({
   };
 }
 
+function createTopPostComparator(commentsState: CommentsState, now: number) {
+  const scoreCache = new Map<string, number>();
+  const getScore = (post: PostUI) => {
+    const cached = scoreCache.get(post.id);
+    if (cached !== undefined) return cached;
+
+    const score = getCommunitySignalScore(post, {
+      commentCount: commentsState.counts[post.id] ?? post.commentCount,
+      now,
+    });
+    scoreCache.set(post.id, score);
+    return score;
+  };
+
+  return (a: PostUI, b: PostUI) =>
+    getScore(b) - getScore(a) || b.votes - a.votes || b.sortTime - a.sortTime;
+}
+
+export function getTopCommunityPostOrder({
+  posts,
+  commentsState,
+  now = Date.now(),
+}: {
+  posts: PostUI[];
+  commentsState: CommentsState;
+  now?: number;
+}) {
+  return [...posts]
+    .sort(createTopPostComparator(commentsState, now))
+    .map((post) => post.id);
+}
+
 export function getVisibleCommunityPosts({
   posts,
   query,
@@ -144,6 +176,7 @@ export function getVisibleCommunityPosts({
   savedPostIds,
   commentsState,
   currentUserId,
+  topPostOrderIds,
 }: {
   posts: PostUI[];
   query: string;
@@ -154,6 +187,7 @@ export function getVisibleCommunityPosts({
   savedPostIds: Set<string>;
   commentsState: CommentsState;
   currentUserId: string | null;
+  topPostOrderIds?: readonly string[];
 }) {
   const matchingPosts = posts.filter((post) =>
     matchesCommunitySearch(post, query),
@@ -185,24 +219,25 @@ export function getVisibleCommunityPosts({
       cutoff === null
         ? scopedPosts
         : scopedPosts.filter((post) => post.sortTime >= cutoff);
-    const scoreCache = new Map<string, number>();
-    const getScore = (post: PostUI) => {
-      const cached = scoreCache.get(post.id);
-      if (cached !== undefined) return cached;
+    if (!topPostOrderIds) {
+      return [...timeScopedPosts].sort(
+        createTopPostComparator(commentsState, now),
+      );
+    }
 
-      const score = getCommunitySignalScore(post, {
-        commentCount: commentsState.counts[post.id] ?? post.commentCount,
-        now,
-      });
-      scoreCache.set(post.id, score);
-      return score;
-    };
+    const stableRank = new Map(
+      topPostOrderIds.map((postId, index) => [postId, index]),
+    );
+    const compareUnrankedPosts = createTopPostComparator(commentsState, now);
 
     return [...timeScopedPosts].sort((a, b) => {
-      const scoreA = getScore(a);
-      const scoreB = getScore(b);
+      const rankA = stableRank.get(a.id);
+      const rankB = stableRank.get(b.id);
 
-      return scoreB - scoreA || b.votes - a.votes || b.sortTime - a.sortTime;
+      if (rankA !== undefined && rankB !== undefined) return rankA - rankB;
+      if (rankA !== undefined) return -1;
+      if (rankB !== undefined) return 1;
+      return compareUnrankedPosts(a, b);
     });
   }
 

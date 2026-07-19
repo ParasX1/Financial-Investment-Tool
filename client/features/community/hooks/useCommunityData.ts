@@ -8,6 +8,7 @@ import { commentFromRow } from "../lib/communityMappers";
 import { getCommunityLoadErrorMessage } from "../lib/communityLoadStatus";
 import {
   getCommunityFeedCounts,
+  getTopCommunityPostOrder,
   getVisibleCommunityPosts,
 } from "../lib/communitySelectors";
 import { commentsReducer, createCommentsState } from "../state/commentsReducer";
@@ -30,6 +31,8 @@ type CommunityResource = {
   likedPostIds: Set<string>;
   savedPostIds: Set<string>;
   posts: PostUI[];
+  // Rebuilt only when the feed resource loads, so live counters cannot move cards.
+  topPostOrderIds: readonly string[];
 };
 
 type CommunityResourceState = {
@@ -54,17 +57,24 @@ const EMPTY_RESOURCE: CommunityResource = {
   likedPostIds: new Set(),
   savedPostIds: new Set(),
   posts: [],
+  topPostOrderIds: [],
 };
 
 function createDemoResource(): CommunityResource {
   const cache = getCachedCommunityForOwner("demo");
   if (cache) return createCachedResource(cache);
 
+  const commentsState = createCommentsState(DEMO_POSTS);
+
   return {
-    commentsState: createCommentsState(DEMO_POSTS),
+    commentsState,
     likedPostIds: new Set(),
     savedPostIds: new Set(),
     posts: [...DEMO_POSTS],
+    topPostOrderIds: getTopCommunityPostOrder({
+      posts: DEMO_POSTS,
+      commentsState,
+    }),
   };
 }
 
@@ -74,17 +84,27 @@ function createCachedResource(cache: CommunityMemoryCache): CommunityResource {
     likedPostIds: new Set(cache.likedPostIds),
     savedPostIds: new Set(cache.savedPostIds),
     posts: cache.posts,
+    topPostOrderIds: getTopCommunityPostOrder({
+      posts: cache.posts,
+      commentsState: cache.commentsState,
+    }),
   };
 }
 
 function createLoadedResource(
   result: Awaited<ReturnType<typeof loadCommunityData>>,
 ): CommunityResource {
+  const commentsState = createCommentsState(result.posts, result.comments);
+
   return {
-    commentsState: createCommentsState(result.posts, result.comments),
+    commentsState,
     likedPostIds: new Set(result.likedPostIds),
     savedPostIds: new Set(result.savedPostIds),
     posts: result.posts,
+    topPostOrderIds: getTopCommunityPostOrder({
+      posts: result.posts,
+      commentsState,
+    }),
   };
 }
 
@@ -302,6 +322,7 @@ export function useCommunityData(
         savedPostIds: resource.savedPostIds,
         commentsState: resource.commentsState,
         currentUserId,
+        topPostOrderIds: resource.topPostOrderIds,
       }),
     [currentUserId, feedView, query, resource, topTimeRange],
   );
