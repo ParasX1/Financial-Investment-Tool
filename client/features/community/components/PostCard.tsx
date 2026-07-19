@@ -1,13 +1,8 @@
 // File purpose: Renders a single discussion card with markdown content, tags, comments, likes, and delete actions.
 import * as React from "react";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
-import BookmarkRoundedIcon from "@mui/icons-material/BookmarkRounded";
-import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
-import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded";
-import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import Link from "next/link";
 import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
@@ -23,6 +18,7 @@ import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
 import { ExpandableText } from "./ExpandableText";
+import { PostEngagementBar } from "./PostEngagementBar";
 
 export function PostCard({
   post,
@@ -63,9 +59,11 @@ export function PostCard({
   const [busy, setBusy] = React.useState(false);
   const commentsId = React.useId();
   const formattedVotes = post.votes.toLocaleString();
+  const formattedCommentCount = count.toLocaleString();
+  const voteLabel = `${formattedVotes} ${post.votes === 1 ? "vote" : "votes"}`;
   const hasInlineImage = bodyContainsImageUrl(post.body, post.imageUrl);
   const signals = React.useMemo(() => getCommunityPostSignals(post), [post]);
-  const commentLabel = `${count.toLocaleString()} ${
+  const commentLabel = `${formattedCommentCount} ${
     count === 1 ? "comment" : "comments"
   }`;
   const timeFrameLabel = getCommunityTimeFrameLabel(post.timeFrame ?? null);
@@ -203,24 +201,40 @@ export function PostCard({
               </p>
             </div>
 
-            {canDeletePost && onDeletePost ? (
+            <div className={communityStyles.postRailHeaderActions}>
               <button
                 type="button"
-                onClick={() => onDeletePost(post.id)}
+                onClick={() => onReport(post.id)}
                 className={cn(
-                  communityUi.iconButton,
-                  "h-8 w-8 shrink-0 text-[#7f8798] hover:bg-[#ff3d68]/10 hover:text-[#ffc4d2]",
+                  "inline-flex min-h-8 touch-manipulation items-center gap-[6px] rounded-md px-[7px] py-[4px] text-[#7f8798] transition-[background-color,color,transform] duration-150 hover:bg-white/[0.04] hover:text-[#f3f6ff] active:translate-y-px",
+                  fitType.control,
                   FOCUS_VISIBLE,
                 )}
-                title="Delete post"
-                aria-label="Delete post"
+                aria-label="Report discussion"
               >
-                <DeleteOutlineRoundedIcon
-                  sx={{ fontSize: 18 }}
-                  aria-hidden="true"
-                />
+                <FlagOutlinedIcon sx={{ fontSize: 17 }} aria-hidden="true" />
+                <span>Report</span>
               </button>
-            ) : null}
+
+              {canDeletePost && onDeletePost ? (
+                <button
+                  type="button"
+                  onClick={() => onDeletePost(post.id)}
+                  className={cn(
+                    communityUi.iconButton,
+                    "h-8 w-8 shrink-0 text-[#7f8798] transition-transform duration-150 hover:bg-[#ff3d68]/10 hover:text-[#ffc4d2] active:translate-y-px",
+                    FOCUS_VISIBLE,
+                  )}
+                  title="Delete post"
+                  aria-label="Delete post"
+                >
+                  <DeleteOutlineRoundedIcon
+                    sx={{ fontSize: 18 }}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {hasSignalBadges ? (
@@ -266,101 +280,23 @@ export function PostCard({
             </a>
           ) : null}
 
-          <div className={communityStyles.postEngagementGrid}>
-            <button
-              type="button"
-              onClick={() => setOpen((value) => !value)}
-              className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] transition-colors",
-                fitType.control,
-                open
-                  ? "bg-[#171b4a] text-[#cfd8ff]"
-                  : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-                FOCUS_VISIBLE,
-              )}
-              aria-expanded={open}
-              aria-controls={commentsId}
-              aria-label={`Toggle ${commentLabel} for ${post.title}`}
-            >
-              <ChatBubbleOutlineRoundedIcon
-                sx={{ fontSize: 18 }}
-                aria-hidden="true"
-              />
-              <span aria-live="polite">{commentLabel}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onToggleLike(post.id)}
-              disabled={likeBusy}
-              className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] transition-colors",
-                fitType.control,
-                liked
-                  ? "bg-[#171b4a] text-[#cfd8ff]"
-                  : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-                likeBusy ? "cursor-wait opacity-70" : "",
-                FOCUS_VISIBLE,
-              )}
-              aria-pressed={liked}
-              aria-label={`${
-                liked ? "Unlike" : "Like"
-              } post. ${formattedVotes} votes`}
-            >
-              {liked ? (
-                <ThumbUpRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
-              ) : (
-                <ThumbUpOffAltRoundedIcon
-                  sx={{ fontSize: 18 }}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="tabular-nums" aria-live="polite">
-                {formattedVotes}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onToggleSave(post.id)}
-              disabled={saveBusy}
-              className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] transition-colors",
-                fitType.control,
-                saved
-                  ? "bg-[#171b4a] text-[#cfd8ff]"
-                  : "text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-                saveBusy ? "cursor-wait opacity-70" : "",
-                FOCUS_VISIBLE,
-              )}
-              aria-pressed={saved}
-              aria-label={`${saved ? "Remove saved" : "Save"} discussion`}
-            >
-              {saved ? (
-                <BookmarkRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
-              ) : (
-                <BookmarkBorderRoundedIcon
-                  sx={{ fontSize: 18 }}
-                  aria-hidden="true"
-                />
-              )}
-              <span>{saved ? "Saved" : "Save"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onReport(post.id)}
-              className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[7px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
-                fitType.control,
-                FOCUS_VISIBLE,
-              )}
-              aria-label="Report discussion"
-            >
-              <FlagOutlinedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
-              <span>Report</span>
-            </button>
-          </div>
+          <PostEngagementBar
+            commentsId={commentsId}
+            commentLabel={commentLabel}
+            formattedCommentCount={formattedCommentCount}
+            postId={post.id}
+            postTitle={post.title}
+            formattedVotes={formattedVotes}
+            voteLabel={voteLabel}
+            commentsOpen={open}
+            liked={liked}
+            likeBusy={likeBusy}
+            saved={saved}
+            saveBusy={saveBusy}
+            onToggleComments={() => setOpen((value) => !value)}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+          />
         </aside>
       </div>
 
