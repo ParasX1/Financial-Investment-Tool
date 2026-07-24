@@ -72,6 +72,8 @@ export const COMMUNITY_COMPACT_MEDIA_QUERY = `(max-width: ${
 }px)`;
 export const POST_BODY_PREVIEW_MAX_CHARS = 360;
 export const POST_BODY_PREVIEW_MIN_WORD_BOUNDARY = 240;
+export const MAX_COMMUNITY_POST_TITLE_CHARS = 300;
+export const MAX_COMMUNITY_POST_BODY_CHARS = 40_000;
 
 export const COMMUNITY_IMAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";

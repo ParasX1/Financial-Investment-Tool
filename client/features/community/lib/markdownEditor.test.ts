@@ -15,23 +15,35 @@ describe("Community markdown editor helpers", () => {
       applyMarkdownCommand("alpha beta", { start: 6, end: 10 }, "bold").value,
     ).toBe("alpha **beta**");
     expect(
-      applyMarkdownCommand("alpha beta", { start: 6, end: 10 }, "strike")
-        .value,
+      applyMarkdownCommand("alpha beta", { start: 6, end: 10 }, "strike").value,
     ).toBe("alpha ~~beta~~");
   });
 
   it("prefixes selected lines for heading and lists", () => {
     expect(
-      applyMarkdownCommand("line one\nline two", { start: 0, end: 17 }, "bullet")
-        .value,
+      applyMarkdownCommand(
+        "line one\nline two",
+        { start: 0, end: 17 },
+        "bullet",
+      ).value,
     ).toBe("- line one\n- line two");
     expect(
-      applyMarkdownCommand("line one\nline two", { start: 0, end: 17 }, "numbered")
-        .value,
+      applyMarkdownCommand(
+        "line one\nline two",
+        { start: 0, end: 17 },
+        "numbered",
+      ).value,
     ).toBe("1. line one\n2. line two");
     expect(
       applyMarkdownCommand("line one", { start: 0, end: 8 }, "heading").value,
     ).toBe("## line one");
+    expect(
+      applyMarkdownCommand(
+        "line one\nline two",
+        { start: 0, end: 17 },
+        "blockquote",
+      ).value,
+    ).toBe("> line one\n> line two");
   });
 
   it("inserts validated markdown links", () => {
@@ -72,5 +84,17 @@ describe("Community markdown editor helpers", () => {
       replaceDraftImageMarkers(inserted.value, "https://cdn.example/chart.png"),
     ).toBe("before ![chart](https://cdn.example/chart.png)\nafter");
     expect(removeDraftImageMarkers(inserted.value)).toBe("before after");
+  });
+
+  it("wraps selected text in inline code and fenced code blocks", () => {
+    expect(
+      applyMarkdownCommand("alpha beta", { start: 6, end: 10 }, "inlineCode")
+        .value,
+    ).toBe("alpha `beta`");
+
+    expect(
+      applyMarkdownCommand("const a = 1;", { start: 0, end: 12 }, "codeBlock")
+        .value,
+    ).toBe("```\nconst a = 1;\n```");
   });
 });

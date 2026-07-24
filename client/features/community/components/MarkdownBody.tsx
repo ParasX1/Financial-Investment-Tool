@@ -1,368 +1,346 @@
-// File purpose: Renders the supported Community markdown subset without using raw HTML injection.
+// File purpose: Safely renders the shared Community CommonMark/GFM contract.
 import * as React from "react";
+import Markdown, { type MarkdownToJSX } from "markdown-to-jsx/react";
 import communityStyles from "../styles/community.module.css";
 import { cn, fitType } from "../design";
-import { DRAFT_IMAGE_MARKER } from "../lib/markdownEditor";
 
-type ImageToken = {
-  index: number;
-  end: number;
-  alt: string;
-  raw: string;
-  src: string;
-};
+const LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+const IMAGE_PROTOCOLS = new Set(["http:", "https:", "blob:"]);
 
-type InlineToken = {
-  index: number;
-  end: number;
-  kind: "link" | "boldItalic" | "bold" | "strike" | "italic" | "superscript";
-  raw: string;
-  text: string;
-  href?: string;
-};
+function normalizeAllowedUrl(
+  rawUrl: string | undefined,
+  protocols: ReadonlySet<string>,
+) {
+  if (!rawUrl) return null;
 
-const inlineMarkers: Array<Pick<InlineToken, "kind"> & { marker: string }> = [
-  { kind: "boldItalic", marker: "***" },
-  { kind: "strike", marker: "~~" },
-  { kind: "bold", marker: "**" },
-  { kind: "italic", marker: "*" },
-  { kind: "superscript", marker: "^" },
-];
-
-function getSafeUrl(rawUrl: string, options: { image?: boolean } = {}) {
   try {
     const url = new URL(rawUrl);
-    const allowedProtocols = options.image
-      ? ["http:", "https:", "blob:"]
-      : ["http:", "https:", "mailto:"];
-
-    return allowedProtocols.includes(url.protocol) ? url.toString() : null;
+    return protocols.has(url.protocol) ? url.toString() : null;
   } catch {
     return null;
   }
 }
 
-function findMarkdownDestinationEnd(text: string, start: number) {
-  let depth = 0;
-
-  for (let index = start; index < text.length; index += 1) {
-    const char = text[index];
-
-    if (char === "(") {
-      depth += 1;
-      continue;
-    }
-
-    if (char === ")") {
-      if (depth === 0) return index;
-      depth -= 1;
-    }
+function markdownUrlSanitizer(value: string, tag: string, attribute: string) {
+  if (tag === "a" && attribute === "href") {
+    return normalizeAllowedUrl(value, LINK_PROTOCOLS);
   }
-
-  return -1;
+  if (tag === "img" && attribute === "src") {
+    return normalizeAllowedUrl(value, IMAGE_PROTOCOLS);
+  }
+  return value;
 }
 
-function findLinkToken(text: string, index: number): InlineToken | null {
-  if (text[index] !== "[" || text[index - 1] === "!") return null;
+function getMarkdownOptions(
+  allowedImageUrl: string | null,
+  optimizeForStreaming: boolean,
+): MarkdownToJSX.Options {
+  const normalizedAllowedImage = normalizeAllowedUrl(
+    allowedImageUrl ?? undefined,
+    IMAGE_PROTOCOLS,
+  );
 
-  const labelEnd = text.indexOf("](", index + 1);
-  if (labelEnd <= index + 1) return null;
-
-  const hrefStart = labelEnd + 2;
-  const hrefEnd = findMarkdownDestinationEnd(text, hrefStart);
-  if (hrefEnd <= hrefStart) return null;
-
-  const end = hrefEnd + 1;
   return {
-    index,
-    end,
-    kind: "link",
-    raw: text.slice(index, end),
-    text: text.slice(index + 1, labelEnd),
-    href: text.slice(hrefStart, hrefEnd),
-  };
-}
+    disableAutoLink: optimizeForStreaming,
+    disableParsingRawHTML: true,
+    enforceAtxHeadings: true,
+    optimizeForStreaming,
+    sanitizer: markdownUrlSanitizer,
+    wrapper: React.Fragment,
+    overrides: {
+      a: {
+        component: ({
+          children,
+          href,
+          ...props
+        }: React.ComponentPropsWithoutRef<"a">) => {
+          const safeHref = normalizeAllowedUrl(href, LINK_PROTOCOLS);
+          if (!safeHref) return <>{children}</>;
 
-function findImageToken(text: string, index: number): ImageToken | null {
-  if (!text.startsWith("![", index)) return null;
-
-  const altEnd = text.indexOf("](", index + 2);
-  if (altEnd < index + 2) return null;
-
-  const srcStart = altEnd + 2;
-  const srcEnd = findMarkdownDestinationEnd(text, srcStart);
-  if (srcEnd <= srcStart) return null;
-
-  const end = srcEnd + 1;
-  return {
-    index,
-    end,
-    alt: text.slice(index + 2, altEnd),
-    raw: text.slice(index, end),
-    src: text.slice(srcStart, srcEnd),
-  };
-}
-
-function findNextImageToken(text: string, start: number) {
-  for (let index = start; index < text.length; index += 1) {
-    const image = findImageToken(text, index);
-    if (image) return image;
-  }
-
-  return null;
-}
-
-function findDelimitedToken(
-  text: string,
-  index: number,
-  kind: InlineToken["kind"],
-  marker: string,
-): InlineToken | null {
-  if (!text.startsWith(marker, index)) return null;
-
-  const contentStart = index + marker.length;
-  let contentEnd = text.indexOf(marker, contentStart);
-  while (
-    contentEnd !== -1 &&
-    ((marker === "**" && text[contentEnd + marker.length] === "*") ||
-      (marker === "*" &&
-        (text[contentEnd - 1] === "*" ||
-          text[contentEnd + marker.length] === "*")))
-  ) {
-    contentEnd = text.indexOf(marker, contentEnd + 1);
-  }
-
-  if (contentEnd <= contentStart) return null;
-
-  const end = contentEnd + marker.length;
-  return {
-    index,
-    end,
-    kind,
-    raw: text.slice(index, end),
-    text: text.slice(contentStart, contentEnd),
-  };
-}
-
-function findNextInlineToken(text: string, start: number) {
-  for (let index = start; index < text.length; index += 1) {
-    const link = findLinkToken(text, index);
-    if (link) return link;
-
-    for (const marker of inlineMarkers) {
-      const token = findDelimitedToken(text, index, marker.kind, marker.marker);
-      if (token) return token;
-    }
-  }
-
-  return null;
-}
-
-function renderInlineMarkdown(text: string, keyPrefix: string) {
-  const nodes: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  let token = findNextInlineToken(text, lastIndex);
-  while (token) {
-    if (token.index > lastIndex) {
-      nodes.push(text.slice(lastIndex, token.index));
-    }
-
-    const key = `${keyPrefix}-${token.kind}-${token.index}`;
-
-    if (token.kind === "link" && token.href) {
-      const safeHref = getSafeUrl(token.href);
-      nodes.push(
-        safeHref ? (
-          <a
-            key={key}
-            href={safeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[#9eb2ff] underline decoration-[#6f7cff]/50 underline-offset-4 hover:text-[#dce3ff]"
+          return (
+            <a
+              {...props}
+              href={safeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#9eb2ff] underline decoration-[#6f7cff]/50 underline-offset-4 hover:text-[#dce3ff]"
+            >
+              {children}
+            </a>
+          );
+        },
+      },
+      blockquote: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"blockquote">) => (
+          <blockquote
+            {...props}
+            className="my-3 border-l-2 border-[#7384ff]/60 bg-white/[0.025] py-1 pl-4 text-[#b8c2d6]"
           >
-            {renderInlineMarkdown(token.text, `${key}-label`)}
-          </a>
-        ) : (
-          token.raw
+            {children}
+          </blockquote>
         ),
-      );
-    } else if (token.kind === "boldItalic") {
-      nodes.push(
-        <strong key={key}>
-          <em>{renderInlineMarkdown(token.text, `${key}-inner`)}</em>
-        </strong>,
-      );
-    } else if (token.kind === "bold") {
-      nodes.push(
-        <strong key={key}>
-          {renderInlineMarkdown(token.text, `${key}-inner`)}
-        </strong>,
-      );
-    } else if (token.kind === "strike") {
-      nodes.push(
-        <s key={key}>{renderInlineMarkdown(token.text, `${key}-inner`)}</s>,
-      );
-    } else if (token.kind === "italic") {
-      nodes.push(
-        <em key={key}>{renderInlineMarkdown(token.text, `${key}-inner`)}</em>,
-      );
-    } else if (token.kind === "superscript") {
-      nodes.push(
-        <sup key={key}>{renderInlineMarkdown(token.text, `${key}-inner`)}</sup>,
-      );
-    }
+      },
+      code: {
+        component: ({
+          children,
+          className,
+          ...props
+        }: React.ComponentPropsWithoutRef<"code">) => (
+          <code
+            {...props}
+            className={cn(
+              "rounded bg-white/[0.07] px-1.5 py-0.5 font-mono text-[0.92em] text-[#dbe2ff]",
+              className,
+            )}
+          >
+            {children}
+          </code>
+        ),
+      },
+      del: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"del">) => (
+          <del {...props}>{children}</del>
+        ),
+      },
+      h1: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"h2">) => (
+          <h2
+            {...props}
+            className={cn("mb-2 mt-5 text-[#f6f7ff]", fitType.sectionTitle)}
+          >
+            {children}
+          </h2>
+        ),
+      },
+      h2: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"h3">) => (
+          <h3
+            {...props}
+            className={cn("mb-2 mt-4 text-[#f6f7ff]", fitType.panelTitle)}
+          >
+            {children}
+          </h3>
+        ),
+      },
+      h3: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"h4">) => (
+          <h4 {...props} className="mb-1.5 mt-4 font-semibold text-[#f2f4ff]">
+            {children}
+          </h4>
+        ),
+      },
+      h4: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"h5">) => (
+          <h5 {...props} className="mb-1 mt-3 font-semibold text-[#eef1ff]">
+            {children}
+          </h5>
+        ),
+      },
+      h5: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"h6">) => (
+          <h6 {...props} className="mb-1 mt-3 font-semibold text-[#e8ecfb]">
+            {children}
+          </h6>
+        ),
+      },
+      h6: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"p">) => (
+          <p
+            {...props}
+            className="mb-1 mt-3 font-semibold uppercase tracking-wide text-[#dfe5f7]"
+          >
+            {children}
+          </p>
+        ),
+      },
+      hr: {
+        component: (props: React.ComponentPropsWithoutRef<"hr">) => (
+          <hr {...props} className="my-5 border-white/10" />
+        ),
+      },
+      img: {
+        component: ({
+          alt,
+          src,
+          ...props
+        }: React.ComponentPropsWithoutRef<"img">) => {
+          const safeSrc = normalizeAllowedUrl(src, IMAGE_PROTOCOLS);
+          if (!safeSrc || safeSrc !== normalizedAllowedImage) {
+            return (
+              <span className="my-2 inline-flex rounded-md border border-white/10 bg-white/[0.025] px-3 py-2 text-[#8f99ac]">
+                Image unavailable{alt ? `: ${alt}` : "."}
+              </span>
+            );
+          }
 
-    lastIndex = token.end;
-    token = findNextInlineToken(text, lastIndex);
-  }
-
-  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
-  return nodes.length ? nodes : text;
-}
-
-function renderTextBlock(text: string, key: string) {
-  const lines = text.split(/\r?\n/);
-  const nodes: React.ReactNode[] = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index];
-
-    if (!line.trim()) {
-      index += 1;
-      continue;
-    }
-
-    const bulletItems: string[] = [];
-    while (index < lines.length) {
-      const bullet = lines[index].match(/^\s*[-*]\s+(.+)$/);
-      if (!bullet) break;
-      bulletItems.push(bullet[1]);
-      index += 1;
-    }
-
-    if (bulletItems.length) {
-      nodes.push(
-        <ul
-          key={`${key}-ul-${index}`}
-          className="my-2 list-disc space-y-1 pl-5"
-        >
-          {bulletItems.map((item, itemIndex) => (
-            <li key={itemIndex}>
-              {renderInlineMarkdown(item, `${key}-ul-${itemIndex}`)}
-            </li>
-          ))}
-        </ul>,
-      );
-      continue;
-    }
-
-    const numberedItems: string[] = [];
-    while (index < lines.length) {
-      const numbered = lines[index].match(/^\s*\d+\.\s+(.+)$/);
-      if (!numbered) break;
-      numberedItems.push(numbered[1]);
-      index += 1;
-    }
-
-    if (numberedItems.length) {
-      nodes.push(
-        <ol
-          key={`${key}-ol-${index}`}
-          className="my-2 list-decimal space-y-1 pl-5"
-        >
-          {numberedItems.map((item, itemIndex) => (
-            <li key={itemIndex}>
-              {renderInlineMarkdown(item, `${key}-ol-${itemIndex}`)}
-            </li>
-          ))}
-        </ol>,
-      );
-      continue;
-    }
-
-    const heading = line.match(/^\s*#{1,6}\s+(.+)$/);
-    if (heading) {
-      nodes.push(
-        <h3
-          key={`${key}-h-${index}`}
-          className={cn("mt-3 text-[#f6f7ff]", fitType.panelTitle)}
-        >
-          {renderInlineMarkdown(heading[1], `${key}-h-${index}`)}
-        </h3>,
-      );
-      index += 1;
-      continue;
-    }
-
-    nodes.push(
-      <p key={`${key}-p-${index}`} className="my-2 first:mt-0 last:mb-0">
-        {renderInlineMarkdown(line, `${key}-p-${index}`)}
-      </p>,
-    );
-    index += 1;
-  }
-
-  return nodes;
+          return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              {...props}
+              src={safeSrc}
+              alt={alt || "Discussion image"}
+              loading="lazy"
+              className="my-3 max-h-[28rem] w-full rounded-lg bg-black/30 object-contain"
+            />
+          );
+        },
+      },
+      input: {
+        component: ({
+          checked,
+          ...props
+        }: React.ComponentPropsWithoutRef<"input">) => (
+          <input
+            {...props}
+            type="checkbox"
+            checked={Boolean(checked)}
+            readOnly
+            disabled
+            className="mr-2 accent-[#7384ff]"
+          />
+        ),
+      },
+      li: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"li">) => (
+          <li {...props} className="pl-1 marker:text-[#7888ff]">
+            {children}
+          </li>
+        ),
+      },
+      ol: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"ol">) => (
+          <ol {...props} className="my-3 list-decimal space-y-1 pl-6">
+            {children}
+          </ol>
+        ),
+      },
+      p: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"p">) => (
+          <p {...props} className="my-2 first:mt-0 last:mb-0">
+            {children}
+          </p>
+        ),
+      },
+      pre: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"pre">) => (
+          <pre
+            {...props}
+            className="my-3 overflow-x-auto rounded-lg border border-white/10 bg-[#06070a] p-3 text-sm text-[#dbe2ff]"
+          >
+            {children}
+          </pre>
+        ),
+      },
+      table: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"table">) => (
+          <div
+            className="my-3 overflow-x-auto rounded-lg border border-white/10"
+            role="region"
+            aria-label="Scrollable table"
+            tabIndex={0}
+          >
+            <table {...props} className="w-full min-w-[28rem] border-collapse">
+              {children}
+            </table>
+          </div>
+        ),
+      },
+      td: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"td">) => (
+          <td
+            {...props}
+            className="border-t border-white/10 px-3 py-2 align-top"
+          >
+            {children}
+          </td>
+        ),
+      },
+      th: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"th">) => (
+          <th
+            {...props}
+            className="bg-white/[0.04] px-3 py-2 text-left font-semibold text-[#eef1ff]"
+          >
+            {children}
+          </th>
+        ),
+      },
+      ul: {
+        component: ({
+          children,
+          ...props
+        }: React.ComponentPropsWithoutRef<"ul">) => (
+          <ul {...props} className="my-3 list-disc space-y-1 pl-6">
+            {children}
+          </ul>
+        ),
+      },
+    },
+  };
 }
 
 export function MarkdownBody({
+  allowedImageUrl = null,
   className,
   id,
+  optimizeForStreaming = false,
   text,
 }: {
+  allowedImageUrl?: string | null;
   className?: string;
   id?: string;
+  optimizeForStreaming?: boolean;
   text: string;
 }) {
-  const nodes = React.useMemo(() => {
-    const rendered: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let imageIndex = 0;
-
-    let image = findNextImageToken(text, lastIndex);
-    while (image) {
-      const before = text.slice(lastIndex, image.index);
-      if (before) {
-        rendered.push(...renderTextBlock(before, `text-${lastIndex}`));
-      }
-
-      const safeSrc =
-        image.src === DRAFT_IMAGE_MARKER
-          ? null
-          : getSafeUrl(image.src, { image: true });
-      if (safeSrc) {
-        rendered.push(
-          <figure
-            key={`image-${imageIndex}`}
-            className={cn(
-              "my-3 overflow-hidden rounded-lg bg-black/30",
-              communityStyles.softBorder,
-            )}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={safeSrc}
-              alt={image.alt || "Discussion image"}
-              loading="lazy"
-              className="max-h-[28rem] w-full object-contain"
-            />
-          </figure>,
-        );
-      } else {
-        rendered.push(image.raw);
-      }
-
-      imageIndex += 1;
-      lastIndex = image.end;
-      image = findNextImageToken(text, lastIndex);
-    }
-
-    const after = text.slice(lastIndex);
-    if (after) rendered.push(...renderTextBlock(after, `text-${lastIndex}`));
-    return rendered;
-  }, [text]);
+  const options = React.useMemo(
+    () => getMarkdownOptions(allowedImageUrl, optimizeForStreaming),
+    [allowedImageUrl, optimizeForStreaming],
+  );
 
   return (
     <div
@@ -374,7 +352,7 @@ export function MarkdownBody({
         className,
       )}
     >
-      {nodes.length ? nodes : null}
+      <Markdown options={options}>{text}</Markdown>
     </div>
   );
 }
