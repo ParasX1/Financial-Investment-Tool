@@ -145,4 +145,28 @@ describe("news query packs", () => {
     expect(profile.searchText).toContain("TEAM");
     expect(profile.searchText).toContain("Atlassian");
   });
+
+  it.each([
+    ["top-stories", "markets", "economy"],
+    ["companies-earnings", "earnings", "ASX"],
+    ["economy-policy", "Australian economy", "budget"],
+    ["rates-inflation", "RBA", "inflation"],
+    ["super-tax", "superannuation", "ATO"],
+  ])(
+    "builds focused Google query variants for the %s topic",
+    (topicId, expectedPrimaryTerm, expectedSecondaryTerm) => {
+      const queries = buildGoogleNewsSearchQueries({
+        context: `${expectedPrimaryTerm} ${expectedSecondaryTerm}`,
+        kind: "search",
+        pageSize: "25",
+        query: `${expectedPrimaryTerm} ${expectedSecondaryTerm}`,
+        topicId,
+      });
+      const joinedQueries = queries.join(" ");
+
+      expect(joinedQueries).toContain(expectedPrimaryTerm);
+      expect(joinedQueries).toContain(expectedSecondaryTerm);
+      expect(queries.every((query) => query.includes("when:"))).toBe(true);
+    },
+  );
 });

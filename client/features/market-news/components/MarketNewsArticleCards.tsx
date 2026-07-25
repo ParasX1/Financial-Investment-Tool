@@ -111,6 +111,9 @@ function articleLinkProps(article: Article) {
   const external = /^https?:\/\//i.test(href);
 
   return {
+    "aria-label": external
+      ? `Read source article in a new tab: ${article.title}`
+      : `Read source article: ${article.title}`,
     href,
     rel: external ? "noopener noreferrer" : undefined,
     target: external ? "_blank" : undefined,
@@ -202,7 +205,6 @@ export function TopicArticleFeed({
                 styles.topicArticleLink,
                 getArticleImage(article) ? "" : styles.topicArticleLinkTextOnly,
               )}
-              aria-label={`Read source article: ${article.title}`}
             >
               {getArticleImage(article) ? (
                 <ArticleVisual

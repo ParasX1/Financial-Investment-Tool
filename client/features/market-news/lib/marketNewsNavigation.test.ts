@@ -3,6 +3,8 @@ import {
   MARKET_NEWS_MARKET_SCOPES,
   MARKET_NEWS_NAV_GROUPS,
 } from "../data/marketNewsConfig";
+import { hasNewsTopicQueryPack } from "@/lib/news/queryPacks";
+import { hasNewsTopicRelevanceProfile } from "@/lib/news/relevance";
 import {
   buildMarketNewsRequest,
   defaultMarketNewsMarketScopeId,
@@ -14,12 +16,13 @@ import {
 } from "./marketNewsNavigation";
 
 describe("marketNewsNavigation", () => {
-  it("models the Yahoo Finance AU inspired channel hierarchy", () => {
+  it("models an investor-first channel hierarchy without overlapping catch-all topics", () => {
     expect(MARKET_NEWS_NAV_GROUPS.map((group) => group.label)).toEqual([
+      "Top Stories",
       "Cost of Living",
       "Markets",
       "Money",
-      "Work",
+      "Economy & Work",
       "Technology",
     ]);
 
@@ -27,19 +30,30 @@ describe("marketNewsNavigation", () => {
       MARKET_NEWS_NAV_GROUPS.find(
         (group) => group.id === "markets",
       )?.topics.map((topic) => topic.label),
-    ).toEqual(["Australian Markets", "International Markets", "Commodities"]);
+    ).toEqual([
+      "Australian Markets",
+      "Global Markets",
+      "Companies & Earnings",
+      "Commodities",
+    ]);
 
     expect(
       MARKET_NEWS_NAV_GROUPS.find((group) => group.id === "money")?.topics.map(
         (topic) => topic.label,
       ),
-    ).toEqual(["Money News", "Personal Finance", "Property News"]);
+    ).toEqual(["Personal Finance", "Property & Housing", "Super & Tax"]);
+
+    expect(
+      MARKET_NEWS_NAV_GROUPS.find(
+        (group) => group.id === "economy-work",
+      )?.topics.map((topic) => topic.label),
+    ).toEqual(["Economy & Policy", "Rates & Inflation", "Work & Wages"]);
   });
 
-  it("uses Cost of Living as the default reader entry point", () => {
-    expect(defaultMarketNewsTopicId).toBe("cost-of-living");
-    expect(resolveMarketNewsTopic(undefined).id).toBe("cost-of-living");
-    expect(resolveMarketNewsTopic("not-a-topic").id).toBe("cost-of-living");
+  it("uses Top Stories as the default reader entry point", () => {
+    expect(defaultMarketNewsTopicId).toBe("top-stories");
+    expect(resolveMarketNewsTopic(undefined).id).toBe("top-stories");
+    expect(resolveMarketNewsTopic("not-a-topic").id).toBe("top-stories");
   });
 
   it("flattens topics and resolves their parent groups", () => {
@@ -48,6 +62,16 @@ describe("marketNewsNavigation", () => {
     expect(topics.map((topic) => topic.id)).toContain("international-markets");
     expect(getMarketNewsGroupForTopic("commodities")?.label).toBe("Markets");
     expect(getMarketNewsGroupForTopic("property-news")?.label).toBe("Money");
+    expect(getMarketNewsGroupForTopic("rates-inflation")?.label).toBe(
+      "Economy & Work",
+    );
+  });
+
+  it("keeps every visible topic wired to query and relevance profiles", () => {
+    for (const topic of getMarketNewsTopics()) {
+      expect(hasNewsTopicQueryPack(topic.id)).toBe(true);
+      expect(hasNewsTopicRelevanceProfile(topic.id)).toBe(true);
+    }
   });
 
   it("builds topic requests and lets search override the active topic source", () => {

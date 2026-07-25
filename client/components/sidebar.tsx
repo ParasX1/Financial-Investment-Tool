@@ -407,6 +407,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       }
     };
   }, []);
+  useEffect(() => {
+    const closeCompactDrawerForNavigation = () => {
+      if (!compact || !rememberedCompactExpanded) return;
+
+      clearCloseTimer();
+      rememberedCompactExpanded = false;
+      setExpanded(false);
+      setShowLabel(false);
+      onHoverChange?.(false);
+    };
+
+    router.events.on("routeChangeStart", closeCompactDrawerForNavigation);
+
+    return () => {
+      router.events.off("routeChangeStart", closeCompactDrawerForNavigation);
+    };
+  }, [compact, onHoverChange, router.events]);
 
   useEffect(() => {
     if (!compact || !expanded) return;

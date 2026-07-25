@@ -7,7 +7,7 @@ export type Article = {
   publishedAt: string;
   source: string;
   confidence?: number | null;
-  provider?: "marketaux" | "newsapi" | string;
+  provider?: string;
   providerLabel?: string;
   relatedSymbols?: string[];
   sentiment?: "positive" | "negative" | "neutral";
@@ -44,7 +44,9 @@ export const MARKET_NEWS_MALFORMED_RESPONSE_ERROR =
   "Market news response was malformed.";
 
 function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
 }
 
 function isNewsResponseMeta(value: unknown): value is NewsResponseMeta {
@@ -62,7 +64,9 @@ function isNewsResponseMeta(value: unknown): value is NewsResponseMeta {
   );
 }
 
-function isMarketNewsFetchResult(value: unknown): value is MarketNewsFetchResult {
+function isMarketNewsFetchResult(
+  value: unknown,
+): value is MarketNewsFetchResult {
   if (!value || typeof value !== "object") return false;
 
   const payload = value as Partial<MarketNewsFetchResult>;

@@ -83,34 +83,34 @@ describe("legacy news route cache policy", () => {
       handler: searchHandler,
       label: "/api/news/search",
       query: {
-        context: "Australia money news banking tax superannuation savings",
-        q: "Australia money news banking tax superannuation savings",
-        topicId: "money-news",
+        context: "personal finance household money Australia",
+        q: "personal finance Australia mortgage retirement insurance savings",
+        topicId: "personal-finance",
       },
       request: {
         kind: "search",
-        query: "Australia money news banking tax superannuation savings",
+        query:
+          "personal finance Australia mortgage retirement insurance savings",
         userSearch: false,
       },
     },
-  ])("$label uses shared cache for recognized topic requests", async ({
-    handler,
-    query,
-    request,
-  }) => {
-    mockNewsResult();
-    const { headers, res } = createResponse();
+  ])(
+    "$label uses shared cache for recognized topic requests",
+    async ({ handler, query, request }) => {
+      mockNewsResult();
+      const { headers, res } = createResponse();
 
-    await handler({ query } as unknown as NextApiRequest, res);
+      await handler({ query } as unknown as NextApiRequest, res);
 
-    expect(headers.get("cache-control")).toBe(
-      "s-maxage=900, stale-while-revalidate=1800",
-    );
-    expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledWith(
-      expect.objectContaining(request),
-    );
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
+      expect(headers.get("cache-control")).toBe(
+        "s-maxage=900, stale-while-revalidate=1800",
+      );
+      expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledWith(
+        expect.objectContaining(request),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    },
+  );
 
   it("keeps ticker-specific legacy news private", async () => {
     mockNewsResult();

@@ -1,12 +1,6 @@
 import type { Article } from "@/services/news";
 
-export type NewsProviderId =
-  | "gdelt"
-  | "google-news-rss"
-  | "marketaux"
-  | "newsapi"
-  | "yahoo-finance-rss"
-  | "demo";
+export type NewsProviderId = string;
 
 export type ServerNewsRequestKind =
   | "general"

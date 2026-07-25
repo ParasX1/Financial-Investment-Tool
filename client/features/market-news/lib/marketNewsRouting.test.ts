@@ -55,8 +55,14 @@ describe("marketNewsRouting", () => {
       searchQuery: "",
       sortId: "latest",
       tickerSymbol: "",
-      topicId: "cost-of-living",
+      topicId: "top-stories",
     });
+  });
+
+  it("maps the retired Money News topic to Personal Finance", () => {
+    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe(
+      "personal-finance",
+    );
   });
 
   it("serializes only meaningful state into shareable Market News URLs", () => {
@@ -68,10 +74,10 @@ describe("marketNewsRouting", () => {
         searchQuery: "RBA rates",
         sortId: "watchlist-first",
         tickerSymbol: "NVDA",
-        topicId: "money-news",
+        topicId: "personal-finance",
       }),
     ).toBe(
-      "/MarketNews?topic=money-news&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
+      "/MarketNews?topic=personal-finance&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
     );
 
     expect(getMarketNewsRouteHref({})).toBe("/MarketNews");

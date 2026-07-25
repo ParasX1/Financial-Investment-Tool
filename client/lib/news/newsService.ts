@@ -6,11 +6,7 @@ import {
   newsCandidateLimit,
 } from "./providerUtils";
 import { getDemoMarketNewsArticles } from "./providers/demoMarketNewsProvider";
-import { gdeltProvider } from "./providers/gdeltProvider";
-import { googleNewsRssProvider } from "./providers/googleNewsRssProvider";
-import { marketAuxProvider } from "./providers/marketAuxProvider";
-import { newsApiProvider } from "./providers/newsApiProvider";
-import { yahooFinanceRssProvider } from "./providers/yahooFinanceRssProvider";
+import { resolveNewsProviders } from "./providerRegistry";
 import { filterRelevantNewsArticles } from "./relevance";
 import type {
   NewsProvider,
@@ -19,81 +15,13 @@ import type {
   ServerNewsResponse,
 } from "./types";
 
-const PROVIDER_REGISTRY: Record<
-  Exclude<NewsProviderId, "demo">,
-  NewsProvider
-> = {
-  gdelt: gdeltProvider,
-  "google-news-rss": googleNewsRssProvider,
-  marketaux: marketAuxProvider,
-  newsapi: newsApiProvider,
-  "yahoo-finance-rss": yahooFinanceRssProvider,
-};
-
-const DEFAULT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
-  "marketaux",
-  "newsapi",
-  "gdelt",
-  "google-news-rss",
-  "yahoo-finance-rss",
-];
-
-const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
-  "google-news-rss",
-  "gdelt",
-  "yahoo-finance-rss",
-  "marketaux",
-  "newsapi",
-];
-const DEVELOPMENT_MIN_STRICT_ARTICLES = 10;
 const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
-
-const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
-  gdelt: "gdelt",
-  google: "google-news-rss",
-  "google-news": "google-news-rss",
-  "google-news-rss": "google-news-rss",
-  "google-rss": "google-news-rss",
-  marketaux: "marketaux",
-  "market-aux": "marketaux",
-  newsapi: "newsapi",
-  "news-api": "newsapi",
-  yahoo: "yahoo-finance-rss",
-  "yahoo-finance": "yahoo-finance-rss",
-  "yahoo-finance-rss": "yahoo-finance-rss",
-  "yahoo-rss": "yahoo-finance-rss",
-};
-
-function normaliseProviderId(value: string) {
-  return PROVIDER_ALIASES[value.trim().toLowerCase()];
-}
 
 function isProductionEnvironment(env: Record<string, string | undefined>) {
   return (env.NODE_ENV ?? "").trim().toLowerCase() === "production";
 }
 
-export function resolveNewsProviders(
-  env: Record<string, string | undefined> = process.env,
-): NewsProvider[] {
-  const requested = (env.NEWS_PROVIDER_ORDER ?? "")
-    .split(",")
-    .map(normaliseProviderId)
-    .filter((id): id is Exclude<NewsProviderId, "demo"> => Boolean(id));
-  const orderedIds = requested.length
-    ? requested
-    : isProductionEnvironment(env)
-      ? DEFAULT_PROVIDER_IDS
-      : DEVELOPMENT_PROVIDER_IDS;
-  const seen = new Set<NewsProviderId>();
-
-  return orderedIds
-    .filter((id) => {
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    })
-    .map((id) => PROVIDER_REGISTRY[id]);
-}
+export { resolveNewsProviders } from "./providerRegistry";
 
 function providerFailureMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : String(cause);
@@ -136,18 +64,6 @@ function readPositiveInteger(value: string | undefined) {
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
 
   return Math.floor(parsed);
-}
-
-function minimumStrictArticles(
-  env: Record<string, string | undefined>,
-  pageSize: number,
-) {
-  const configured = readPositiveInteger(env.NEWS_MIN_STRICT_ARTICLES);
-  if (configured) return Math.min(pageSize, configured);
-
-  return isProductionEnvironment(env)
-    ? pageSize
-    : Math.min(pageSize, DEVELOPMENT_MIN_STRICT_ARTICLES);
 }
 
 function providerTimeoutMs(env: Record<string, string | undefined>) {
@@ -214,7 +130,7 @@ export async function fetchMarketNewsWithProviders(
   const pageSize = normaliseNewsPageSize(request.pageSize);
   const pageSizeNumber = Number(pageSize);
   const strictCandidateLimit = newsCandidateLimit(pageSize);
-  const minimumArticleCount = minimumStrictArticles(env, pageSizeNumber);
+  const minimumArticleCount = pageSizeNumber;
   const normalizedRequest = { ...request, pageSize };
   const providerList = providers ?? resolveNewsProviders(env);
   const timedFetcher = withTimeout(fetcher, env);
@@ -343,7 +259,22 @@ export async function fetchMarketNewsWithProviders(
   }
 
   if (failedProviders === configuredProviders.length) {
-    throw new Error("Market news providers failed");
+    const demoArticles = getDemoMarketNewsArticles(normalizedRequest);
+
+    return {
+      articles: demoArticles,
+      meta: {
+        attemptedProviders,
+        provider: "demo",
+        providerLabel: "Demo",
+        query: describeNewsRequest(normalizedRequest),
+        strictCategory: true,
+        warnings: [
+          "Live market news is temporarily unavailable. Demo stories are shown instead.",
+          ...warnings,
+        ],
+      },
+    };
   }
 
   return {

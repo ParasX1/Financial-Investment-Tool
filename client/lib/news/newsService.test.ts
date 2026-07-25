@@ -46,9 +46,9 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(
       resolveNewsProviders({
         NEWS_PROVIDER_ORDER:
-          "google-rss, gdelt, marketaux, google-rss, unknown",
+          "google-rss, gdelt, removed-source, google-rss, unknown",
       }).map((resolvedProvider) => resolvedProvider.id),
-    ).toEqual(["google-news-rss", "gdelt", "marketaux"]);
+    ).toEqual(["google-news-rss", "gdelt"]);
   });
 
   it("uses fresh category-friendly provider order in development when no order is configured", () => {
@@ -56,50 +56,82 @@ describe("fetchMarketNewsWithProviders", () => {
       resolveNewsProviders({ NODE_ENV: "development" }).map(
         (resolvedProvider) => resolvedProvider.id,
       ),
-    ).toEqual([
-      "google-news-rss",
-      "gdelt",
-      "yahoo-finance-rss",
-      "marketaux",
-      "newsapi",
-    ]);
+    ).toEqual(["google-news-rss", "gdelt", "yahoo-finance-rss"]);
   });
 
-  it("keeps production provider order focused on primary finance APIs", () => {
+  it("uses the same Google-first provider order in production", () => {
     expect(
       resolveNewsProviders({ NODE_ENV: "production" }).map(
         (resolvedProvider) => resolvedProvider.id,
       ),
-    ).toEqual([
-      "marketaux",
-      "newsapi",
-      "gdelt",
+    ).toEqual(["google-news-rss", "gdelt", "yahoo-finance-rss"]);
+  });
+
+  it("does not stop before the requested page sentinel can be filled", async () => {
+    const firstProvider = provider({
+      articles: Array.from({ length: 10 }, (_, index) => ({
+        id: `cost-google-${index + 1}`,
+        image: null,
+        publishedAt: "2026-07-24T04:00:00Z",
+        source: "Yahoo Finance Australia",
+        summary: "Mortgage pressure remains high for Australian households.",
+        title: `Cost of living pressure story ${index + 1}`,
+        url: `https://example.com/cost-google-${index + 1}`,
+      })),
+      id: "google-news-rss",
+      label: "Google News RSS",
+    });
+    const secondProvider = provider({
+      articles: Array.from({ length: 3 }, (_, index) => ({
+        id: `cost-gdelt-${index + 1}`,
+        image: null,
+        publishedAt: "2026-07-24T05:00:00Z",
+        source: "ABC News",
+        summary: "Household bills and inflation remain visible.",
+        title: `Australian household budgets under pressure ${index + 1}`,
+        url: `https://example.com/cost-gdelt-${index + 1}`,
+      })),
+      id: "gdelt",
+      label: "GDELT",
+    });
+
+    const result = await fetchMarketNewsWithProviders(
+      { ...request, pageSize: "13", topicId: "cost-of-living" },
+      {
+        env: { NODE_ENV: "development" },
+        providers: [firstProvider, secondProvider],
+      },
+    );
+
+    expect(result.articles).toHaveLength(13);
+    expect(secondProvider.fetchArticles).toHaveBeenCalled();
+    expect(result.meta.attemptedProviders).toEqual([
       "google-news-rss",
-      "yahoo-finance-rss",
+      "gdelt",
     ]);
   });
 
   it("tries same-request providers but does not fabricate broad fallback news", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
-        provider({ articles: [], id: "marketaux", label: "MarketAux" }),
-        provider({ articles: [], id: "newsapi", label: "NewsAPI" }),
+        provider({ articles: [], id: "primary", label: "Primary Source" }),
+        provider({ articles: [], id: "secondary", label: "Secondary Source" }),
       ],
     });
 
     expect(result.articles).toEqual([]);
     expect(result.meta).toMatchObject({
-      attemptedProviders: ["marketaux", "newsapi"],
-      provider: "newsapi",
-      providerLabel: "NewsAPI",
+      attemptedProviders: ["primary", "secondary"],
+      provider: "secondary",
+      providerLabel: "Secondary Source",
       strictCategory: true,
     });
   });
 
-  it("prefers MarketAux and only falls back to NewsAPI when needed", async () => {
+  it("continues to a later provider when the first has no strict matches", async () => {
     const result = await fetchMarketNewsWithProviders(request, {
       providers: [
-        provider({ articles: [], id: "marketaux", label: "MarketAux" }),
+        provider({ articles: [], id: "primary", label: "Primary Source" }),
         provider({
           articles: [
             {
@@ -112,17 +144,17 @@ describe("fetchMarketNewsWithProviders", () => {
               url: "https://example.com/story",
             },
           ],
-          id: "newsapi",
-          label: "NewsAPI",
+          id: "secondary",
+          label: "Secondary Source",
         }),
       ],
     });
 
     expect(result.articles).toHaveLength(1);
     expect(result.meta).toMatchObject({
-      attemptedProviders: ["marketaux", "newsapi"],
-      provider: "newsapi",
-      providerLabel: "NewsAPI",
+      attemptedProviders: ["primary", "secondary"],
+      provider: "secondary",
+      providerLabel: "Secondary Source",
     });
   });
 
@@ -134,17 +166,17 @@ describe("fetchMarketNewsWithProviders", () => {
           provider({
             articles: [
               {
-                id: "marketaux-cost",
+                id: "google-cost",
                 image: null,
                 publishedAt: "2026-06-16T04:00:00Z",
                 source: "Market Desk",
                 summary: "Mortgage pressure remains high.",
                 title: "Cost of living pressure stays in focus",
-                url: "https://example.com/marketaux-cost",
+                url: "https://example.com/google-cost",
               },
             ],
-            id: "marketaux",
-            label: "MarketAux",
+            id: "google-news-rss",
+            label: "Google News RSS",
           }),
           provider({
             articles: [
@@ -169,12 +201,12 @@ describe("fetchMarketNewsWithProviders", () => {
 
     expect(result.articles.map((article) => article.id)).toEqual([
       "gdelt-cost",
-      "marketaux-cost",
+      "google-cost",
     ]);
     expect(result.meta).toMatchObject({
-      attemptedProviders: ["marketaux", "gdelt"],
-      provider: "marketaux",
-      providerLabel: "MarketAux + GDELT",
+      attemptedProviders: ["google-news-rss", "gdelt"],
+      provider: "google-news-rss",
+      providerLabel: "Google News RSS + GDELT",
       strictCategory: true,
     });
   });
@@ -285,7 +317,7 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.meta.providerLabel).toBe("Google News RSS + GDELT");
   });
 
-  it("returns early in development after enough strict stories are available", async () => {
+  it("ignores the retired partial-page threshold and fills the requested result size", async () => {
     const firstProvider = provider({
       articles: [
         {
@@ -322,8 +354,8 @@ describe("fetchMarketNewsWithProviders", () => {
           url: "https://example.com/cost-3",
         },
       ],
-      id: "marketaux",
-      label: "MarketAux",
+      id: "gdelt",
+      label: "GDELT",
     });
 
     const result = await fetchMarketNewsWithProviders(
@@ -338,10 +370,11 @@ describe("fetchMarketNewsWithProviders", () => {
     );
 
     expect(result.articles.map((article) => article.id)).toEqual([
+      "cost-3",
       "cost-2",
       "cost-1",
     ]);
-    expect(secondProvider.fetchArticles).not.toHaveBeenCalled();
+    expect(secondProvider.fetchArticles).toHaveBeenCalled();
   });
 
   it("keeps the freshest strict stories before trimming a provider candidate set", async () => {
@@ -430,8 +463,8 @@ describe("fetchMarketNewsWithProviders", () => {
               url: "https://example.com/dated",
             },
           ],
-          id: "newsapi",
-          label: "NewsAPI",
+          id: "google-news-rss",
+          label: "Google News RSS",
         }),
       ],
     });
@@ -457,8 +490,8 @@ describe("fetchMarketNewsWithProviders", () => {
               url: "https://example.com/broad",
             },
           ],
-          id: "marketaux",
-          label: "MarketAux",
+          id: "google-news-rss",
+          label: "Google News RSS",
         }),
         provider({
           articles: [
@@ -472,13 +505,13 @@ describe("fetchMarketNewsWithProviders", () => {
               url: "https://example.com/cost",
             },
           ],
-          id: "newsapi",
-          label: "NewsAPI",
+          id: "gdelt",
+          label: "GDELT",
         }),
       ],
     });
 
-    expect(result.meta.provider).toBe("newsapi");
+    expect(result.meta.provider).toBe("gdelt");
     expect(result.meta.warnings[0]).toContain("strict");
     expect(result.articles.map((article) => article.id)).toEqual(["cost"]);
   });
@@ -572,8 +605,8 @@ describe("fetchMarketNewsWithProviders", () => {
               url: "https://example.com/cost",
             },
           ],
-          id: "marketaux",
-          label: "MarketAux",
+          id: "gdelt",
+          label: "GDELT",
         }),
       ],
     });
@@ -582,7 +615,7 @@ describe("fetchMarketNewsWithProviders", () => {
       "strict-cost",
     ]);
     expect(result.meta).toMatchObject({
-      provider: "marketaux",
+      provider: "gdelt",
       strictCategory: true,
     });
   });
@@ -625,8 +658,8 @@ describe("fetchMarketNewsWithProviders", () => {
         provider({
           articles: [],
           configured: false,
-          id: "marketaux",
-          label: "MarketAux",
+          id: "google-news-rss",
+          label: "Google News RSS",
         }),
       ],
     });
@@ -637,24 +670,34 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(result.meta.warnings[0]).toContain("Demo stories");
   });
 
-  it("surfaces a generic error when every configured provider fails", async () => {
+  it("keeps the page usable with labelled demo stories when every provider fails", async () => {
     const consoleWarn = jest
       .spyOn(console, "warn")
       .mockImplementation(() => undefined);
 
     try {
-      await expect(
-        fetchMarketNewsWithProviders(request, {
-          providers: [
-            provider({
-              articles: [],
-              id: "marketaux",
-              label: "MarketAux",
-              rejects: true,
-            }),
-          ],
-        }),
-      ).rejects.toThrow(/^Market news providers failed$/);
+      const result = await fetchMarketNewsWithProviders(request, {
+        providers: [
+          provider({
+            articles: [],
+            id: "google-news-rss",
+            label: "Google News RSS",
+            rejects: true,
+          }),
+        ],
+      });
+
+      expect(result.articles.length).toBeGreaterThan(0);
+      expect(result.articles[0]?.provider).toBe("demo");
+      expect(result.meta).toMatchObject({
+        attemptedProviders: ["google-news-rss"],
+        provider: "demo",
+        providerLabel: "Demo",
+        strictCategory: true,
+      });
+      expect(result.meta.warnings[0]).toBe(
+        "Live market news is temporarily unavailable. Demo stories are shown instead.",
+      );
     } finally {
       consoleWarn.mockRestore();
     }

@@ -29,15 +29,15 @@ const rss = `<?xml version="1.0" encoding="UTF-8"?>
 </rss>`;
 
 describe("yahooFinanceRssProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
+  it("is enabled by default in every environment and can be disabled explicitly", () => {
     expect(isYahooFinanceRssEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isYahooFinanceRssEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(isYahooFinanceRssEnabled({ NODE_ENV: "production" })).toBe(true);
     expect(
       isYahooFinanceRssEnabled({
         NODE_ENV: "production",
-        YAHOO_FINANCE_RSS_ENABLED: "true",
+        YAHOO_FINANCE_RSS_ENABLED: "false",
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isYahooFinanceRssEnabled({
         NODE_ENV: "development",
@@ -149,6 +149,36 @@ describe("yahooFinanceRssProvider", () => {
     );
   });
 
+
+  it.each([
+    "http://127.0.0.1/internal",
+    "https://finance.yahoo.com.evil.example/rss",
+    "file:///etc/passwd",
+  ])("does not fetch an unsafe RSS override: %s", async (configuredUrl) => {
+    const fetcher = jest.fn(async () => new Response(rss));
+
+    await yahooFinanceRssProvider.fetchArticles(
+      {
+        context: "Australian personal finance money news",
+        kind: "search",
+        pageSize: "5",
+        query: "Australia money news banking tax superannuation savings",
+        topicId: "money-news",
+      },
+      {
+        env: {
+          NODE_ENV: "production",
+          YAHOO_FINANCE_RSS_URL: configuredUrl,
+        },
+        fetcher: fetcher as typeof fetch,
+      },
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://au.finance.yahoo.com/news/rssindex",
+      expect.any(Object),
+    );
+  });
   it("keeps invalid provider dates visibly uncertain instead of rewriting them to now", () => {
     expect(
       mapYahooFinanceRssItems([

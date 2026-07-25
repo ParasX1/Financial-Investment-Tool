@@ -45,7 +45,7 @@ export function isGdeltNewsEnabled(env: Record<string, string | undefined>) {
   const configured = envFlag(env.GDELT_NEWS_ENABLED);
   if (configured !== null) return configured;
 
-  return compact(env.NODE_ENV).toLowerCase() !== "production";
+  return true;
 }
 
 function normaliseTimespan(value: string | undefined) {
@@ -74,7 +74,10 @@ export function buildGdeltUrl({
   url.searchParams.set("format", "json");
   url.searchParams.set("sort", "datedesc");
   url.searchParams.set("timespan", normaliseTimespan(env.GDELT_NEWS_TIMESPAN));
-  url.searchParams.set("maxrecords", String(normaliseMaxRecords(request.pageSize)));
+  url.searchParams.set(
+    "maxrecords",
+    String(normaliseMaxRecords(request.pageSize)),
+  );
 
   return url.toString();
 }

@@ -5,8 +5,8 @@ import type { ServerNewsRequest } from "./types";
 const baseArticle = {
   id: "1",
   image: null,
-  provider: "marketaux",
-  providerLabel: "MarketAux",
+  provider: "google-news-rss",
+  providerLabel: "Google News RSS",
   publishedAt: "2026-06-16T04:00:00Z",
   source: "Yahoo Finance Australia",
   summary: "",
@@ -368,6 +368,39 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["local-super"]);
   });
 
+  it("keeps Personal Finance practical without accepting one generic money term", () => {
+    const request: ServerNewsRequest = {
+      context: "personal finance household money Australia",
+      kind: "search",
+      pageSize: "18",
+      query: "personal finance Australia mortgage retirement insurance savings",
+      topicId: "personal-finance",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "mortgage-only",
+            title: "Australian lenders expect mortgage demand to rise",
+          },
+          {
+            ...baseArticle,
+            id: "household-choice",
+            title: "Australians compare mortgage rates and insurance costs",
+          },
+          {
+            ...baseArticle,
+            id: "direct-guide",
+            title: "Personal finance guide for Australian savers",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["household-choice", "direct-guide"]);
+  });
+
   it("keeps international market stories using common US market language", () => {
     const request: ServerNewsRequest = {
       context: "global markets Wall Street stocks bonds",
@@ -545,4 +578,65 @@ describe("filterRelevantNewsArticles", () => {
       ).map((article) => article.id),
     ).toEqual(["energy"]);
   });
+
+  it.each([
+    {
+      expectedId: "top",
+      matchingTitle:
+        "ASX 200 rises as Australian inflation data changes the market outlook",
+      topicId: "top-stories",
+    },
+    {
+      expectedId: "earnings",
+      matchingTitle: "CBA earnings beat forecasts as profit and revenue rise",
+      topicId: "companies-earnings",
+    },
+    {
+      expectedId: "economy",
+      matchingTitle:
+        "Australian federal budget shifts the economic growth outlook",
+      topicId: "economy-policy",
+    },
+    {
+      expectedId: "rates",
+      matchingTitle:
+        "RBA interest rate decision keeps inflation outlook in focus",
+      topicId: "rates-inflation",
+    },
+    {
+      expectedId: "super",
+      matchingTitle:
+        "ATO updates superannuation tax rules for Australian workers",
+      topicId: "super-tax",
+    },
+  ])(
+    "keeps relevant $topicId coverage while rejecting unrelated lifestyle news",
+    ({ expectedId, matchingTitle, topicId }) => {
+      const request: ServerNewsRequest = {
+        context: topicId,
+        kind: "search",
+        pageSize: "18",
+        query: topicId,
+        topicId,
+      };
+
+      expect(
+        filterRelevantNewsArticles(
+          [
+            {
+              ...baseArticle,
+              id: expectedId,
+              title: matchingTitle,
+            },
+            {
+              ...baseArticle,
+              id: "lifestyle",
+              title: "Winter garden trends and the best flowers to plant",
+            },
+          ],
+          request,
+        ).map((article) => article.id),
+      ).toEqual([expectedId]);
+    },
+  );
 });

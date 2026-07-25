@@ -79,15 +79,15 @@ function rssWithItems(items: readonly { guid: string; title: string }[]) {
 }
 
 describe("googleNewsRssProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
+  it("is enabled by default in every environment and can be disabled explicitly", () => {
     expect(isGoogleNewsRssEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isGoogleNewsRssEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(isGoogleNewsRssEnabled({ NODE_ENV: "production" })).toBe(true);
     expect(
       isGoogleNewsRssEnabled({
-        GOOGLE_NEWS_RSS_ENABLED: "true",
+        GOOGLE_NEWS_RSS_ENABLED: "false",
         NODE_ENV: "production",
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("builds Google News RSS search URLs from category query packs", () => {
@@ -108,9 +108,9 @@ describe("googleNewsRssProvider", () => {
     const urls = buildGoogleNewsRssUrls(request).map((value) => new URL(value));
 
     expect(urls.length).toBeGreaterThan(1);
-    expect(
-      new Set(urls.map((url) => url.searchParams.get("q"))).size,
-    ).toBe(urls.length);
+    expect(new Set(urls.map((url) => url.searchParams.get("q"))).size).toBe(
+      urls.length,
+    );
   });
 
   it("maps RSS items into safe Google News link article metadata", () => {

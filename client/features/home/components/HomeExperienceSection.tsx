@@ -17,11 +17,12 @@ export function HomeExperienceSection({
       aria-labelledby="home-experience-title"
     >
       <div className={styles.experienceCopy}>
-        <p className={styles.eyebrow}>Experience</p>
-        <h2 id="home-experience-title">Built for modern investing.</h2>
+        <p className={styles.eyebrow}>Research process</p>
+        <h2 id="home-experience-title">A research loop you can repeat.</h2>
         <p>
-          Bring analytics, news, and investor perspective together without
-          turning the workspace into noise.
+          Move from observation to evidence, then pause before you form a view.
+          The same process works whether you are reviewing a portfolio or
+          following a market story.
         </p>
 
         <div className={styles.experienceGrid}>

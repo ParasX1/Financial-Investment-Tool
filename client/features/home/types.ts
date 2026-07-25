@@ -8,7 +8,6 @@ export type HomeEntryDestination =
 export type HomeRouteLink = {
   readonly description: string;
   readonly gated?: boolean;
-  readonly highlights?: readonly string[];
   readonly href: HomeEntryDestination;
   readonly icon?: SvgIconComponent;
   readonly label: string;

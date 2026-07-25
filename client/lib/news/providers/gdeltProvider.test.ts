@@ -25,15 +25,15 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("gdeltProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
+  it("is enabled by default in every environment and can be disabled explicitly", () => {
     expect(isGdeltNewsEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isGdeltNewsEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(isGdeltNewsEnabled({ NODE_ENV: "production" })).toBe(true);
     expect(
       isGdeltNewsEnabled({
-        GDELT_NEWS_ENABLED: "true",
+        GDELT_NEWS_ENABLED: "false",
         NODE_ENV: "production",
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("builds GDELT article-list URLs from strict category queries", () => {
@@ -56,9 +56,7 @@ describe("gdeltProvider", () => {
   });
 
   it("parses compact GDELT seendate values", () => {
-    expect(parseGdeltSeenDate("20260616T113000Z")).toBe(
-      "2026-06-16T11:30:00Z",
-    );
+    expect(parseGdeltSeenDate("20260616T113000Z")).toBe("2026-06-16T11:30:00Z");
     expect(parseGdeltSeenDate("not-a-date")).toBe("not-a-date");
   });
 

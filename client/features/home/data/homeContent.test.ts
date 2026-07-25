@@ -3,6 +3,7 @@ import {
   homeCta,
   homeExperiencePoints,
   homeFooterGroups,
+  homeMetadata,
   homeRouteLinks,
 } from "./homeContent";
 
@@ -33,15 +34,24 @@ describe("homeContent", () => {
     expect(allRoutes.every((route) => allowedRoutes.has(route))).toBe(true);
   });
 
-  it("avoids unsupported marketing placeholders from the previous front page", () => {
+  it("uses specific, beginner-friendly language without hype or unsupported claims", () => {
     const text = JSON.stringify({
       homeCta,
       homeExperiencePoints,
       homeFooterGroups,
+      homeMetadata,
+      homeRouteLinks,
     });
 
     expect(text).not.toMatch(
-      /15K|2\.4B|Pricing|Careers|Legal|Assets Analyzed|Real routes|Private by default/i,
+      /15K|2\.4B|Assets Analyzed|Master your|empowers investors|smarter decisions|modern investing|optimize portfolios|Ready to get FIT/i,
+    );
+    expect(text).toMatch(/students and newer investors/i);
+  });
+
+  it("keeps product entry copy focused on decisions instead of feature lists", () => {
+    expect(homeRouteLinks.every((route) => !("highlights" in route))).toBe(
+      true,
     );
   });
 });

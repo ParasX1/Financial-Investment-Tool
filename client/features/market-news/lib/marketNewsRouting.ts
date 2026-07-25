@@ -29,15 +29,23 @@ const MARKET_NEWS_SORT_IDS: readonly MarketNewsSortId[] = [
   "watchlist-first",
 ];
 
+const LEGACY_TOPIC_ALIASES: Readonly<Record<string, MarketNewsTopicId>> = {
+  "money-news": "personal-finance",
+};
+
 function firstQueryValue(value: ParsedUrlQuery[string] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
 function validTopicId(value: string | undefined): MarketNewsTopicId {
   const topics = MARKET_NEWS_NAV_GROUPS.flatMap((group) => [...group.topics]);
+  const normalizedValue = value
+    ? (LEGACY_TOPIC_ALIASES[value] ?? value)
+    : value;
 
   return (
-    topics.find((topic) => topic.id === value)?.id ?? defaultMarketNewsTopicId
+    topics.find((topic) => topic.id === normalizedValue)?.id ??
+    defaultMarketNewsTopicId
   );
 }
 
@@ -51,15 +59,11 @@ function validMarketScopeId(
 }
 
 function validLensId(value: string | undefined): MarketNewsLensId {
-  return (
-    MARKET_NEWS_LENS_IDS.find((lensId) => lensId === value) ?? "all"
-  );
+  return MARKET_NEWS_LENS_IDS.find((lensId) => lensId === value) ?? "all";
 }
 
 function validSortId(value: string | undefined): MarketNewsSortId {
-  return (
-    MARKET_NEWS_SORT_IDS.find((sortId) => sortId === value) ?? "latest"
-  );
+  return MARKET_NEWS_SORT_IDS.find((sortId) => sortId === value) ?? "latest";
 }
 
 export interface MarketNewsRouteState {

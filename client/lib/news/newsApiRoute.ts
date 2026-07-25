@@ -1,5 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
+  getRequestClientKey,
+  marketNewsApiRateLimiter,
+  MARKET_API_RETRY_AFTER_SECONDS,
+} from "@/lib/server/marketApiGuard";
+import {
   applyMarketNewsRequestPrivacy,
   getMarketNewsCacheControl,
 } from "./marketNewsRequestPolicy";
@@ -12,6 +17,8 @@ export type NewsApiErrorResponse = { error: string };
 export const MARKET_NEWS_UNAVAILABLE_ERROR =
   "Market news is temporarily unavailable.";
 export const MARKET_NEWS_ERROR_CACHE_CONTROL = "private, no-store, max-age=0";
+export const MARKET_NEWS_RATE_LIMIT_ERROR =
+  "Too many market news requests. Please wait a moment.";
 
 type MarketNewsRouteOptions = {
   buildRequest: (req: NextApiRequest) => ServerNewsRequest | null;
@@ -52,6 +59,22 @@ export async function handleMarketNewsRoute(
     validate,
   }: MarketNewsRouteOptions,
 ) {
+  if ((req.method ?? "GET") !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method not allowed." });
+  }
+
+  const clientAddress = getRequestClientKey({
+    headers: req.headers ?? {},
+    socket: req.socket ?? {},
+  });
+
+  if (!marketNewsApiRateLimiter.allow(`market-news:${clientAddress}`)) {
+    res.setHeader("Cache-Control", MARKET_NEWS_ERROR_CACHE_CONTROL);
+    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
+    return res.status(429).json({ error: MARKET_NEWS_RATE_LIMIT_ERROR });
+  }
+
   try {
     const builtRequest = buildRequest(req);
 

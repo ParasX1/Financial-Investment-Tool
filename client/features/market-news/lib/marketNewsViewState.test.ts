@@ -102,6 +102,23 @@ describe("marketNewsViewState", () => {
     });
   });
 
+  it("preserves state identity when route reconciliation changes nothing", () => {
+    const routeState = {
+      lensId: "ticker-linked" as const,
+      marketScopeId: "australia" as const,
+      pageIndex: 3,
+      searchQuery: "",
+      sortId: "relevance" as const,
+      tickerSymbol: "CBA.AX",
+      topicId: "cost-of-living" as const,
+    };
+    const currentState = deriveMarketNewsViewStateFromRoute(routeState);
+
+    expect(
+      reconcileMarketNewsViewStateFromRoute(currentState, routeState),
+    ).toBe(currentState);
+  });
+
   it("uses route changes to leave ticker-news and search contexts explicitly", () => {
     expect(
       reconcileMarketNewsViewStateFromRoute(
@@ -241,10 +258,12 @@ describe("marketNewsViewState", () => {
   });
 
   it("topic, lens, and sort changes reset only the state that should affect scanning", () => {
-    expect(applyMarketNewsTopicChange(baseState, "money-news")).toMatchObject({
+    expect(
+      applyMarketNewsTopicChange(baseState, "personal-finance"),
+    ).toMatchObject({
       activeLensId: "all",
       activeSortId: "relevance",
-      activeTopicId: "money-news",
+      activeTopicId: "personal-finance",
       lookupDraft: "",
       searchDraft: "",
       searchQuery: "",

@@ -43,12 +43,53 @@ const GOOGLE_LOCALES_BY_SCOPE: Record<string, GoogleLocale> = {
 };
 
 const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
+  "top-stories": {
+    phrases: ["market news", "business news"],
+    terms: [
+      "Australia",
+      "markets",
+      "economy",
+      "companies",
+      "investing",
+      "inflation",
+      "earnings",
+    ],
+    googleAlternates: [
+      ["ASX", "Australian economy", "RBA", "business"],
+      ["global markets", "Wall Street", "commodities", "central banks"],
+      ["company earnings", "mergers", "dividends", "market outlook"],
+    ],
+    googleRawQueries: [
+      '(ASX OR RBA OR "Australian economy" OR "company earnings") when:3d',
+    ],
+  },
   "australian-markets": {
     phrases: ["ASX", "Australian shares"],
     terms: ["Australia", "stocks", "earnings", "RBA", "banks", "miners"],
     googleRawQueries: [
       'site:au.finance.yahoo.com/news (ASX OR "Australian shares" OR "ASX Preview" OR "stock market") when:7d',
       'site:marketindex.com.au/news (ASX OR "ASX 200" OR "Australian shares") when:7d',
+    ],
+    sourceCountry: "AS",
+  },
+  "companies-earnings": {
+    phrases: ["company earnings", "corporate results"],
+    terms: [
+      "Australia",
+      "ASX",
+      "profit",
+      "revenue",
+      "guidance",
+      "dividend",
+      "acquisition",
+    ],
+    googleAlternates: [
+      ["ASX results", "earnings", "profit", "revenue"],
+      ["company guidance", "dividend", "merger", "acquisition"],
+      ["sales update", "annual results", "half-year results", "investors"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (earnings OR results OR profit OR revenue OR dividend OR acquisition) ASX when:7d",
     ],
     sourceCountry: "AS",
   },
@@ -100,6 +141,27 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     googleRawQueries: [
       'site:finance.yahoo.com/news ("Wall Street" OR "S&P 500" OR Nasdaq OR "global markets") when:7d',
     ],
+  },
+  "economy-policy": {
+    phrases: ["Australian economy", "economic policy"],
+    terms: [
+      "GDP",
+      "budget",
+      "Treasury",
+      "productivity",
+      "economic growth",
+      "recession",
+      "regulation",
+    ],
+    googleAlternates: [
+      ["Australian economy", "GDP", "economic growth", "Treasury"],
+      ["federal budget", "economic policy", "productivity", "regulation"],
+      ["business conditions", "consumer spending", "recession", "Australia"],
+    ],
+    googleRawQueries: [
+      '(GDP OR budget OR Treasury OR productivity OR "economic growth") Australia when:7d',
+    ],
+    sourceCountry: "AS",
   },
   "money-news": {
     phrases: ["personal finance", "money news"],
@@ -156,6 +218,50 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     ],
     sourceCountry: "AS",
   },
+  "rates-inflation": {
+    phrases: ["interest rates", "monetary policy"],
+    terms: [
+      "Australia",
+      "RBA",
+      "cash rate",
+      "inflation",
+      "CPI",
+      "bond yields",
+      "rate hike",
+      "rate cut",
+    ],
+    googleAlternates: [
+      ["RBA", "cash rate", "interest rates", "monetary policy"],
+      ["Australian inflation", "CPI", "consumer prices", "bond yields"],
+      ["rate hike", "rate cut", "mortgage rates", "inflation outlook"],
+    ],
+    googleRawQueries: [
+      '(RBA OR "cash rate" OR inflation OR CPI OR "interest rates") Australia when:7d',
+    ],
+    sourceCountry: "AS",
+  },
+  "super-tax": {
+    phrases: ["superannuation", "Australian tax"],
+    terms: [
+      "Australia",
+      "ATO",
+      "tax return",
+      "capital gains tax",
+      "CGT",
+      "retirement",
+      "pension",
+      "super fund",
+    ],
+    googleAlternates: [
+      ["superannuation", "super fund", "retirement", "contributions"],
+      ["ATO", "tax return", "capital gains tax", "CGT"],
+      ["pension", "retirement income", "super rules", "Australia"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (superannuation OR ATO OR tax OR CGT OR retirement) Australia when:7d",
+    ],
+    sourceCountry: "AS",
+  },
   technology: {
     phrases: ["technology stocks"],
     terms: ["AI", "software", "semiconductors", "earnings", "Nvidia"],
@@ -181,6 +287,10 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     sourceCountry: "AS",
   },
 };
+
+export function hasNewsTopicQueryPack(topicId: string) {
+  return Boolean(TOPIC_QUERY_PACKS[topicId]);
+}
 
 const SCOPE_QUERY_TERMS: Record<string, readonly string[]> = {
   "asia-markets": ["Asia", "Nikkei", "Hang Seng"],
@@ -438,7 +548,9 @@ function profileFromTerms({
   );
   const googleQueries = uniqueQueries([
     appendGoogleRecency(primaryGoogleQuery, freshRecency),
-    ...googleRawQueries.map((query) => appendGoogleRecency(query, freshRecency)),
+    ...googleRawQueries.map((query) =>
+      appendGoogleRecency(query, freshRecency),
+    ),
     ...alternateGoogleQueries.map((query) =>
       appendGoogleRecency(query, freshRecency),
     ),

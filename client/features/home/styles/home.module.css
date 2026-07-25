@@ -378,33 +378,6 @@
   display: block;
 }
 
-.routeHighlights {
-  display: grid;
-  grid-auto-flow: row;
-  gap: 0.45rem;
-  color: #aeb8cb;
-  font-size: var(--fit-type-size-body-sm);
-  line-height: var(--fit-type-leading-body);
-}
-
-.routeHighlights span {
-  position: relative;
-  display: block;
-  min-width: 0;
-  padding-left: 0.9rem;
-}
-
-.routeHighlights span::before {
-  position: absolute;
-  left: 0;
-  top: 0.62em;
-  width: 0.28rem;
-  height: 0.28rem;
-  border-radius: 999px;
-  background: var(--home-primary);
-  content: "";
-}
-
 .routeAction {
   display: inline-flex;
   align-items: center;
@@ -789,10 +762,6 @@
 
   .routeTile {
     min-height: auto;
-  }
-
-  .routeHighlights {
-    font-size: var(--fit-type-size-body-sm);
   }
 
   .primaryButton,

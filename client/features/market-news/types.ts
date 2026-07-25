@@ -1,18 +1,23 @@
 export type MarketNewsGroupId =
+  | "top-stories"
   | "cost-of-living"
   | "markets"
   | "money"
-  | "work"
+  | "economy-work"
   | "technology";
 
 export type MarketNewsTopicId =
+  | "top-stories"
   | "cost-of-living"
   | "australian-markets"
   | "international-markets"
+  | "companies-earnings"
   | "commodities"
-  | "money-news"
   | "personal-finance"
   | "property-news"
+  | "super-tax"
+  | "economy-policy"
+  | "rates-inflation"
   | "work"
   | "technology";
 

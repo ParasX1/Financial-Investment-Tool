@@ -81,5 +81,10 @@ export const marketApiRateLimiter = createFixedWindowRateLimiter({
   windowMs: 60_000,
 });
 
+export const marketNewsApiRateLimiter = createFixedWindowRateLimiter({
+  limit: 20,
+  windowMs: 60_000,
+});
+
 export const MARKET_API_RETRY_AFTER_SECONDS = 60;
 export const MARKET_PROVIDER_TIMEOUT_MS = 5_000;

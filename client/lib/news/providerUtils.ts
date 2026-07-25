@@ -3,7 +3,7 @@ import { buildNewsSearchProfile } from "./queryPacks";
 import type { ServerNewsRequest } from "./types";
 
 const MAX_PAGE_SIZE = 100;
-const DEFAULT_CANDIDATE_MULTIPLIER = 4;
+const DEFAULT_CANDIDATE_MULTIPLIER = 8;
 
 export function compact(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
@@ -41,9 +41,8 @@ export function newsCandidateLimit(
 
 function canonicalTitle(value: string, source: string) {
   const suffix = source ? ` - ${source}` : "";
-  const title = suffix && value.endsWith(suffix)
-    ? value.slice(0, -suffix.length)
-    : value;
+  const title =
+    suffix && value.endsWith(suffix) ? value.slice(0, -suffix.length) : value;
 
   return title
     .toLowerCase()

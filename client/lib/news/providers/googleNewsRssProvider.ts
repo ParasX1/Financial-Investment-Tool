@@ -75,7 +75,7 @@ export function isGoogleNewsRssEnabled(
   const configured = envFlag(env.GOOGLE_NEWS_RSS_ENABLED);
   if (configured !== null) return configured;
 
-  return compact(env.NODE_ENV).toLowerCase() !== "production";
+  return true;
 }
 
 export function buildGoogleNewsRssUrl(request: ServerNewsRequest): string {
@@ -239,7 +239,10 @@ function interleaveArticleBuckets(
 ): Article[] {
   const merged: Article[] = [];
   const seen = new Set<string>();
-  const maxBucketLength = Math.max(0, ...buckets.map((bucket) => bucket.length));
+  const maxBucketLength = Math.max(
+    0,
+    ...buckets.map((bucket) => bucket.length),
+  );
 
   for (let index = 0; index < maxBucketLength; index += 1) {
     for (const bucket of buckets) {

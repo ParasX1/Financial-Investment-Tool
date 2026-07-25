@@ -121,6 +121,27 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).not.toContain("Market News</span>");
   });
 
+  it("announces that source links open in a new tab", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(1)]}
+        emptyState={{
+          message: "No stories",
+          title: "Empty",
+        }}
+        error={null}
+        loading={false}
+        title="Top Stories"
+      />,
+    );
+
+    expect(html).toContain(
+      'aria-label="Read source article in a new tab: Story 1"',
+    );
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
   it("labels article signals in beginner-readable language", () => {
     const html = renderToStaticMarkup(
       <MarketNewsArticleLayout
