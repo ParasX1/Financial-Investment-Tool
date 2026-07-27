@@ -38,7 +38,14 @@ export async function installMarketNewsMockBackend(page: Page) {
   await page.route("**/api/news/market?*", async (route) => {
     const url = new URL(route.request().url());
     const cursor = url.searchParams.get("cursor");
-    if (cursor && cursor !== "cursor-1") {
+    const topicId = url.searchParams.get("topicId") ?? "top-stories";
+    const overlapContinuation =
+      topicId === "property-news" && cursor === "cursor-1";
+    const validCursor =
+      cursor === null ||
+      cursor === "cursor-1" ||
+      (topicId === "property-news" && cursor === "cursor-2");
+    if (!validCursor) {
       await fulfillJson(route, { error: "Invalid cursor." }, 400);
       return;
     }
@@ -46,10 +53,13 @@ export async function installMarketNewsMockBackend(page: Page) {
       1,
       Math.min(100, Number(url.searchParams.get("pageSize")) || 13),
     );
-    const topicId = url.searchParams.get("topicId") ?? "top-stories";
     const label = topicLabel(topicId);
-    const startIndex = cursor ? 72 : 0;
-    const batchSize = cursor ? 24 : Math.min(pageSize, 72);
+    const startIndex = overlapContinuation ? 60 : cursor ? 72 : 0;
+    const batchSize = overlapContinuation
+      ? 12
+      : cursor
+        ? 24
+        : Math.min(pageSize, 72);
     const articles = Array.from({ length: batchSize }, (_, index) => {
       const articleNumber = startIndex + index + 1;
 
@@ -75,8 +85,12 @@ export async function installMarketNewsMockBackend(page: Page) {
       articles,
       meta: {
         attemptedProviders: ["google-news-rss"],
-        hasMore: !cursor,
-        nextCursor: cursor ? null : "cursor-1",
+        hasMore: !cursor || overlapContinuation,
+        nextCursor: !cursor
+          ? "cursor-1"
+          : overlapContinuation
+            ? "cursor-2"
+            : null,
         provider: "google-news-rss",
         providerLabel: "Google News RSS",
         query: label,

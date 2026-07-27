@@ -159,20 +159,18 @@ function articleIdentityKeys(article: Article) {
   ];
 }
 
-function appendUniqueArticles(
+export function getUniqueMarketNewsArticles(
   previous: readonly Article[],
   incoming: readonly Article[],
 ) {
   const seen = new Set(previous.flatMap(articleIdentityKeys));
-  const appended = incoming.filter((article) => {
+  return incoming.filter((article) => {
     const keys = articleIdentityKeys(article);
     if (keys.some((key) => seen.has(key))) return false;
 
     keys.forEach((key) => seen.add(key));
     return true;
   });
-
-  return [...previous, ...appended];
 }
 
 export function beginMarketNewsOlderLoad(
@@ -201,7 +199,10 @@ export function appendMarketNewsArticleLoad(
 
   return {
     ...previous,
-    articles: appendUniqueArticles(previous.articles, result.articles),
+    articles: [
+      ...previous.articles,
+      ...getUniqueMarketNewsArticles(previous.articles, result.articles),
+    ],
     loadingOlder: false,
     meta: result.meta,
     olderError: null,

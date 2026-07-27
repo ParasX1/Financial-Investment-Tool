@@ -12,6 +12,7 @@ import {
   failMarketNewsArticleLoad,
   failMarketNewsOlderLoad,
   getMarketNewsArticleRequestKey,
+  getUniqueMarketNewsArticles,
   initialMarketNewsArticleState,
   succeedMarketNewsArticleLoad,
 } from "../lib/marketNewsArticleLoadState";
@@ -145,6 +146,7 @@ export function useMarketNewsArticles({
 
     try {
       let cursor = firstCursor;
+      let knownArticles = loadState.articles;
 
       for (let scan = 0; scan < MAX_EMPTY_CONTINUATION_SCANS; scan += 1) {
         const result = await fetchOlderMarketNewsRequest(
@@ -156,8 +158,13 @@ export function useMarketNewsArticles({
         if (activeRequestKey.current !== requestKey) return [];
 
         const nextCursor = result.meta.nextCursor;
+        const addedArticles = getUniqueMarketNewsArticles(
+          knownArticles,
+          result.articles,
+        );
+        knownArticles = [...knownArticles, ...addedArticles];
         const continueScanning =
-          !result.articles.length &&
+          !addedArticles.length &&
           result.meta.hasMore &&
           Boolean(nextCursor) &&
           nextCursor !== cursor &&
@@ -174,8 +181,8 @@ export function useMarketNewsArticles({
             : appended;
         });
 
-        if (result.articles.length || !result.meta.hasMore) {
-          return result.articles;
+        if (addedArticles.length || !result.meta.hasMore) {
+          return addedArticles;
         }
 
         if (!nextCursor || nextCursor === cursor) return [];
@@ -192,7 +199,7 @@ export function useMarketNewsArticles({
     } finally {
       continuationInFlight.current = false;
     }
-  }, [limit, loadState.meta, request, requestKey]);
+  }, [limit, loadState.articles, loadState.meta, request, requestKey]);
 
   return {
     articles: loadState.articles,

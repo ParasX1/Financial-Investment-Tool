@@ -160,6 +160,32 @@ test("loads older stories after the local snapshot and reaches an honest end", a
   ).toBeVisible();
 });
 
+test("skips duplicate-only continuation batches before opening the next page", async ({
+  page,
+}) => {
+  const continuationCursors: string[] = [];
+  page.on("request", (request) => {
+    if (!request.url().includes("/api/news/market?")) return;
+
+    const cursor = new URL(request.url()).searchParams.get("cursor");
+    if (cursor) continuationCursors.push(cursor);
+  });
+
+  await page.goto("/MarketNews?topic=property-news&page=6");
+  await expect(page.getByText("61-72 shown")).toBeVisible();
+
+  await page.getByRole("button", { name: "Load older stories" }).click();
+
+  await expect(page).toHaveURL(/page=7/);
+  await expect(
+    page.getByRole("link", {
+      exact: true,
+      name: "Read source article in a new tab: Property & Housing story 73",
+    }),
+  ).toBeVisible();
+  expect(continuationCursors).toEqual(["cursor-1", "cursor-2"]);
+});
+
 test("keeps category and story controls usable on a narrow mobile viewport", async ({
   page,
 }) => {
