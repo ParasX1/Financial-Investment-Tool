@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import handler from "@/pages/api/news/market";
+import { encodeMarketNewsContinuationCursor } from "@/lib/news/newsContinuation";
 import { fetchMarketNewsWithProviders } from "@/lib/news/newsService";
 import { marketNewsApiRateLimiter } from "@/lib/server/marketApiGuard";
 
@@ -337,5 +338,104 @@ describe("/api/news/market", () => {
     expect(res.status).toHaveBeenCalledWith(429);
 
     allow.mockRestore();
+  });
+
+  it("rejects malformed continuation cursors before provider work starts", async () => {
+    const { res } = createResponse();
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          context: "markets",
+          cursor: "not-a-valid-cursor",
+          kind: "general",
+          pageSize: "72",
+        },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(mockFetchMarketNewsWithProviders).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: "Invalid cursor." });
+  });
+
+  it("decodes a request-bound cursor into an exact keyset boundary", async () => {
+    mockNewsResult();
+    const { res } = createResponse();
+    const baseRequest = {
+      context: "markets",
+      kind: "general" as const,
+      pageSize: "72",
+    };
+    const cursor = encodeMarketNewsContinuationCursor(baseRequest, {
+      publishedAt: "2026-06-21T04:00:00.000Z",
+      stableKey: "story-72\u0000https://example.com/story-72",
+    });
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          context: "markets",
+          cursor,
+          kind: "general",
+          pageSize: "72",
+        },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        continuationCursor: cursor,
+        publishedBefore: "2026-06-21T04:00:00.000Z",
+        publishedBeforeKey: "story-72\u0000https://example.com/story-72",
+      }),
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("adds continuation metadata from the oldest live article", async () => {
+    mockFetchMarketNewsWithProviders.mockResolvedValueOnce({
+      articles: [
+        {
+          id: "story-1",
+          image: null,
+          publishedAt: "2026-06-21T04:00:00.000Z",
+          source: "Market Desk",
+          summary: "Markets update",
+          title: "Markets story",
+          url: "https://example.com/story-1",
+        },
+      ],
+      meta: {
+        attemptedProviders: ["google-news-rss"],
+        provider: "google-news-rss",
+        providerLabel: "Google News RSS",
+        query: "markets",
+        strictCategory: true,
+        warnings: [],
+      },
+    });
+    const { res } = createResponse();
+
+    await handler(
+      {
+        method: "GET",
+        query: { context: "markets", kind: "general", pageSize: "72" },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({
+          hasMore: true,
+          nextCursor: expect.any(String),
+        }),
+      }),
+    );
   });
 });

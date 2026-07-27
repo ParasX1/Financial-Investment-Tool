@@ -59,6 +59,18 @@ function normaliseMaxRecords(pageSize: string) {
   return Math.min(MAX_GDELT_RECORDS, newsCandidateLimit(pageSize));
 }
 
+function gdeltEndDate(value: string | undefined) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date
+    .toISOString()
+    .replace(/[-:TZ.]/g, "")
+    .slice(0, 14);
+}
+
 export function buildGdeltUrl({
   env,
   request,
@@ -73,7 +85,15 @@ export function buildGdeltUrl({
   url.searchParams.set("mode", "artlist");
   url.searchParams.set("format", "json");
   url.searchParams.set("sort", "datedesc");
-  url.searchParams.set("timespan", normaliseTimespan(env.GDELT_NEWS_TIMESPAN));
+  const endDate = gdeltEndDate(request.publishedBefore);
+  if (endDate) {
+    url.searchParams.set("enddatetime", endDate);
+  } else {
+    url.searchParams.set(
+      "timespan",
+      normaliseTimespan(env.GDELT_NEWS_TIMESPAN),
+    );
+  }
   url.searchParams.set(
     "maxrecords",
     String(normaliseMaxRecords(request.pageSize)),
@@ -137,6 +157,7 @@ export const gdeltProvider: NewsProvider = {
   id: "gdelt",
   label: "GDELT",
   isConfigured: isGdeltNewsEnabled,
+  supports: () => true,
   async fetchArticles(request, context: NewsProviderFetchContext) {
     const response = await context.fetcher(
       buildGdeltUrl({ env: context.env, request }),

@@ -8,6 +8,10 @@ import {
   applyMarketNewsRequestPrivacy,
   getMarketNewsCacheControl,
 } from "./marketNewsRequestPolicy";
+import {
+  resolveMarketNewsContinuationRequest,
+  withMarketNewsContinuation,
+} from "./newsContinuation";
 import { fetchMarketNewsWithProviders } from "./newsService";
 import { normaliseNewsPageSize } from "./providerUtils";
 import type { ServerNewsRequest, ServerNewsResponse } from "./types";
@@ -82,7 +86,13 @@ export async function handleMarketNewsRoute(
       return res.status(400).json({ error: unsupportedError });
     }
 
-    const request = applyMarketNewsRequestPrivacy(builtRequest);
+    const privateRequest = applyMarketNewsRequestPrivacy(builtRequest);
+    const request = resolveMarketNewsContinuationRequest(privateRequest);
+
+    if (!request) {
+      return res.status(400).json({ error: "Invalid cursor." });
+    }
+
     const validationError = validate?.(request);
 
     if (validationError) {
@@ -98,7 +108,7 @@ export async function handleMarketNewsRoute(
     );
 
     const result = await fetchMarketNewsWithProviders(request);
-    return res.status(200).json(result);
+    return res.status(200).json(withMarketNewsContinuation(result, request));
   } catch (cause) {
     return sendMarketNewsUnavailable(res, errorLogLabel, cause);
   }

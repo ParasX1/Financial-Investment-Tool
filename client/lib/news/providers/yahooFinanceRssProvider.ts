@@ -212,6 +212,7 @@ export const yahooFinanceRssProvider: NewsProvider = {
   id: "yahoo-finance-rss",
   label: "Yahoo Finance RSS",
   isConfigured: isYahooFinanceRssEnabled,
+  supports: (request) => !request.publishedBefore,
   async fetchArticles(request, context: NewsProviderFetchContext) {
     const response = await context.fetcher(yahooRssUrl(request, context.env), {
       headers: {

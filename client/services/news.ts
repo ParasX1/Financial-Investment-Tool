@@ -15,6 +15,8 @@ export type Article = {
 
 export type NewsResponseMeta = {
   attemptedProviders: string[];
+  hasMore: boolean;
+  nextCursor: string | null;
   provider: string;
   providerLabel: string;
   query: string;
@@ -56,6 +58,9 @@ function isNewsResponseMeta(value: unknown): value is NewsResponseMeta {
 
   return (
     isStringArray(meta.attemptedProviders) &&
+    typeof meta.hasMore === "boolean" &&
+    (typeof meta.nextCursor === "string" || meta.nextCursor === null) &&
+    (meta.hasMore ? Boolean(meta.nextCursor) : meta.nextCursor === null) &&
     typeof meta.provider === "string" &&
     typeof meta.providerLabel === "string" &&
     typeof meta.query === "string" &&
@@ -91,10 +96,11 @@ async function readNewsResponse(res: Response): Promise<MarketNewsFetchResult> {
   return data;
 }
 
-export async function fetchMarketNews(
+async function fetchMarketNewsPage(
   request: MarketNewsFetchParams,
-  limit = 10,
-  refreshKey = 0,
+  limit: number,
+  refreshKey: number,
+  cursor?: string,
 ): Promise<MarketNewsFetchResult> {
   const params = new URLSearchParams({
     context: request.context,
@@ -110,6 +116,7 @@ export async function fetchMarketNews(
   if (request.ticker) params.set("ticker", request.ticker);
   if (request.topicId) params.set("topicId", request.topicId);
   if (request.userSearch) params.set("userSearch", "true");
+  if (cursor) params.set("cursor", cursor);
   if (refreshKey > 0) params.set("_refresh", String(refreshKey));
 
   const res = await fetch(`/api/news/market?${params.toString()}`, {
@@ -117,6 +124,22 @@ export async function fetchMarketNews(
   });
 
   return readNewsResponse(res);
+}
+
+export function fetchMarketNews(
+  request: MarketNewsFetchParams,
+  limit = 10,
+  refreshKey = 0,
+) {
+  return fetchMarketNewsPage(request, limit, refreshKey);
+}
+
+export function fetchOlderMarketNews(
+  request: MarketNewsFetchParams,
+  limit: number,
+  cursor: string,
+) {
+  return fetchMarketNewsPage(request, limit, 0, cursor);
 }
 
 export async function fetchGeneralNews(limit = 10): Promise<Article[]> {

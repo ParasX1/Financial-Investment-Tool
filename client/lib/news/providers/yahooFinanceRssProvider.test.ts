@@ -50,6 +50,17 @@ describe("yahooFinanceRssProvider", () => {
     expect(yahooFinanceRssProvider.allowBroadFallback).toBeUndefined();
   });
 
+  it("declines historical continuation requests it cannot satisfy", () => {
+    expect(yahooFinanceRssProvider.supports?.(tickerRequest)).toBe(true);
+    expect(
+      yahooFinanceRssProvider.supports?.({
+        ...tickerRequest,
+        publishedBefore: "2026-07-20T12:34:56.000Z",
+        publishedBeforeKey: "story-72",
+      }),
+    ).toBe(false);
+  });
+
   it("maps RSS items into safe original-link article metadata", () => {
     expect(
       mapYahooFinanceRssItems([
@@ -148,7 +159,6 @@ describe("yahooFinanceRssProvider", () => {
       expect.any(Object),
     );
   });
-
 
   it.each([
     "http://127.0.0.1/internal",

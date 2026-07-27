@@ -55,6 +55,22 @@ describe("gdeltProvider", () => {
     expect(url.searchParams.get("query")).toContain("ASX");
   });
 
+  it("uses an exact enddatetime instead of a relative timespan for continuation", () => {
+    const url = new URL(
+      buildGdeltUrl({
+        env: { GDELT_NEWS_TIMESPAN: "1d" },
+        request: {
+          ...request,
+          publishedBefore: "2026-07-20T12:34:56.000Z",
+          publishedBeforeKey: "story-72",
+        },
+      }),
+    );
+
+    expect(url.searchParams.get("enddatetime")).toBe("20260720123456");
+    expect(url.searchParams.get("timespan")).toBeNull();
+  });
+
   it("parses compact GDELT seendate values", () => {
     expect(parseGdeltSeenDate("20260616T113000Z")).toBe("2026-06-16T11:30:00Z");
     expect(parseGdeltSeenDate("not-a-date")).toBe("not-a-date");

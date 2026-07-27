@@ -22,6 +22,9 @@ export interface ServerNewsRequest {
   ticker?: string;
   topicId?: string;
   userSearch?: boolean;
+  continuationCursor?: string;
+  publishedBefore?: string;
+  publishedBeforeKey?: string;
 }
 
 export interface NewsProviderFetchContext {
@@ -34,6 +37,7 @@ export interface NewsProvider {
   label: string;
   allowBroadFallback?: (request: ServerNewsRequest) => boolean;
   isConfigured: (env: Record<string, string | undefined>) => boolean;
+  supports?: (request: ServerNewsRequest) => boolean;
   fetchArticles: (
     request: ServerNewsRequest,
     context: NewsProviderFetchContext,
@@ -42,6 +46,8 @@ export interface NewsProvider {
 
 export interface NewsResponseMeta {
   attemptedProviders: NewsProviderId[];
+  hasMore?: boolean;
+  nextCursor?: string | null;
   provider: NewsProviderId | "none";
   providerLabel: string;
   query: string;

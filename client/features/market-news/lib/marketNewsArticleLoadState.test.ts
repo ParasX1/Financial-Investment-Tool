@@ -2,9 +2,13 @@ import type { Article, MarketNewsFetchResult } from "@/services/news";
 import type { MarketNewsRequest } from "../types";
 import {
   MARKET_NEWS_LOAD_ERROR,
+  MARKET_NEWS_OLDER_LOAD_ERROR,
   MARKET_NEWS_REFRESH_WARNING,
+  appendMarketNewsArticleLoad,
   beginMarketNewsArticleLoad,
+  beginMarketNewsOlderLoad,
   failMarketNewsArticleLoad,
+  failMarketNewsOlderLoad,
   initialMarketNewsArticleState,
   succeedMarketNewsArticleLoad,
 } from "./marketNewsArticleLoadState";
@@ -26,7 +30,7 @@ const nextTopicRequest: MarketNewsRequest = {
   topicId: "technology",
 };
 
-function article(id: string): Article {
+function article(id: string, overrides: Partial<Article> = {}): Article {
   return {
     id,
     image: null,
@@ -35,19 +39,26 @@ function article(id: string): Article {
     summary: "Market news summary",
     title: `Story ${id}`,
     url: `https://example.com/${id}`,
+    ...overrides,
   };
 }
 
-function result(articles: Article[]): MarketNewsFetchResult {
+function result(
+  articles: Article[],
+  metaOverrides: Partial<MarketNewsFetchResult["meta"]> = {},
+): MarketNewsFetchResult {
   return {
     articles,
     meta: {
       attemptedProviders: ["google-news-rss"],
+      hasMore: true,
+      nextCursor: "cursor-1",
       provider: "google-news-rss",
       providerLabel: "Google News RSS",
       query: "cost of living",
       strictCategory: true,
       warnings: [],
+      ...metaOverrides,
     },
   };
 }
@@ -110,5 +121,76 @@ describe("marketNewsArticleLoadState", () => {
     expect(state.error).toBeNull();
     expect(state.loading).toBe(false);
     expect(state.meta?.warnings[0]).toBe(MARKET_NEWS_REFRESH_WARNING);
+  });
+
+  it("immutably appends and dedupes an older batch", () => {
+    const existing = article("existing");
+    const previous = succeedMarketNewsArticleLoad(
+      initialMarketNewsArticleState,
+      topicRequest,
+      result([existing]),
+    );
+    const previousArticles = previous.articles;
+    const loading = beginMarketNewsOlderLoad(previous, topicRequest);
+
+    expect(loading.loadingOlder).toBe(true);
+    const state = appendMarketNewsArticleLoad(
+      loading,
+      topicRequest,
+      result(
+        [
+          article("existing", { url: "https://example.com/id-duplicate" }),
+          article("url-duplicate", { url: existing.url }),
+          article("title-duplicate", {
+            source: existing.source,
+            title: existing.title,
+          }),
+          article("new"),
+        ],
+        { nextCursor: "cursor-2" },
+      ),
+    );
+
+    expect(state.articles.map((item) => item.id)).toEqual(["existing", "new"]);
+    expect(state.articles).not.toBe(previousArticles);
+    expect(previous.articles).toBe(previousArticles);
+    expect(previous.articles.map((item) => item.id)).toEqual(["existing"]);
+    expect(state.loadingOlder).toBe(false);
+    expect(state.olderError).toBeNull();
+    expect(state.meta?.nextCursor).toBe("cursor-2");
+  });
+
+  it("ignores a late older response for a different request", () => {
+    const previous = succeedMarketNewsArticleLoad(
+      initialMarketNewsArticleState,
+      nextTopicRequest,
+      result([article("technology")]),
+    );
+
+    const state = appendMarketNewsArticleLoad(
+      previous,
+      topicRequest,
+      result([article("late-cost-story")]),
+    );
+
+    expect(state).toBe(previous);
+  });
+
+  it("keeps loaded stories and exposes a retryable older-load error", () => {
+    const previous = beginMarketNewsOlderLoad(
+      succeedMarketNewsArticleLoad(
+        initialMarketNewsArticleState,
+        topicRequest,
+        result([article("existing")]),
+      ),
+      topicRequest,
+    );
+
+    const state = failMarketNewsOlderLoad(previous, topicRequest);
+
+    expect(state.articles.map((item) => item.id)).toEqual(["existing"]);
+    expect(state.loadingOlder).toBe(false);
+    expect(state.olderError).toBe(MARKET_NEWS_OLDER_LOAD_ERROR);
+    expect(state.meta?.hasMore).toBe(true);
   });
 });

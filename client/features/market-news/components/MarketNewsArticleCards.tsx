@@ -157,13 +157,19 @@ function ArticleVisual({
 }
 
 export type TopicFeedPagination = {
+  canLoadOlder: boolean;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
   loading: boolean;
+  loadingOlder: boolean;
+  olderError: string | null;
+  olderNotice?: string | null;
+  onLoadOlder: () => void | Promise<void>;
   onNextPage: () => void;
   onPreviousPage: () => void;
   pageIndex: number;
   pageSize: number;
+  reachedEnd: boolean;
   totalLoaded: number;
 };
 
@@ -182,6 +188,27 @@ export function TopicArticleFeed({
   const statusText =
     feedStatus ??
     `${articles.length} ${articles.length === 1 ? "story" : "stories"} shown`;
+  const continuationMode = Boolean(pagination && !pagination.hasNextPage);
+  const continuationMessage = !continuationMode
+    ? null
+    : pagination?.loadingOlder
+      ? "Loading older stories..."
+      : pagination?.olderError
+        ? pagination.olderError
+        : pagination?.olderNotice
+          ? pagination.olderNotice
+          : pagination?.reachedEnd
+            ? "No more stories are available from the current providers for this topic."
+            : null;
+  const nextButtonLabel = !continuationMode
+    ? "Next page"
+    : pagination?.loadingOlder
+      ? "Loading older stories..."
+      : pagination?.olderError
+        ? "Try loading older stories again"
+        : pagination?.reachedEnd
+          ? "No older stories"
+          : "Load older stories";
 
   return (
     <section className={styles.topicFeed} aria-label="Topic stories">
@@ -228,9 +255,20 @@ export function TopicArticleFeed({
 
       {pagination ? (
         <nav className={styles.topicPager} aria-label="Story pages">
-          <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
-            Page {pageNumber}
-          </p>
+          <div>
+            <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
+              Page {pageNumber}
+            </p>
+            {continuationMessage ? (
+              <p
+                aria-live="polite"
+                className={cn(styles.topicPagerStatus, fitText.subtle)}
+                role="status"
+              >
+                {continuationMessage}
+              </p>
+            ) : null}
+          </div>
           <div className={styles.topicPagerActions}>
             <button
               type="button"
@@ -243,10 +281,21 @@ export function TopicArticleFeed({
             <button
               type="button"
               className={styles.topicPagerButton}
-              disabled={!pagination.hasNextPage || pagination.loading}
-              onClick={pagination.onNextPage}
+              disabled={
+                pagination.loading ||
+                pagination.loadingOlder ||
+                (!pagination.hasNextPage && !pagination.canLoadOlder)
+              }
+              onClick={() => {
+                if (pagination.hasNextPage) {
+                  pagination.onNextPage();
+                  return;
+                }
+
+                void pagination.onLoadOlder();
+              }}
             >
-              Next page
+              {nextButtonLabel}
             </button>
           </div>
         </nav>

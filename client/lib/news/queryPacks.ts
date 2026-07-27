@@ -163,7 +163,7 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["workplace", "unemployment", "productivity", "pay growth"],
     ],
     googleRawQueries: [
-      'site:au.finance.yahoo.com/news (economy OR RBA OR inflation OR jobs OR wages OR employment) Australia when:7d',
+      "site:au.finance.yahoo.com/news (economy OR RBA OR inflation OR jobs OR wages OR employment) Australia when:7d",
       '("Australian economy" OR RBA OR inflation OR jobs OR wages) Australia when:3d',
     ],
     sourceCountry: "AS",
@@ -678,14 +678,38 @@ export function buildGdeltSearchQuery(request: ServerNewsRequest): string {
   return buildNewsSearchProfile(request).gdeltQuery;
 }
 
+function googleContinuationBoundary(request: ServerNewsRequest) {
+  if (!request.publishedBefore) return null;
+
+  const boundary = new Date(request.publishedBefore);
+  if (Number.isNaN(boundary.getTime())) return null;
+
+  boundary.setUTCDate(boundary.getUTCDate() + 1);
+  return boundary.toISOString().slice(0, 10);
+}
+
+function applyGoogleContinuation(query: string, request: ServerNewsRequest) {
+  const boundary = googleContinuationBoundary(request);
+  if (!boundary) return query;
+
+  return compact(
+    `${query.replace(/\s+when:\d+[a-z]+/gi, "")} before:${boundary}`,
+  );
+}
+
 export function buildGoogleNewsSearchQuery(request: ServerNewsRequest): string {
-  return buildNewsSearchProfile(request).googleNewsQuery;
+  return applyGoogleContinuation(
+    buildNewsSearchProfile(request).googleNewsQuery,
+    request,
+  );
 }
 
 export function buildGoogleNewsSearchQueries(
   request: ServerNewsRequest,
 ): readonly string[] {
-  return buildNewsSearchProfile(request).googleNewsQueries;
+  return buildNewsSearchProfile(request).googleNewsQueries.map((query) =>
+    applyGoogleContinuation(query, request),
+  );
 }
 
 export function getGoogleNewsLocale(request: ServerNewsRequest): GoogleLocale {

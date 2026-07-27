@@ -113,6 +113,21 @@ describe("googleNewsRssProvider", () => {
     );
   });
 
+  it("puts the continuation boundary in every RSS URL", () => {
+    const urls = buildGoogleNewsRssUrls({
+      ...request,
+      publishedBefore: "2026-07-20T12:34:56.000Z",
+      publishedBeforeKey: "story-72",
+    }).map((value) => new URL(value));
+
+    expect(urls.length).toBeGreaterThan(1);
+    expect(
+      urls.every((url) =>
+        url.searchParams.get("q")?.includes("before:2026-07-21"),
+      ),
+    ).toBe(true);
+  });
+
   it("maps RSS items into safe Google News link article metadata", () => {
     expect(
       mapGoogleNewsRssItems([

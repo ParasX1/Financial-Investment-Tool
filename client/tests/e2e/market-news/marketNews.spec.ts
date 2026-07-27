@@ -111,6 +111,55 @@ test("paginates Cost of Living stories and explains external-link behavior", asy
   expect(marketNewsRequests).toHaveLength(requestCountAfterSnapshot);
 });
 
+test("loads older stories after the local snapshot and reaches an honest end", async ({
+  page,
+}) => {
+  const marketNewsRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/news/market?")) {
+      marketNewsRequests.push(request.url());
+    }
+  });
+
+  await page.goto("/MarketNews?topic=cost-of-living&page=6");
+  await expect(page.getByText("61-72 shown")).toBeVisible();
+  const requestCountAfterSnapshot = marketNewsRequests.length;
+
+  await page.getByRole("button", { name: "Load older stories" }).click();
+
+  await expect(page).toHaveURL(/page=7/);
+  await expect(page.getByText("73-84 shown")).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      exact: true,
+      name: "Read source article in a new tab: Cost of Living story 73",
+    }),
+  ).toBeVisible();
+  expect(marketNewsRequests).toHaveLength(requestCountAfterSnapshot + 1);
+  expect(new URL(marketNewsRequests.at(-1)!).searchParams.get("cursor")).toBe(
+    "cursor-1",
+  );
+
+  await page.getByRole("button", { name: "Next page" }).click();
+  await expect(page).toHaveURL(/page=8/);
+  await expect(page.getByText("85-96 shown")).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      exact: true,
+      name: "Read source article in a new tab: Cost of Living story 85",
+    }),
+  ).toBeVisible();
+  expect(marketNewsRequests).toHaveLength(requestCountAfterSnapshot + 1);
+  await expect(
+    page.getByRole("button", { name: "No older stories" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText(
+      "No more stories are available from the current providers for this topic.",
+    ),
+  ).toBeVisible();
+});
+
 test("keeps category and story controls usable on a narrow mobile viewport", async ({
   page,
 }) => {

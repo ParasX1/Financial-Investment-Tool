@@ -20,6 +20,7 @@ function provider({
   id,
   label,
   rejects,
+  supports,
 }: {
   articles: any[];
   configured?: boolean;
@@ -27,6 +28,7 @@ function provider({
   label: string;
   broadFallback?: boolean;
   rejects?: boolean;
+  supports?: boolean;
 }): NewsProvider {
   return {
     allowBroadFallback: broadFallback
@@ -35,6 +37,7 @@ function provider({
     id,
     label,
     isConfigured: () => configured,
+    supports: supports === undefined ? undefined : () => supports,
     fetchArticles: jest.fn(async () => {
       if (rejects) throw new Error(`${label} down`);
       return articles;
@@ -754,6 +757,147 @@ describe("fetchMarketNewsWithProviders", () => {
     expect(startedTogether).toBe(true);
   });
 
+  it("skips providers that cannot satisfy historical continuation", async () => {
+    const latestOnly = provider({
+      articles: [],
+      id: "latest-only",
+      label: "Latest only",
+      supports: false,
+    });
+    const historical = provider({
+      articles: [
+        {
+          id: "older",
+          image: null,
+          publishedAt: "2026-07-19T04:00:00.000Z",
+          source: "Market Desk",
+          summary: "Household bills remain under pressure.",
+          title: "Australian cost of living pressure continues",
+          url: "https://example.com/older",
+        },
+      ],
+      id: "historical",
+      label: "Historical",
+      supports: true,
+    });
+
+    const result = await fetchMarketNewsWithProviders(
+      {
+        ...request,
+        pageSize: "12",
+        publishedBefore: "2026-07-20T04:00:00.000Z",
+        publishedBeforeKey: "boundary",
+        topicId: "cost-of-living",
+      },
+      { providers: [latestOnly, historical] },
+    );
+
+    expect(latestOnly.fetchArticles).not.toHaveBeenCalled();
+    expect(historical.fetchArticles).toHaveBeenCalled();
+    expect(result.meta.attemptedProviders).toEqual(["historical"]);
+    expect(result.articles.map((item) => item.id)).toEqual(["older"]);
+  });
+
+  it("post-filters providers by the exact keyset boundary", async () => {
+    const publishedBefore = "2026-07-20T04:00:00.000Z";
+    const result = await fetchMarketNewsWithProviders(
+      {
+        ...request,
+        pageSize: "12",
+        publishedBefore,
+        publishedBeforeKey: "m\u0000https://example.com/m",
+        topicId: "cost-of-living",
+      },
+      {
+        providers: [
+          provider({
+            articles: [
+              {
+                id: "newer",
+                image: null,
+                publishedAt: "2026-07-21T04:00:00.000Z",
+                source: "Market Desk",
+                summary: "Household bills remain under pressure.",
+                title: "Australian cost of living newer story",
+                url: "https://example.com/newer",
+              },
+              {
+                id: "a",
+                image: null,
+                publishedAt: publishedBefore,
+                source: "Market Desk",
+                summary: "Household bills remain under pressure.",
+                title: "Australian cost of living equal earlier key",
+                url: "https://example.com/a",
+              },
+              {
+                id: "z",
+                image: null,
+                publishedAt: publishedBefore,
+                source: "Market Desk",
+                summary: "Household bills remain under pressure.",
+                title: "Australian cost of living equal later key",
+                url: "https://example.com/z",
+              },
+              {
+                id: "older",
+                image: null,
+                publishedAt: "2026-07-19T04:00:00.000Z",
+                source: "Market Desk",
+                summary: "Household bills remain under pressure.",
+                title: "Australian cost of living older story",
+                url: "https://example.com/older",
+              },
+              {
+                id: "undated",
+                image: null,
+                publishedAt: "unknown",
+                source: "Market Desk",
+                summary: "Household bills remain under pressure.",
+                title: "Australian cost of living undated story",
+                url: "https://example.com/undated",
+              },
+            ],
+            id: "google-news-rss",
+            label: "Google News RSS",
+          }),
+        ],
+      },
+    );
+
+    expect(result.articles.map((item) => item.id)).toEqual(["z", "older"]);
+  });
+
+  it("does not append demo stories when every continuation provider fails", async () => {
+    const consoleWarn = jest
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
+
+    try {
+      await expect(
+        fetchMarketNewsWithProviders(
+          {
+            ...request,
+            publishedBefore: "2026-07-20T04:00:00.000Z",
+            publishedBeforeKey: "boundary",
+          },
+          {
+            providers: [
+              provider({
+                articles: [],
+                id: "google-news-rss",
+                label: "Google News RSS",
+                rejects: true,
+              }),
+            ],
+          },
+        ),
+      ).rejects.toThrow("All historical market news providers failed.");
+    } finally {
+      consoleWarn.mockRestore();
+    }
+  });
+
   it("uses a stable article key when publication timestamps are equal", async () => {
     const result = await fetchMarketNewsWithProviders(
       {
@@ -792,8 +936,8 @@ describe("fetchMarketNewsWithProviders", () => {
     );
 
     expect(result.articles.map((article) => article.id)).toEqual([
-      "story-a",
       "story-b",
+      "story-a",
     ]);
   });
 });

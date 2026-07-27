@@ -72,7 +72,8 @@ describe("news query packs", () => {
       context: "Australian money decisions",
       kind: "search",
       pageSize: "72",
-      query: "Australia personal finance property housing superannuation tax savings",
+      query:
+        "Australia personal finance property housing superannuation tax savings",
       topicId: "money",
     });
     const joinedQueries = queries.join(" ");
@@ -189,4 +190,18 @@ describe("news query packs", () => {
       expect(queries.every((query) => query.includes("when:"))).toBe(true);
     },
   );
+
+  it("replaces relative recency with a no-gap continuation boundary", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      ...costOfLivingRequest,
+      publishedBefore: "2026-07-20T12:34:56.000Z",
+      publishedBeforeKey: "story-72\u0000https://example.com/story-72",
+    });
+
+    expect(queries.length).toBeGreaterThan(1);
+    expect(queries.every((query) => !query.includes("when:"))).toBe(true);
+    expect(queries.every((query) => query.includes("before:2026-07-21"))).toBe(
+      true,
+    );
+  });
 });

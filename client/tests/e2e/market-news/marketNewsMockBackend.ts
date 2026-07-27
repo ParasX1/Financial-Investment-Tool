@@ -37,36 +37,46 @@ function topicLabel(topicId: string) {
 export async function installMarketNewsMockBackend(page: Page) {
   await page.route("**/api/news/market?*", async (route) => {
     const url = new URL(route.request().url());
+    const cursor = url.searchParams.get("cursor");
+    if (cursor && cursor !== "cursor-1") {
+      await fulfillJson(route, { error: "Invalid cursor." }, 400);
+      return;
+    }
     const pageSize = Math.max(
       1,
       Math.min(100, Number(url.searchParams.get("pageSize")) || 13),
     );
     const topicId = url.searchParams.get("topicId") ?? "top-stories";
     const label = topicLabel(topicId);
-    const articles = Array.from(
-      { length: Math.min(pageSize, 72) },
-      (_, index) => ({
+    const startIndex = cursor ? 72 : 0;
+    const batchSize = cursor ? 24 : Math.min(pageSize, 72);
+    const articles = Array.from({ length: batchSize }, (_, index) => {
+      const articleNumber = startIndex + index + 1;
+
+      return {
         confidence: 0.72,
-        id: `${topicId}-${index + 1}`,
+        id: `${topicId}-${articleNumber}`,
         image: null,
         provider: "google-news-rss",
         providerLabel: "Google News RSS",
         publishedAt: new Date(
-          Date.UTC(2026, 6, 24, 4) - index * 60 * 60 * 1000,
+          Date.UTC(2026, 6, 24, 4) - (articleNumber - 1) * 60 * 60 * 1000,
         ).toISOString(),
-        relatedSymbols: index % 3 === 0 ? ["CBA.AX"] : [],
+        relatedSymbols: articleNumber % 3 === 1 ? ["CBA.AX"] : [],
         sentiment: "neutral",
         source: "Market News E2E",
         summary: `${label} coverage for usability testing.`,
-        title: `${label} story ${index + 1}`,
-        url: `https://example.com/${topicId}/${index + 1}`,
-      }),
-    );
+        title: `${label} story ${articleNumber}`,
+        url: `https://example.com/${topicId}/${articleNumber}`,
+      };
+    });
 
     await fulfillJson(route, {
       articles,
       meta: {
         attemptedProviders: ["google-news-rss"],
+        hasMore: !cursor,
+        nextCursor: cursor ? null : "cursor-1",
         provider: "google-news-rss",
         providerLabel: "Google News RSS",
         query: label,

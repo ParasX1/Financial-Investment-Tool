@@ -38,12 +38,17 @@ describe("MarketNewsArticleLayout", () => {
         feedStatus="1-12 shown"
         loading={false}
         pagination={{
+          canLoadOlder: true,
           hasNextPage: true,
           hasPreviousPage: false,
           loading: false,
+          loadingOlder: false,
+          olderError: null,
           pageIndex: 0,
           pageSize: 12,
+          reachedEnd: false,
           totalLoaded: 13,
+          onLoadOlder: () => undefined,
           onNextPage: () => undefined,
           onPreviousPage: () => undefined,
         }}
@@ -62,6 +67,133 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).toContain("Next page");
     expect(html).not.toContain("Featured stories");
     expect(html).not.toContain("Latest");
+  });
+
+  it("offers an explicit older-stories action after local pages are exhausted", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(72)]}
+        emptyState={{ message: "No stories", title: "Empty" }}
+        error={null}
+        loading={false}
+        pagination={{
+          canLoadOlder: true,
+          hasNextPage: false,
+          hasPreviousPage: true,
+          loading: false,
+          loadingOlder: false,
+          olderError: null,
+          pageIndex: 5,
+          pageSize: 12,
+          reachedEnd: false,
+          totalLoaded: 72,
+          onLoadOlder: () => undefined,
+          onNextPage: () => undefined,
+          onPreviousPage: () => undefined,
+        }}
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Load older stories");
+    expect(html).not.toContain("No older stories");
+  });
+
+  it("announces older-story loading and disables duplicate requests", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(72)]}
+        emptyState={{ message: "No stories", title: "Empty" }}
+        error={null}
+        loading={false}
+        pagination={{
+          canLoadOlder: true,
+          hasNextPage: false,
+          hasPreviousPage: true,
+          loading: false,
+          loadingOlder: true,
+          olderError: null,
+          pageIndex: 5,
+          pageSize: 12,
+          reachedEnd: false,
+          totalLoaded: 72,
+          onLoadOlder: () => undefined,
+          onNextPage: () => undefined,
+          onPreviousPage: () => undefined,
+        }}
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Loading older stories...");
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain("disabled");
+  });
+
+  it("keeps older-story failures retryable without hiding loaded stories", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(72)]}
+        emptyState={{ message: "No stories", title: "Empty" }}
+        error={null}
+        loading={false}
+        pagination={{
+          canLoadOlder: true,
+          hasNextPage: false,
+          hasPreviousPage: true,
+          loading: false,
+          loadingOlder: false,
+          olderError:
+            "Older stories could not be loaded. Try again without losing the stories above.",
+          pageIndex: 5,
+          pageSize: 12,
+          reachedEnd: false,
+          totalLoaded: 72,
+          onLoadOlder: () => undefined,
+          onNextPage: () => undefined,
+          onPreviousPage: () => undefined,
+        }}
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("Story 72");
+    expect(html).toContain("Older stories could not be loaded");
+    expect(html).toContain("Try loading older stories again");
+  });
+
+  it("shows an honest provider-history end state", () => {
+    const html = renderToStaticMarkup(
+      <MarketNewsArticleLayout
+        articles={[article(96)]}
+        emptyState={{ message: "No stories", title: "Empty" }}
+        error={null}
+        loading={false}
+        pagination={{
+          canLoadOlder: false,
+          hasNextPage: false,
+          hasPreviousPage: true,
+          loading: false,
+          loadingOlder: false,
+          olderError: null,
+          pageIndex: 7,
+          pageSize: 12,
+          reachedEnd: true,
+          totalLoaded: 96,
+          onLoadOlder: () => undefined,
+          onNextPage: () => undefined,
+          onPreviousPage: () => undefined,
+        }}
+        title="Cost of Living"
+      />,
+    );
+
+    expect(html).toContain("No older stories");
+    expect(html).toContain(
+      "No more stories are available from the current providers for this topic.",
+    );
+    expect(html).toContain("disabled");
   });
 
   it("surfaces provider warnings above the topic feed", () => {

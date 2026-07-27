@@ -1,6 +1,7 @@
 import {
   MARKET_NEWS_MALFORMED_RESPONSE_ERROR,
   fetchMarketNews,
+  fetchOlderMarketNews,
 } from "./news";
 
 const originalFetch = global.fetch;
@@ -11,6 +12,8 @@ function jsonResponse(body: unknown, status = 200) {
 
 const validMeta = {
   attemptedProviders: ["google-news-rss"],
+  hasMore: true,
+  nextCursor: "opaque-cursor",
   provider: "google-news-rss",
   providerLabel: "Google News RSS",
   query: "cost of living",
@@ -82,6 +85,35 @@ describe("market news service client", () => {
     );
   });
 
+  it("requests an older batch with an opaque continuation cursor", async () => {
+    global.fetch = jest.fn(async () =>
+      jsonResponse({
+        articles: [],
+        meta: {
+          ...validMeta,
+          hasMore: false,
+          nextCursor: null,
+        },
+      }),
+    ) as jest.MockedFunction<typeof fetch>;
+
+    await fetchOlderMarketNews(
+      {
+        context: "cost of living",
+        kind: "search",
+        query: "cost of living",
+        topicId: "cost-of-living",
+      },
+      72,
+      "opaque-cursor",
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("cursor=opaque-cursor"),
+      { cache: "default" },
+    );
+  });
+
   it("rejects malformed JSON success responses instead of showing an empty feed", async () => {
     global.fetch = jest.fn(
       async () => new Response("<html>not json</html>", { status: 200 }),
@@ -100,6 +132,28 @@ describe("market news service client", () => {
     global.fetch = jest.fn(async () =>
       jsonResponse({
         articles: [],
+      }),
+    ) as jest.MockedFunction<typeof fetch>;
+
+    await expect(
+      fetchMarketNews({
+        context: "cost of living",
+        kind: "search",
+        query: "cost of living",
+      }),
+    ).rejects.toThrow(MARKET_NEWS_MALFORMED_RESPONSE_ERROR);
+  });
+
+  it("rejects responses that omit the continuation contract", async () => {
+    const {
+      hasMore: _hasMore,
+      nextCursor: _nextCursor,
+      ...legacyMeta
+    } = validMeta;
+    global.fetch = jest.fn(async () =>
+      jsonResponse({
+        articles: [],
+        meta: legacyMeta,
       }),
     ) as jest.MockedFunction<typeof fetch>;
 
