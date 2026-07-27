@@ -100,19 +100,50 @@ function publishedAtMs(article: Article) {
   return Number.isFinite(time) ? time : 0;
 }
 
+function stableArticleKey(article: Article) {
+  return `${article.id}\u0000${article.url}`;
+}
+
 function selectFreshStrictArticles(
   articles: readonly Article[],
   limit: number,
 ): Article[] {
   return dedupeArticles(articles)
-    .map((article, index) => ({ article, index }))
     .sort(
       (left, right) =>
-        publishedAtMs(right.article) - publishedAtMs(left.article) ||
-        left.index - right.index,
+        publishedAtMs(right) - publishedAtMs(left) ||
+        stableArticleKey(left).localeCompare(stableArticleKey(right)),
     )
     .slice(0, limit)
-    .map(({ article }) => article);
+}
+
+type ProviderAttemptResult =
+  | {
+      articles: Article[];
+      ok: true;
+      provider: NewsProvider;
+    }
+  | {
+      cause: unknown;
+      ok: false;
+      provider: NewsProvider;
+    };
+
+async function attemptProvider(
+  provider: NewsProvider,
+  request: ServerNewsRequest,
+  env: Record<string, string | undefined>,
+  fetcher: typeof fetch,
+): Promise<ProviderAttemptResult> {
+  try {
+    return {
+      articles: await provider.fetchArticles(request, { env, fetcher }),
+      ok: true,
+      provider,
+    };
+  } catch (cause) {
+    return { cause, ok: false, provider };
+  }
 }
 
 export async function fetchMarketNewsWithProviders(
@@ -138,6 +169,7 @@ export async function fetchMarketNewsWithProviders(
     provider.isConfigured(env),
   );
   const attemptedProviders: NewsProviderId[] = [];
+  const emptyWarnings: string[] = [];
   const warnings: string[] = [];
   let emptyProvider: NewsProvider | null = null;
   let failedProviders = 0;
@@ -167,14 +199,30 @@ export async function fetchMarketNewsWithProviders(
     };
   }
 
-  for (const provider of configuredProviders) {
-    attemptedProviders.push(provider.id);
+  const providerBatches = [
+    [configuredProviders[0]!],
+    configuredProviders.slice(1),
+  ].filter((batch) => batch.length);
 
-    try {
-      const providerArticles = await provider.fetchArticles(normalizedRequest, {
-        env,
-        fetcher: timedFetcher,
-      });
+  for (const providerBatch of providerBatches) {
+    attemptedProviders.push(...providerBatch.map((provider) => provider.id));
+    const providerResults = await Promise.all(
+      providerBatch.map((provider) =>
+        attemptProvider(provider, normalizedRequest, env, timedFetcher),
+      ),
+    );
+
+    for (const providerResult of providerResults) {
+      const { provider } = providerResult;
+
+      if (!providerResult.ok) {
+        failedProviders += 1;
+        logProviderFailure(provider, providerResult.cause);
+        warnings.push(providerWarning(provider));
+        continue;
+      }
+
+      const providerArticles = providerResult.articles;
       const articles = filterRelevantNewsArticles(
         providerArticles,
         normalizedRequest,
@@ -219,11 +267,7 @@ export async function fetchMarketNewsWithProviders(
       }
 
       emptyProvider = provider;
-      warnings.push(strictEmptyWarning(provider, normalizedRequest));
-    } catch (cause) {
-      failedProviders += 1;
-      logProviderFailure(provider, cause);
-      warnings.push(providerWarning(provider));
+      emptyWarnings.push(strictEmptyWarning(provider, normalizedRequest));
     }
   }
 
@@ -285,7 +329,7 @@ export async function fetchMarketNewsWithProviders(
       providerLabel: emptyProvider?.label ?? "No matching provider result",
       query: describeNewsRequest(normalizedRequest),
       strictCategory: true,
-      warnings,
+      warnings: [...warnings, ...emptyWarnings],
     },
   };
 }

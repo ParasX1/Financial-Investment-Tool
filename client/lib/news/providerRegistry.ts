@@ -25,6 +25,11 @@ const PROVIDER_DEFINITIONS: readonly ProviderDefinition[] = [
   },
 ];
 
+const DEFAULT_PROVIDER_IDS = [
+  googleNewsRssProvider.id,
+  yahooFinanceRssProvider.id,
+] as const;
+
 const PROVIDERS_BY_ID = new Map(
   PROVIDER_DEFINITIONS.map(({ provider }) => [provider.id, provider]),
 );
@@ -47,9 +52,7 @@ export function resolveNewsProviders(
     .split(",")
     .map(normaliseProviderId)
     .filter((id): id is string => Boolean(id));
-  const orderedIds = requestedIds.length
-    ? requestedIds
-    : PROVIDER_DEFINITIONS.map(({ provider }) => provider.id);
+  const orderedIds = requestedIds.length ? requestedIds : DEFAULT_PROVIDER_IDS;
   const seen = new Set<string>();
 
   return orderedIds

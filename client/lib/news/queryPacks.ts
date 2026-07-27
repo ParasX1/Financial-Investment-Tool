@@ -1,3 +1,4 @@
+import { resolveNewsTopicProfileId } from "./newsTopicProfiles";
 import { getPrimarySymbolName, getSymbolAliases } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";
 
@@ -142,6 +143,31 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       'site:finance.yahoo.com/news ("Wall Street" OR "S&P 500" OR Nasdaq OR "global markets") when:7d',
     ],
   },
+  "economy-work": {
+    phrases: ["Australian economy", "labour market"],
+    terms: [
+      "Australia",
+      "GDP",
+      "RBA",
+      "inflation",
+      "interest rates",
+      "jobs",
+      "wages",
+      "employment",
+      "productivity",
+    ],
+    googleAlternates: [
+      ["Australian economy", "GDP", "budget", "economic growth"],
+      ["RBA", "inflation", "cash rate", "interest rates"],
+      ["labour market", "jobs", "wages", "employment"],
+      ["workplace", "unemployment", "productivity", "pay growth"],
+    ],
+    googleRawQueries: [
+      'site:au.finance.yahoo.com/news (economy OR RBA OR inflation OR jobs OR wages OR employment) Australia when:7d',
+      '("Australian economy" OR RBA OR inflation OR jobs OR wages) Australia when:3d',
+    ],
+    sourceCountry: "AS",
+  },
   "economy-policy": {
     phrases: ["Australian economy", "economic policy"],
     terms: [
@@ -163,7 +189,8 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     ],
     sourceCountry: "AS",
   },
-  "money-news": {
+  money: {
+    exclude: ["Atmos Energy"],
     phrases: ["personal finance", "money news"],
     terms: [
       "Australia",
@@ -174,6 +201,8 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       "consumer finance",
       "mortgage rates",
       "negative gearing",
+      "property",
+      "housing",
       "savings",
       "superannuation",
       "tax",
@@ -184,6 +213,7 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["ATO", "tax return", "tax liability", "superannuation", "CGT"],
       ["capital gains tax", "negative gearing", "tax changes", "Australia"],
       ["mortgage rates", "home loans", "bank fees", "credit cards"],
+      ["property", "housing", "rent", "home buyers"],
       ["superannuation", "retirement", "pension", "insurance"],
       ["interest rates", "household savings", "financial stress", "Australia"],
     ],
@@ -289,7 +319,7 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
 };
 
 export function hasNewsTopicQueryPack(topicId: string) {
-  return Boolean(TOPIC_QUERY_PACKS[topicId]);
+  return Boolean(TOPIC_QUERY_PACKS[resolveNewsTopicProfileId(topicId) ?? ""]);
 }
 
 const SCOPE_QUERY_TERMS: Record<string, readonly string[]> = {
@@ -436,8 +466,9 @@ function tickerTerms(ticker: string | undefined) {
 }
 
 function packForRequest(request: ServerNewsRequest): QueryPack {
-  if (request.topicId && TOPIC_QUERY_PACKS[request.topicId]) {
-    return TOPIC_QUERY_PACKS[request.topicId]!;
+  const profileId = resolveNewsTopicProfileId(request.topicId);
+  if (profileId && TOPIC_QUERY_PACKS[profileId]) {
+    return TOPIC_QUERY_PACKS[profileId]!;
   }
 
   if (request.kind === "commodity") {
@@ -536,6 +567,10 @@ function profileFromTerms({
     .slice(0, 5)
     .map((value) => `-${quoteGdelt(value)}`)
     .join(" ");
+  const googleExclude = unique(exclude)
+    .slice(0, 5)
+    .map((value) => `-${quoteGoogle(value)}`)
+    .join(" ");
   const gdeltCountry = sourceCountry ? `sourcecountry:${sourceCountry}` : "";
   const freshRecency = "when:3d";
   const recentRecency = "when:7d";
@@ -559,7 +594,9 @@ function profileFromTerms({
     ...alternateGoogleQueries.map((query) =>
       appendGoogleRecency(query, recentRecency),
     ),
-  ]).slice(0, 10);
+  ])
+    .map((query) => compact([query, googleExclude].join(" ")))
+    .slice(0, 10);
 
   return {
     displayText: compact(displayText),

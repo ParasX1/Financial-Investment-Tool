@@ -18,8 +18,10 @@ function topicLabel(topicId: string) {
     "australian-markets": "Australian Markets",
     "companies-earnings": "Companies & Earnings",
     "cost-of-living": "Cost of Living",
+    "economy-work": "Economy & Work Overview",
     "economy-policy": "Economy & Policy",
     "international-markets": "Global Markets",
+    money: "Money Overview",
     "personal-finance": "Personal Finance",
     "property-news": "Property & Housing",
     "rates-inflation": "Rates & Inflation",
@@ -42,7 +44,7 @@ export async function installMarketNewsMockBackend(page: Page) {
     const topicId = url.searchParams.get("topicId") ?? "top-stories";
     const label = topicLabel(topicId);
     const articles = Array.from(
-      { length: Math.min(pageSize, 26) },
+      { length: Math.min(pageSize, 72) },
       (_, index) => ({
         confidence: 0.72,
         id: `${topicId}-${index + 1}`,

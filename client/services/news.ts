@@ -113,7 +113,7 @@ export async function fetchMarketNews(
   if (refreshKey > 0) params.set("_refresh", String(refreshKey));
 
   const res = await fetch(`/api/news/market?${params.toString()}`, {
-    cache: "no-store",
+    cache: refreshKey > 0 ? "no-store" : "default",
   });
 
   return readNewsResponse(res);

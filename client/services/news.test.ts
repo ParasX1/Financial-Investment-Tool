@@ -51,6 +51,35 @@ describe("market news service client", () => {
 
     expect(result.articles).toHaveLength(1);
     expect(result.meta.provider).toBe("google-news-rss");
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/news/market?"),
+      { cache: "default" },
+    );
+  });
+
+  it("bypasses browser and shared caches only for an explicit refresh", async () => {
+    global.fetch = jest.fn(async () =>
+      jsonResponse({
+        articles: [],
+        meta: validMeta,
+      }),
+    ) as jest.MockedFunction<typeof fetch>;
+
+    await fetchMarketNews(
+      {
+        context: "cost of living",
+        kind: "search",
+        query: "cost of living",
+        topicId: "cost-of-living",
+      },
+      72,
+      1,
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("_refresh=1"),
+      { cache: "no-store" },
+    );
   });
 
   it("rejects malformed JSON success responses instead of showing an empty feed", async () => {

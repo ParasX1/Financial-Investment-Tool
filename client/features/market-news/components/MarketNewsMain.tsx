@@ -114,6 +114,7 @@ export function MarketNewsMain({
     selectedLookupSeed ??
     defaultQuoteReferenceTicker;
   const { articles, error, loading, meta, request } = useMarketNewsArticles({
+    autoRefreshEnabled: storyPageIndex === 0,
     enabled: routeReady,
     limit: articleLimit,
     refreshKey,

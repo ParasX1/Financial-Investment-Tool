@@ -41,13 +41,23 @@ describe("marketNewsNavigation", () => {
       MARKET_NEWS_NAV_GROUPS.find((group) => group.id === "money")?.topics.map(
         (topic) => topic.label,
       ),
-    ).toEqual(["Personal Finance", "Property & Housing", "Super & Tax"]);
+    ).toEqual([
+      "Money Overview",
+      "Personal Finance",
+      "Property & Housing",
+      "Super & Tax",
+    ]);
 
     expect(
       MARKET_NEWS_NAV_GROUPS.find(
         (group) => group.id === "economy-work",
       )?.topics.map((topic) => topic.label),
-    ).toEqual(["Economy & Policy", "Rates & Inflation", "Work & Wages"]);
+    ).toEqual([
+      "Economy & Work Overview",
+      "Economy & Policy",
+      "Rates & Inflation",
+      "Work & Wages",
+    ]);
   });
 
   it("uses Top Stories as the default reader entry point", () => {
@@ -95,6 +105,26 @@ describe("marketNewsNavigation", () => {
     });
     expect(searchRequest.topicId).toBeUndefined();
     expect(searchRequest.marketScopeId).toBeUndefined();
+  });
+
+  it("builds first-class aggregate requests for broad Money and Economy & Work views", () => {
+    expect(buildMarketNewsRequest(resolveMarketNewsTopic("money"), "")).toMatchObject({
+      kind: "search",
+      query: expect.stringContaining("personal finance"),
+      title: "Money Overview",
+      topicId: "money",
+      userSearch: false,
+    });
+
+    expect(
+      buildMarketNewsRequest(resolveMarketNewsTopic("economy-work"), ""),
+    ).toMatchObject({
+      kind: "search",
+      query: expect.stringContaining("jobs"),
+      title: "Economy & Work Overview",
+      topicId: "economy-work",
+      userSearch: false,
+    });
   });
 
   it("keeps user search independent from the active topic and market scope", () => {

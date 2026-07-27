@@ -639,4 +639,106 @@ describe("filterRelevantNewsArticles", () => {
       ).toEqual([expectedId]);
     },
   );
+
+  it("treats an Australian inflation headline as high-signal cost-of-living news", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia cost of living inflation",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "inflation",
+            title: "Australian inflation eases to its lowest level in two years",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["inflation"]);
+  });
+
+  it("keeps the Money overview broad within personal finance but rejects lifestyle stories", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian money decisions",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia personal finance property super tax",
+      topicId: "money",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "money",
+            title: "Australian mortgage borrowers build savings as rates fall",
+          },
+          {
+            ...baseArticle,
+            id: "atmos-energy",
+            title: "Atmos Energy Corporation $ATO shares bought by a US fund",
+          },
+          {
+            ...baseArticle,
+            id: "lifestyle",
+            title: "Ten winter recipes for a relaxed weekend at home",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["money"]);
+  });
+
+  it("keeps jobs and wages in the Economy & Work aggregate", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian economy and work",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia economy jobs wages",
+      topicId: "economy-work",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "work",
+            title: "Australian jobs growth lifts wages across the labour market",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["work"]);
+  });
+
+  it("does not mistake Treasury Wine Estates for economic policy", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian economy policy",
+      kind: "search",
+      pageSize: "72",
+      query: "Australian economy Treasury policy",
+      topicId: "economy-policy",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "wine",
+            title: "Treasury Wine Estates shares climb after a sales update",
+          },
+        ],
+        request,
+      ),
+    ).toEqual([]);
+  });
 });

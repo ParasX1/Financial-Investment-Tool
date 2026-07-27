@@ -38,6 +38,7 @@ async function fetchMarketNewsRequest(
 }
 
 export function useMarketNewsArticles({
+  autoRefreshEnabled = true,
   enabled = true,
   limit,
   refreshKey,
@@ -45,6 +46,7 @@ export function useMarketNewsArticles({
   tickerSymbol,
   topic,
 }: {
+  autoRefreshEnabled?: boolean;
   enabled?: boolean;
   limit: number;
   refreshKey: number;
@@ -63,7 +65,13 @@ export function useMarketNewsArticles({
   const effectiveRefreshKey = refreshKey + autoRefreshKey;
 
   React.useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
+    if (
+      !enabled ||
+      !autoRefreshEnabled ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
 
     const refreshWhenVisible = () => {
       if (document.hidden) return;
@@ -77,7 +85,7 @@ export function useMarketNewsArticles({
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [enabled]);
+  }, [autoRefreshEnabled, enabled]);
 
   React.useEffect(() => {
     if (!enabled) return;

@@ -30,7 +30,7 @@ const MARKET_NEWS_SORT_IDS: readonly MarketNewsSortId[] = [
 ];
 
 const LEGACY_TOPIC_ALIASES: Readonly<Record<string, MarketNewsTopicId>> = {
-  "money-news": "personal-finance",
+  "money-news": "money",
 };
 
 function firstQueryValue(value: ParsedUrlQuery[string] | undefined) {

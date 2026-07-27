@@ -9,6 +9,8 @@ export type MarketNewsGroupId =
 export type MarketNewsTopicId =
   | "top-stories"
   | "cost-of-living"
+  | "money"
+  | "economy-work"
   | "australian-markets"
   | "international-markets"
   | "companies-earnings"

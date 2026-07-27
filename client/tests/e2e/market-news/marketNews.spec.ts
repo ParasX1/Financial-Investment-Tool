@@ -41,9 +41,41 @@ test("navigates the investor-first categories and preserves shareable topic URLs
   ).toBeVisible();
 });
 
+test("opens broad Money and Economy & Work overviews before narrower topics", async ({
+  page,
+}) => {
+  await page.goto("/MarketNews");
+
+  await page.getByRole("button", { exact: true, name: "Money" }).click();
+  await expect(page).toHaveURL(/topic=money/);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Money Overview" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { exact: true, name: "Money Overview" }),
+  ).toHaveAttribute("aria-pressed", "true");
+
+  await page
+    .getByRole("button", { exact: true, name: "Economy & Work" })
+    .click();
+  await expect(page).toHaveURL(/topic=economy-work/);
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "Economy & Work Overview",
+    }),
+  ).toBeVisible();
+});
+
 test("paginates Cost of Living stories and explains external-link behavior", async ({
   page,
 }) => {
+  const marketNewsRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/news/market?")) {
+      marketNewsRequests.push(request.url());
+    }
+  });
   await page.goto("/MarketNews?topic=cost-of-living");
 
   await expect(page.getByText("1-12 shown")).toBeVisible();
@@ -53,6 +85,7 @@ test("paginates Cost of Living stories and explains external-link behavior", asy
   });
   await expect(firstStoryLink).toBeVisible();
   await expect(firstStoryLink).toHaveAttribute("target", "_blank");
+  const requestCountAfterSnapshot = marketNewsRequests.length;
 
   await page.getByRole("button", { name: "Next page" }).click();
 
@@ -65,6 +98,17 @@ test("paginates Cost of Living stories and explains external-link behavior", asy
     }),
   ).toBeVisible();
   await expect(firstStoryLink).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Next page" }).click();
+  await expect(page).toHaveURL(/page=3/);
+  await expect(page.getByText("25-36 shown")).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      exact: true,
+      name: "Read source article in a new tab: Cost of Living story 25",
+    }),
+  ).toBeVisible();
+  expect(marketNewsRequests).toHaveLength(requestCountAfterSnapshot);
 });
 
 test("keeps category and story controls usable on a narrow mobile viewport", async ({

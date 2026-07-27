@@ -3,6 +3,7 @@ import {
   fetchMarketNewsWithProviders,
   resolveNewsProviders,
 } from "./newsService";
+import type { Article } from "@/services/news";
 import type { NewsProvider, NewsProviderId, ServerNewsRequest } from "./types";
 
 const request: ServerNewsRequest = {
@@ -56,7 +57,7 @@ describe("fetchMarketNewsWithProviders", () => {
       resolveNewsProviders({ NODE_ENV: "development" }).map(
         (resolvedProvider) => resolvedProvider.id,
       ),
-    ).toEqual(["google-news-rss", "gdelt", "yahoo-finance-rss"]);
+    ).toEqual(["google-news-rss", "yahoo-finance-rss"]);
   });
 
   it("uses the same Google-first provider order in production", () => {
@@ -64,7 +65,7 @@ describe("fetchMarketNewsWithProviders", () => {
       resolveNewsProviders({ NODE_ENV: "production" }).map(
         (resolvedProvider) => resolvedProvider.id,
       ),
-    ).toEqual(["google-news-rss", "gdelt", "yahoo-finance-rss"]);
+    ).toEqual(["google-news-rss", "yahoo-finance-rss"]);
   });
 
   it("does not stop before the requested page sentinel can be filled", async () => {
@@ -512,7 +513,7 @@ describe("fetchMarketNewsWithProviders", () => {
     });
 
     expect(result.meta.provider).toBe("gdelt");
-    expect(result.meta.warnings[0]).toContain("strict");
+    expect(result.meta.warnings).toEqual([]);
     expect(result.articles.map((article) => article.id)).toEqual(["cost"]);
   });
 
@@ -701,5 +702,98 @@ describe("fetchMarketNewsWithProviders", () => {
     } finally {
       consoleWarn.mockRestore();
     }
+  });
+
+  it("starts secondary providers together after the primary source underfills", async () => {
+    let resolveSecondary: ((articles: Article[]) => void) | undefined;
+    let resolveTertiary: ((articles: Article[]) => void) | undefined;
+    const primary = provider({
+      articles: [],
+      id: "primary",
+      label: "Primary",
+    });
+    const secondary: NewsProvider = {
+      id: "secondary",
+      label: "Secondary",
+      isConfigured: () => true,
+      fetchArticles: jest.fn(
+        () =>
+          new Promise<Article[]>((resolve) => {
+            resolveSecondary = resolve;
+          }),
+      ),
+    };
+    const tertiary: NewsProvider = {
+      id: "tertiary",
+      label: "Tertiary",
+      isConfigured: () => true,
+      fetchArticles: jest.fn(
+        () =>
+          new Promise<Article[]>((resolve) => {
+            resolveTertiary = resolve;
+          }),
+      ),
+    };
+
+    const pendingResult = fetchMarketNewsWithProviders(request, {
+      providers: [primary, secondary, tertiary],
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    const startedTogether = Boolean(resolveSecondary && resolveTertiary);
+
+    resolveSecondary?.([]);
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    resolveTertiary?.([]);
+    await pendingResult;
+
+    expect(startedTogether).toBe(true);
+  });
+
+  it("uses a stable article key when publication timestamps are equal", async () => {
+    const result = await fetchMarketNewsWithProviders(
+      {
+        ...request,
+        pageSize: "2",
+        topicId: "cost-of-living",
+      },
+      {
+        providers: [
+          provider({
+            articles: [
+              {
+                id: "story-b",
+                image: null,
+                publishedAt: "2026-07-24T04:00:00Z",
+                source: "Yahoo Finance Australia",
+                summary: "Mortgage pressure remains high for households.",
+                title: "Cost of living pressure story B",
+                url: "https://example.com/story-b",
+              },
+              {
+                id: "story-a",
+                image: null,
+                publishedAt: "2026-07-24T04:00:00Z",
+                source: "Yahoo Finance Australia",
+                summary: "Mortgage pressure remains high for households.",
+                title: "Cost of living pressure story A",
+                url: "https://example.com/story-a",
+              },
+            ],
+            id: "google-news-rss",
+            label: "Google News RSS",
+          }),
+        ],
+      },
+    );
+
+    expect(result.articles.map((article) => article.id)).toEqual([
+      "story-a",
+      "story-b",
+    ]);
   });
 });

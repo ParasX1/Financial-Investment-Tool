@@ -113,6 +113,20 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
       "Personal finance, property, banking, superannuation, tax, and saving decisions.",
     topics: [
       {
+        id: "money",
+        label: "Money Overview",
+        shortLabel: "Overview",
+        eyebrow: "Money decisions",
+        description:
+          "A practical overview of personal finance, property, banking, superannuation, tax, and saving in Australia.",
+        source: {
+          kind: "search",
+          query:
+            "Australia personal finance property housing superannuation tax savings",
+          context: "Australian household money decisions",
+        },
+      },
+      {
         id: "personal-finance",
         label: "Personal Finance",
         shortLabel: "Personal",
@@ -161,6 +175,20 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     description:
       "Economic policy, rates, inflation, jobs, wages, and workplace trends.",
     topics: [
+      {
+        id: "economy-work",
+        label: "Economy & Work Overview",
+        shortLabel: "Overview",
+        eyebrow: "Economic picture",
+        description:
+          "A connected view of Australian growth, policy, rates, inflation, jobs, wages, and workplace trends.",
+        source: {
+          kind: "search",
+          query:
+            "Australia economy policy interest rates inflation jobs wages employment",
+          context: "Australian economy and work",
+        },
+      },
       {
         id: "economy-policy",
         label: "Economy & Policy",

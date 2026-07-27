@@ -2,6 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   dedupeArticles,
   newsCandidateLimit,
+  normaliseNewsPageSize,
   safeExternalUrl,
 } from "./providerUtils";
 import type { Article } from "@/services/news";
@@ -30,9 +31,11 @@ describe("providerUtils", () => {
   });
 
   it("collects a deep enough candidate pool before strict topic filtering", () => {
-    expect(newsCandidateLimit("13")).toBe(100);
+    expect(normaliseNewsPageSize("999")).toBe("100");
+    expect(newsCandidateLimit("13")).toBe(104);
     expect(newsCandidateLimit("5")).toBe(40);
-    expect(newsCandidateLimit("25")).toBe(100);
+    expect(newsCandidateLimit("72")).toBe(500);
+    expect(newsCandidateLimit("100")).toBe(500);
   });
 
   it("dedupes syndicated stories by canonical title as well as URL", () => {

@@ -45,7 +45,7 @@ export function isGdeltNewsEnabled(env: Record<string, string | undefined>) {
   const configured = envFlag(env.GDELT_NEWS_ENABLED);
   if (configured !== null) return configured;
 
-  return true;
+  return false;
 }
 
 function normaliseTimespan(value: string | undefined) {

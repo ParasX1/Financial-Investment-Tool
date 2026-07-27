@@ -24,7 +24,8 @@ describe("environment example contracts", () => {
   it("documents the Google-first market news provider stack", () => {
     const example = readText(path.join(clientRoot, ".env.example"));
 
-    expect(example).toContain("NEWS_PROVIDER_ORDER=google-rss,gdelt,yahoo-rss");
+    expect(example).toContain("NEWS_PROVIDER_ORDER=google-rss,yahoo-rss");
+    expect(example).toContain("GDELT_NEWS_ENABLED=false");
     expect(example).not.toContain("MARKETAUX_API_KEY");
     expect(example).not.toContain("NEWSAPI_KEY");
     expect(example).not.toContain("NEWS_MIN_STRICT_ARTICLES");

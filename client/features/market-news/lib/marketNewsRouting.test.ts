@@ -59,10 +59,8 @@ describe("marketNewsRouting", () => {
     });
   });
 
-  it("maps the retired Money News topic to Personal Finance", () => {
-    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe(
-      "personal-finance",
-    );
+  it("maps the retired Money News route to the complete Money overview", () => {
+    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe("money");
   });
 
   it("serializes only meaningful state into shareable Market News URLs", () => {

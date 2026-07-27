@@ -1,12 +1,9 @@
 export const MARKET_NEWS_TOPIC_PAGE_SIZE = 12;
-const NEXT_PAGE_SENTINEL_COUNT = 1;
+export const MARKET_NEWS_TOPIC_RESULT_POOL_SIZE =
+  MARKET_NEWS_TOPIC_PAGE_SIZE * 6;
 
-export function getMarketNewsFetchLimit(pageIndex: number) {
-  const safePageIndex = Math.max(0, Math.floor(pageIndex));
-
-  return (
-    (safePageIndex + 1) * MARKET_NEWS_TOPIC_PAGE_SIZE + NEXT_PAGE_SENTINEL_COUNT
-  );
+export function getMarketNewsFetchLimit(_pageIndex: number) {
+  return MARKET_NEWS_TOPIC_RESULT_POOL_SIZE;
 }
 
 export function getMarketNewsPageWindow<T>(

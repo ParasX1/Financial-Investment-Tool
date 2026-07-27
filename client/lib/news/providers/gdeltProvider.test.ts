@@ -25,15 +25,15 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("gdeltProvider", () => {
-  it("is enabled by default in every environment and can be disabled explicitly", () => {
-    expect(isGdeltNewsEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isGdeltNewsEnabled({ NODE_ENV: "production" })).toBe(true);
+  it("is opt-in so an unreliable auxiliary source cannot delay the default feed", () => {
+    expect(isGdeltNewsEnabled({ NODE_ENV: "development" })).toBe(false);
+    expect(isGdeltNewsEnabled({ NODE_ENV: "production" })).toBe(false);
     expect(
       isGdeltNewsEnabled({
-        GDELT_NEWS_ENABLED: "false",
+        GDELT_NEWS_ENABLED: "true",
         NODE_ENV: "production",
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("builds GDELT article-list URLs from strict category queries", () => {
