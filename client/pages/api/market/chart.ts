@@ -5,12 +5,16 @@ import {
   MARKET_API_RETRY_AFTER_SECONDS,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
+import { fetchCachedYahooChartSnapshot } from "@/lib/server/marketChartCache";
 import {
-  fetchYahooChartSnapshot,
   getYahooChartProviderLog,
   type YahooChartSnapshot,
 } from "@/lib/server/yahooChartProvider";
 import { normalizeYahooMarketSymbol } from "@/lib/server/yahooQuoteProvider";
+import {
+  isMarketChartRangeId,
+  type MarketChartRangeId,
+} from "@/lib/market/chartRanges";
 
 const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 const MARKET_CHART_UNAVAILABLE = "Market chart is temporarily unavailable.";
@@ -29,7 +33,22 @@ export default async function handler(
     return;
   }
 
-  const clientKey = `market-chart:${getRequestClientKey(req)}`;
+  const symbol = normalizeYahooMarketSymbol(String(req.query.symbol ?? ""));
+  if (!symbol) {
+    res.status(400).json({ error: "Enter a valid market symbol." });
+    return;
+  }
+  const rawRange = Array.isArray(req.query.range)
+    ? req.query.range[0]
+    : req.query.range;
+  const candidateRange = rawRange ?? "1d";
+  if (!isMarketChartRangeId(candidateRange)) {
+    res.status(400).json({ error: "Select a valid chart range." });
+    return;
+  }
+  const rangeId: MarketChartRangeId = candidateRange;
+
+  const clientKey = `market-data:${getRequestClientKey(req)}`;
   if (!marketApiRateLimiter.allow(clientKey)) {
     res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
     res.status(429).json({
@@ -38,14 +57,9 @@ export default async function handler(
     return;
   }
 
-  const symbol = normalizeYahooMarketSymbol(String(req.query.symbol ?? ""));
-  if (!symbol) {
-    res.status(400).json({ error: "Enter a valid market symbol." });
-    return;
-  }
-
   try {
-    const snapshot = await fetchYahooChartSnapshot(symbol, {
+    const snapshot = await fetchCachedYahooChartSnapshot(symbol, {
+      rangeId,
       timeoutMs: MARKET_PROVIDER_TIMEOUT_MS,
     });
     res.status(200).json(snapshot);

@@ -1,6 +1,6 @@
 import type { Article } from "@/services/news";
 import { resolveNewsTopicProfileId } from "./newsTopicProfiles";
-import { getSymbolAliases } from "./symbolAliases";
+import { getSymbolResultFilter } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";
 
 const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
@@ -615,12 +615,16 @@ function articleMatchesTicker(article: Article, ticker: string | undefined) {
   if (!symbol) return true;
 
   const text = articleText(article, { includeSymbols: false });
-  const aliases = getSymbolAliases(symbol);
-
-  return aliases.some((alias) => {
+  const filter = getSymbolResultFilter(symbol);
+  const matches = (alias: string) => {
     const cleaned = normalize(alias);
     return cleaned.length >= 2 && containsBoundedPhrase(text, cleaned);
-  });
+  };
+
+  if (filter.exactAliases.some(matches)) return true;
+  if (filter.conflictingAliases.some(matches)) return false;
+
+  return filter.aliases.some(matches);
 }
 
 function requestKeywords(request: ServerNewsRequest): string[] {

@@ -176,11 +176,10 @@ export function mapYahooFinanceRssItems(
       const summary = stripHtml(item.description);
       const source = readSource(item.source);
       const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${summary} ${source}`,
+        `${title} ${summary}`,
       );
 
       return {
-        confidence: relatedSymbols.length ? 0.62 : null,
         id: readGuid(item, url),
         image:
           readMediaUrl(item["media:content"]) ??
@@ -189,7 +188,6 @@ export function mapYahooFinanceRssItems(
         providerLabel: "Yahoo Finance RSS",
         publishedAt: readPublishedAt(item.pubDate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary,
         title,

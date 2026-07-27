@@ -24,6 +24,28 @@ describe("MarketLineChart", () => {
     expect(markup).toContain('data-testid="previous-close-line"');
   });
 
+  it("labels longer ranges and their sampling cadence accurately", () => {
+    const markup = renderToStaticMarkup(
+      <MarketLineChart
+        currency="AUD"
+        pointCadenceLabel="Daily snapshots"
+        points={[
+          { timeMs: Date.UTC(2026, 4, 1), value: 119 },
+          { timeMs: Date.UTC(2026, 5, 1), value: 121 },
+          { timeMs: Date.UTC(2026, 6, 15), value: 120 },
+        ]}
+        previousClose={118}
+        rangeLabel="3M"
+        symbol="CBA.AX"
+      />,
+    );
+
+    expect(markup).toContain("CBA.AX 3M price trend");
+    expect(markup).toContain("Daily snapshots");
+    expect(markup).not.toContain("one-day price trend");
+    expect(markup).not.toContain("One-minute snapshots");
+  });
+
   it("ignores finite timestamps outside the JavaScript Date range", () => {
     expect(() =>
       renderToStaticMarkup(

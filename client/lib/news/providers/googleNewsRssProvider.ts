@@ -184,11 +184,10 @@ export function mapGoogleNewsRssItems(
       const source = readSource(item.source);
       const summary = summaryWithoutDuplicateTitle(item, title, source);
       const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${summary} ${source}`,
+        `${title} ${summary}`,
       );
 
       return {
-        confidence: relatedSymbols.length ? 0.58 : null,
         id: readGuid(item, url),
         image:
           readMediaUrl(item["media:content"]) ??
@@ -197,7 +196,6 @@ export function mapGoogleNewsRssItems(
         providerLabel: "Google News RSS",
         publishedAt: readPublishedAt(item.pubDate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary,
         title,

@@ -62,8 +62,7 @@ describe("yahooFinanceRssProvider", () => {
   });
 
   it("maps RSS items into safe original-link article metadata", () => {
-    expect(
-      mapYahooFinanceRssItems([
+    const [article] = mapYahooFinanceRssItems([
         {
           description: "Apple demand and services revenue remain in focus.",
           guid: "apple-demand-120000000.html",
@@ -77,8 +76,9 @@ describe("yahooFinanceRssProvider", () => {
           link: "javascript:alert(1)",
           title: "Unsafe link is dropped",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "apple-demand-120000000.html",
         image: "https://media.example.com/apple.jpg",
@@ -90,6 +90,8 @@ describe("yahooFinanceRssProvider", () => {
         url: "https://finance.yahoo.com/news/apple-demand-120000000.html",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
   });
 
   it("drops unsafe RSS media URLs without dropping the story", () => {

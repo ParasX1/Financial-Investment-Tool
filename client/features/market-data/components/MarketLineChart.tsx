@@ -28,20 +28,39 @@ function formatTime(timeMs: number) {
   }).format(new Date(timeMs));
 }
 
+function formatDate(timeMs: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(timeMs));
+}
+
 export function MarketLineChart({
   currency,
+  pointCadenceLabel,
   points,
   previousClose,
+  rangeLabel,
   symbol,
 }: {
   currency: string | null;
+  pointCadenceLabel?: string;
   points: readonly MarketChartPoint[];
   previousClose: number | null;
+  rangeLabel?: string;
   symbol: string;
 }) {
   const titleId = React.useId();
   const descriptionId = React.useId();
   const gradientId = React.useId().replace(/:/g, "");
+  const resolvedRangeLabel = rangeLabel?.trim() || "one-day";
+  const resolvedCadenceLabel =
+    pointCadenceLabel?.trim() || "One-minute snapshots";
+  const formatAxisTime =
+    resolvedRangeLabel === "one-day" || resolvedRangeLabel === "1D"
+      ? formatTime
+      : formatDate;
   const usablePoints = points
     .filter(
       (point) =>
@@ -109,11 +128,11 @@ export function MarketLineChart({
       role="img"
       viewBox={"0 0 " + WIDTH + " " + HEIGHT}
     >
-      <title id={titleId}>{`${symbol} one-day price trend`}</title>
+      <title id={titleId}>{`${symbol} ${resolvedRangeLabel} price trend`}</title>
       <desc id={descriptionId}>
-        One-minute snapshots from {formatTime(firstTime)} to{" "}
-        {formatTime(lastTime)}. Latest value {formatPrice(latestValue, currency)}
-        {previousClose === null
+        {resolvedCadenceLabel} from {formatAxisTime(firstTime)} to{" "}
+        {formatAxisTime(lastTime)}. Latest value{" "}
+        {formatPrice(latestValue, currency)}{previousClose === null
           ? "."
           : "; previous close " + formatPrice(previousClose, currency) + "."}
       </desc>
@@ -173,7 +192,7 @@ export function MarketLineChart({
       />
 
       <text className={styles.axisLabel} x={PADDING.left} y={HEIGHT - 8}>
-        {formatTime(firstTime)}
+        {formatAxisTime(firstTime)}
       </text>
       <text
         className={styles.axisLabel}
@@ -181,7 +200,7 @@ export function MarketLineChart({
         y={HEIGHT - 8}
         textAnchor="end"
       >
-        {formatTime(lastTime)}
+        {formatAxisTime(lastTime)}
       </text>
       <text
         className={styles.axisLabel}

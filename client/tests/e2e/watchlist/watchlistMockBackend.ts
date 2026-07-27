@@ -50,6 +50,7 @@ export async function installWatchlistMockBackend(
   let rows = [createRow("CBA.AX", 0), createRow("BHP.AX", 1)];
   const timestamp = "2026-07-15T00:00:00.000Z";
   const unavailableSymbols = new Set(options.unavailableSymbols ?? []);
+  const chartRequests: Array<{ range: string; symbols: string[] }> = [];
 
   await page.addInitScript(
     ({ now, userId }) => {
@@ -238,5 +239,58 @@ export async function installWatchlistMockBackend(
     });
   });
 
-  return { rows: () => rows.map((row) => ({ ...row })) };
+  await page.route("**/api/market/charts?*", async (route) => {
+    const url = new URL(route.request().url());
+    const range = url.searchParams.get("range") ?? "1d";
+    const symbols = url.searchParams.get("symbols")?.split(",") ?? [];
+    const intervalByRange: Record<string, string> = {
+      "1d": "1m",
+      "5d": "15m",
+      "1m": "1h",
+      "3m": "1d",
+      "6m": "1d",
+      ytd: "1d",
+      "1y": "1d",
+      "5y": "1wk",
+      max: "1mo",
+    };
+    chartRequests.push({ range, symbols: [...symbols] });
+
+    await fulfillJson(route, {
+      rangeId: range,
+      snapshots: symbols
+        .filter((symbol) => !unavailableSymbols.has(symbol))
+        .map((symbol, index) => {
+          const baseline = index === 0 ? 100 : 50;
+          return {
+            currency: "AUD",
+            exchange: "ASX",
+            interval: intervalByRange[range] ?? "1m",
+            marketState: "CLOSED",
+            points: [
+              { timeMs: Date.UTC(2026, 4, 1), value: baseline },
+              { timeMs: Date.UTC(2026, 5, 1), value: baseline * 1.04 },
+              { timeMs: Date.UTC(2026, 6, 15), value: baseline * (index ? 0.98 : 1.08) },
+            ],
+            previousClose: baseline,
+            quoteTime: "2026-07-15T04:00:00.000Z",
+            rangeId: range,
+            regularMarketPrice: baseline * (index ? 0.98 : 1.08),
+            symbol,
+          };
+        }),
+      unavailableSymbols: symbols.filter((symbol) =>
+        unavailableSymbols.has(symbol),
+      ),
+    });
+  });
+
+  return {
+    chartRequests: () =>
+      chartRequests.map((request) => ({
+        range: request.range,
+        symbols: [...request.symbols],
+      })),
+    rows: () => rows.map((row) => ({ ...row })),
+  };
 }

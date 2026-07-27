@@ -25,6 +25,14 @@
   line-height: var(--fit-type-leading-heading);
 }
 
+.monitorSubtitle {
+  max-width: 48rem;
+  margin: 0.35rem 0 0;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
+}
+
 
 .monitorActions {
   display: flex;
@@ -152,6 +160,115 @@
   font-size: var(--fit-type-size-2xs);
 }
 
+.rangeSelector {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.3rem;
+  margin: 0.75rem 0 0.65rem;
+  padding: 0.2rem;
+  border: 1px solid var(--fit-color-border-subtle);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--fit-color-surface) 75%, transparent);
+  scrollbar-width: thin;
+}
+
+.rangeButton {
+  flex: 0 0 auto;
+  min-width: 2.65rem;
+  min-height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--fit-color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.rangeButton:hover {
+  color: var(--fit-color-text-body);
+  background: rgba(123, 140, 255, 0.09);
+}
+
+.rangeButtonActive {
+  border-color: rgba(123, 140, 255, 0.42);
+  background: rgba(123, 140, 255, 0.17);
+  color: #fff;
+}
+
+.comparisonSummaries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--fit-color-border-subtle);
+}
+
+.comparisonSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem 1rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--fit-color-border-subtle);
+  border-radius: 0.65rem;
+  background: var(--fit-color-inner-surface);
+}
+
+.comparisonSummary > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.comparisonSummary > div:nth-child(2) {
+  justify-items: end;
+  text-align: right;
+}
+
+.comparisonSummary strong {
+  color: #f2f5ff;
+  font-size: var(--fit-type-size-body-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.comparisonSummary span {
+  overflow: hidden;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparisonNewsLink {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  width: fit-content;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--fit-color-accent);
+  font-size: var(--fit-type-size-caption);
+  font-weight: var(--fit-type-weight-semibold);
+  text-decoration: none;
+}
+
+.comparisonChartCard {
+  min-width: 0;
+  padding: 1.25rem;
+  background: var(--fit-color-inner-surface);
+}
+
+.partialWarning {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(241, 190, 106, 0.32);
+  border-radius: 0.5rem;
+  background: rgba(241, 190, 106, 0.08);
+  color: #f6d79f;
+  font-size: var(--fit-type-size-caption);
+}
+
 .monitorChartLoading,
 .monitorChartError {
   display: grid;
@@ -203,13 +320,24 @@
   }
 
   .monitorChartCard,
+  .comparisonChartCard,
   .monitorHeader,
+  .comparisonSummaries,
   .monitorSummary {
     padding: 1rem;
   }
 
   .monitorPrice {
     font-size: var(--fit-type-size-xl);
+  }
+
+  .comparisonSummary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comparisonSummary > div:nth-child(2) {
+    justify-items: start;
+    text-align: left;
   }
 }
 

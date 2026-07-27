@@ -1,7 +1,10 @@
 import * as React from "react";
 import { useAuth } from "@/components/authContext";
 import supabase from "@/components/supabase";
-import { WATCHLIST_LIMIT } from "../constants";
+import {
+  WATCHLIST_LIMIT,
+  WATCHLIST_SUCCESS_FEEDBACK_DURATION_MS,
+} from "../constants";
 import { createWatchlistRepository } from "../data/watchlistRepository";
 import {
   moveWatchlistItem,
@@ -88,6 +91,21 @@ export function useWatchlistController() {
 
     void load();
   }, [authLoading, load, userId]);
+
+  React.useEffect(() => {
+    if (feedback?.tone !== "success") return;
+
+    const expectedFeedback = feedback;
+    const timer = globalThis.setTimeout(() => {
+      setFeedback((current) =>
+        current === expectedFeedback ? null : current,
+      );
+    }, WATCHLIST_SUCCESS_FEEDBACK_DURATION_MS);
+
+    return () => {
+      globalThis.clearTimeout(timer);
+    };
+  }, [feedback]);
 
   const addItem = React.useCallback(
     async (rawSymbol: string) => {

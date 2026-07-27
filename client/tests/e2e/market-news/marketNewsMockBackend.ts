@@ -64,7 +64,6 @@ export async function installMarketNewsMockBackend(page: Page) {
       const articleNumber = startIndex + index + 1;
 
       return {
-        confidence: 0.72,
         id: `${topicId}-${articleNumber}`,
         image: null,
         provider: "google-news-rss",
@@ -73,7 +72,6 @@ export async function installMarketNewsMockBackend(page: Page) {
           Date.UTC(2026, 6, 24, 4) - (articleNumber - 1) * 60 * 60 * 1000,
         ).toISOString(),
         relatedSymbols: articleNumber % 3 === 1 ? ["CBA.AX"] : [],
-        sentiment: "neutral",
         source: "Market News E2E",
         summary: `${label} coverage for usability testing.`,
         title: `${label} story ${articleNumber}`,

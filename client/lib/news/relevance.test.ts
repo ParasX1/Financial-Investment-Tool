@@ -497,6 +497,43 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["cba"]);
   });
 
+  it("does not cross-match an explicitly different Bitcoin quote currency", () => {
+    const request: ServerNewsRequest = {
+      context: "BTC-USD Bitcoin US dollar market news",
+      kind: "ticker",
+      pageSize: "18",
+      ticker: "BTC-USD",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "generic",
+            title: "Bitcoin rises as institutional demand improves",
+          },
+          {
+            ...baseArticle,
+            id: "aud-pair",
+            title: "BTC/AUD gains as the Australian dollar weakens",
+          },
+          {
+            ...baseArticle,
+            id: "usd-pair",
+            title: "BTC/USD advances after a volatile session",
+          },
+          {
+            ...baseArticle,
+            id: "both-pairs",
+            title: "BTC/USD and BTC/AUD diverge in regional trading",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["generic", "usd-pair", "both-pairs"]);
+  });
+
   it("keeps commodity stories that match commodity market language", () => {
     const request: ServerNewsRequest = {
       commodity: "commodities",

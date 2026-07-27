@@ -62,6 +62,7 @@ export function WatchlistRow({
   canMoveDown,
   canMoveUp,
   isMonitored,
+  monitorDisabled = false,
   item,
   onEdit,
   onMonitor,
@@ -74,6 +75,7 @@ export function WatchlistRow({
   canMoveDown: boolean;
   canMoveUp: boolean;
   isMonitored: boolean;
+  monitorDisabled?: boolean;
   item: WatchlistItem;
   onEdit: () => void;
   onMonitor: () => void;
@@ -135,10 +137,19 @@ export function WatchlistRow({
             FIT_FOCUS_VISIBLE,
           )}
           onClick={onMonitor}
-          aria-label={`Monitor ${item.symbol} price trend`}
+          disabled={monitorDisabled}
+          aria-label={`${isMonitored ? "Remove" : "Add"} ${item.symbol} ${
+            isMonitored ? "from" : "to"
+          } comparison`}
           aria-controls="watchlist-market-monitor"
-          aria-expanded={isMonitored}
-          title={isMonitored ? "Market monitor selected" : "Open market monitor"}
+          aria-pressed={isMonitored}
+          title={
+            isMonitored
+              ? "Selected for comparison"
+              : monitorDisabled
+                ? "Compare up to four saved ideas"
+                : "Add to market comparison"
+          }
         >
           <ShowChartRoundedIcon fontSize="small" aria-hidden="true" />
         </button>

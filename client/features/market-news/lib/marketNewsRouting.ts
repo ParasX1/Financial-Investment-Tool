@@ -18,14 +18,10 @@ const MARKET_NEWS_LENS_IDS: readonly MarketNewsLensId[] = [
   "all",
   "watchlist",
   "ticker-linked",
-  "high-relevance",
-  "positive",
-  "negative",
 ];
 
 const MARKET_NEWS_SORT_IDS: readonly MarketNewsSortId[] = [
   "latest",
-  "relevance",
   "watchlist-first",
 ];
 

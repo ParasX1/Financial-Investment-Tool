@@ -63,19 +63,20 @@ describe("WatchlistMain interactions", () => {
     }));
     jest.doMock("./WatchlistMarketMonitor", () => ({
       WatchlistMarketMonitor: ({
-        item,
+        items,
         onClose,
       }: {
-        item: WatchlistItem;
+        items: readonly WatchlistItem[];
         onClose: () => void;
       }) => React.createElement(
         "section",
         { "data-testid": "market-monitor" },
-        React.createElement("h2", null, `${item.symbol} Market Monitor`),
+        React.createElement("h2", null, "Market comparison"),
+        React.createElement("p", null, items.map((item) => item.symbol).join(", ")),
         React.createElement(
           "button",
           {
-            "aria-label": `Close ${item.symbol} market monitor`,
+            "aria-label": "Close market comparison",
             onClick: onClose,
           },
           "Close monitor",
@@ -217,7 +218,7 @@ describe("WatchlistMain interactions", () => {
     renderer!.unmount();
   });
 
-  it("opens the first saved idea, switches the focused monitor, and closes it", async () => {
+  it("opens the first saved idea, adds another comparison series, and closes it", async () => {
     mockController.authenticated = true;
     mockController.items = [item("CBA.AX", 0), item("BHP.AX", 1)];
     mockQuotes.quotes = {
@@ -242,24 +243,37 @@ describe("WatchlistMain interactions", () => {
       ).length,
     ).toBeGreaterThan(0);
     expect(renderer!.root.findAllByType("h2").some((heading) =>
-      heading.children.includes("CBA.AX Market Monitor"),
+      heading.children.includes("Market comparison"),
     )).toBe(true);
+    expect(
+      renderer!.root.findByProps({ name: "watchlist-filter" }).props.className,
+    ).toContain("fit-search-field");
     expect(renderer!.root.findByProps({
-      "aria-label": "Monitor CBA.AX price trend",
-    }).props["aria-expanded"]).toBe(true);
+      "aria-label": "Remove CBA.AX from comparison",
+    }).props["aria-pressed"]).toBe(true);
 
     act(() => renderer!.root.findByProps({
-      "aria-label": "Monitor BHP.AX price trend",
+      "aria-label": "Add BHP.AX to comparison",
     }).props.onClick());
-    expect(renderer!.root.findAllByType("h2").some((heading) =>
-      heading.children.includes("BHP.AX Market Monitor"),
-    )).toBe(true);
+    const monitor = renderer!.root.findByProps({
+      "data-testid": "market-monitor",
+    });
+    expect(monitor.findByType("p").children.join("")).toBe("CBA.AX, BHP.AX");
 
     act(() => renderer!.root.findByProps({
-      "aria-label": "Close BHP.AX market monitor",
+      "aria-label": "Close market comparison",
     }).props.onClick());
     expect(renderer!.root.findAllByProps({ "data-testid": "market-monitor" }))
       .toHaveLength(0);
+
+    act(() => renderer!.root.findByProps({
+      "aria-label": "Add CBA.AX to comparison",
+    }).props.onClick());
+    expect(
+      renderer!.root
+        .findByProps({ "data-testid": "market-monitor" })
+        .findByType("p").children.join(""),
+    ).toBe("CBA.AX");
     renderer!.unmount();
   });
   it("does not mark or announce the whole list busy during background quote refresh", async () => {

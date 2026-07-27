@@ -207,10 +207,10 @@ describe("useMarketNewsController", () => {
       latest!.handleLensChange("watchlist");
     });
     act(() => {
-      latest!.handleSortChange("relevance");
+      latest!.handleSortChange("watchlist-first");
     });
     expect(latest!.activeLensId).toBe("watchlist");
-    expect(latest!.activeSortId).toBe("relevance");
+    expect(latest!.activeSortId).toBe("watchlist-first");
 
     const replaceCountBeforeUnavailablePage = mockReplace.mock.calls.length;
     act(() => {

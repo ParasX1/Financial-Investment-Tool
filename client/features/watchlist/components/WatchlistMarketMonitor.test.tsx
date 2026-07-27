@@ -5,6 +5,7 @@ import type { MarketChartSnapshot } from "@/features/market-data";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import {
   refreshMarketMonitor,
+  WatchlistMarketComparisonView,
   WatchlistMarketMonitorView,
 } from "./WatchlistMarketMonitor";
 
@@ -36,6 +37,7 @@ const quote: WatchlistQuote = {
 const chart: MarketChartSnapshot = {
   currency: "AUD",
   exchange: "ASX",
+  interval: "1m",
   marketState: "REGULAR",
   points: [
     { timeMs: Date.UTC(2026, 6, 15, 0, 0), value: 119 },
@@ -43,8 +45,26 @@ const chart: MarketChartSnapshot = {
   ],
   previousClose: 119,
   quoteTime: "2026-07-15T04:00:00.000Z",
+  rangeId: "1d",
   regularMarketPrice: 120,
   symbol: "CBA.AX",
+};
+
+const bhpItem: WatchlistItem = {
+  ...item,
+  note: "Compare commodity exposure",
+  position: 1,
+  symbol: "BHP.AX",
+};
+
+const bhpQuote: WatchlistQuote = {
+  ...quote,
+  change: -0.4,
+  changePercent: -0.8,
+  longName: "BHP Group",
+  previousClose: 50.4,
+  price: 50,
+  symbol: "BHP.AX",
 };
 
 function chartState(overrides = {}) {
@@ -83,6 +103,25 @@ describe("WatchlistMarketMonitorView", () => {
     expect(markup).not.toContain("extended-hours price");
   });
 
+  it("offers established chart ranges instead of locking the monitor to one day", () => {
+    const markup = renderToStaticMarkup(
+      <WatchlistMarketMonitorView
+        chartState={chartState()}
+        item={item}
+        onClose={jest.fn()}
+        onRefreshQuotes={jest.fn()}
+        quote={quote}
+        quoteRefreshing={false}
+      />,
+    );
+
+    for (const label of [
+      "1D", "5D", "1M", "3M", "6M", "YTD", "1Y", "5Y", "Max",
+    ]) {
+      expect(markup).toContain(`>${label}<`);
+    }
+  });
+
   it("refreshes both quote and chart layers from one monitor action", () => {
     const refreshQuotes = jest.fn();
     const refreshChart = jest.fn();
@@ -94,7 +133,7 @@ describe("WatchlistMarketMonitorView", () => {
   });
   it.each([
     {
-      expectedCadence: "Regular-session price/chart · checks 30s",
+      expectedCadence: "Prices 30s · chart 60s",
       expectedChange: "↓ −1.00 (−0.50%)",
       expectedState: "Pre-market",
       marketState: "PREPRE",
@@ -108,7 +147,7 @@ describe("WatchlistMarketMonitorView", () => {
       },
     },
     {
-      expectedCadence: "Regular-session price/chart · checks 30s",
+      expectedCadence: "Prices 30s · chart 60s",
       expectedChange: "→ 0.00 (0.00%)",
       expectedState: "After hours",
       marketState: "POSTPOST",
@@ -232,6 +271,7 @@ describe("WatchlistMarketMonitorView", () => {
     );
 
     expect(loading).toContain("Loading one-day trend");
+    expect(loading).toContain('disabled=""');
     expect(error).toContain("Market chart is temporarily unavailable.");
     const empty = renderToStaticMarkup(
       <WatchlistMarketMonitorView
@@ -246,5 +286,69 @@ describe("WatchlistMarketMonitorView", () => {
 
     expect(error).toContain("Try chart again");
     expect(empty).toContain("Intraday trend is not available yet.");
+  });
+});
+
+describe("WatchlistMarketComparisonView", () => {
+  it("compares selected symbols as relative performance and reports partial data", () => {
+    const markup = renderToStaticMarkup(
+      <WatchlistMarketComparisonView
+        chartState={{
+          data: {
+            rangeId: "3m",
+            snapshots: [
+              {
+                ...chart,
+                interval: "1d",
+                points: [
+                  { timeMs: Date.UTC(2026, 4, 1), value: 100 },
+                  { timeMs: Date.UTC(2026, 6, 15), value: 110 },
+                ],
+                rangeId: "3m",
+              },
+              {
+                ...chart,
+                interval: "1d",
+                points: [
+                  { timeMs: Date.UTC(2026, 4, 1), value: 50 },
+                  { timeMs: Date.UTC(2026, 6, 15), value: 48 },
+                ],
+                rangeId: "3m",
+                symbol: "BHP.AX",
+              },
+            ],
+            unavailableSymbols: ["CSL.AX"],
+          },
+          error: null,
+          lastUpdated: new Date("2026-07-15T04:00:00.000Z"),
+          loading: false,
+          refresh: jest.fn(),
+          refreshing: false,
+        }}
+        items={[
+          item,
+          bhpItem,
+          { ...item, position: 2, symbol: "CSL.AX" },
+        ]}
+        onClose={jest.fn()}
+        onRangeChange={jest.fn()}
+        onRefreshQuotes={jest.fn()}
+        quotes={{
+          "BHP.AX": bhpQuote,
+          "CBA.AX": quote,
+        }}
+        quoteRefreshing={false}
+        rangeId="3m"
+      />,
+    );
+
+    expect(markup).toContain("Market comparison");
+    expect(markup).toContain("Each line starts at 0%");
+    expect(markup).toContain("CBA.AX");
+    expect(markup).toContain("BHP.AX");
+    expect(markup).toContain("CSL.AX chart data is unavailable");
+    expect(markup).toContain("3M relative performance comparison");
+    expect(markup).toContain('aria-pressed="true">3M</button>');
+    expect(markup).toContain("/MarketNews?quote=CBA.AX");
   });
 });

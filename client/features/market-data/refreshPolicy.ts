@@ -1,3 +1,5 @@
+import type { MarketChartRangeId } from "@/lib/market/chartRanges";
+
 export const MARKET_REFRESH_INTERVALS = Object.freeze({
   activeChartMs: 30_000,
   activeQuoteMs: 15_000,
@@ -8,6 +10,20 @@ export const MARKET_REFRESH_INTERVALS = Object.freeze({
   retryBaseMs: 30_000,
   unknownQuoteMs: 60_000,
 });
+
+const CHART_RANGE_REFRESH_FLOORS_MS: Readonly<
+  Record<MarketChartRangeId, number>
+> = {
+  "1d": 0,
+  "5d": 60_000,
+  "1m": 300_000,
+  "3m": 900_000,
+  "6m": 900_000,
+  ytd: 900_000,
+  "1y": 900_000,
+  "5y": 3_600_000,
+  max: 3_600_000,
+};
 
 type MarketStateValue = { marketState: string | null | undefined };
 
@@ -41,6 +57,16 @@ export function getChartRefreshInterval(
   }
   if (state === "CLOSED") return MARKET_REFRESH_INTERVALS.closedMs;
   return MARKET_REFRESH_INTERVALS.extendedChartMs;
+}
+
+export function getRangeAwareChartRefreshInterval(
+  marketState: string | null | undefined,
+  rangeId: MarketChartRangeId,
+): number {
+  return Math.max(
+    getChartRefreshInterval(marketState),
+    CHART_RANGE_REFRESH_FLOORS_MS[rangeId],
+  );
 }
 
 export function getRetryInterval(retryCount: number): number {

@@ -103,15 +103,9 @@ export interface MarketNewsMarketScope {
   };
 }
 
-export type MarketNewsLensId =
-  | "all"
-  | "watchlist"
-  | "ticker-linked"
-  | "high-relevance"
-  | "positive"
-  | "negative";
+export type MarketNewsLensId = "all" | "watchlist" | "ticker-linked";
 
-export type MarketNewsSortId = "latest" | "relevance" | "watchlist-first";
+export type MarketNewsSortId = "latest" | "watchlist-first";
 
 export interface MarketNewsLensOption {
   id: MarketNewsLensId;

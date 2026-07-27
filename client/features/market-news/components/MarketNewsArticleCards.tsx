@@ -3,42 +3,21 @@ import type { Article } from "@/services/news";
 import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import {
   formatArticleTime,
-  getArticleDomain,
   getArticleImage,
-  getArticleInvestorCues,
   getSafeArticleHref,
 } from "../lib/marketNewsArticles";
 import styles from "../styles/marketNews.module.css";
 
-const CUE_DESCRIPTIONS: Record<string, string> = {
-  Commodities: "Mentions energy, metals, or commodity-market inputs.",
-  Fresh: "Published within the recent market-news window.",
-  Macro: "Mentions economy, jobs, wages, consumers, or GDP.",
-  Opportunity: "Provider sentiment is positive.",
-  Property: "Mentions housing, mortgages, rent, or real estate.",
-  "Rate-sensitive": "Mentions rates, inflation, bonds, yields, CPI, or RBA.",
-  Risk: "Provider sentiment is negative.",
-  Technology:
-    "Mentions AI, technology, software, semiconductors, or cybersecurity.",
-  "Ticker-linked": "The story is linked to at least one market symbol.",
-};
-
-function chipLabel(value: string) {
-  return value === "Ticker-linked" ? "Ticker linked" : value;
-}
-
 function ArticleChip({
   children,
-  tone = "neutral",
   title,
 }: {
   children: ReactNode;
-  tone?: "neutral" | "signal" | "ticker";
   title: string;
 }) {
   return (
     <span
-      className={cn(styles.articleChip, styles[`articleChip_${tone}`])}
+      className={cn(styles.articleChip, styles.articleChip_ticker)}
       title={title}
     >
       {children}
@@ -48,16 +27,6 @@ function ArticleChip({
 
 function ArticleMeta({ article }: { article: Article }) {
   const relatedSymbols = article.relatedSymbols?.slice(0, 3) ?? [];
-  const domain =
-    article.provider === "demo"
-      ? "category demo"
-      : getArticleDomain(article.url);
-  const confidence =
-    typeof article.confidence === "number" &&
-    Number.isFinite(article.confidence)
-      ? article.confidence.toFixed(1)
-      : null;
-  const investorCues = getArticleInvestorCues(article);
 
   return (
     <div
@@ -69,39 +38,17 @@ function ArticleMeta({ article }: { article: Article }) {
     >
       <span>{article.source}</span>
       <span aria-hidden="true">-</span>
-      <span>{domain}</span>
-      <span aria-hidden="true">-</span>
       <time dateTime={article.publishedAt}>
         {formatArticleTime(article.publishedAt)}
       </time>
-      {article.providerLabel ? (
-        <ArticleChip title={`Fetched from ${article.providerLabel}`}>
-          {article.providerLabel}
-        </ArticleChip>
-      ) : null}
       {relatedSymbols.map((symbol) => (
         <ArticleChip
           key={symbol}
-          tone="ticker"
-          title={`Related market symbol: ${symbol}`}
+          title={`Story appears related to ${symbol}`}
         >
           {symbol}
         </ArticleChip>
       ))}
-      {investorCues.map((cue) => (
-        <ArticleChip
-          key={cue}
-          tone="signal"
-          title={CUE_DESCRIPTIONS[cue] ?? "Investor scanning signal."}
-        >
-          {chipLabel(cue)}
-        </ArticleChip>
-      ))}
-      {confidence ? (
-        <ArticleChip title="Approximate relevance score from the provider or local matching rules.">
-          Relevance {confidence}
-        </ArticleChip>
-      ) : null}
     </div>
   );
 }
@@ -141,19 +88,7 @@ function ArticleVisual({
       />
     );
   }
-
-  const signal = article.relatedSymbols?.[0] ?? article.providerLabel ?? "NEWS";
-
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(styles.marketVisual, className)}
-      data-variant="feature"
-    >
-      <span className={styles.marketVisualLabel}>Market News</span>
-      <span className={styles.marketVisualSignal}>{signal}</span>
-    </div>
-  );
+  return null;
 }
 
 export type TopicFeedPagination = {

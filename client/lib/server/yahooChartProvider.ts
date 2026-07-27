@@ -2,6 +2,11 @@ import {
   mapYahooChartMetaQuote,
   normalizeYahooMarketSymbol,
 } from "./yahooQuoteProvider";
+import {
+  getMarketChartRange,
+  type MarketChartInterval,
+  type MarketChartRangeId,
+} from "@/lib/market/chartRanges";
 
 export interface MarketChartPoint {
   timeMs: number;
@@ -11,10 +16,12 @@ export interface MarketChartPoint {
 export interface YahooChartSnapshot {
   currency: string | null;
   exchange: string | null;
+  interval: MarketChartInterval;
   marketState: string | null;
   points: MarketChartPoint[];
   previousClose: number | null;
   quoteTime: string | null;
+  rangeId: MarketChartRangeId;
   regularMarketPrice: number | null;
   symbol: string;
 }
@@ -27,6 +34,7 @@ type FetchImplementation = (
 interface YahooChartProviderOptions {
   fetchImpl?: FetchImplementation;
   maxPoints?: number;
+  rangeId?: MarketChartRangeId;
   timeoutMs?: number;
 }
 
@@ -101,12 +109,13 @@ export async function fetchYahooChartSnapshot(
     2,
     Math.min(Math.floor(options.maxPoints ?? DEFAULT_MAX_POINTS), 500),
   );
+  const range = getMarketChartRange(options.rangeId);
   const url = new URL(
     `/v8/finance/chart/${encodeURIComponent(symbol)}`,
     YAHOO_HOST,
   );
-  url.searchParams.set("range", "1d");
-  url.searchParams.set("interval", "1m");
+  url.searchParams.set("range", range.providerRange);
+  url.searchParams.set("interval", range.interval);
 
   let response: Response;
   try {
@@ -159,10 +168,12 @@ export async function fetchYahooChartSnapshot(
   return {
     currency: quoteMeta.currency,
     exchange: quoteMeta.exchange,
+    interval: range.interval,
     marketState: quoteMeta.marketState,
     points: compactPoints(points, maxPoints),
     previousClose: quoteMeta.previousClose,
     quoteTime: quoteMeta.quoteTime,
+    rangeId: range.id,
     regularMarketPrice: quoteMeta.price,
     symbol,
   };

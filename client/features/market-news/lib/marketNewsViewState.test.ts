@@ -16,7 +16,7 @@ import {
 const baseState: MarketNewsViewState = {
   activeLensId: "ticker-linked",
   activeMarketScopeId: "australia",
-  activeSortId: "relevance",
+  activeSortId: "latest",
   activeTopicId: "cost-of-living",
   lookupDraft: "CBA.AX",
   quoteReferenceVisible: true,
@@ -81,7 +81,7 @@ describe("marketNewsViewState", () => {
           tickerSymbol: "",
         },
         {
-          lensId: "high-relevance",
+          lensId: "ticker-linked",
           marketScopeId: "us-markets",
           pageIndex: 1,
           searchQuery: "",
@@ -91,7 +91,7 @@ describe("marketNewsViewState", () => {
         },
       ),
     ).toMatchObject({
-      activeLensId: "high-relevance",
+      activeLensId: "ticker-linked",
       activeMarketScopeId: "us-markets",
       activeSortId: "watchlist-first",
       activeTopicId: "technology",
@@ -108,7 +108,7 @@ describe("marketNewsViewState", () => {
       marketScopeId: "australia" as const,
       pageIndex: 3,
       searchQuery: "",
-      sortId: "relevance" as const,
+      sortId: "latest" as const,
       tickerSymbol: "CBA.AX",
       topicId: "cost-of-living" as const,
     };
@@ -262,7 +262,7 @@ describe("marketNewsViewState", () => {
       applyMarketNewsTopicChange(baseState, "personal-finance"),
     ).toMatchObject({
       activeLensId: "all",
-      activeSortId: "relevance",
+      activeSortId: "latest",
       activeTopicId: "personal-finance",
       lookupDraft: "",
       searchDraft: "",
@@ -274,7 +274,7 @@ describe("marketNewsViewState", () => {
 
     expect(applyMarketNewsLensChange(baseState, "watchlist")).toMatchObject({
       activeLensId: "watchlist",
-      activeSortId: "relevance",
+      activeSortId: "latest",
       storyPageIndex: 0,
       tickerSymbol: "CBA.AX",
       quoteReferenceVisible: true,

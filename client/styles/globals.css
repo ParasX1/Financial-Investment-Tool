@@ -7,6 +7,55 @@
     background: var(--fit-page-background);
   }
 
+  .fit-search-field {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid var(--fit-color-border-control);
+    border-color: var(--fit-color-border-control);
+    background-color: var(--fit-color-field);
+    color: white;
+    outline: none;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .fit-search-field::placeholder {
+    color: #7f8798;
+    opacity: 1;
+  }
+
+  .fit-search-field:hover {
+    border-color: rgba(83, 103, 255, 0.45);
+  }
+
+  .fit-search-field:focus-visible {
+    border-color: rgba(111, 124, 255, 0.85);
+    box-shadow: 0 0 0 2px rgba(111, 124, 255, 0.24);
+  }
+
+  .fit-search-field::-webkit-search-cancel-button,
+  .fit-search-field::-webkit-search-decoration,
+  .fit-search-field::-webkit-search-results-button,
+  .fit-search-field::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  @media (forced-colors: active) {
+    .fit-search-field {
+      border-color: ButtonText;
+      forced-color-adjust: auto;
+    }
+
+    .fit-search-field:focus-visible {
+      border-color: Highlight;
+      box-shadow: none;
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+
   .fit-type-display-title {
     font-size: var(--fit-type-size-display-title-mobile);
     font-weight: var(--fit-type-weight-semibold);

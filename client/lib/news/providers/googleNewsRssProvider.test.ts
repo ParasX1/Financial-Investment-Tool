@@ -129,8 +129,7 @@ describe("googleNewsRssProvider", () => {
   });
 
   it("maps RSS items into safe Google News link article metadata", () => {
-    expect(
-      mapGoogleNewsRssItems([
+    const [article] = mapGoogleNewsRssItems([
         {
           description:
             "Mortgage pressure rises as cost of living bites - Yahoo Finance Australia",
@@ -148,8 +147,9 @@ describe("googleNewsRssProvider", () => {
           link: "javascript:alert(1)",
           title: "Unsafe URL",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "example-guid",
         provider: "google-news-rss",
@@ -161,6 +161,20 @@ describe("googleNewsRssProvider", () => {
         url: "https://news.google.com/rss/articles/example?oc=5",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
+  });
+
+  it("infers symbols only from article content, not a publisher name", () => {
+    expect(
+      mapGoogleNewsRssItems([
+        {
+          link: "https://news.google.com/rss/articles/source-only?oc=5",
+          source: "Meta",
+          title: "Markets finish the session little changed",
+        },
+      ])[0]?.relatedSymbols,
+    ).toEqual([]);
   });
 
   it("drops unsafe media URLs without dropping the story", () => {

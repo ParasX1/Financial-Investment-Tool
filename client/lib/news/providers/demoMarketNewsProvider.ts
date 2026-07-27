@@ -8,7 +8,6 @@ type DemoStoryInput = {
   summary: string;
   source: string;
   relatedSymbols?: string[];
-  sentiment?: "positive" | "negative" | "neutral";
 };
 
 const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
@@ -16,7 +15,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "cost-rates-households",
       relatedSymbols: ["CBA.AX", "WOW.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Mortgage pressure, grocery prices, and wage growth remain the fastest signals for household spending risk.",
@@ -26,7 +24,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "cost-inflation-basket",
       relatedSymbols: ["COL.AX", "WES.AX"],
-      sentiment: "negative",
       source: "FIT Demo Desk",
       summary:
         "A tighter spending basket can shift earnings expectations for supermarkets, banks, and discretionary retailers.",
@@ -36,7 +33,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "cost-rba-income",
       relatedSymbols: ["AUDUSD=X", "^AXJO"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Rate expectations remain a useful bridge between household finance headlines and market positioning.",
@@ -48,7 +44,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "au-market-open",
       relatedSymbols: ["^AORD", "^AXJO", "BHP.AX"],
-      sentiment: "positive",
       source: "FIT Demo Desk",
       summary:
         "Banks, miners, and the Australian dollar set the tone for local portfolio moves.",
@@ -57,7 +52,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "au-earnings-watch",
       relatedSymbols: ["CBA.AX", "WOW.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Investors are scanning for earnings revisions and balance-sheet sensitivity across domestic leaders.",
@@ -69,7 +63,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "global-macro",
       relatedSymbols: ["^GSPC", "^IXIC", "^FTSE"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "US tech, European rates, and Asian demand are the cross-market inputs most likely to affect local portfolios.",
@@ -78,7 +71,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "global-risk",
       relatedSymbols: ["^VIX", "AUDUSD=X"],
-      sentiment: "negative",
       source: "FIT Demo Desk",
       summary:
         "Currency and volatility moves can change offshore exposure even before headline index levels move.",
@@ -89,7 +81,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "commodity-oil-gold",
       relatedSymbols: ["CL=F", "GC=F", "BHP.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Energy and precious metals remain the quickest commodity read-throughs for inflation and resource earnings.",
@@ -98,7 +89,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "commodity-copper",
       relatedSymbols: ["HG=F", "RIO.AX"],
-      sentiment: "positive",
       source: "FIT Demo Desk",
       summary:
         "Copper remains a practical signal for industrial demand and China-sensitive Australian exposures.",
@@ -109,7 +99,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "money-tax-super",
       relatedSymbols: ["CBA.AX", "NAB.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Tax, superannuation, and bank product changes can affect household cash flow and long-term allocations.",
@@ -120,7 +109,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "personal-finance-mortgage",
       relatedSymbols: ["CBA.AX", "ANZ.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Mortgage repricing and savings rates remain important for household resilience and bank margin expectations.",
@@ -132,7 +120,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "property-rents",
       relatedSymbols: ["REA.AX", "CBA.AX"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Rents, listings, and borrowing capacity are the cleanest signals for housing-linked portfolio risk.",
@@ -144,7 +131,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "work-wages",
       relatedSymbols: ["^AXJO", "AUDUSD=X"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Wage growth and job openings shape both household income and central bank expectations.",
@@ -155,7 +141,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "tech-ai-platforms",
       relatedSymbols: ["NVDA", "MSFT", "TEAM"],
-      sentiment: "positive",
       source: "FIT Demo Desk",
       summary:
         "AI infrastructure, software margins, and platform spending remain the main tech market narratives.",
@@ -164,7 +149,6 @@ const DEMO_STORIES_BY_TOPIC: Record<string, readonly DemoStoryInput[]> = {
     {
       id: "tech-cyber",
       relatedSymbols: ["TEAM", "CRWD"],
-      sentiment: "neutral",
       source: "FIT Demo Desk",
       summary:
         "Cybersecurity and enterprise software demand are useful checks on risk appetite in growth portfolios.",
@@ -184,7 +168,6 @@ function resolveDemoStories(request: ServerNewsRequest) {
       {
         id: `ticker-${symbol}`,
         relatedSymbols: [symbol],
-        sentiment: "neutral" as const,
         source: "FIT Demo Desk",
         summary:
           "Ticker-specific demo coverage keeps the drill-down usable while a live finance news provider is not configured.",
@@ -199,7 +182,6 @@ function resolveDemoStories(request: ServerNewsRequest) {
       {
         id: `search-${query.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
         relatedSymbols: [],
-        sentiment: "neutral" as const,
         source: "FIT Demo Desk",
         summary:
           "Search demo results preserve the active category context while a live provider key is missing.",
@@ -217,7 +199,6 @@ export function getDemoMarketNewsArticles(
 ): Article[] {
   return dedupeArticles(
     resolveDemoStories(request).map((story, index) => ({
-      confidence: 1,
       id: `demo-${story.id}`,
       image: null,
       provider: "demo",
@@ -226,7 +207,6 @@ export function getDemoMarketNewsArticles(
         DEMO_BASE_TIME - index * 45 * 60 * 1000,
       ).toISOString(),
       relatedSymbols: story.relatedSymbols ?? [],
-      sentiment: story.sentiment ?? "neutral",
       source: story.source,
       summary: story.summary,
       title: story.title,

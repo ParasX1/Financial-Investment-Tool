@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 type RequestIdentity = {
   headers: Record<string, string | string[] | undefined>;
   socket: { remoteAddress?: string | undefined };
@@ -15,11 +17,9 @@ type RateLimitBucket = {
   resetAt: number;
 };
 
-const CLIENT_ADDRESS_PATTERN = /^[0-9a-f:.]{1,64}$/i;
-
 function safeClientAddress(value: string | undefined): string | null {
   const address = value?.trim();
-  return address && CLIENT_ADDRESS_PATTERN.test(address) ? address : null;
+  return address && isIP(address) ? address : null;
 }
 
 export function getRequestClientKey(request: RequestIdentity): string {
@@ -53,13 +53,19 @@ export function createFixedWindowRateLimiter({
   }
 
   return {
-    allow(key: string) {
+    allow(key: string, requestedCost = 1) {
+      const cost =
+        Number.isFinite(requestedCost) && requestedCost > 0
+          ? Math.floor(requestedCost)
+          : 1;
+      if (cost > limit) return false;
+
       const currentTime = now();
       const bucket = buckets.get(key);
 
       if (bucket && bucket.resetAt > currentTime) {
-        if (bucket.count >= limit) return false;
-        buckets.set(key, { ...bucket, count: bucket.count + 1 });
+        if (bucket.count + cost > limit) return false;
+        buckets.set(key, { ...bucket, count: bucket.count + cost });
         return true;
       }
 
@@ -70,7 +76,7 @@ export function createFixedWindowRateLimiter({
         buckets.delete(oldestKey);
       }
 
-      buckets.set(key, { count: 1, resetAt: currentTime + windowMs });
+      buckets.set(key, { count: cost, resetAt: currentTime + windowMs });
       return true;
     },
   };

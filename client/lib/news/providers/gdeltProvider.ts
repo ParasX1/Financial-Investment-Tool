@@ -127,19 +127,15 @@ export function mapGdeltArticles(
       const domain = compact(article.domain ?? undefined);
       const sourceCountry = compact(article.sourcecountry ?? undefined);
       const source = domain || sourceCountry || "GDELT source";
-      const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${source} ${sourceCountry}`,
-      );
+      const relatedSymbols = inferRelatedSymbolsFromText(title);
 
       return {
-        confidence: relatedSymbols.length ? 0.58 : null,
         id: url,
         image: safeExternalUrl(article.socialimage ?? undefined) || null,
         provider: "gdelt",
         providerLabel: "GDELT",
         publishedAt: parseGdeltSeenDate(article.seendate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary: sourceCountry ? `Source country: ${sourceCountry}` : "",
         title,

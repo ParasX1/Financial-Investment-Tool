@@ -249,7 +249,7 @@ describe("MarketNewsArticleLayout", () => {
     );
 
     expect(html).toContain("Story 1");
-    expect(html).toContain("Google News RSS");
+    expect(html).toContain("Yahoo Finance AU");
     expect(html).not.toContain("Market News</span>");
   });
 
@@ -274,16 +274,14 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
-  it("labels article signals in beginner-readable language", () => {
+  it("shows only trustworthy article metadata", () => {
     const html = renderToStaticMarkup(
       <MarketNewsArticleLayout
         articles={[
           {
             ...article(1),
-            confidence: 0.62,
             image: "",
             relatedSymbols: ["NVDA"],
-            sentiment: "neutral",
             summary: "AI and semiconductor demand lifted technology stocks.",
             title: "NVIDIA data-center revenue jumps",
           },
@@ -298,13 +296,15 @@ describe("MarketNewsArticleLayout", () => {
       />,
     );
 
-    expect(html).toContain("Google News RSS");
+    expect(html).toContain("Yahoo Finance AU");
     expect(html).toContain("NVDA");
-    expect(html).toContain("Ticker linked");
-    expect(html).toContain("Technology");
-    expect(html).toContain("Relevance 0.6");
+    expect(html).toContain('title="Story appears related to NVDA"');
+    expect(html).not.toContain("Google News RSS");
+    expect(html).not.toContain("<span>example.com</span>");
+    expect(html).not.toContain("Ticker linked");
+    expect(html).not.toContain("Technology");
+    expect(html).not.toContain("Relevance");
     expect(html).not.toContain("Open original");
-    expect(html).not.toContain("Match 0.6");
   });
 
   it("uses the compact topic feed as the only Market News article layout", () => {

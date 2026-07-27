@@ -11,7 +11,7 @@ describe("marketNewsRouting", () => {
         lens: "ticker-linked",
         market: "us-markets",
         quote: " cba.ax ",
-        sort: "relevance",
+        sort: "watchlist-first",
         topic: "technology",
       }),
     ).toEqual({
@@ -19,7 +19,7 @@ describe("marketNewsRouting", () => {
       marketScopeId: "us-markets",
       pageIndex: 0,
       searchQuery: "",
-      sortId: "relevance",
+      sortId: "watchlist-first",
       tickerSymbol: "CBA.AX",
       topicId: "technology",
     });
@@ -57,6 +57,20 @@ describe("marketNewsRouting", () => {
       tickerSymbol: "",
       topicId: "top-stories",
     });
+  });
+
+  it("normalizes retired confidence and sentiment views to trustworthy defaults", () => {
+    expect(
+      parseMarketNewsRouteQuery({
+        lens: "high-relevance",
+        sort: "relevance",
+      }),
+    ).toMatchObject({
+      lensId: "all",
+      sortId: "latest",
+    });
+    expect(parseMarketNewsRouteQuery({ lens: "positive" }).lensId).toBe("all");
+    expect(parseMarketNewsRouteQuery({ lens: "negative" }).lensId).toBe("all");
   });
 
   it("maps the retired Money News route to the complete Money overview", () => {

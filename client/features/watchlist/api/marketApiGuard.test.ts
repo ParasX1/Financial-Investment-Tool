@@ -22,6 +22,19 @@ describe("market API guard", () => {
     expect(limiter.allow("client-a")).toBe(true);
   });
 
+  it("charges fan-out requests by their bounded upstream cost", () => {
+    const limiter = createFixedWindowRateLimiter({
+      limit: 4,
+      now: () => 1_000,
+      windowMs: 1_000,
+    });
+
+    expect(limiter.allow("client-a", 3)).toBe(true);
+    expect(limiter.allow("client-a", 2)).toBe(false);
+    expect(limiter.allow("client-a", 1)).toBe(true);
+    expect(limiter.allow("client-a")).toBe(false);
+  });
+
   it("uses the first forwarded address without trusting arbitrary header text", () => {
     expect(
       getRequestClientKey({
@@ -32,6 +45,12 @@ describe("market API guard", () => {
     expect(
       getRequestClientKey({
         headers: { "x-forwarded-for": "<script>" },
+        socket: { remoteAddress: "127.0.0.1" },
+      }),
+    ).toBe("127.0.0.1");
+    expect(
+      getRequestClientKey({
+        headers: { "x-forwarded-for": "deadbeef" },
         socket: { remoteAddress: "127.0.0.1" },
       }),
     ).toBe("127.0.0.1");

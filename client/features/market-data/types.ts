@@ -1,4 +1,12 @@
-﻿export interface MarketQuote {
+import {
+  MAX_MARKET_CHART_COMPARISON_SYMBOLS,
+  getMarketChartRange,
+  isMarketChartRangeId,
+  type MarketChartInterval,
+  type MarketChartRangeId,
+} from "@/lib/market/chartRanges";
+
+export interface MarketQuote {
   change: number | null;
   changePercent: number | null;
   currency: string | null;
@@ -25,15 +33,24 @@ export interface MarketChartPoint {
 export interface MarketChartSnapshot {
   currency: string | null;
   exchange: string | null;
+  interval: MarketChartInterval;
   marketState: string | null;
   points: MarketChartPoint[];
   previousClose: number | null;
   quoteTime: string | null;
+  rangeId: MarketChartRangeId;
   regularMarketPrice: number | null;
   symbol: string;
 }
 
+export interface MarketChartsResponse {
+  rangeId: MarketChartRangeId;
+  snapshots: MarketChartSnapshot[];
+  unavailableSymbols: string[];
+}
+
 type JsonRecord = Record<string, unknown>;
+const MARKET_SYMBOL_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
 
 function isRecord(value: unknown): value is JsonRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -85,13 +102,28 @@ export function isMarketQuotesResponse(
   );
 }
 
+function isValidTimestamp(value: number): boolean {
+  return Number.isFinite(value) && !Number.isNaN(new Date(value).getTime());
+}
+
 function isMarketChartPoint(value: unknown): value is MarketChartPoint {
   if (!isRecord(value)) return false;
   return (
     typeof value.timeMs === "number" &&
-    Number.isFinite(value.timeMs) &&
+    isValidTimestamp(value.timeMs) &&
     typeof value.value === "number" &&
     Number.isFinite(value.value)
+  );
+}
+
+function isMarketChartInterval(value: unknown): value is MarketChartInterval {
+  return (
+    value === "1m" ||
+    value === "15m" ||
+    value === "1h" ||
+    value === "1d" ||
+    value === "1wk" ||
+    value === "1mo"
   );
 }
 
@@ -101,14 +133,50 @@ export function isMarketChartSnapshot(
   if (!isRecord(value)) return false;
   return (
     typeof value.symbol === "string" &&
-    value.symbol.trim().length > 0 &&
+    MARKET_SYMBOL_PATTERN.test(value.symbol) &&
     isNullableString(value.currency) &&
     isNullableString(value.exchange) &&
+    isMarketChartInterval(value.interval) &&
     isNullableString(value.marketState) &&
     Array.isArray(value.points) &&
     value.points.every(isMarketChartPoint) &&
     isNullableNumber(value.previousClose) &&
     isNullableString(value.quoteTime) &&
-    isNullableNumber(value.regularMarketPrice)
+    isMarketChartRangeId(value.rangeId) &&
+    isNullableNumber(value.regularMarketPrice) &&
+    getMarketChartRange(value.rangeId).interval === value.interval
+  );
+}
+
+export function isMarketChartsResponse(
+  value: unknown,
+): value is MarketChartsResponse {
+  if (!isRecord(value) || !isMarketChartRangeId(value.rangeId)) return false;
+  if (
+    !Array.isArray(value.snapshots) ||
+    !value.snapshots.every(isMarketChartSnapshot) ||
+    !Array.isArray(value.unavailableSymbols) ||
+    !value.unavailableSymbols.every(
+      (symbol) => typeof symbol === "string" && symbol.trim().length > 0,
+    )
+  ) {
+    return false;
+  }
+  const symbols = [
+    ...value.snapshots.map((snapshot) => snapshot.symbol),
+    ...value.unavailableSymbols,
+  ];
+  if (
+    symbols.length > MAX_MARKET_CHART_COMPARISON_SYMBOLS ||
+    new Set(symbols).size !== symbols.length ||
+    value.unavailableSymbols.some(
+      (symbol) => !MARKET_SYMBOL_PATTERN.test(symbol),
+    )
+  ) {
+    return false;
+  }
+
+  return value.snapshots.every(
+    (snapshot) => snapshot.rangeId === value.rangeId,
   );
 }

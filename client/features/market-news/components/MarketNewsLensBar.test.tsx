@@ -33,7 +33,7 @@ describe("MarketNewsLensBar", () => {
     expect(html).toContain("No My watchlist stories in this view");
   });
 
-  it("hides empty advanced signals until the provider returns matches", () => {
+  it("shows only trustworthy watchlist and ticker filters", () => {
     const html = renderToStaticMarkup(
       <MarketNewsLensBar
         activeLensId="all"
@@ -59,20 +59,6 @@ describe("MarketNewsLensBar", () => {
             label: "Ticker stories",
             selectable: false,
           },
-          {
-            count: 0,
-            description: "Provider stories with a strong match score.",
-            id: "high-relevance",
-            label: "High relevance",
-            selectable: false,
-          },
-          {
-            count: 1,
-            description: "Positive sentiment stories.",
-            id: "positive",
-            label: "Opportunities",
-            selectable: true,
-          },
         ]}
         onLensChange={() => undefined}
       />,
@@ -81,8 +67,9 @@ describe("MarketNewsLensBar", () => {
     expect(html).toContain("All");
     expect(html).toContain("My watchlist");
     expect(html).toContain("Ticker stories");
-    expect(html).toContain("Opportunities");
+    expect(html).toContain("explicit ticker links");
     expect(html).not.toContain("Ticker stories stories");
     expect(html).not.toContain("High relevance");
+    expect(html).not.toContain("Opportunities");
   });
 });

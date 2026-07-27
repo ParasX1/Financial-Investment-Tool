@@ -6,11 +6,9 @@ export type Article = {
   image: string | null;
   publishedAt: string;
   source: string;
-  confidence?: number | null;
   provider?: string;
   providerLabel?: string;
   relatedSymbols?: string[];
-  sentiment?: "positive" | "negative" | "neutral";
 };
 
 export type NewsResponseMeta = {

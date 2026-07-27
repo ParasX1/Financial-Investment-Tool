@@ -7,7 +7,7 @@ describe("MarketNewsScanOrderBar", () => {
   it("renders scan-order options as a compact pressed-button group", () => {
     const html = renderToStaticMarkup(
       <MarketNewsScanOrderBar
-        activeSortId="relevance"
+        activeSortId="latest"
         options={MARKET_NEWS_SORT_OPTIONS}
         onSortChange={() => undefined}
       />,
@@ -15,9 +15,9 @@ describe("MarketNewsScanOrderBar", () => {
 
     expect(html).toContain("Scan order");
     expect(html).toContain("Latest");
-    expect(html).toContain("Most relevant");
+    expect(html).not.toContain("Most relevant");
     expect(html).toContain("Watchlist first");
     expect(html).toContain('aria-pressed="true"');
-    expect(html).toContain("Provider match, ticker links, then newest stories.");
+    expect(html).toContain("Newest headlines first.");
   });
 });

@@ -77,8 +77,7 @@ describe("gdeltProvider", () => {
   });
 
   it("maps, filters, and dedupes GDELT articles", () => {
-    expect(
-      mapGdeltArticles([
+    const [article] = mapGdeltArticles([
         {
           domain: "example.com",
           seendate: "20260616T113000Z",
@@ -96,8 +95,9 @@ describe("gdeltProvider", () => {
           title: "Unsafe URL",
           url: "javascript:alert(1)",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "https://example.com/asx",
         image: "https://example.com/asx.jpg",
@@ -108,6 +108,8 @@ describe("gdeltProvider", () => {
         title: "ASX investors watch banks and miners",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
   });
 
   it("drops unsafe social image URLs without dropping the article", () => {
