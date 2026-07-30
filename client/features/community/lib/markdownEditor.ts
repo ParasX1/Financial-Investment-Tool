@@ -7,8 +7,11 @@ export type MarkdownCommand =
   | "strike"
   | "superscript"
   | "heading"
+  | "blockquote"
   | "bullet"
-  | "numbered";
+  | "numbered"
+  | "inlineCode"
+  | "codeBlock";
 
 export type TextSelection = {
   start: number;
@@ -86,7 +89,10 @@ function applyLinePrefix(
   const prefixed = lines
     .map((line, index) => {
       if (!line.trim()) return line;
-      return `${getPrefix(index)}${line.replace(/^((#{1,6}|[-*]|\d+\.)\s+)/, "")}`;
+      return `${getPrefix(index)}${line.replace(
+        /^((#{1,6}|[-*]|\d+\.|>)\s+)/,
+        "",
+      )}`;
     })
     .join("\n");
 
@@ -113,10 +119,23 @@ export function applyMarkdownCommand(
       return wrapSelection(value, selection, "^", "^", "superscript");
     case "heading":
       return applyLinePrefix(value, selection, () => "## ");
+    case "blockquote":
+      return applyLinePrefix(value, selection, () => "> ");
     case "bullet":
       return applyLinePrefix(value, selection, () => "- ");
     case "numbered":
       return applyLinePrefix(value, selection, (index) => `${index + 1}. `);
+    case "inlineCode":
+      return wrapSelection(value, selection, "`", "`", "code");
+    case "codeBlock": {
+      const safeSelection = clampSelection(value, selection);
+      const selected = value.slice(safeSelection.start, safeSelection.end);
+      const code = selected || "code";
+      return replaceSelection(value, safeSelection, `\`\`\`\n${code}\n\`\`\``, {
+        start: 4,
+        end: 4 + code.length,
+      });
+    }
     default:
       return { value, selection: clampSelection(value, selection) };
   }
@@ -141,7 +160,9 @@ export function normalizeMarkdownUrl(rawUrl: string) {
       return { error: "Enter a valid http, https, or mailto URL." };
     }
 
-    return { value: url.toString().replace(/\(/g, "%28").replace(/\)/g, "%29") };
+    return {
+      value: url.toString().replace(/\(/g, "%28").replace(/\)/g, "%29"),
+    };
   } catch {
     return { error: "Enter a valid URL." };
   }
@@ -158,7 +179,10 @@ export function removeDraftImageMarkers(value: string) {
 }
 
 function escapeMarkdownLabel(value: string) {
-  return value.trim().replace(/[\[\]\n\r]/g, " ").replace(/\s+/g, " ");
+  return value
+    .trim()
+    .replace(/[\[\]\n\r]/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 export function insertMarkdownLink(
@@ -169,12 +193,18 @@ export function insertMarkdownLink(
 ): MarkdownEdit & { error?: string } {
   const normalized = normalizeMarkdownUrl(rawUrl);
   if ("error" in normalized) {
-    return { value, selection: clampSelection(value, selection), error: normalized.error };
+    return {
+      value,
+      selection: clampSelection(value, selection),
+      error: normalized.error,
+    };
   }
 
   const safeSelection = clampSelection(value, selection);
   const selected = value.slice(safeSelection.start, safeSelection.end).trim();
-  const label = escapeMarkdownLabel(displayText || selected || normalized.value);
+  const label = escapeMarkdownLabel(
+    displayText || selected || normalized.value,
+  );
   const replacement = `[${label}](${normalized.value})`;
 
   return replaceSelection(value, safeSelection, replacement);
@@ -196,12 +226,16 @@ export function insertMarkdownImage(
   return replaceSelection(value, safeSelection, replacement);
 }
 
-export function replaceDraftImageMarkers(value: string, imageUrl: string | null) {
+export function replaceDraftImageMarkers(
+  value: string,
+  imageUrl: string | null,
+) {
   if (!imageUrl) return removeDraftImageMarkers(value);
 
   return value.replace(
     DRAFT_IMAGE_PATTERN,
-    (_match, altText: string) => `![${escapeMarkdownLabel(altText) || "image"}](${imageUrl})`,
+    (_match, altText: string) =>
+      `![${escapeMarkdownLabel(altText) || "image"}](${imageUrl})`,
   );
 }
 

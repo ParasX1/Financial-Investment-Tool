@@ -1,3 +1,4 @@
+import { resolveNewsTopicProfileId } from "./newsTopicProfiles";
 import { getPrimarySymbolName, getSymbolAliases } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";
 
@@ -43,12 +44,53 @@ const GOOGLE_LOCALES_BY_SCOPE: Record<string, GoogleLocale> = {
 };
 
 const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
+  "top-stories": {
+    phrases: ["market news", "business news"],
+    terms: [
+      "Australia",
+      "markets",
+      "economy",
+      "companies",
+      "investing",
+      "inflation",
+      "earnings",
+    ],
+    googleAlternates: [
+      ["ASX", "Australian economy", "RBA", "business"],
+      ["global markets", "Wall Street", "commodities", "central banks"],
+      ["company earnings", "mergers", "dividends", "market outlook"],
+    ],
+    googleRawQueries: [
+      '(ASX OR RBA OR "Australian economy" OR "company earnings") when:3d',
+    ],
+  },
   "australian-markets": {
     phrases: ["ASX", "Australian shares"],
     terms: ["Australia", "stocks", "earnings", "RBA", "banks", "miners"],
     googleRawQueries: [
       'site:au.finance.yahoo.com/news (ASX OR "Australian shares" OR "ASX Preview" OR "stock market") when:7d',
       'site:marketindex.com.au/news (ASX OR "ASX 200" OR "Australian shares") when:7d',
+    ],
+    sourceCountry: "AS",
+  },
+  "companies-earnings": {
+    phrases: ["company earnings", "corporate results"],
+    terms: [
+      "Australia",
+      "ASX",
+      "profit",
+      "revenue",
+      "guidance",
+      "dividend",
+      "acquisition",
+    ],
+    googleAlternates: [
+      ["ASX results", "earnings", "profit", "revenue"],
+      ["company guidance", "dividend", "merger", "acquisition"],
+      ["sales update", "annual results", "half-year results", "investors"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (earnings OR results OR profit OR revenue OR dividend OR acquisition) ASX when:7d",
     ],
     sourceCountry: "AS",
   },
@@ -101,7 +143,54 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       'site:finance.yahoo.com/news ("Wall Street" OR "S&P 500" OR Nasdaq OR "global markets") when:7d',
     ],
   },
-  "money-news": {
+  "economy-work": {
+    phrases: ["Australian economy", "labour market"],
+    terms: [
+      "Australia",
+      "GDP",
+      "RBA",
+      "inflation",
+      "interest rates",
+      "jobs",
+      "wages",
+      "employment",
+      "productivity",
+    ],
+    googleAlternates: [
+      ["Australian economy", "GDP", "budget", "economic growth"],
+      ["RBA", "inflation", "cash rate", "interest rates"],
+      ["labour market", "jobs", "wages", "employment"],
+      ["workplace", "unemployment", "productivity", "pay growth"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (economy OR RBA OR inflation OR jobs OR wages OR employment) Australia when:7d",
+      '("Australian economy" OR RBA OR inflation OR jobs OR wages) Australia when:3d',
+    ],
+    sourceCountry: "AS",
+  },
+  "economy-policy": {
+    phrases: ["Australian economy", "economic policy"],
+    terms: [
+      "GDP",
+      "budget",
+      "Treasury",
+      "productivity",
+      "economic growth",
+      "recession",
+      "regulation",
+    ],
+    googleAlternates: [
+      ["Australian economy", "GDP", "economic growth", "Treasury"],
+      ["federal budget", "economic policy", "productivity", "regulation"],
+      ["business conditions", "consumer spending", "recession", "Australia"],
+    ],
+    googleRawQueries: [
+      '(GDP OR budget OR Treasury OR productivity OR "economic growth") Australia when:7d',
+    ],
+    sourceCountry: "AS",
+  },
+  money: {
+    exclude: ["Atmos Energy"],
     phrases: ["personal finance", "money news"],
     terms: [
       "Australia",
@@ -112,6 +201,8 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       "consumer finance",
       "mortgage rates",
       "negative gearing",
+      "property",
+      "housing",
       "savings",
       "superannuation",
       "tax",
@@ -122,6 +213,7 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
       ["ATO", "tax return", "tax liability", "superannuation", "CGT"],
       ["capital gains tax", "negative gearing", "tax changes", "Australia"],
       ["mortgage rates", "home loans", "bank fees", "credit cards"],
+      ["property", "housing", "rent", "home buyers"],
       ["superannuation", "retirement", "pension", "insurance"],
       ["interest rates", "household savings", "financial stress", "Australia"],
     ],
@@ -156,6 +248,50 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     ],
     sourceCountry: "AS",
   },
+  "rates-inflation": {
+    phrases: ["interest rates", "monetary policy"],
+    terms: [
+      "Australia",
+      "RBA",
+      "cash rate",
+      "inflation",
+      "CPI",
+      "bond yields",
+      "rate hike",
+      "rate cut",
+    ],
+    googleAlternates: [
+      ["RBA", "cash rate", "interest rates", "monetary policy"],
+      ["Australian inflation", "CPI", "consumer prices", "bond yields"],
+      ["rate hike", "rate cut", "mortgage rates", "inflation outlook"],
+    ],
+    googleRawQueries: [
+      '(RBA OR "cash rate" OR inflation OR CPI OR "interest rates") Australia when:7d',
+    ],
+    sourceCountry: "AS",
+  },
+  "super-tax": {
+    phrases: ["superannuation", "Australian tax"],
+    terms: [
+      "Australia",
+      "ATO",
+      "tax return",
+      "capital gains tax",
+      "CGT",
+      "retirement",
+      "pension",
+      "super fund",
+    ],
+    googleAlternates: [
+      ["superannuation", "super fund", "retirement", "contributions"],
+      ["ATO", "tax return", "capital gains tax", "CGT"],
+      ["pension", "retirement income", "super rules", "Australia"],
+    ],
+    googleRawQueries: [
+      "site:au.finance.yahoo.com/news (superannuation OR ATO OR tax OR CGT OR retirement) Australia when:7d",
+    ],
+    sourceCountry: "AS",
+  },
   technology: {
     phrases: ["technology stocks"],
     terms: ["AI", "software", "semiconductors", "earnings", "Nvidia"],
@@ -181,6 +317,10 @@ const TOPIC_QUERY_PACKS: Record<string, QueryPack> = {
     sourceCountry: "AS",
   },
 };
+
+export function hasNewsTopicQueryPack(topicId: string) {
+  return Boolean(TOPIC_QUERY_PACKS[resolveNewsTopicProfileId(topicId) ?? ""]);
+}
 
 const SCOPE_QUERY_TERMS: Record<string, readonly string[]> = {
   "asia-markets": ["Asia", "Nikkei", "Hang Seng"],
@@ -326,8 +466,9 @@ function tickerTerms(ticker: string | undefined) {
 }
 
 function packForRequest(request: ServerNewsRequest): QueryPack {
-  if (request.topicId && TOPIC_QUERY_PACKS[request.topicId]) {
-    return TOPIC_QUERY_PACKS[request.topicId]!;
+  const profileId = resolveNewsTopicProfileId(request.topicId);
+  if (profileId && TOPIC_QUERY_PACKS[profileId]) {
+    return TOPIC_QUERY_PACKS[profileId]!;
   }
 
   if (request.kind === "commodity") {
@@ -426,6 +567,10 @@ function profileFromTerms({
     .slice(0, 5)
     .map((value) => `-${quoteGdelt(value)}`)
     .join(" ");
+  const googleExclude = unique(exclude)
+    .slice(0, 5)
+    .map((value) => `-${quoteGoogle(value)}`)
+    .join(" ");
   const gdeltCountry = sourceCountry ? `sourcecountry:${sourceCountry}` : "";
   const freshRecency = "when:3d";
   const recentRecency = "when:7d";
@@ -438,7 +583,9 @@ function profileFromTerms({
   );
   const googleQueries = uniqueQueries([
     appendGoogleRecency(primaryGoogleQuery, freshRecency),
-    ...googleRawQueries.map((query) => appendGoogleRecency(query, freshRecency)),
+    ...googleRawQueries.map((query) =>
+      appendGoogleRecency(query, freshRecency),
+    ),
     ...alternateGoogleQueries.map((query) =>
       appendGoogleRecency(query, freshRecency),
     ),
@@ -447,7 +594,9 @@ function profileFromTerms({
     ...alternateGoogleQueries.map((query) =>
       appendGoogleRecency(query, recentRecency),
     ),
-  ]).slice(0, 10);
+  ])
+    .map((query) => compact([query, googleExclude].join(" ")))
+    .slice(0, 10);
 
   return {
     displayText: compact(displayText),
@@ -529,14 +678,38 @@ export function buildGdeltSearchQuery(request: ServerNewsRequest): string {
   return buildNewsSearchProfile(request).gdeltQuery;
 }
 
+function googleContinuationBoundary(request: ServerNewsRequest) {
+  if (!request.publishedBefore) return null;
+
+  const boundary = new Date(request.publishedBefore);
+  if (Number.isNaN(boundary.getTime())) return null;
+
+  boundary.setUTCDate(boundary.getUTCDate() + 1);
+  return boundary.toISOString().slice(0, 10);
+}
+
+function applyGoogleContinuation(query: string, request: ServerNewsRequest) {
+  const boundary = googleContinuationBoundary(request);
+  if (!boundary) return query;
+
+  return compact(
+    `${query.replace(/\s+when:\d+[a-z]+/gi, "")} before:${boundary}`,
+  );
+}
+
 export function buildGoogleNewsSearchQuery(request: ServerNewsRequest): string {
-  return buildNewsSearchProfile(request).googleNewsQuery;
+  return applyGoogleContinuation(
+    buildNewsSearchProfile(request).googleNewsQuery,
+    request,
+  );
 }
 
 export function buildGoogleNewsSearchQueries(
   request: ServerNewsRequest,
 ): readonly string[] {
-  return buildNewsSearchProfile(request).googleNewsQueries;
+  return buildNewsSearchProfile(request).googleNewsQueries.map((query) =>
+    applyGoogleContinuation(query, request),
+  );
 }
 
 export function getGoogleNewsLocale(request: ServerNewsRequest): GoogleLocale {

@@ -138,6 +138,56 @@ describe("Community delete image cleanup", () => {
     expect(db.from).not.toHaveBeenCalled();
   });
 
+  it("rejects oversized raw Markdown before calling the repository", async () => {
+    const { db } = createMockSupabase([]);
+
+    await expect(
+      createCommunityPost(
+        db,
+        {
+          title: "Oversized discussion",
+          body: "x".repeat(40_001),
+          tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: [],
+          symbol: null,
+          sourceUrl: null,
+        },
+        "user-1",
+      ),
+    ).rejects.toThrow("Keep the post body to 40,000 characters or fewer.");
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects unmatched persisted image references before calling the repository", async () => {
+    const { db } = createMockSupabase([]);
+
+    await expect(
+      createCommunityPost(
+        db,
+        {
+          title: "External image",
+          body: "This image must not be loaded by other readers.",
+          tags: [],
+          postType: "discussion",
+          timeFrame: null,
+          tickers: [],
+          symbol: null,
+          sourceUrl: null,
+          imageUrl: "https://tracker.example/pixel.png",
+          imagePath: null,
+        },
+        "user-1",
+      ),
+    ).rejects.toThrow(
+      "The post image reference is invalid. Reattach the image and try again.",
+    );
+
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   it("persists four tickers when the legacy symbol repeats the primary", async () => {
     const postRow = {
       id: "post-1",
@@ -214,6 +264,24 @@ describe("Community delete image cleanup", () => {
         text: "Stale action",
       }),
     ).rejects.toThrow("Your session changed. Please try again.");
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an external comment image reference before calling the repository", async () => {
+    const { db } = createMockSupabase([]);
+
+    await expect(
+      createCommunityComment({
+        authorId: "user-1",
+        db,
+        postId: "post-1",
+        text: "Do not load this tracker.",
+        imageUrl: "https://tracker.example/pixel.png",
+      }),
+    ).rejects.toThrow(
+      "The comment image reference is invalid. Reattach the image and try again.",
+    );
+
     expect(db.from).not.toHaveBeenCalled();
   });
 

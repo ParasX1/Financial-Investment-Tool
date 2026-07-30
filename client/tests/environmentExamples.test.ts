@@ -21,6 +21,16 @@ describe("environment example contracts", () => {
     expect(example).not.toMatch(/eyJhbGciOi/);
   });
 
+  it("documents the Google-first market news provider stack", () => {
+    const example = readText(path.join(clientRoot, ".env.example"));
+
+    expect(example).toContain("NEWS_PROVIDER_ORDER=google-rss,yahoo-rss");
+    expect(example).toContain("GDELT_NEWS_ENABLED=false");
+    expect(example).not.toContain("MARKETAUX_API_KEY");
+    expect(example).not.toContain("NEWSAPI_KEY");
+    expect(example).not.toContain("NEWS_MIN_STRICT_ARTICLES");
+  });
+
   it("documents a separate Flask server configuration", () => {
     const example = readText(
       path.join(repositoryRoot, "server", ".env.example"),

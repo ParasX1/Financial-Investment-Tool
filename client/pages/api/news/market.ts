@@ -29,6 +29,7 @@ function makeRequest(req: NextApiRequest): ServerNewsRequest | null {
 
   return {
     commodity: firstQueryValue(req.query.commodity),
+    continuationCursor: firstQueryValue(req.query.cursor),
     context: firstQueryValue(req.query.context) || "",
     country: firstQueryValue(req.query.country),
     industry: firstQueryValue(req.query.industry),

@@ -9,9 +9,11 @@ import { getExpandableText } from "../lib/communityText";
 import { MarkdownBody } from "./MarkdownBody";
 
 export function ExpandableText({
+  allowedImageUrl,
   text,
   maxChars = POST_BODY_PREVIEW_MAX_CHARS,
 }: {
+  allowedImageUrl?: string | null;
   text: string;
   maxChars?: number;
 }) {
@@ -30,12 +32,14 @@ export function ExpandableText({
   return (
     <div className={cn("mt-[10px]", communityStyles.postCopyMeasure)}>
       <MarkdownBody
+        allowedImageUrl={allowedImageUrl}
         id={contentId}
         className={cn(
           "text-[#c4ccdc]",
           fitType.body,
           communityStyles.wrapAnywhere,
         )}
+        optimizeForStreaming={shouldCollapse && !expanded}
         text={visibleText}
       />
 

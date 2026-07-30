@@ -75,7 +75,7 @@ export function isGoogleNewsRssEnabled(
   const configured = envFlag(env.GOOGLE_NEWS_RSS_ENABLED);
   if (configured !== null) return configured;
 
-  return compact(env.NODE_ENV).toLowerCase() !== "production";
+  return true;
 }
 
 export function buildGoogleNewsRssUrl(request: ServerNewsRequest): string {
@@ -184,11 +184,10 @@ export function mapGoogleNewsRssItems(
       const source = readSource(item.source);
       const summary = summaryWithoutDuplicateTitle(item, title, source);
       const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${summary} ${source}`,
+        `${title} ${summary}`,
       );
 
       return {
-        confidence: relatedSymbols.length ? 0.58 : null,
         id: readGuid(item, url),
         image:
           readMediaUrl(item["media:content"]) ??
@@ -197,7 +196,6 @@ export function mapGoogleNewsRssItems(
         providerLabel: "Google News RSS",
         publishedAt: readPublishedAt(item.pubDate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary,
         title,
@@ -239,7 +237,10 @@ function interleaveArticleBuckets(
 ): Article[] {
   const merged: Article[] = [];
   const seen = new Set<string>();
-  const maxBucketLength = Math.max(0, ...buckets.map((bucket) => bucket.length));
+  const maxBucketLength = Math.max(
+    0,
+    ...buckets.map((bucket) => bucket.length),
+  );
 
   for (let index = 0; index < maxBucketLength; index += 1) {
     for (const bucket of buckets) {

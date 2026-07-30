@@ -40,6 +40,7 @@ describe("Yahoo chart provider", () => {
 
     const snapshot = await fetchYahooChartSnapshot(" cba.ax ", {
       fetchImpl,
+      rangeId: "1d",
       maxPoints: 240,
       timeoutMs: 5_000,
     });
@@ -51,9 +52,11 @@ describe("Yahoo chart provider", () => {
       expect.objectContaining({
         currency: "AUD",
         exchange: "ASX",
+        interval: "1m",
         marketState: "REGULAR",
         previousClose: 169.3,
         quoteTime: "2026-07-15T06:10:10.000Z",
+        rangeId: "1d",
         regularMarketPrice: 170,
         symbol: "CBA.AX",
       }),
@@ -62,6 +65,22 @@ describe("Yahoo chart provider", () => {
       { timeMs: 1784094000000, value: 169.8 },
       { timeMs: 1784094120000, value: 170 },
     ]);
+  });
+
+  it("maps a selected product range to a provider-safe range and interval", async () => {
+    const fetchImpl = jest
+      .fn<typeof fetch>()
+      .mockResolvedValue(chartResponse());
+
+    const snapshot = await fetchYahooChartSnapshot("CBA.AX", {
+      fetchImpl,
+      rangeId: "3m",
+    });
+
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain(
+      "/v8/finance/chart/CBA.AX?range=3mo&interval=1d",
+    );
+    expect(snapshot).toMatchObject({ interval: "1d", rangeId: "3m" });
   });
 
   it("rejects unsafe symbols and mismatched provider identities without fetching arbitrary hosts", async () => {

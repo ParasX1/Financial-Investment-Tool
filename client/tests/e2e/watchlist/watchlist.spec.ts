@@ -71,3 +71,41 @@ test("keeps available prices visible when one saved ticker has no quote", async 
     page.getByText("Some quotes are temporarily unavailable."),
   ).toBeVisible();
 });
+
+test("compares saved symbols across ranges and dismisses routine success feedback", async ({
+  page,
+}) => {
+  const backend = await installWatchlistMockBackend(page);
+  const watchlist = new WatchlistPage(page);
+
+  await watchlist.goto();
+  await expect(
+    page.getByRole("heading", { name: "CBA.AX Market Monitor" }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Add BHP.AX to comparison" })
+    .click();
+
+  await expect(
+    page.getByRole("heading", { name: "Market comparison" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("comparison-line-CBA.AX")).toBeVisible();
+  await expect(page.getByTestId("comparison-line-BHP.AX")).toBeVisible();
+  await expect(page.getByText(/Each line starts at 0%/)).toBeVisible();
+
+  await page.getByRole("button", { exact: true, name: "3M" }).click();
+  await expect(
+    page.getByRole("button", { exact: true, name: "3M" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => backend.chartRequests()).toContainEqual({
+    range: "3m",
+    symbols: ["CBA.AX", "BHP.AX"],
+  });
+
+  await watchlist.addCompany("wesfarmers", "WES.AX");
+  await expect(page.getByText("WES.AX was added to your watchlist.")).toBeVisible();
+  await expect(page.getByText("WES.AX was added to your watchlist.")).toBeHidden({
+    timeout: 6_000,
+  });
+});

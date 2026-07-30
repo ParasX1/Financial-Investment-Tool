@@ -89,4 +89,44 @@ describe("PostCard", () => {
     expect(html).toContain("/MarketNews?quote=NFLX");
     expect(html).not.toContain(">View market news<");
   });
+
+  it("does not request a persisted external image even when the row marks it as owned", () => {
+    const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+
+    try {
+      const html = renderToStaticMarkup(
+        <PostCard
+          post={post({
+            body: "![tracker](https://tracker.example/pixel.png)",
+            imageUrl: "https://tracker.example/pixel.png",
+            imagePath: "posts/pixel.png",
+          })}
+          comments={[]}
+          count={0}
+          liked={false}
+          likeBusy={false}
+          saved={false}
+          saveBusy={false}
+          canDeletePost={false}
+          canDeleteComment={() => false}
+          canAttachCommentImage={true}
+          onAddComment={jest.fn<any>()}
+          onDeleteComment={jest.fn<any>()}
+          onToggleLike={jest.fn<any>()}
+          onToggleSave={jest.fn<any>()}
+          onReport={jest.fn<any>()}
+        />,
+      );
+
+      expect(html).toContain("Image unavailable");
+      expect(html).not.toContain('src="https://tracker.example/pixel.png"');
+    } finally {
+      if (originalUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      } else {
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+      }
+    }
+  });
 });

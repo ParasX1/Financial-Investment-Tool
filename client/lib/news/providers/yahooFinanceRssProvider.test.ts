@@ -29,15 +29,15 @@ const rss = `<?xml version="1.0" encoding="UTF-8"?>
 </rss>`;
 
 describe("yahooFinanceRssProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
+  it("is enabled by default in every environment and can be disabled explicitly", () => {
     expect(isYahooFinanceRssEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isYahooFinanceRssEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(isYahooFinanceRssEnabled({ NODE_ENV: "production" })).toBe(true);
     expect(
       isYahooFinanceRssEnabled({
         NODE_ENV: "production",
-        YAHOO_FINANCE_RSS_ENABLED: "true",
+        YAHOO_FINANCE_RSS_ENABLED: "false",
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isYahooFinanceRssEnabled({
         NODE_ENV: "development",
@@ -50,9 +50,19 @@ describe("yahooFinanceRssProvider", () => {
     expect(yahooFinanceRssProvider.allowBroadFallback).toBeUndefined();
   });
 
-  it("maps RSS items into safe original-link article metadata", () => {
+  it("declines historical continuation requests it cannot satisfy", () => {
+    expect(yahooFinanceRssProvider.supports?.(tickerRequest)).toBe(true);
     expect(
-      mapYahooFinanceRssItems([
+      yahooFinanceRssProvider.supports?.({
+        ...tickerRequest,
+        publishedBefore: "2026-07-20T12:34:56.000Z",
+        publishedBeforeKey: "story-72",
+      }),
+    ).toBe(false);
+  });
+
+  it("maps RSS items into safe original-link article metadata", () => {
+    const [article] = mapYahooFinanceRssItems([
         {
           description: "Apple demand and services revenue remain in focus.",
           guid: "apple-demand-120000000.html",
@@ -66,8 +76,9 @@ describe("yahooFinanceRssProvider", () => {
           link: "javascript:alert(1)",
           title: "Unsafe link is dropped",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "apple-demand-120000000.html",
         image: "https://media.example.com/apple.jpg",
@@ -79,6 +90,8 @@ describe("yahooFinanceRssProvider", () => {
         url: "https://finance.yahoo.com/news/apple-demand-120000000.html",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
   });
 
   it("drops unsafe RSS media URLs without dropping the story", () => {
@@ -149,6 +162,35 @@ describe("yahooFinanceRssProvider", () => {
     );
   });
 
+  it.each([
+    "http://127.0.0.1/internal",
+    "https://finance.yahoo.com.evil.example/rss",
+    "file:///etc/passwd",
+  ])("does not fetch an unsafe RSS override: %s", async (configuredUrl) => {
+    const fetcher = jest.fn(async () => new Response(rss));
+
+    await yahooFinanceRssProvider.fetchArticles(
+      {
+        context: "Australian personal finance money news",
+        kind: "search",
+        pageSize: "5",
+        query: "Australia money news banking tax superannuation savings",
+        topicId: "money-news",
+      },
+      {
+        env: {
+          NODE_ENV: "production",
+          YAHOO_FINANCE_RSS_URL: configuredUrl,
+        },
+        fetcher: fetcher as typeof fetch,
+      },
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://au.finance.yahoo.com/news/rssindex",
+      expect.any(Object),
+    );
+  });
   it("keeps invalid provider dates visibly uncertain instead of rewriting them to now", () => {
     expect(
       mapYahooFinanceRssItems([

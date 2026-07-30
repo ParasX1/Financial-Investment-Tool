@@ -1,5 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
-import { dedupeArticles, safeExternalUrl } from "./providerUtils";
+import {
+  dedupeArticles,
+  newsCandidateLimit,
+  normaliseNewsPageSize,
+  safeExternalUrl,
+} from "./providerUtils";
 import type { Article } from "@/services/news";
 
 const baseArticle: Article = {
@@ -25,6 +30,14 @@ describe("providerUtils", () => {
     expect(safeExternalUrl("not a url")).toBe("");
   });
 
+  it("collects a deep enough candidate pool before strict topic filtering", () => {
+    expect(normaliseNewsPageSize("999")).toBe("100");
+    expect(newsCandidateLimit("13")).toBe(104);
+    expect(newsCandidateLimit("5")).toBe(40);
+    expect(newsCandidateLimit("72")).toBe(500);
+    expect(newsCandidateLimit("100")).toBe(500);
+  });
+
   it("dedupes syndicated stories by canonical title as well as URL", () => {
     expect(
       dedupeArticles([
@@ -32,14 +45,16 @@ describe("providerUtils", () => {
           ...baseArticle,
           id: "mwm",
           source: "Michael West Media",
-          title: "Oil and milk prices to spill the tea on inflation story - Michael West Media",
+          title:
+            "Oil and milk prices to spill the tea on inflation story - Michael West Media",
           url: "https://example.com/mwm",
         },
         {
           ...baseArticle,
           id: "yahoo",
           source: "Yahoo Finance Australia",
-          title: "Oil and milk prices to spill the tea on inflation story - Yahoo Finance Australia",
+          title:
+            "Oil and milk prices to spill the tea on inflation story - Yahoo Finance Australia",
           url: "https://example.com/yahoo",
         },
         {

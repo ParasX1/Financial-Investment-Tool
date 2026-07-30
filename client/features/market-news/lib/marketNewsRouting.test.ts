@@ -11,7 +11,7 @@ describe("marketNewsRouting", () => {
         lens: "ticker-linked",
         market: "us-markets",
         quote: " cba.ax ",
-        sort: "relevance",
+        sort: "watchlist-first",
         topic: "technology",
       }),
     ).toEqual({
@@ -19,7 +19,7 @@ describe("marketNewsRouting", () => {
       marketScopeId: "us-markets",
       pageIndex: 0,
       searchQuery: "",
-      sortId: "relevance",
+      sortId: "watchlist-first",
       tickerSymbol: "CBA.AX",
       topicId: "technology",
     });
@@ -55,8 +55,26 @@ describe("marketNewsRouting", () => {
       searchQuery: "",
       sortId: "latest",
       tickerSymbol: "",
-      topicId: "cost-of-living",
+      topicId: "top-stories",
     });
+  });
+
+  it("normalizes retired confidence and sentiment views to trustworthy defaults", () => {
+    expect(
+      parseMarketNewsRouteQuery({
+        lens: "high-relevance",
+        sort: "relevance",
+      }),
+    ).toMatchObject({
+      lensId: "all",
+      sortId: "latest",
+    });
+    expect(parseMarketNewsRouteQuery({ lens: "positive" }).lensId).toBe("all");
+    expect(parseMarketNewsRouteQuery({ lens: "negative" }).lensId).toBe("all");
+  });
+
+  it("maps the retired Money News route to the complete Money overview", () => {
+    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe("money");
   });
 
   it("serializes only meaningful state into shareable Market News URLs", () => {
@@ -68,10 +86,10 @@ describe("marketNewsRouting", () => {
         searchQuery: "RBA rates",
         sortId: "watchlist-first",
         tickerSymbol: "NVDA",
-        topicId: "money-news",
+        topicId: "personal-finance",
       }),
     ).toBe(
-      "/MarketNews?topic=money-news&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
+      "/MarketNews?topic=personal-finance&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
     );
 
     expect(getMarketNewsRouteHref({})).toBe("/MarketNews");

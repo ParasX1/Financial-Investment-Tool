@@ -79,15 +79,15 @@ function rssWithItems(items: readonly { guid: string; title: string }[]) {
 }
 
 describe("googleNewsRssProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
+  it("is enabled by default in every environment and can be disabled explicitly", () => {
     expect(isGoogleNewsRssEnabled({ NODE_ENV: "development" })).toBe(true);
-    expect(isGoogleNewsRssEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(isGoogleNewsRssEnabled({ NODE_ENV: "production" })).toBe(true);
     expect(
       isGoogleNewsRssEnabled({
-        GOOGLE_NEWS_RSS_ENABLED: "true",
+        GOOGLE_NEWS_RSS_ENABLED: "false",
         NODE_ENV: "production",
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("builds Google News RSS search URLs from category query packs", () => {
@@ -108,14 +108,28 @@ describe("googleNewsRssProvider", () => {
     const urls = buildGoogleNewsRssUrls(request).map((value) => new URL(value));
 
     expect(urls.length).toBeGreaterThan(1);
+    expect(new Set(urls.map((url) => url.searchParams.get("q"))).size).toBe(
+      urls.length,
+    );
+  });
+
+  it("puts the continuation boundary in every RSS URL", () => {
+    const urls = buildGoogleNewsRssUrls({
+      ...request,
+      publishedBefore: "2026-07-20T12:34:56.000Z",
+      publishedBeforeKey: "story-72",
+    }).map((value) => new URL(value));
+
+    expect(urls.length).toBeGreaterThan(1);
     expect(
-      new Set(urls.map((url) => url.searchParams.get("q"))).size,
-    ).toBe(urls.length);
+      urls.every((url) =>
+        url.searchParams.get("q")?.includes("before:2026-07-21"),
+      ),
+    ).toBe(true);
   });
 
   it("maps RSS items into safe Google News link article metadata", () => {
-    expect(
-      mapGoogleNewsRssItems([
+    const [article] = mapGoogleNewsRssItems([
         {
           description:
             "Mortgage pressure rises as cost of living bites - Yahoo Finance Australia",
@@ -133,8 +147,9 @@ describe("googleNewsRssProvider", () => {
           link: "javascript:alert(1)",
           title: "Unsafe URL",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "example-guid",
         provider: "google-news-rss",
@@ -146,6 +161,20 @@ describe("googleNewsRssProvider", () => {
         url: "https://news.google.com/rss/articles/example?oc=5",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
+  });
+
+  it("infers symbols only from article content, not a publisher name", () => {
+    expect(
+      mapGoogleNewsRssItems([
+        {
+          link: "https://news.google.com/rss/articles/source-only?oc=5",
+          source: "Meta",
+          title: "Markets finish the session little changed",
+        },
+      ])[0]?.relatedSymbols,
+    ).toEqual([]);
   });
 
   it("drops unsafe media URLs without dropping the story", () => {

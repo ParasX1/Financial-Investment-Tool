@@ -22,8 +22,8 @@ export function HomeProductSection({
       aria-labelledby="home-product-title"
     >
       <div className={styles.sectionIntro}>
-        <p className={styles.eyebrow}>Product</p>
-        <h2 id="home-product-title">Practical tools for learning investors.</h2>
+        <p className={styles.eyebrow}>Explore FIT</p>
+        <h2 id="home-product-title">Start with the questions that matter.</h2>
       </div>
 
       <div className={styles.routeGrid}>
@@ -38,15 +38,6 @@ export function HomeProductSection({
               <span className={styles.routeBody}>
                 <strong>{route.label}</strong>
                 <span>{route.description}</span>
-                {route.highlights ? (
-                  <span className={styles.routeHighlights} role="list">
-                    {route.highlights.map((highlight) => (
-                      <span key={highlight} role="listitem">
-                        {highlight}
-                      </span>
-                    ))}
-                  </span>
-                ) : null}
               </span>
               <span className={styles.routeAction} aria-hidden="true">
                 {locked ? <LockOutlinedIcon sx={{ fontSize: 15 }} /> : null}

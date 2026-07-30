@@ -1,5 +1,9 @@
-﻿import * as React from "react";
-import { getChartRefreshInterval } from "../refreshPolicy";
+import * as React from "react";
+import {
+  getMarketChartRange,
+  type MarketChartRangeId,
+} from "@/lib/market/chartRanges";
+import { getRangeAwareChartRefreshInterval } from "../refreshPolicy";
 import {
   getMarketApiError,
   isMarketChartSnapshot,
@@ -12,17 +16,24 @@ const MARKET_CHART_UNAVAILABLE = "Market chart is temporarily unavailable.";
 
 export function createMarketChartRequestKey(
   value: string | null | undefined,
+  rangeId: MarketChartRangeId = "1d",
 ): string | null {
   const symbol = value?.trim().toUpperCase() ?? "";
-  return SYMBOL_PATTERN.test(symbol)
-    ? "/api/market/chart?symbol=" + encodeURIComponent(symbol)
-    : null;
+  if (!SYMBOL_PATTERN.test(symbol)) return null;
+  const range = getMarketChartRange(rangeId);
+  return (
+    "/api/market/chart?symbol=" +
+    encodeURIComponent(symbol) +
+    "&range=" +
+    range.id
+  );
 }
 
 export function getMarketChartRefreshInterval(
   payload: Pick<MarketChartSnapshot, "marketState"> | undefined,
+  rangeId: MarketChartRangeId = "1d",
 ): number {
-  return getChartRefreshInterval(payload?.marketState);
+  return getRangeAwareChartRefreshInterval(payload?.marketState, rangeId);
 }
 
 async function fetchMarketChart(key: string): Promise<MarketChartSnapshot> {
@@ -43,18 +54,25 @@ async function fetchMarketChart(key: string): Promise<MarketChartSnapshot> {
   return payload;
 }
 
-export function useMarketChart(symbol: string | null | undefined) {
+export function useMarketChart(
+  symbol: string | null | undefined,
+  rangeId: MarketChartRangeId = "1d",
+) {
   const key = React.useMemo(
-    () => createMarketChartRequestKey(symbol),
-    [symbol],
+    () => createMarketChartRequestKey(symbol, rangeId),
+    [rangeId, symbol],
   );
   const polling = useMarketDataPolling({
     fetcher: fetchMarketChart,
     key,
-    refreshInterval: getMarketChartRefreshInterval,
+    refreshInterval: (latest) =>
+      getMarketChartRefreshInterval(latest, rangeId),
   });
   const expectedSymbol = symbol?.trim().toUpperCase() ?? null;
-  const data = polling.data?.symbol === expectedSymbol ? polling.data : null;
+  const data =
+    polling.data?.symbol === expectedSymbol && polling.data.rangeId === rangeId
+      ? polling.data
+      : null;
 
   return {
     data,

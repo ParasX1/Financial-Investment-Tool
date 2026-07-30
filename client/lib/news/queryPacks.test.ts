@@ -67,13 +67,14 @@ describe("news query packs", () => {
     expect(queries.every((query) => query.includes("when:"))).toBe(true);
   });
 
-  it("builds practical Money News variants for Australian consumer finance coverage", () => {
+  it("builds practical Money overview variants across consumer finance, property, super, and tax", () => {
     const queries = buildGoogleNewsSearchQueries({
-      context: "Australian personal finance money news",
+      context: "Australian money decisions",
       kind: "search",
-      pageSize: "18",
-      query: "Australia money news banking tax superannuation savings",
-      topicId: "money-news",
+      pageSize: "72",
+      query:
+        "Australia personal finance property housing superannuation tax savings",
+      topicId: "money",
     });
     const joinedQueries = queries.join(" ");
 
@@ -84,6 +85,26 @@ describe("news query packs", () => {
     expect(joinedQueries).toContain("negative gearing");
     expect(joinedQueries).toContain("consumer finance");
     expect(joinedQueries).toContain("mortgage rates");
+    expect(joinedQueries).toContain("property");
+    expect(joinedQueries).toContain('-"Atmos Energy"');
+    expect(joinedQueries).toContain("site:au.finance.yahoo.com/news");
+    expect(queries.every((query) => query.includes("when:"))).toBe(true);
+  });
+
+  it("builds Economy & Work overview variants across policy, rates, jobs, and wages", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      context: "Australian economy and work",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia economy policy inflation jobs wages employment",
+      topicId: "economy-work",
+    });
+    const joinedQueries = queries.join(" ");
+
+    expect(joinedQueries).toContain("Australian economy");
+    expect(joinedQueries).toContain("RBA");
+    expect(joinedQueries).toContain("jobs");
+    expect(joinedQueries).toContain("wages");
     expect(joinedQueries).toContain("site:au.finance.yahoo.com/news");
     expect(queries.every((query) => query.includes("when:"))).toBe(true);
   });
@@ -144,5 +165,43 @@ describe("news query packs", () => {
 
     expect(profile.searchText).toContain("TEAM");
     expect(profile.searchText).toContain("Atlassian");
+  });
+
+  it.each([
+    ["top-stories", "markets", "economy"],
+    ["companies-earnings", "earnings", "ASX"],
+    ["economy-policy", "Australian economy", "budget"],
+    ["rates-inflation", "RBA", "inflation"],
+    ["super-tax", "superannuation", "ATO"],
+  ])(
+    "builds focused Google query variants for the %s topic",
+    (topicId, expectedPrimaryTerm, expectedSecondaryTerm) => {
+      const queries = buildGoogleNewsSearchQueries({
+        context: `${expectedPrimaryTerm} ${expectedSecondaryTerm}`,
+        kind: "search",
+        pageSize: "25",
+        query: `${expectedPrimaryTerm} ${expectedSecondaryTerm}`,
+        topicId,
+      });
+      const joinedQueries = queries.join(" ");
+
+      expect(joinedQueries).toContain(expectedPrimaryTerm);
+      expect(joinedQueries).toContain(expectedSecondaryTerm);
+      expect(queries.every((query) => query.includes("when:"))).toBe(true);
+    },
+  );
+
+  it("replaces relative recency with a no-gap continuation boundary", () => {
+    const queries = buildGoogleNewsSearchQueries({
+      ...costOfLivingRequest,
+      publishedBefore: "2026-07-20T12:34:56.000Z",
+      publishedBeforeKey: "story-72\u0000https://example.com/story-72",
+    });
+
+    expect(queries.length).toBeGreaterThan(1);
+    expect(queries.every((query) => !query.includes("when:"))).toBe(true);
+    expect(queries.every((query) => query.includes("before:2026-07-21"))).toBe(
+      true,
+    );
   });
 });

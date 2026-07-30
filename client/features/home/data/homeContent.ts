@@ -1,7 +1,6 @@
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
 import type {
   HomeExperiencePoint,
@@ -11,59 +10,44 @@ import type {
 
 export const homeMetadata = {
   description:
-    "A focused workspace for portfolio analytics, market context, and investment discussion.",
+    "Portfolio analysis, market context, and guided explanations for students and newer investors.",
   themeColor: "#000000",
   title: "FIT | Financial Investment Tool",
 } as const;
 
 export const homeHeroActions = {
   primary: "Sign in",
-  secondary: "See features",
+  secondary: "See how FIT works",
 };
 
 export const homeCta = {
-  body: "Analyze markets, optimize portfolios, and keep the conversation close to the decision.",
-  primarySignedIn: "Open dashboard",
-  primarySignedOut: "Start free today",
-  title: "Ready to get FIT?",
+  body: "Use FIT to practise a clear research process at your own pace.",
+  primarySignedIn: "Open workspace",
+  primarySignedOut: "Create an account",
+  title: "Build confidence through practice.",
 } as const;
 
 export const homeRouteLinks = [
   {
     description:
-      "Analyze allocation, performance, and downside exposure without leaving the dashboard.",
+      "What has driven performance? See return and risk in context, then identify what deserves a closer look.",
     gated: true,
-    highlights: [
-      "Sharpe, Sortino, alpha, beta, and volatility",
-      "Efficient frontier and allocation views",
-      "Value at Risk, drawdown, and correlation context",
-    ],
     href: "/dashboardView",
     icon: AccountBalanceWalletRoundedIcon,
     label: "Portfolio",
   },
   {
     description:
-      "Stay close to the market stories that can change a portfolio decision.",
+      "What changed in the market? Follow a theme or ticker and read beyond the headline.",
     gated: true,
-    highlights: [
-      "Market, regional, industry, and commodity news",
-      "Ticker search with quote and sparkline context",
-      "Trending symbols for quick scanning",
-    ],
     href: "/MarketNews",
     icon: NewspaperRoundedIcon,
     label: "Market News",
   },
   {
     description:
-      "Use discussion to pressure-test ideas before they become positions.",
+      "How strong is the case? Compare viewpoints, make your reasoning explicit, and refine the next question.",
     gated: true,
-    highlights: [
-      "Post theses, questions, and portfolio reviews",
-      "Reply threads for follow-up reasoning",
-      "Smart tags that keep discussions easy to scan",
-    ],
     href: "/Community",
     icon: GroupsRoundedIcon,
     label: "Community",
@@ -72,24 +56,25 @@ export const homeRouteLinks = [
 
 export const homeExperiencePoints = [
   {
-    description: "Risk and return in the same view.",
+    description: "Begin with a portfolio, watchlist, or market question.",
     icon: AutoGraphRoundedIcon,
-    label: "Portfolio clarity",
+    label: "Observe",
   },
   {
-    description: "Headlines, ticker context, and watchlists together.",
+    description: "Read performance and risk together.",
+    icon: AccountBalanceWalletRoundedIcon,
+    label: "Compare",
+  },
+  {
+    description:
+      "Look past the headline and note when the information was published.",
     icon: NewspaperRoundedIcon,
-    label: "Market context",
+    label: "Check the source",
   },
   {
-    description: "Use community notes to test an idea.",
+    description: "Compare viewpoints, then decide what needs more research.",
     icon: GroupsRoundedIcon,
-    label: "Second opinion",
-  },
-  {
-    description: "Plain-English context for unfamiliar metrics.",
-    icon: MenuBookRoundedIcon,
-    label: "Metric meaning",
+    label: "Reflect",
   },
 ] as const satisfies readonly HomeExperiencePoint[];
 

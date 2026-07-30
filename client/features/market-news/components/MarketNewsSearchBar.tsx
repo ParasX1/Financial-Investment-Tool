@@ -50,9 +50,8 @@ export function MarketNewsSearchBar({
           onChange={(event) => onDraftChange(event.target.value)}
           placeholder="Search news"
           className={cn(
-            "h-12 w-full rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-field)] pl-12 pr-12 text-white placeholder:text-[#7f8798]",
+            "fit-search-field h-12 w-full rounded-lg pl-12 pr-12",
             fitType.field,
-            "transition-colors hover:border-[#5367ff]/45 focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
           )}
         />
         {draft || searchQuery ? (

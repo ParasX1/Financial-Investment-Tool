@@ -1,8 +1,29 @@
 import type { Article } from "@/services/news";
-import { getSymbolAliases } from "./symbolAliases";
+import { resolveNewsTopicProfileId } from "./newsTopicProfiles";
+import { getSymbolResultFilter } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";
 
 const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
+  "top-stories": [
+    "asx",
+    "australia",
+    "australian",
+    "business",
+    "central bank",
+    "companies",
+    "company",
+    "earnings",
+    "economy",
+    "economic",
+    "inflation",
+    "investing",
+    "market",
+    "markets",
+    "rba",
+    "shares",
+    "stocks",
+    "wall street",
+  ],
   "australian-markets": [
     "all ords",
     "asx",
@@ -38,6 +59,23 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "oil",
     "oil prices",
   ],
+  "companies-earnings": [
+    "acquisition",
+    "annual results",
+    "asx",
+    "company",
+    "companies",
+    "corporate results",
+    "dividend",
+    "earnings",
+    "guidance",
+    "half-year results",
+    "merger",
+    "profit",
+    "revenue",
+    "sales update",
+    "takeover",
+  ],
   "cost-of-living": [
     "bill",
     "cash rate",
@@ -60,6 +98,7 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "household budget",
     "household budgets",
     "household debt",
+    "australian inflation",
     "homeowner",
     "homeowners",
     "housing affordability",
@@ -113,7 +152,40 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "us stocks",
     "wall street",
   ],
-  "money-news": [
+  "economy-work": [
+    "australian economy",
+    "cash rate",
+    "economic growth",
+    "economy",
+    "employment",
+    "gdp",
+    "inflation",
+    "interest rates",
+    "jobs",
+    "labour",
+    "productivity",
+    "rba",
+    "wage",
+    "wages",
+    "workplace",
+  ],
+  "economy-policy": [
+    "australian economy",
+    "budget",
+    "business conditions",
+    "consumer spending",
+    "economic",
+    "economic growth",
+    "economy",
+    "federal budget",
+    "gdp",
+    "government policy",
+    "productivity",
+    "recession",
+    "regulation",
+    "treasury",
+  ],
+  money: [
     "ato",
     "bank",
     "banks",
@@ -150,11 +222,19 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
   ],
   "personal-finance": [
     "budget",
+    "budgeting",
+    "credit card",
+    "financial advice",
+    "financial stress",
+    "home loan",
     "insurance",
     "mortgage",
+    "mortgage rate",
     "personal finance",
     "retirement",
+    "retirement planning",
     "saving",
+    "savings",
   ],
   "property-news": [
     "home price",
@@ -163,6 +243,38 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
     "property",
     "real estate",
     "rent",
+  ],
+  "rates-inflation": [
+    "bond yield",
+    "bond yields",
+    "cash rate",
+    "central bank",
+    "consumer price",
+    "consumer prices",
+    "cpi",
+    "inflation",
+    "interest rate",
+    "interest rates",
+    "monetary policy",
+    "rate cut",
+    "rate hike",
+    "rba",
+  ],
+  "super-tax": [
+    "ato",
+    "australian tax",
+    "capital gains tax",
+    "cgt",
+    "contribution",
+    "contributions",
+    "pension",
+    "retirement",
+    "super",
+    "super fund",
+    "super funds",
+    "superannuation",
+    "tax",
+    "tax return",
   ],
   technology: [
     "5g",
@@ -187,14 +299,35 @@ const TOPIC_KEYWORDS: Record<string, readonly string[]> = {
   ],
 };
 
+export function hasNewsTopicRelevanceProfile(topicId: string) {
+  return Boolean(TOPIC_KEYWORDS[resolveNewsTopicProfileId(topicId) ?? ""]);
+}
+
 const TOPIC_MINIMUM_MATCHES: Record<string, number> = {
+  "top-stories": 2,
   "australian-markets": 2,
   commodities: 2,
+  "companies-earnings": 2,
   "cost-of-living": 2,
-  "money-news": 2,
+  "economy-work": 2,
+  "economy-policy": 2,
+  money: 2,
+  "personal-finance": 2,
+  "rates-inflation": 2,
+  "super-tax": 2,
 };
 
 const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
+  "top-stories": [
+    "asx",
+    "australian",
+    "earnings",
+    "economy",
+    "inflation",
+    "markets",
+    "rba",
+    "wall street",
+  ],
   "australian-markets": [
     "all ords",
     "asx",
@@ -212,6 +345,18 @@ const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
     "gold prices",
     "oil prices",
   ],
+  "companies-earnings": [
+    "annual results",
+    "corporate results",
+    "dividend",
+    "earnings",
+    "guidance",
+    "half-year results",
+    "merger",
+    "profit",
+    "revenue",
+    "takeover",
+  ],
   "cost-of-living": [
     "cash rate",
     "cost of living",
@@ -219,6 +364,7 @@ const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
     "grocery prices",
     "homeowners",
     "housing affordability",
+    "australian inflation",
     "interest rates",
     "milk prices",
     "mortgage rates",
@@ -227,7 +373,28 @@ const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
     "rate hike",
     "rate hikes",
   ],
-  "money-news": [
+  "economy-work": [
+    "australian economy",
+    "cash rate",
+    "economic growth",
+    "employment",
+    "inflation",
+    "interest rates",
+    "labour market",
+    "productivity",
+    "rba",
+    "wages",
+  ],
+  "economy-policy": [
+    "australian economy",
+    "economic growth",
+    "federal budget",
+    "gdp",
+    "government policy",
+    "productivity",
+    "recession",
+  ],
+  money: [
     "ato",
     "capital gains tax",
     "cgt",
@@ -246,14 +413,55 @@ const TOPIC_HIGH_SIGNAL_KEYWORDS: Record<string, readonly string[]> = {
     "tax return",
     "tax returns",
   ],
+  "personal-finance": [
+    "credit card",
+    "financial advice",
+    "financial stress",
+    "home loan",
+    "mortgage rate",
+    "personal finance",
+    "retirement planning",
+    "savings",
+  ],
+  "rates-inflation": [
+    "bond yields",
+    "cash rate",
+    "consumer prices",
+    "inflation",
+    "interest rates",
+    "monetary policy",
+    "rate cut",
+    "rate hike",
+    "rba",
+  ],
+  "super-tax": [
+    "ato",
+    "capital gains tax",
+    "cgt",
+    "pension",
+    "retirement",
+    "super fund",
+    "superannuation",
+    "tax return",
+  ],
+};
+
+const TOPIC_EXCLUDED_PHRASES: Record<string, readonly string[]> = {
+  money: ["$ato", "atmos energy"],
+  "super-tax": ["$ato", "atmos energy"],
 };
 
 const AUSTRALIAN_CONTEXT_TOPIC_IDS = new Set([
   "australian-markets",
+  "companies-earnings",
   "cost-of-living",
-  "money-news",
+  "economy-work",
+  "economy-policy",
+  "money",
   "personal-finance",
   "property-news",
+  "rates-inflation",
+  "super-tax",
   "work",
 ]);
 
@@ -328,7 +536,8 @@ function containsBoundedPhrase(text: string, phrase: string): boolean {
 function requestNeedsAustralianContext(request: ServerNewsRequest): boolean {
   if (request.userSearch) return false;
   if (normalize(request.country) === "au") return true;
-  if (!request.topicId || !AUSTRALIAN_CONTEXT_TOPIC_IDS.has(request.topicId)) {
+  const profileId = resolveNewsTopicProfileId(request.topicId);
+  if (!profileId || !AUSTRALIAN_CONTEXT_TOPIC_IDS.has(profileId)) {
     return false;
   }
 
@@ -406,17 +615,22 @@ function articleMatchesTicker(article: Article, ticker: string | undefined) {
   if (!symbol) return true;
 
   const text = articleText(article, { includeSymbols: false });
-  const aliases = getSymbolAliases(symbol);
-
-  return aliases.some((alias) => {
+  const filter = getSymbolResultFilter(symbol);
+  const matches = (alias: string) => {
     const cleaned = normalize(alias);
     return cleaned.length >= 2 && containsBoundedPhrase(text, cleaned);
-  });
+  };
+
+  if (filter.exactAliases.some(matches)) return true;
+  if (filter.conflictingAliases.some(matches)) return false;
+
+  return filter.aliases.some(matches);
 }
 
 function requestKeywords(request: ServerNewsRequest): string[] {
-  if (request.topicId && TOPIC_KEYWORDS[request.topicId]) {
-    return [...TOPIC_KEYWORDS[request.topicId]];
+  const profileId = resolveNewsTopicProfileId(request.topicId);
+  if (profileId && TOPIC_KEYWORDS[profileId]) {
+    return [...TOPIC_KEYWORDS[profileId]];
   }
 
   if (request.kind === "commodity") {
@@ -449,14 +663,20 @@ export function filterRelevantNewsArticles(
 
   const keywords = requestKeywords(request);
   if (!keywords.length) return [...articles];
-  const minimumMatches = request.topicId
-    ? (TOPIC_MINIMUM_MATCHES[request.topicId] ?? 1)
+  const profileId = resolveNewsTopicProfileId(request.topicId);
+  const minimumMatches = profileId
+    ? (TOPIC_MINIMUM_MATCHES[profileId] ?? 1)
     : 1;
-  const highSignalKeywords = request.topicId
-    ? (TOPIC_HIGH_SIGNAL_KEYWORDS[request.topicId] ?? [])
+  const highSignalKeywords = profileId
+    ? (TOPIC_HIGH_SIGNAL_KEYWORDS[profileId] ?? [])
+    : [];
+  const excludedPhrases = profileId
+    ? (TOPIC_EXCLUDED_PHRASES[profileId] ?? [])
     : [];
 
   return articles.filter((article) => {
+    if (articleMatchesKeywords(article, excludedPhrases)) return false;
+
     if (
       !articleMatchesKeywords(article, keywords, {
         highSignalKeywords,

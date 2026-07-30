@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import handler from "@/pages/api/news/market";
+import { encodeMarketNewsContinuationCursor } from "@/lib/news/newsContinuation";
 import { fetchMarketNewsWithProviders } from "@/lib/news/newsService";
+import { marketNewsApiRateLimiter } from "@/lib/server/marketApiGuard";
 
 jest.mock("@/lib/news/newsService", () => ({
   fetchMarketNewsWithProviders: jest.fn(),
@@ -57,6 +59,23 @@ describe("/api/news/market", () => {
     expect(res.json).toHaveBeenCalledWith({
       error: "Unsupported market news request",
     });
+  });
+
+  it("rejects non-GET requests before provider work starts", async () => {
+    const { headers, res } = createResponse();
+
+    await handler(
+      {
+        method: "POST",
+        query: { kind: "general" },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(mockFetchMarketNewsWithProviders).not.toHaveBeenCalled();
+    expect(headers.get("allow")).toBe("GET");
+    expect(res.status).toHaveBeenCalledWith(405);
+    expect(res.json).toHaveBeenCalledWith({ error: "Method not allowed." });
   });
 
   it("requires a query for search requests", async () => {
@@ -139,10 +158,10 @@ describe("/api/news/market", () => {
     await handler(
       {
         query: {
-          context: "Australia money news banking tax superannuation savings",
+          context: "personal finance household money Australia",
           kind: "search",
-          q: "Australia money news banking tax superannuation savings",
-          topicId: "money-news",
+          q: "personal finance Australia mortgage retirement insurance savings",
+          topicId: "personal-finance",
           userSearch: "false",
         },
       } as unknown as NextApiRequest,
@@ -155,8 +174,9 @@ describe("/api/news/market", () => {
     expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "search",
-        query: "Australia money news banking tax superannuation savings",
-        topicId: "money-news",
+        query:
+          "personal finance Australia mortgage retirement insurance savings",
+        topicId: "personal-finance",
         userSearch: false,
       }),
     );
@@ -174,10 +194,10 @@ describe("/api/news/market", () => {
     await handler(
       {
         query: {
-          context: "Australia money news banking tax superannuation savings",
+          context: "personal finance household money Australia",
           kind: "search",
-          q: "Australia money news banking tax superannuation savings",
-          topicId: "money-news",
+          q: "personal finance Australia mortgage retirement insurance savings",
+          topicId: "personal-finance",
           userSearch: "false",
         },
       } as unknown as NextApiRequest,
@@ -232,7 +252,7 @@ describe("/api/news/market", () => {
         query: {
           kind: "search",
           q: "CBA bank margin",
-          topicId: "money-news",
+          topicId: "personal-finance",
           userSearch: "false",
         },
       } as unknown as NextApiRequest,
@@ -244,7 +264,7 @@ describe("/api/news/market", () => {
       expect.objectContaining({
         kind: "search",
         query: "CBA bank margin",
-        topicId: "money-news",
+        topicId: "personal-finance",
         userSearch: true,
       }),
     );
@@ -266,5 +286,156 @@ describe("/api/news/market", () => {
 
     expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("rate limits repeated provider fanout from the same client", async () => {
+    mockNewsResult();
+    let lastResponse = createResponse();
+
+    for (let requestNumber = 0; requestNumber < 21; requestNumber += 1) {
+      lastResponse = createResponse();
+      await handler(
+        {
+          headers: { "x-forwarded-for": "203.0.113.74" },
+          method: "GET",
+          query: { kind: "general" },
+          socket: {},
+        } as unknown as NextApiRequest,
+        lastResponse.res,
+      );
+    }
+
+    expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledTimes(20);
+    expect(lastResponse.headers.get("cache-control")).toBe(
+      "private, no-store, max-age=0",
+    );
+    expect(lastResponse.headers.get("retry-after")).toBe("60");
+    expect(lastResponse.res.status).toHaveBeenCalledWith(429);
+    expect(lastResponse.res.json).toHaveBeenCalledWith({
+      error: "Too many market news requests. Please wait a moment.",
+    });
+  });
+
+  it("rate limits provider fanout when the client address is unavailable", async () => {
+    const allow = jest
+      .spyOn(marketNewsApiRateLimiter, "allow")
+      .mockReturnValueOnce(false);
+    const { headers, res } = createResponse();
+
+    await handler(
+      {
+        headers: {},
+        method: "GET",
+        query: { kind: "general" },
+        socket: {},
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(allow).toHaveBeenCalledWith("market-news:unknown");
+    expect(mockFetchMarketNewsWithProviders).not.toHaveBeenCalled();
+    expect(headers.get("retry-after")).toBe("60");
+    expect(res.status).toHaveBeenCalledWith(429);
+
+    allow.mockRestore();
+  });
+
+  it("rejects malformed continuation cursors before provider work starts", async () => {
+    const { res } = createResponse();
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          context: "markets",
+          cursor: "not-a-valid-cursor",
+          kind: "general",
+          pageSize: "72",
+        },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(mockFetchMarketNewsWithProviders).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: "Invalid cursor." });
+  });
+
+  it("decodes a request-bound cursor into an exact keyset boundary", async () => {
+    mockNewsResult();
+    const { res } = createResponse();
+    const baseRequest = {
+      context: "markets",
+      kind: "general" as const,
+      pageSize: "72",
+    };
+    const cursor = encodeMarketNewsContinuationCursor(baseRequest, {
+      publishedAt: "2026-06-21T04:00:00.000Z",
+      stableKey: "story-72\u0000https://example.com/story-72",
+    });
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          context: "markets",
+          cursor,
+          kind: "general",
+          pageSize: "72",
+        },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(mockFetchMarketNewsWithProviders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        continuationCursor: cursor,
+        publishedBefore: "2026-06-21T04:00:00.000Z",
+        publishedBeforeKey: "story-72\u0000https://example.com/story-72",
+      }),
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("adds continuation metadata from the oldest live article", async () => {
+    mockFetchMarketNewsWithProviders.mockResolvedValueOnce({
+      articles: [
+        {
+          id: "story-1",
+          image: null,
+          publishedAt: "2026-06-21T04:00:00.000Z",
+          source: "Market Desk",
+          summary: "Markets update",
+          title: "Markets story",
+          url: "https://example.com/story-1",
+        },
+      ],
+      meta: {
+        attemptedProviders: ["google-news-rss"],
+        provider: "google-news-rss",
+        providerLabel: "Google News RSS",
+        query: "markets",
+        strictCategory: true,
+        warnings: [],
+      },
+    });
+    const { res } = createResponse();
+
+    await handler(
+      {
+        method: "GET",
+        query: { context: "markets", kind: "general", pageSize: "72" },
+      } as unknown as NextApiRequest,
+      res,
+    );
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({
+          hasMore: true,
+          nextCursor: expect.any(String),
+        }),
+      }),
+    );
   });
 });

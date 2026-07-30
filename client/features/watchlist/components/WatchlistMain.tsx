@@ -14,7 +14,15 @@ import {
   FIT_FOCUS_VISIBLE,
   cn,
 } from "@/components/shared/uiPrimitives";
-import { WATCHLIST_LIMIT, WATCHLIST_NOTE_LIMIT } from "../constants";
+import {
+  WATCHLIST_COMPARISON_LIMIT,
+  WATCHLIST_LIMIT,
+  WATCHLIST_NOTE_LIMIT,
+} from "../constants";
+import {
+  reconcileWatchlistComparisonSymbols,
+  toggleWatchlistComparisonSymbol,
+} from "../lib/watchlistComparison";
 import {
   selectWatchlistItems,
   validateWatchlistDraft,
@@ -69,7 +77,7 @@ export function WatchlistMain() {
   const [draft, setDraft] = React.useState<WatchlistDraft>({ note: "", targetPrice: "" });
   const [draftErrors, setDraftErrors] = React.useState<WatchlistDraftErrors>({});
   const [pendingRemove, setPendingRemove] = React.useState<WatchlistItem | null>(null);
-  const [monitoredSymbol, setMonitoredSymbol] = React.useState<string | null>(null);
+  const [monitoredSymbols, setMonitoredSymbols] = React.useState<string[]>([]);
   const [monitorOpen, setMonitorOpen] = React.useState(true);
   const symbolSearch = useWatchlistSymbolSearch(addQuery);
   const quoteState = useWatchlistQuotes(watchlist.items.map((item) => item.symbol));
@@ -89,18 +97,41 @@ export function WatchlistMain() {
   }, [symbolSearch.results]);
 
   React.useEffect(() => {
-    setMonitoredSymbol((current) => {
-      if (!watchlist.items.length) return null;
-      return current && watchlist.items.some((item) => item.symbol === current)
-        ? current
-        : watchlist.items[0]!.symbol;
+    setMonitoredSymbols((current) => {
+      if (!monitorOpen) return [];
+      return reconcileWatchlistComparisonSymbols(
+        current,
+        watchlist.items.map((item) => item.symbol),
+        WATCHLIST_COMPARISON_LIMIT,
+      );
     });
-  }, [watchlist.items]);
+  }, [monitorOpen, watchlist.items]);
 
-  const monitoredItem = React.useMemo(
-    () => watchlist.items.find((item) => item.symbol === monitoredSymbol) ?? null,
-    [monitoredSymbol, watchlist.items],
+  const monitoredItems = React.useMemo(
+    () =>
+      monitoredSymbols
+        .map((symbol) =>
+          watchlist.items.find((item) => item.symbol === symbol),
+        )
+        .filter((item): item is WatchlistItem => Boolean(item)),
+    [monitoredSymbols, watchlist.items],
   );
+
+  const toggleMonitoredSymbol = React.useCallback((symbol: string) => {
+    setMonitoredSymbols((current) =>
+      toggleWatchlistComparisonSymbol(
+        current,
+        symbol,
+        WATCHLIST_COMPARISON_LIMIT,
+      ),
+    );
+    setMonitorOpen(true);
+  }, []);
+
+  const closeMarketMonitor = React.useCallback(() => {
+    setMonitoredSymbols([]);
+    setMonitorOpen(false);
+  }, []);
 
   const addSymbol = React.useCallback(async (symbol: string) => {
     const added = await watchlist.addItem(symbol);
@@ -229,7 +260,7 @@ export function WatchlistMain() {
                           symbolSearch.hasSearched),
                     )}
                     aria-activedescendant={activeSuggestion >= 0 ? `watchlist-option-${activeSuggestion}` : undefined}
-                    className={cn(styles.input, FIT_FOCUS_VISIBLE)}
+                    className={cn("fit-search-field", styles.input)}
                     disabled={busy || watchlist.items.length >= WATCHLIST_LIMIT}
                   />
                   {addQuery &&
@@ -295,16 +326,12 @@ export function WatchlistMain() {
             </div>
           ) : null}
 
-          {listReady && monitorOpen && monitoredItem ? (
+          {listReady && monitorOpen && monitoredItems.length ? (
             <WatchlistMarketMonitor
-              item={monitoredItem}
-              quote={
-                quoteState.loading && !quoteState.quotes[monitoredItem.symbol]
-                  ? undefined
-                  : quoteState.quotes[monitoredItem.symbol] ?? null
-              }
+              items={monitoredItems}
+              quotes={quoteState.quotes}
               quoteRefreshing={quoteState.refreshing}
-              onClose={() => setMonitorOpen(false)}
+              onClose={closeMarketMonitor}
               onRefreshQuotes={quoteState.refresh}
             />
           ) : null}
@@ -329,7 +356,7 @@ export function WatchlistMain() {
                 <div className={styles.toolbarControls}>
                   <label>
                     <span>Filter list</span>
-                    <input type="search" name="watchlist-filter" autoComplete="off" placeholder="Filter saved ideas…" value={listFilter} onChange={(event) => setListFilter(event.target.value)} className={cn(styles.control, FIT_FOCUS_VISIBLE)} />
+                    <input type="search" name="watchlist-filter" autoComplete="off" placeholder="Filter saved ideas…" value={listFilter} onChange={(event) => setListFilter(event.target.value)} className={cn("fit-search-field", styles.control, FIT_FOCUS_VISIBLE)} />
                   </label>
                   <label>
                     <span>Sort by</span>
@@ -356,16 +383,14 @@ export function WatchlistMain() {
                     <WatchlistRow
                       key={item.symbol}
                       item={item}
-                      isMonitored={monitorOpen && monitoredSymbol === item.symbol}
+                      isMonitored={monitoredSymbols.includes(item.symbol)}
+                      monitorDisabled={monitoredSymbols.length >= WATCHLIST_COMPARISON_LIMIT && !monitoredSymbols.includes(item.symbol)}
                       quote={quoteState.loading && !quoteState.quotes[item.symbol] ? undefined : quoteState.quotes[item.symbol] ?? null}
                       busy={busy}
                       canMoveUp={reorderEnabled && savedIndex > 0}
                       canMoveDown={reorderEnabled && savedIndex >= 0 && savedIndex < watchlist.items.length - 1}
                       onEdit={() => openEdit(item)}
-                      onMonitor={() => {
-                        setMonitoredSymbol(item.symbol);
-                        setMonitorOpen(true);
-                      }}
+                      onMonitor={() => toggleMonitoredSymbol(item.symbol)}
                       onRemove={() => setPendingRemove(item)}
                       onMoveUp={() => void watchlist.moveItem(item.symbol, "up")}
                       onMoveDown={() => void watchlist.moveItem(item.symbol, "down")}

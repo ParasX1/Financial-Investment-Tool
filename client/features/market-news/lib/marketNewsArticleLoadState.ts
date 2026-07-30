@@ -9,12 +9,16 @@ export const MARKET_NEWS_LOAD_ERROR =
   "Market news could not be loaded right now.";
 export const MARKET_NEWS_REFRESH_WARNING =
   "Could not refresh live market news. Showing the last loaded stories.";
+export const MARKET_NEWS_OLDER_LOAD_ERROR =
+  "Older stories could not be loaded. Try again without losing the stories above.";
 
 export interface MarketNewsArticleLoadState {
   articles: Article[];
   error: string | null;
   loading: boolean;
+  loadingOlder: boolean;
   meta: NewsResponseMeta | null;
+  olderError: string | null;
   requestKey: string | null;
 }
 
@@ -22,7 +26,9 @@ export const initialMarketNewsArticleState: MarketNewsArticleLoadState = {
   articles: [],
   error: null,
   loading: true,
+  loadingOlder: false,
   meta: null,
+  olderError: null,
   requestKey: null,
 };
 
@@ -56,7 +62,9 @@ export function beginMarketNewsArticleLoad(
     articles: sameRequest ? previous.articles : [],
     error: null,
     loading: true,
+    loadingOlder: false,
     meta: sameRequest ? previous.meta : null,
+    olderError: null,
     requestKey,
   };
 }
@@ -70,7 +78,9 @@ export function succeedMarketNewsArticleLoad(
     articles: result.articles,
     error: null,
     loading: false,
+    loadingOlder: false,
     meta: result.meta,
+    olderError: null,
     requestKey: getMarketNewsArticleRequestKey(request),
   };
 }
@@ -78,6 +88,8 @@ export function succeedMarketNewsArticleLoad(
 function failedMeta(request: MarketNewsRequest): NewsResponseMeta {
   return {
     attemptedProviders: [],
+    hasMore: false,
+    nextCursor: null,
     provider: "none",
     providerLabel: "Live provider unavailable",
     query:
@@ -99,7 +111,9 @@ function metaWithRefreshWarning(meta: NewsResponseMeta | null) {
     ...meta,
     warnings: [
       MARKET_NEWS_REFRESH_WARNING,
-      ...meta.warnings.filter((warning) => warning !== MARKET_NEWS_REFRESH_WARNING),
+      ...meta.warnings.filter(
+        (warning) => warning !== MARKET_NEWS_REFRESH_WARNING,
+      ),
     ],
   };
 }
@@ -117,7 +131,9 @@ export function failMarketNewsArticleLoad(
       articles: previous.articles,
       error: null,
       loading: false,
+      loadingOlder: false,
       meta: metaWithRefreshWarning(previous.meta),
+      olderError: null,
       requestKey,
     };
   }
@@ -126,7 +142,84 @@ export function failMarketNewsArticleLoad(
     articles: [],
     error: MARKET_NEWS_LOAD_ERROR,
     loading: false,
+    loadingOlder: false,
     meta: failedMeta(request),
+    olderError: null,
     requestKey,
+  };
+}
+
+function articleIdentityKeys(article: Article) {
+  return [
+    `id:${article.id}`,
+    `url:${article.url}`,
+    `title-source:${article.title.trim().toLowerCase()}\u0000${article.source
+      .trim()
+      .toLowerCase()}`,
+  ];
+}
+
+export function getUniqueMarketNewsArticles(
+  previous: readonly Article[],
+  incoming: readonly Article[],
+) {
+  const seen = new Set(previous.flatMap(articleIdentityKeys));
+  return incoming.filter((article) => {
+    const keys = articleIdentityKeys(article);
+    if (keys.some((key) => seen.has(key))) return false;
+
+    keys.forEach((key) => seen.add(key));
+    return true;
+  });
+}
+
+export function beginMarketNewsOlderLoad(
+  previous: MarketNewsArticleLoadState,
+  request: MarketNewsRequest,
+): MarketNewsArticleLoadState {
+  if (previous.requestKey !== getMarketNewsArticleRequestKey(request)) {
+    return previous;
+  }
+
+  return {
+    ...previous,
+    loadingOlder: true,
+    olderError: null,
+  };
+}
+
+export function appendMarketNewsArticleLoad(
+  previous: MarketNewsArticleLoadState,
+  request: MarketNewsRequest,
+  result: MarketNewsFetchResult,
+): MarketNewsArticleLoadState {
+  if (previous.requestKey !== getMarketNewsArticleRequestKey(request)) {
+    return previous;
+  }
+
+  return {
+    ...previous,
+    articles: [
+      ...previous.articles,
+      ...getUniqueMarketNewsArticles(previous.articles, result.articles),
+    ],
+    loadingOlder: false,
+    meta: result.meta,
+    olderError: null,
+  };
+}
+
+export function failMarketNewsOlderLoad(
+  previous: MarketNewsArticleLoadState,
+  request: MarketNewsRequest,
+): MarketNewsArticleLoadState {
+  if (previous.requestKey !== getMarketNewsArticleRequestKey(request)) {
+    return previous;
+  }
+
+  return {
+    ...previous,
+    loadingOlder: false,
+    olderError: MARKET_NEWS_OLDER_LOAD_ERROR,
   };
 }

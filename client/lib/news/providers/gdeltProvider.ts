@@ -45,7 +45,7 @@ export function isGdeltNewsEnabled(env: Record<string, string | undefined>) {
   const configured = envFlag(env.GDELT_NEWS_ENABLED);
   if (configured !== null) return configured;
 
-  return compact(env.NODE_ENV).toLowerCase() !== "production";
+  return false;
 }
 
 function normaliseTimespan(value: string | undefined) {
@@ -57,6 +57,18 @@ function normaliseTimespan(value: string | undefined) {
 
 function normaliseMaxRecords(pageSize: string) {
   return Math.min(MAX_GDELT_RECORDS, newsCandidateLimit(pageSize));
+}
+
+function gdeltEndDate(value: string | undefined) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date
+    .toISOString()
+    .replace(/[-:TZ.]/g, "")
+    .slice(0, 14);
 }
 
 export function buildGdeltUrl({
@@ -73,8 +85,19 @@ export function buildGdeltUrl({
   url.searchParams.set("mode", "artlist");
   url.searchParams.set("format", "json");
   url.searchParams.set("sort", "datedesc");
-  url.searchParams.set("timespan", normaliseTimespan(env.GDELT_NEWS_TIMESPAN));
-  url.searchParams.set("maxrecords", String(normaliseMaxRecords(request.pageSize)));
+  const endDate = gdeltEndDate(request.publishedBefore);
+  if (endDate) {
+    url.searchParams.set("enddatetime", endDate);
+  } else {
+    url.searchParams.set(
+      "timespan",
+      normaliseTimespan(env.GDELT_NEWS_TIMESPAN),
+    );
+  }
+  url.searchParams.set(
+    "maxrecords",
+    String(normaliseMaxRecords(request.pageSize)),
+  );
 
   return url.toString();
 }
@@ -104,19 +127,15 @@ export function mapGdeltArticles(
       const domain = compact(article.domain ?? undefined);
       const sourceCountry = compact(article.sourcecountry ?? undefined);
       const source = domain || sourceCountry || "GDELT source";
-      const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${source} ${sourceCountry}`,
-      );
+      const relatedSymbols = inferRelatedSymbolsFromText(title);
 
       return {
-        confidence: relatedSymbols.length ? 0.58 : null,
         id: url,
         image: safeExternalUrl(article.socialimage ?? undefined) || null,
         provider: "gdelt",
         providerLabel: "GDELT",
         publishedAt: parseGdeltSeenDate(article.seendate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary: sourceCountry ? `Source country: ${sourceCountry}` : "",
         title,
@@ -134,6 +153,7 @@ export const gdeltProvider: NewsProvider = {
   id: "gdelt",
   label: "GDELT",
   isConfigured: isGdeltNewsEnabled,
+  supports: () => true,
   async fetchArticles(request, context: NewsProviderFetchContext) {
     const response = await context.fetcher(
       buildGdeltUrl({ env: context.env, request }),

@@ -12,7 +12,6 @@ function article(
     providerLabel: "Demo",
     publishedAt: "2026-06-01T00:00:00.000Z",
     relatedSymbols: [],
-    sentiment: "neutral",
     source: "Source",
     summary: "",
     title: id,
@@ -36,32 +35,6 @@ describe("marketNewsSort", () => {
       }).map((item) => item.id),
     ).toEqual(["new", "old"]);
     expect(articles.map((item) => item.id)).toEqual(["old", "new"]);
-  });
-
-  it("promotes high-confidence ticker-linked stories in relevance mode", () => {
-    const articles = [
-      article("fresh-low", {
-        confidence: 0.2,
-        publishedAt: "2026-06-03T00:00:00.000Z",
-      }),
-      article("older-high", {
-        confidence: 0.91,
-        publishedAt: "2026-06-01T00:00:00.000Z",
-      }),
-      article("ticker-mid", {
-        confidence: 0.72,
-        publishedAt: "2026-06-02T00:00:00.000Z",
-        relatedSymbols: ["NVDA"],
-      }),
-    ];
-
-    expect(
-      sortMarketNewsArticles({
-        articles,
-        sortId: "relevance",
-        watchlistSymbols: [],
-      }).map((item) => item.id),
-    ).toEqual(["older-high", "ticker-mid", "fresh-low"]);
   });
 
   it("puts watchlist-linked stories first without hiding the rest", () => {

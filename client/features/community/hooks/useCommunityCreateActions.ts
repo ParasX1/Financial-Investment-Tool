@@ -10,6 +10,7 @@ import { normalizeDiscussionDraft } from "../lib/communityDraft";
 import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
 import { createLocalPost } from "../lib/communityMappers";
 import { replaceDraftImageMarkers } from "../lib/markdownEditor";
+import { validateCommunityPostContent } from "../lib/communityValidation";
 import {
   invalidateCommunityDataForUser,
   rememberLocalCommunityPost,
@@ -94,6 +95,15 @@ export function useCommunityCreateActions(
   }, [sessionKey]);
 
   const handleCreatePost = React.useCallback(async () => {
+    const contentError = validateCommunityPostContent(draft);
+    if (contentError) {
+      pushFeedback({
+        tone: "error",
+        title: "Check your post",
+        message: contentError,
+      });
+      return false;
+    }
     const researchContextError = validateCommunityResearchDraft(draft);
     if (researchContextError) {
       pushFeedback({

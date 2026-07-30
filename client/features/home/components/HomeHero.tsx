@@ -20,13 +20,13 @@ export function HomeHero({
       <div className={styles.heroShade} aria-hidden="true" />
 
       <div className={styles.heroContent}>
-        <p className={styles.eyebrow}>Financial Investment Tool</p>
+        <p className={styles.eyebrow}>For students and newer investors</p>
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Master your investment strategy.
+          Learn how investment decisions come together.
         </h1>
         <p className={styles.heroSubtitle}>
-          FIT empowers investors with portfolio analytics, risk-aware metrics,
-          and market context for smarter decisions.
+          Review portfolio data, put market news in context, and understand
+          unfamiliar metrics at your own pace before forming a view.
         </p>
 
         <div className={styles.heroActions}>

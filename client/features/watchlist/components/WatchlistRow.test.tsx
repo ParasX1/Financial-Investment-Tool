@@ -96,9 +96,12 @@ describe("WatchlistRow", () => {
   it("exposes an accessible control for the selected market monitor", () => {
     const markup = renderRow(baseQuote, baseItem, false, true);
 
-    expect(markup).toContain('aria-label="Monitor CBA.AX price trend"');
+    expect(markup).toContain(
+      'aria-label="Remove CBA.AX from comparison"',
+    );
     expect(markup).toContain('aria-controls="watchlist-market-monitor"');
-    expect(markup).toContain('aria-expanded="true"');
+    expect(markup).toContain('aria-pressed="true"');
+    expect(markup).toContain("Selected for comparison");
   });
   it("renders pending, unavailable, neutral, and extended-session quote states", () => {
     const pending = renderRow(undefined, { ...baseItem, note: null, targetPrice: null });

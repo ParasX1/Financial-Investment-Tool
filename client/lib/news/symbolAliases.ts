@@ -4,6 +4,7 @@ export const NEWS_SYMBOL_ALIASES: Record<string, readonly string[]> = {
   AAPL: ["Apple Inc.", "Apple"],
   AMZN: ["Amazon"],
   "AUDUSD=X": ["Australian dollar", "AUD/USD", "Aussie dollar"],
+  "BTC-USD": ["Bitcoin", "BTC", "Bitcoin USD", "Bitcoin US dollar"],
   "BTC-AUD": ["Bitcoin Australia", "Bitcoin", "BTC"],
   "CL=F": ["oil futures", "oil", "crude", "WTI"],
   "CBA.AX": ["Commonwealth Bank", "CBA"],
@@ -46,6 +47,94 @@ export const NEWS_SYMBOL_ALIASES: Record<string, readonly string[]> = {
   "000001.SS": ["Shanghai Composite", "Shanghai"],
 };
 
+/**
+ * Conservative aliases used for user-visible ticker attribution.
+ *
+ * Query aliases can be broad so a ticker search still finds useful coverage.
+ * Article attribution has a higher bar: only exact symbols or unambiguous
+ * instrument/company names belong here. When the text is ambiguous, returning
+ * no symbol is preferable to showing a confidently wrong ticker.
+ */
+const NEWS_SYMBOL_INFERENCE_ALIASES: Readonly<
+  Record<string, readonly string[]>
+> = {
+  AAPL: ["Apple Inc."],
+  AMZN: ["Amazon.com"],
+  "AUDUSD=X": ["AUD/USD", "Australian dollar / US dollar"],
+  "BTC-USD": ["BTC/USD", "Bitcoin USD", "Bitcoin US dollar"],
+  "BTC-AUD": ["BTC/AUD", "Bitcoin AUD", "Bitcoin Australian dollar"],
+  "CL=F": ["WTI futures", "WTI crude futures"],
+  "CBA.AX": ["Commonwealth Bank", "CBA"],
+  "ETH-AUD": ["ETH/AUD", "Ethereum AUD", "Ethereum Australian dollar"],
+  "EURUSD=X": ["EUR/USD", "Euro / US dollar"],
+  "GC=F": ["gold futures"],
+  "GBPUSD=X": ["GBP/USD", "British pound / US dollar"],
+  "HG=F": ["copper futures"],
+  META: ["Meta Platforms"],
+  MSFT: ["Microsoft"],
+  NVDA: ["NVIDIA"],
+  "SI=F": ["silver futures"],
+  SPCX: ["SpaceX", "Space Exploration Technologies"],
+  TEAM: ["Atlassian"],
+  TSLA: ["Tesla"],
+  "USDJPY=X": ["USD/JPY", "US dollar / Japanese yen"],
+  "WOW.AX": ["Woolworths Group"],
+  "^AORD": ["All Ordinaries", "All Ords"],
+  "^AXJO": ["ASX 200", "S&P/ASX 200"],
+  "^DJI": ["Dow Jones Industrial Average"],
+  "^GSPC": ["S&P 500", "Standard & Poor's 500"],
+  "^IXIC": ["Nasdaq Composite"],
+  "^VIX": ["CBOE Volatility Index", "VIX"],
+};
+
+const NEWS_SYMBOL_CONTEXTUAL_ALIASES: Readonly<
+  Record<string, readonly string[]>
+> = {
+  AAPL: ["Apple"],
+  AMZN: ["Amazon"],
+};
+
+const COMPANY_CONTEXT_PATTERN =
+  /\b(company|earnings|iphone|investor|revenue|share|shares|stock|stocks)\b/i;
+const TAGGED_ONLY_TICKER_SYMBOLS = new Set(["META", "TEAM"]);
+
+type SymbolResultFilter = {
+  aliases: readonly string[];
+  conflictingAliases: readonly string[];
+  exactAliases: readonly string[];
+};
+
+const SYMBOL_RESULT_FILTERS: Readonly<
+  Record<
+    string,
+    Pick<SymbolResultFilter, "conflictingAliases" | "exactAliases">
+  >
+> = {
+  "BTC-USD": {
+    conflictingAliases: [
+      "BTC/AUD",
+      "BTC-AUD",
+      "Bitcoin AUD",
+      "Bitcoin Australian dollar",
+    ],
+    exactAliases: ["BTC/USD", "BTC-USD", "Bitcoin USD", "Bitcoin US dollar"],
+  },
+  "BTC-AUD": {
+    conflictingAliases: [
+      "BTC/USD",
+      "BTC-USD",
+      "Bitcoin USD",
+      "Bitcoin US dollar",
+    ],
+    exactAliases: [
+      "BTC/AUD",
+      "BTC-AUD",
+      "Bitcoin AUD",
+      "Bitcoin Australian dollar",
+    ],
+  },
+};
+
 function normalize(value: string | undefined): string {
   return (value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -85,19 +174,62 @@ export function getPrimarySymbolName(symbol: string | undefined) {
   return NEWS_SYMBOL_ALIASES[compactSymbol(symbol)]?.[0];
 }
 
+export function getSymbolResultFilter(
+  symbol: string | undefined,
+): SymbolResultFilter {
+  const cleaned = compactSymbol(symbol);
+  const pairFilter = SYMBOL_RESULT_FILTERS[cleaned];
+
+  return {
+    aliases: getSymbolAliases(cleaned),
+    conflictingAliases: pairFilter?.conflictingAliases ?? [],
+    exactAliases: pairFilter?.exactAliases ?? [],
+  };
+}
+
+function containsExplicitTicker(value: string, symbol: string): boolean {
+  const escapedSymbol = escapeRegExp(symbol);
+  const taggedTicker = new RegExp(
+    `(?:\\$|\\b(?:ASX|NASDAQ|NYSE):)${escapedSymbol}(?=$|[^A-Z0-9])`,
+    "i",
+  );
+  if (taggedTicker.test(value)) return true;
+  if (TAGGED_ONLY_TICKER_SYMBOLS.has(symbol)) return false;
+
+  if (/[.^=_-]/.test(symbol)) {
+    return new RegExp(
+      `(^|[^a-z0-9])${escapedSymbol}([^a-z0-9]|$)`,
+      "i",
+    ).test(value);
+  }
+
+  if (!COMPANY_CONTEXT_PATTERN.test(value)) return false;
+  return new RegExp(
+    `(^|[^A-Z0-9])${escapedSymbol}([^A-Z0-9]|$)`,
+  ).test(value);
+}
+
 export function inferRelatedSymbolsFromText(
   value: string,
   { limit = 6 }: { limit?: number } = {},
 ): string[] {
   const text = normalize(value);
+  const sourceText = value.replace(/\s+/g, " ").trim();
   const matches: string[] = [];
 
   for (const symbol of Object.keys(NEWS_SYMBOL_ALIASES)) {
-    if (
-      getSymbolAliases(symbol).some(
+    const inferenceAliases = NEWS_SYMBOL_INFERENCE_ALIASES[symbol] ?? [];
+    const hasDirectMatch = inferenceAliases.some(
+      (alias) => alias.length >= 2 && containsBoundedPhrase(text, alias),
+    );
+    const hasExplicitTicker = containsExplicitTicker(sourceText, symbol);
+    const hasContextualMatch =
+      COMPANY_CONTEXT_PATTERN.test(text) &&
+      (NEWS_SYMBOL_CONTEXTUAL_ALIASES[symbol] ?? []).some(
         (alias) => alias.length >= 2 && containsBoundedPhrase(text, alias),
-      )
-    ) {
+      );
+
+    if (hasDirectMatch || hasExplicitTicker || hasContextualMatch) {
       matches.push(symbol);
     }
 

@@ -13,7 +13,6 @@ function article(
     providerLabel: "Google News RSS",
     publishedAt: "2026-06-21T02:00:00Z",
     relatedSymbols: [...relatedSymbols],
-    sentiment: "neutral",
     source: "Market Index",
     summary: "",
     title: `Story ${id}`,

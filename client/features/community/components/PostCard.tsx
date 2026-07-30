@@ -13,6 +13,7 @@ import {
   getCommunityTimeFrameLabel,
   normalizeCommunitySourceUrl,
 } from "../lib/communityPostMetadata";
+import { getDisplayableCommunityPostImageUrl } from "../lib/communityImageUrls";
 import { bodyContainsImageUrl } from "../lib/markdownEditor";
 import type { CommentUI, NewComment, PostUI } from "../types";
 import { CommentForm } from "./CommentForm";
@@ -61,7 +62,8 @@ export function PostCard({
   const formattedVotes = post.votes.toLocaleString();
   const formattedCommentCount = count.toLocaleString();
   const voteLabel = `${formattedVotes} ${post.votes === 1 ? "vote" : "votes"}`;
-  const hasInlineImage = bodyContainsImageUrl(post.body, post.imageUrl);
+  const displayImageUrl = getDisplayableCommunityPostImageUrl(post);
+  const hasInlineImage = bodyContainsImageUrl(post.body, displayImageUrl);
   const signals = React.useMemo(() => getCommunityPostSignals(post), [post]);
   const commentLabel = `${formattedCommentCount} ${
     count === 1 ? "comment" : "comments"
@@ -167,9 +169,9 @@ export function PostCard({
             {post.title}
           </h2>
 
-          <ExpandableText text={post.body} />
+          <ExpandableText text={post.body} allowedImageUrl={displayImageUrl} />
 
-          {post.imageUrl && !hasInlineImage ? (
+          {displayImageUrl && !hasInlineImage ? (
             <div
               className={cn(
                 "mt-[12px] overflow-hidden rounded-lg bg-black/30",
@@ -178,7 +180,7 @@ export function PostCard({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={post.imageUrl}
+                src={displayImageUrl}
                 alt="Discussion attachment"
                 width={960}
                 height={540}

@@ -1,6 +1,11 @@
 // File purpose: Coordinates Community business operations between repository, mapping, auth, and storage cleanup.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeDiscussionDraft } from "../lib/communityDraft";
+import {
+  validateCommunityCommentImageReference,
+  validateCommunityPostImageReference,
+} from "../lib/communityImageUrls";
+import { validateCommunityPostContent } from "../lib/communityValidation";
 import { getErrorMessage } from "../lib/communityErrors";
 import { commentFromRow, postFromRow } from "../lib/communityMappers";
 import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
@@ -191,12 +196,16 @@ export async function createCommunityPost(
   if (activeUserId !== authorId) {
     throw new Error("Your session changed. Please try again.");
   }
+  const contentError = validateCommunityPostContent(draft);
+  if (contentError) throw new Error(contentError);
+  const imageError = validateCommunityPostImageReference(draft);
+  if (imageError) throw new Error(imageError);
   const researchContextError = validateCommunityResearchDraft(draft);
   if (researchContextError) throw new Error(researchContextError);
 
   const postDraft = {
     ...normalizeDiscussionDraft(draft),
-    imageUrl: draft.imageUrl ?? null,
+    imageUrl: null,
     imagePath: draft.imagePath ?? null,
   };
 
@@ -261,12 +270,17 @@ export async function createCommunityComment({
   if (activeUserId !== authorId) {
     throw new Error("Your session changed. Please try again.");
   }
+  const imageError = validateCommunityCommentImageReference({
+    imageUrl,
+    imagePath,
+  });
+  if (imageError) throw new Error(imageError);
 
   const row = await insertCommunityCommentRow({
     db,
     postId,
     text,
-    imageUrl,
+    imageUrl: undefined,
     imagePath,
     uid: authorId,
   });

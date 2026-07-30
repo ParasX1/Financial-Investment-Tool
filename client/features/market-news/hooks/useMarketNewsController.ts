@@ -42,6 +42,29 @@ const initialRouteState: MarketNewsRouteState = {
   topicId: defaultMarketNewsTopicId,
 };
 
+function getRouteStateFromViewState(
+  viewState: MarketNewsViewState,
+): MarketNewsRouteState {
+  return {
+    lensId: viewState.activeLensId,
+    marketScopeId: viewState.activeMarketScopeId,
+    pageIndex: viewState.storyPageIndex,
+    searchQuery: viewState.searchQuery,
+    sortId: viewState.activeSortId,
+    tickerSymbol: viewState.tickerSymbol,
+    topicId: viewState.activeTopicId,
+  };
+}
+
+function isCancelledNavigation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "cancelled" in error &&
+    error.cancelled === true
+  );
+}
+
 export function useMarketNewsController({
   onQuoteLookup,
 }: {
@@ -54,28 +77,29 @@ export function useMarketNewsController({
   const [refreshKey, setRefreshKey] = React.useState(0);
 
   const syncRouteState = React.useCallback(
-    (nextState: Partial<MarketNewsRouteState>) => {
-      if (!router.isReady) return;
+    (nextViewState: MarketNewsViewState) => {
+      if (!router.isReady || router.pathname !== "/MarketNews") return;
 
-      const href = getMarketNewsRouteHref({
-        lensId: viewState.activeLensId,
-        marketScopeId: viewState.activeMarketScopeId,
-        pageIndex: viewState.storyPageIndex,
-        searchQuery: viewState.searchQuery,
-        sortId: viewState.activeSortId,
-        tickerSymbol: viewState.tickerSymbol,
-        topicId: viewState.activeTopicId,
-        ...nextState,
-      });
-
+      const href = getMarketNewsRouteHref(
+        getRouteStateFromViewState(nextViewState),
+      );
       if (href !== router.asPath) {
-        void router.replace(href, undefined, {
-          scroll: false,
-          shallow: true,
-        });
+        void router
+          .replace(href, undefined, {
+            scroll: false,
+            shallow: true,
+          })
+          .catch((error: unknown) => {
+            if (!isCancelledNavigation(error)) {
+              console.error(
+                "Failed to synchronize the Market News URL.",
+                error,
+              );
+            }
+          });
       }
     },
-    [router, viewState],
+    [router],
   );
 
   React.useEffect(() => {
@@ -88,11 +112,19 @@ export function useMarketNewsController({
   }, [router.asPath, router.isReady, router.query]);
 
   const setSearchDraft = React.useCallback((searchDraft: string) => {
-    setViewState((previousState) => ({ ...previousState, searchDraft }));
+    setViewState((previousState) =>
+      previousState.searchDraft === searchDraft
+        ? previousState
+        : { ...previousState, searchDraft },
+    );
   }, []);
 
   const setLookupDraft = React.useCallback((lookupDraft: string) => {
-    setViewState((previousState) => ({ ...previousState, lookupDraft }));
+    setViewState((previousState) =>
+      previousState.lookupDraft === lookupDraft
+        ? previousState
+        : { ...previousState, lookupDraft },
+    );
   }, []);
 
   const handleTopicChange = React.useCallback(
@@ -100,13 +132,7 @@ export function useMarketNewsController({
       const nextState = applyMarketNewsTopicChange(viewState, topicId);
 
       setViewState(nextState);
-      syncRouteState({
-        lensId: nextState.activeLensId,
-        pageIndex: nextState.storyPageIndex,
-        searchQuery: nextState.searchQuery,
-        tickerSymbol: nextState.tickerSymbol,
-        topicId: nextState.activeTopicId,
-      });
+      syncRouteState(nextState);
     },
     [syncRouteState, viewState],
   );
@@ -115,41 +141,31 @@ export function useMarketNewsController({
     const nextState = applyMarketNewsSearchSubmit(viewState);
 
     setViewState(nextState);
-    syncRouteState({
-      lensId: nextState.activeLensId,
-      pageIndex: nextState.storyPageIndex,
-      searchQuery: nextState.searchQuery,
-      tickerSymbol: nextState.tickerSymbol,
-    });
+    syncRouteState(nextState);
   }, [syncRouteState, viewState]);
 
   const handleSearchClear = React.useCallback(() => {
     const nextState = applyMarketNewsSearchClear(viewState);
 
     setViewState(nextState);
-    syncRouteState({
-      lensId: nextState.activeLensId,
-      pageIndex: nextState.storyPageIndex,
-      searchQuery: nextState.searchQuery,
-      tickerSymbol: nextState.tickerSymbol,
-    });
+    syncRouteState(nextState);
   }, [syncRouteState, viewState]);
 
   const handleRefresh = React.useCallback(() => {
-    setViewState((previousState) => ({
-      ...previousState,
-      storyPageIndex: 0,
-    }));
+    if (viewState.storyPageIndex > 0) {
+      const nextState = { ...viewState, storyPageIndex: 0 };
+      setViewState(nextState);
+      syncRouteState(nextState);
+    }
     setRefreshKey((key) => key + 1);
-    syncRouteState({ pageIndex: 0 });
-  }, [syncRouteState]);
+  }, [syncRouteState, viewState]);
 
   const handleMarketScopeChange = React.useCallback(
     (scopeId: MarketNewsMarketScopeId) => {
       const nextState = applyMarketNewsMarketScopeChange(viewState, scopeId);
 
       setViewState(nextState);
-      syncRouteState({ marketScopeId: nextState.activeMarketScopeId });
+      syncRouteState(nextState);
     },
     [syncRouteState, viewState],
   );
@@ -170,12 +186,7 @@ export function useMarketNewsController({
       if (nextState === viewState) return;
 
       setViewState(nextState);
-      syncRouteState({
-        lensId: nextState.activeLensId,
-        pageIndex: nextState.storyPageIndex,
-        searchQuery: nextState.searchQuery,
-        tickerSymbol: nextState.tickerSymbol,
-      });
+      syncRouteState(nextState);
       onQuoteLookup?.(nextState.tickerSymbol);
     },
     [onQuoteLookup, syncRouteState, viewState],
@@ -186,10 +197,7 @@ export function useMarketNewsController({
       const nextState = applyMarketNewsLensChange(viewState, lensId);
 
       setViewState(nextState);
-      syncRouteState({
-        lensId: nextState.activeLensId,
-        pageIndex: nextState.storyPageIndex,
-      });
+      syncRouteState(nextState);
     },
     [syncRouteState, viewState],
   );
@@ -199,70 +207,66 @@ export function useMarketNewsController({
       const nextState = applyMarketNewsSortChange(viewState, sortId);
 
       setViewState(nextState);
-      syncRouteState({ pageIndex: nextState.storyPageIndex, sortId });
+      syncRouteState(nextState);
     },
     [syncRouteState, viewState],
   );
 
   const resetEmptyLens = React.useCallback(() => {
-    setViewState((previousState) => ({
-      ...previousState,
+    if (viewState.activeLensId === "all" && viewState.storyPageIndex === 0) {
+      return;
+    }
+
+    const nextState: MarketNewsViewState = {
+      ...viewState,
       activeLensId: "all",
       storyPageIndex: 0,
-    }));
-    syncRouteState({ lensId: "all", pageIndex: 0 });
-  }, [syncRouteState]);
+    };
+    setViewState(nextState);
+    syncRouteState(nextState);
+  }, [syncRouteState, viewState]);
 
   const clampStoryPageToCount = React.useCallback(
     (itemCount: number) => {
-      setViewState((previousState) => {
-        const clampedPageIndex = clampMarketNewsPageIndex(
-          previousState.storyPageIndex,
-          itemCount,
-        );
+      const clampedPageIndex = clampMarketNewsPageIndex(
+        viewState.storyPageIndex,
+        itemCount,
+      );
+      if (clampedPageIndex === viewState.storyPageIndex) return;
 
-        if (clampedPageIndex !== previousState.storyPageIndex) {
-          syncRouteState({ pageIndex: clampedPageIndex });
-        }
-
-        return {
-          ...previousState,
-          storyPageIndex: clampedPageIndex,
-        };
-      });
+      const nextState = {
+        ...viewState,
+        storyPageIndex: clampedPageIndex,
+      };
+      setViewState(nextState);
+      syncRouteState(nextState);
     },
-    [syncRouteState],
+    [syncRouteState, viewState],
   );
 
   const handlePreviousPage = React.useCallback(() => {
-    setViewState((previousState) => {
-      const nextPageIndex = Math.max(0, previousState.storyPageIndex - 1);
+    if (viewState.storyPageIndex === 0) return;
 
-      syncRouteState({ pageIndex: nextPageIndex });
-
-      return {
-        ...previousState,
-        storyPageIndex: nextPageIndex,
-      };
-    });
-  }, [syncRouteState]);
+    const nextState = {
+      ...viewState,
+      storyPageIndex: viewState.storyPageIndex - 1,
+    };
+    setViewState(nextState);
+    syncRouteState(nextState);
+  }, [syncRouteState, viewState]);
 
   const handleNextPage = React.useCallback(
     (hasNextPage: boolean) => {
       if (!hasNextPage) return;
 
-      setViewState((previousState) => {
-        const nextPageIndex = previousState.storyPageIndex + 1;
-
-        syncRouteState({ pageIndex: nextPageIndex });
-
-        return {
-          ...previousState,
-          storyPageIndex: nextPageIndex,
-        };
-      });
+      const nextState = {
+        ...viewState,
+        storyPageIndex: viewState.storyPageIndex + 1,
+      };
+      setViewState(nextState);
+      syncRouteState(nextState);
     },
-    [syncRouteState],
+    [syncRouteState, viewState],
   );
 
   const activeTopic = React.useMemo(

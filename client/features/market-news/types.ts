@@ -1,18 +1,25 @@
 export type MarketNewsGroupId =
+  | "top-stories"
   | "cost-of-living"
   | "markets"
   | "money"
-  | "work"
+  | "economy-work"
   | "technology";
 
 export type MarketNewsTopicId =
+  | "top-stories"
   | "cost-of-living"
+  | "money"
+  | "economy-work"
   | "australian-markets"
   | "international-markets"
+  | "companies-earnings"
   | "commodities"
-  | "money-news"
   | "personal-finance"
   | "property-news"
+  | "super-tax"
+  | "economy-policy"
+  | "rates-inflation"
   | "work"
   | "technology";
 
@@ -96,15 +103,9 @@ export interface MarketNewsMarketScope {
   };
 }
 
-export type MarketNewsLensId =
-  | "all"
-  | "watchlist"
-  | "ticker-linked"
-  | "high-relevance"
-  | "positive"
-  | "negative";
+export type MarketNewsLensId = "all" | "watchlist" | "ticker-linked";
 
-export type MarketNewsSortId = "latest" | "relevance" | "watchlist-first";
+export type MarketNewsSortId = "latest" | "watchlist-first";
 
 export interface MarketNewsLensOption {
   id: MarketNewsLensId;

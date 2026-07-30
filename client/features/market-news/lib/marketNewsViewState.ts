@@ -25,6 +25,25 @@ function getFirstScopeSymbol(scopeId: MarketNewsMarketScopeId) {
   return resolveMarketNewsMarketScope(scopeId).tickers[0]?.symbol ?? "";
 }
 
+function viewStatesMatch(
+  left: MarketNewsViewState,
+  right: MarketNewsViewState,
+) {
+  return (
+    left.activeLensId === right.activeLensId &&
+    left.activeMarketScopeId === right.activeMarketScopeId &&
+    left.activeSortId === right.activeSortId &&
+    left.activeTopicId === right.activeTopicId &&
+    left.lookupDraft === right.lookupDraft &&
+    left.quoteReferenceVisible === right.quoteReferenceVisible &&
+    left.searchDraft === right.searchDraft &&
+    left.searchQuery === right.searchQuery &&
+    left.selectedSymbol === right.selectedSymbol &&
+    left.storyPageIndex === right.storyPageIndex &&
+    left.tickerSymbol === right.tickerSymbol
+  );
+}
+
 export function deriveMarketNewsViewStateFromRoute(
   routeState: MarketNewsRouteState,
 ): MarketNewsViewState {
@@ -49,23 +68,21 @@ export function reconcileMarketNewsViewStateFromRoute(
   routeState: MarketNewsRouteState,
 ): MarketNewsViewState {
   const routeViewState = deriveMarketNewsViewStateFromRoute(routeState);
-
-  if (
+  const nextState =
     routeState.searchQuery ||
     routeState.tickerSymbol ||
     previousState.tickerSymbol
-  ) {
-    return routeViewState;
-  }
+      ? routeViewState
+      : {
+          ...routeViewState,
+          lookupDraft: previousState.lookupDraft,
+          quoteReferenceVisible: previousState.quoteReferenceVisible,
+          selectedSymbol: previousState.quoteReferenceVisible
+            ? previousState.selectedSymbol
+            : routeViewState.selectedSymbol,
+        };
 
-  return {
-    ...routeViewState,
-    lookupDraft: previousState.lookupDraft,
-    quoteReferenceVisible: previousState.quoteReferenceVisible,
-    selectedSymbol: previousState.quoteReferenceVisible
-      ? previousState.selectedSymbol
-      : routeViewState.selectedSymbol,
-  };
+  return viewStatesMatch(previousState, nextState) ? previousState : nextState;
 }
 
 export function applyMarketNewsTopicChange(

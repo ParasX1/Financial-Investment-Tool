@@ -285,4 +285,50 @@ describe("useWatchlistController", () => {
     expect(mockRepository.add).not.toHaveBeenCalled();
     renderer!.unmount();
   });
+
+  it("auto-dismisses routine success feedback while keeping errors actionable", async () => {
+    jest.useFakeTimers();
+    let latest: ReturnType<typeof useWatchlistController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useWatchlistController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushPromises();
+      });
+      await act(async () => {
+        await latest!.addItem("BHP.AX");
+      });
+      expect(latest!.feedback).toEqual({
+        message: "BHP.AX was added to your watchlist.",
+        tone: "success",
+      });
+
+      act(() => {
+        jest.advanceTimersByTime(3_999);
+      });
+      expect(latest!.feedback?.tone).toBe("success");
+      act(() => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(latest!.feedback).toBeNull();
+
+      await act(async () => {
+        await latest!.addItem("BHP.AX");
+      });
+      expect(latest!.feedback?.tone).toBe("error");
+      act(() => {
+        jest.advanceTimersByTime(30_000);
+      });
+      expect(latest!.feedback?.tone).toBe("error");
+      renderer!.unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

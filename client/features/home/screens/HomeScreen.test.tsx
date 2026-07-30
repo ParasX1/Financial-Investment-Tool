@@ -154,7 +154,7 @@ describe("HomeScreenView", () => {
       button.children.includes("Sign in"),
     );
     const createAccount = buttons.find((button) =>
-      button.children.includes("Start free today"),
+      button.children.includes("Create an account"),
     );
 
     expect(signInButtons).toHaveLength(3);
@@ -202,7 +202,7 @@ describe("HomeScreenView", () => {
       .filter(
         (button) =>
           button.children.includes("Sign in") ||
-          button.children.includes("Start free today") ||
+          button.children.includes("Create an account") ||
           typeof button.props["aria-label"] === "string",
       );
 

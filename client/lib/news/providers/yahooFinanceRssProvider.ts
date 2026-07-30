@@ -67,6 +67,34 @@ function envFlag(value: string | undefined) {
   return null;
 }
 
+function safeYahooFinanceRssUrl(value: string | undefined) {
+  const configured = compact(value);
+  if (!configured) return null;
+
+  try {
+    const url = new URL(configured);
+    const hostname = url.hostname.toLowerCase();
+    const allowedHostname =
+      hostname === "finance.yahoo.com" ||
+      hostname.endsWith(".finance.yahoo.com");
+    const allowedPort = !url.port || url.port === "443";
+
+    if (
+      url.protocol !== "https:" ||
+      !allowedHostname ||
+      !allowedPort ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function yahooRssUrl(
   request: ServerNewsRequest,
   env: Record<string, string | undefined>,
@@ -77,7 +105,7 @@ function yahooRssUrl(
     return url.toString();
   }
 
-  const configured = compact(env.YAHOO_FINANCE_RSS_URL);
+  const configured = safeYahooFinanceRssUrl(env.YAHOO_FINANCE_RSS_URL);
   if (configured) return configured;
 
   return DEFAULT_YAHOO_FINANCE_RSS_URL;
@@ -89,7 +117,7 @@ export function isYahooFinanceRssEnabled(
   const configured = envFlag(env.YAHOO_FINANCE_RSS_ENABLED);
   if (configured !== null) return configured;
 
-  return compact(env.NODE_ENV).toLowerCase() !== "production";
+  return true;
 }
 
 function asList<T>(value: T | T[] | undefined): T[] {
@@ -148,11 +176,10 @@ export function mapYahooFinanceRssItems(
       const summary = stripHtml(item.description);
       const source = readSource(item.source);
       const relatedSymbols = inferRelatedSymbolsFromText(
-        `${title} ${summary} ${source}`,
+        `${title} ${summary}`,
       );
 
       return {
-        confidence: relatedSymbols.length ? 0.62 : null,
         id: readGuid(item, url),
         image:
           readMediaUrl(item["media:content"]) ??
@@ -161,7 +188,6 @@ export function mapYahooFinanceRssItems(
         providerLabel: "Yahoo Finance RSS",
         publishedAt: readPublishedAt(item.pubDate),
         relatedSymbols,
-        sentiment: "neutral",
         source,
         summary,
         title,
@@ -184,6 +210,7 @@ export const yahooFinanceRssProvider: NewsProvider = {
   id: "yahoo-finance-rss",
   label: "Yahoo Finance RSS",
   isConfigured: isYahooFinanceRssEnabled,
+  supports: (request) => !request.publishedBefore,
   async fetchArticles(request, context: NewsProviderFetchContext) {
     const response = await context.fetcher(yahooRssUrl(request, context.env), {
       headers: {

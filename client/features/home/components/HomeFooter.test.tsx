@@ -17,5 +17,6 @@ describe("HomeFooter", () => {
     expect(markup).toMatch(/portfolio analytics/i);
     expect(markup).toMatch(/market research/i);
     expect(markup).not.toMatch(/portfolio management/i);
+    expect(markup).toMatch(/does not provide personal financial advice/i);
   });
 });

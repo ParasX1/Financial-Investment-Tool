@@ -16,7 +16,7 @@ import {
 const baseState: MarketNewsViewState = {
   activeLensId: "ticker-linked",
   activeMarketScopeId: "australia",
-  activeSortId: "relevance",
+  activeSortId: "latest",
   activeTopicId: "cost-of-living",
   lookupDraft: "CBA.AX",
   quoteReferenceVisible: true,
@@ -81,7 +81,7 @@ describe("marketNewsViewState", () => {
           tickerSymbol: "",
         },
         {
-          lensId: "high-relevance",
+          lensId: "ticker-linked",
           marketScopeId: "us-markets",
           pageIndex: 1,
           searchQuery: "",
@@ -91,7 +91,7 @@ describe("marketNewsViewState", () => {
         },
       ),
     ).toMatchObject({
-      activeLensId: "high-relevance",
+      activeLensId: "ticker-linked",
       activeMarketScopeId: "us-markets",
       activeSortId: "watchlist-first",
       activeTopicId: "technology",
@@ -100,6 +100,23 @@ describe("marketNewsViewState", () => {
       storyPageIndex: 1,
       tickerSymbol: "",
     });
+  });
+
+  it("preserves state identity when route reconciliation changes nothing", () => {
+    const routeState = {
+      lensId: "ticker-linked" as const,
+      marketScopeId: "australia" as const,
+      pageIndex: 3,
+      searchQuery: "",
+      sortId: "latest" as const,
+      tickerSymbol: "CBA.AX",
+      topicId: "cost-of-living" as const,
+    };
+    const currentState = deriveMarketNewsViewStateFromRoute(routeState);
+
+    expect(
+      reconcileMarketNewsViewStateFromRoute(currentState, routeState),
+    ).toBe(currentState);
   });
 
   it("uses route changes to leave ticker-news and search contexts explicitly", () => {
@@ -241,10 +258,12 @@ describe("marketNewsViewState", () => {
   });
 
   it("topic, lens, and sort changes reset only the state that should affect scanning", () => {
-    expect(applyMarketNewsTopicChange(baseState, "money-news")).toMatchObject({
+    expect(
+      applyMarketNewsTopicChange(baseState, "personal-finance"),
+    ).toMatchObject({
       activeLensId: "all",
-      activeSortId: "relevance",
-      activeTopicId: "money-news",
+      activeSortId: "latest",
+      activeTopicId: "personal-finance",
       lookupDraft: "",
       searchDraft: "",
       searchQuery: "",
@@ -255,7 +274,7 @@ describe("marketNewsViewState", () => {
 
     expect(applyMarketNewsLensChange(baseState, "watchlist")).toMatchObject({
       activeLensId: "watchlist",
-      activeSortId: "relevance",
+      activeSortId: "latest",
       storyPageIndex: 0,
       tickerSymbol: "CBA.AX",
       quoteReferenceVisible: true,

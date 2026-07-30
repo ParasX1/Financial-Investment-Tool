@@ -73,7 +73,7 @@ export function MarketNewsRightRail({
                 onChange={(event) => onLookupDraftChange(event.target.value)}
                 placeholder="Quote lookup"
                 className={cn(
-                  "h-11 w-full rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-field)] pl-10 pr-4 text-white placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
+                  "fit-search-field h-11 w-full rounded-lg pl-10 pr-4",
                   fitType.field,
                 )}
               />

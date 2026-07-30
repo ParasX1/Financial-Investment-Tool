@@ -5,95 +5,25 @@ import {
   describeNewsRequest,
   newsCandidateLimit,
 } from "./providerUtils";
+import {
+  filterArticlesPublishedBefore,
+  oldestMarketNewsPosition,
+  stableMarketNewsArticleKey,
+  type ContinuableServerNewsResponse,
+  type MarketNewsContinuationPosition,
+} from "./newsContinuation";
 import { getDemoMarketNewsArticles } from "./providers/demoMarketNewsProvider";
-import { gdeltProvider } from "./providers/gdeltProvider";
-import { googleNewsRssProvider } from "./providers/googleNewsRssProvider";
-import { marketAuxProvider } from "./providers/marketAuxProvider";
-import { newsApiProvider } from "./providers/newsApiProvider";
-import { yahooFinanceRssProvider } from "./providers/yahooFinanceRssProvider";
+import { resolveNewsProviders } from "./providerRegistry";
 import { filterRelevantNewsArticles } from "./relevance";
-import type {
-  NewsProvider,
-  NewsProviderId,
-  ServerNewsRequest,
-  ServerNewsResponse,
-} from "./types";
+import type { NewsProvider, NewsProviderId, ServerNewsRequest } from "./types";
 
-const PROVIDER_REGISTRY: Record<
-  Exclude<NewsProviderId, "demo">,
-  NewsProvider
-> = {
-  gdelt: gdeltProvider,
-  "google-news-rss": googleNewsRssProvider,
-  marketaux: marketAuxProvider,
-  newsapi: newsApiProvider,
-  "yahoo-finance-rss": yahooFinanceRssProvider,
-};
-
-const DEFAULT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
-  "marketaux",
-  "newsapi",
-  "gdelt",
-  "google-news-rss",
-  "yahoo-finance-rss",
-];
-
-const DEVELOPMENT_PROVIDER_IDS: readonly Exclude<NewsProviderId, "demo">[] = [
-  "google-news-rss",
-  "gdelt",
-  "yahoo-finance-rss",
-  "marketaux",
-  "newsapi",
-];
-const DEVELOPMENT_MIN_STRICT_ARTICLES = 10;
 const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
-
-const PROVIDER_ALIASES: Record<string, Exclude<NewsProviderId, "demo">> = {
-  gdelt: "gdelt",
-  google: "google-news-rss",
-  "google-news": "google-news-rss",
-  "google-news-rss": "google-news-rss",
-  "google-rss": "google-news-rss",
-  marketaux: "marketaux",
-  "market-aux": "marketaux",
-  newsapi: "newsapi",
-  "news-api": "newsapi",
-  yahoo: "yahoo-finance-rss",
-  "yahoo-finance": "yahoo-finance-rss",
-  "yahoo-finance-rss": "yahoo-finance-rss",
-  "yahoo-rss": "yahoo-finance-rss",
-};
-
-function normaliseProviderId(value: string) {
-  return PROVIDER_ALIASES[value.trim().toLowerCase()];
-}
 
 function isProductionEnvironment(env: Record<string, string | undefined>) {
   return (env.NODE_ENV ?? "").trim().toLowerCase() === "production";
 }
 
-export function resolveNewsProviders(
-  env: Record<string, string | undefined> = process.env,
-): NewsProvider[] {
-  const requested = (env.NEWS_PROVIDER_ORDER ?? "")
-    .split(",")
-    .map(normaliseProviderId)
-    .filter((id): id is Exclude<NewsProviderId, "demo"> => Boolean(id));
-  const orderedIds = requested.length
-    ? requested
-    : isProductionEnvironment(env)
-      ? DEFAULT_PROVIDER_IDS
-      : DEVELOPMENT_PROVIDER_IDS;
-  const seen = new Set<NewsProviderId>();
-
-  return orderedIds
-    .filter((id) => {
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    })
-    .map((id) => PROVIDER_REGISTRY[id]);
-}
+export { resolveNewsProviders } from "./providerRegistry";
 
 function providerFailureMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : String(cause);
@@ -138,18 +68,6 @@ function readPositiveInteger(value: string | undefined) {
   return Math.floor(parsed);
 }
 
-function minimumStrictArticles(
-  env: Record<string, string | undefined>,
-  pageSize: number,
-) {
-  const configured = readPositiveInteger(env.NEWS_MIN_STRICT_ARTICLES);
-  if (configured) return Math.min(pageSize, configured);
-
-  return isProductionEnvironment(env)
-    ? pageSize
-    : Math.min(pageSize, DEVELOPMENT_MIN_STRICT_ARTICLES);
-}
-
 function providerTimeoutMs(env: Record<string, string | undefined>) {
   const configured = readPositiveInteger(env.NEWS_PROVIDER_TIMEOUT_MS);
   if (configured) return configured;
@@ -184,19 +102,50 @@ function publishedAtMs(article: Article) {
   return Number.isFinite(time) ? time : 0;
 }
 
+function stableArticleKey(article: Article) {
+  return stableMarketNewsArticleKey(article);
+}
+
 function selectFreshStrictArticles(
   articles: readonly Article[],
   limit: number,
 ): Article[] {
   return dedupeArticles(articles)
-    .map((article, index) => ({ article, index }))
     .sort(
       (left, right) =>
-        publishedAtMs(right.article) - publishedAtMs(left.article) ||
-        left.index - right.index,
+        publishedAtMs(right) - publishedAtMs(left) ||
+        stableArticleKey(left).localeCompare(stableArticleKey(right)),
     )
-    .slice(0, limit)
-    .map(({ article }) => article);
+    .slice(0, limit);
+}
+
+type ProviderAttemptResult =
+  | {
+      articles: Article[];
+      ok: true;
+      provider: NewsProvider;
+    }
+  | {
+      cause: unknown;
+      ok: false;
+      provider: NewsProvider;
+    };
+
+async function attemptProvider(
+  provider: NewsProvider,
+  request: ServerNewsRequest,
+  env: Record<string, string | undefined>,
+  fetcher: typeof fetch,
+): Promise<ProviderAttemptResult> {
+  try {
+    return {
+      articles: await provider.fetchArticles(request, { env, fetcher }),
+      ok: true,
+      provider,
+    };
+  } catch (cause) {
+    return { cause, ok: false, provider };
+  }
 }
 
 export async function fetchMarketNewsWithProviders(
@@ -210,18 +159,28 @@ export async function fetchMarketNewsWithProviders(
     fetcher?: typeof fetch;
     providers?: readonly NewsProvider[];
   } = {},
-): Promise<ServerNewsResponse> {
+): Promise<ContinuableServerNewsResponse> {
   const pageSize = normaliseNewsPageSize(request.pageSize);
   const pageSizeNumber = Number(pageSize);
   const strictCandidateLimit = newsCandidateLimit(pageSize);
-  const minimumArticleCount = minimumStrictArticles(env, pageSizeNumber);
+  const minimumArticleCount = pageSizeNumber;
   const normalizedRequest = { ...request, pageSize };
   const providerList = providers ?? resolveNewsProviders(env);
   const timedFetcher = withTimeout(fetcher, env);
-  const configuredProviders = providerList.filter((provider) =>
-    provider.isConfigured(env),
+  const configuredProviders = providerList.filter(
+    (provider) =>
+      provider.isConfigured(env) &&
+      (provider.supports?.(normalizedRequest) ?? true),
   );
+  const continuationPosition: MarketNewsContinuationPosition | null =
+    normalizedRequest.publishedBefore && normalizedRequest.publishedBeforeKey
+      ? {
+          publishedAt: normalizedRequest.publishedBefore,
+          stableKey: normalizedRequest.publishedBeforeKey,
+        }
+      : null;
   const attemptedProviders: NewsProviderId[] = [];
+  const emptyWarnings: string[] = [];
   const warnings: string[] = [];
   let emptyProvider: NewsProvider | null = null;
   let failedProviders = 0;
@@ -232,12 +191,29 @@ export async function fetchMarketNewsWithProviders(
     provider: NewsProvider;
     warning: string;
   } | null = null;
+  let scannedArticles: Article[] = [];
 
   if (!configuredProviders.length) {
+    if (continuationPosition) {
+      return {
+        articles: [],
+        continuationAnchor: null,
+        meta: {
+          attemptedProviders,
+          provider: "none",
+          providerLabel: "No historical provider available",
+          query: describeNewsRequest(normalizedRequest),
+          strictCategory: true,
+          warnings: [],
+        },
+      };
+    }
+
     const demoArticles = getDemoMarketNewsArticles(normalizedRequest);
 
     return {
       articles: demoArticles,
+      continuationAnchor: null,
       meta: {
         attemptedProviders,
         provider: "demo",
@@ -251,14 +227,36 @@ export async function fetchMarketNewsWithProviders(
     };
   }
 
-  for (const provider of configuredProviders) {
-    attemptedProviders.push(provider.id);
+  const providerBatches = [
+    [configuredProviders[0]!],
+    configuredProviders.slice(1),
+  ].filter((batch) => batch.length);
 
-    try {
-      const providerArticles = await provider.fetchArticles(normalizedRequest, {
-        env,
-        fetcher: timedFetcher,
-      });
+  for (const providerBatch of providerBatches) {
+    attemptedProviders.push(...providerBatch.map((provider) => provider.id));
+    const providerResults = await Promise.all(
+      providerBatch.map((provider) =>
+        attemptProvider(provider, normalizedRequest, env, timedFetcher),
+      ),
+    );
+
+    for (const providerResult of providerResults) {
+      const { provider } = providerResult;
+
+      if (!providerResult.ok) {
+        failedProviders += 1;
+        logProviderFailure(provider, providerResult.cause);
+        warnings.push(providerWarning(provider));
+        continue;
+      }
+
+      const providerArticles = continuationPosition
+        ? filterArticlesPublishedBefore(
+            providerResult.articles,
+            continuationPosition,
+          )
+        : providerResult.articles;
+      scannedArticles = [...scannedArticles, ...providerArticles];
       const articles = filterRelevantNewsArticles(
         providerArticles,
         normalizedRequest,
@@ -272,8 +270,13 @@ export async function fetchMarketNewsWithProviders(
         );
 
         if (strictArticles.length >= minimumArticleCount) {
+          const selectedArticles = selectFreshStrictArticles(
+            strictArticles,
+            pageSizeNumber,
+          );
           return {
-            articles: selectFreshStrictArticles(strictArticles, pageSizeNumber),
+            articles: selectedArticles,
+            continuationAnchor: oldestMarketNewsPosition(selectedArticles),
             meta: {
               attemptedProviders,
               provider: strictProviders[0]!.id,
@@ -289,6 +292,7 @@ export async function fetchMarketNewsWithProviders(
       }
 
       if (
+        !continuationPosition &&
         providerArticles.length &&
         provider.allowBroadFallback?.(normalizedRequest)
       ) {
@@ -303,17 +307,18 @@ export async function fetchMarketNewsWithProviders(
       }
 
       emptyProvider = provider;
-      warnings.push(strictEmptyWarning(provider, normalizedRequest));
-    } catch (cause) {
-      failedProviders += 1;
-      logProviderFailure(provider, cause);
-      warnings.push(providerWarning(provider));
+      emptyWarnings.push(strictEmptyWarning(provider, normalizedRequest));
     }
   }
 
   if (strictArticles.length) {
+    const selectedArticles = selectFreshStrictArticles(
+      strictArticles,
+      pageSizeNumber,
+    );
     return {
-      articles: selectFreshStrictArticles(strictArticles, pageSizeNumber),
+      articles: selectedArticles,
+      continuationAnchor: oldestMarketNewsPosition(scannedArticles),
       meta: {
         attemptedProviders,
         provider: strictProviders[0]!.id,
@@ -328,6 +333,7 @@ export async function fetchMarketNewsWithProviders(
   if (broadFallback) {
     return {
       articles: broadFallback.articles,
+      continuationAnchor: oldestMarketNewsPosition(broadFallback.articles),
       meta: {
         attemptedProviders,
         provider: broadFallback.provider.id,
@@ -342,19 +348,40 @@ export async function fetchMarketNewsWithProviders(
     };
   }
 
+  if (continuationPosition && failedProviders === configuredProviders.length) {
+    throw new Error("All historical market news providers failed.");
+  }
+
   if (failedProviders === configuredProviders.length) {
-    throw new Error("Market news providers failed");
+    const demoArticles = getDemoMarketNewsArticles(normalizedRequest);
+
+    return {
+      articles: demoArticles,
+      continuationAnchor: null,
+      meta: {
+        attemptedProviders,
+        provider: "demo",
+        providerLabel: "Demo",
+        query: describeNewsRequest(normalizedRequest),
+        strictCategory: true,
+        warnings: [
+          "Live market news is temporarily unavailable. Demo stories are shown instead.",
+          ...warnings,
+        ],
+      },
+    };
   }
 
   return {
     articles: [],
+    continuationAnchor: oldestMarketNewsPosition(scannedArticles),
     meta: {
       attemptedProviders,
       provider: emptyProvider?.id ?? attemptedProviders[0] ?? "none",
       providerLabel: emptyProvider?.label ?? "No matching provider result",
       query: describeNewsRequest(normalizedRequest),
       strictCategory: true,
-      warnings,
+      warnings: [...warnings, ...emptyWarnings],
     },
   };
 }

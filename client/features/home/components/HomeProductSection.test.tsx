@@ -16,7 +16,9 @@ describe("HomeProductSection", () => {
 
     expect(markup).toContain('aria-label="Portfolio requires sign in"');
     expect(markup).not.toContain('href="/dashboardView"');
-    expect(markup).toContain("Practical tools for learning investors.");
+    expect(markup).toContain("Start with the questions that matter.");
+    expect(markup).toContain("What has driven performance?");
+    expect(markup).not.toContain('role="list"');
   });
 
   it("renders product entries as links once the user is signed in", () => {

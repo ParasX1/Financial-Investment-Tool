@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  MARKET_NEWS_TOPIC_RESULT_POOL_SIZE,
   MARKET_NEWS_TOPIC_PAGE_SIZE,
   clampMarketNewsPageIndex,
   getMarketNewsFetchLimit,
@@ -7,11 +8,13 @@ import {
 } from "./marketNewsPagination";
 
 describe("marketNewsPagination", () => {
-  it("requests one extra story per page to detect whether the next page exists", () => {
+  it("loads one bounded six-page snapshot instead of refetching on page changes", () => {
     expect(MARKET_NEWS_TOPIC_PAGE_SIZE).toBe(12);
-    expect(getMarketNewsFetchLimit(0)).toBe(13);
-    expect(getMarketNewsFetchLimit(1)).toBe(25);
-    expect(getMarketNewsFetchLimit(2)).toBe(37);
+    expect(MARKET_NEWS_TOPIC_RESULT_POOL_SIZE).toBe(72);
+    expect(getMarketNewsFetchLimit(0)).toBe(72);
+    expect(getMarketNewsFetchLimit(1)).toBe(72);
+    expect(getMarketNewsFetchLimit(5)).toBe(72);
+    expect(getMarketNewsFetchLimit(99)).toBe(72);
   });
 
   it("returns the visible page window without leaking the next-page sentinel story", () => {

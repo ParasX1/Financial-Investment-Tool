@@ -22,9 +22,7 @@ import {
   MARKET_NEWS_SORT_OPTIONS,
   sortMarketNewsArticles,
 } from "../lib/marketNewsSort";
-import {
-  formatMarketNewsShownStatus,
-} from "../lib/marketNewsStatus";
+import { formatMarketNewsShownStatus } from "../lib/marketNewsStatus";
 import { useMarketNewsArticles } from "../hooks/useMarketNewsArticles";
 import { useMarketNewsController } from "../hooks/useMarketNewsController";
 import {
@@ -113,7 +111,17 @@ export function MarketNewsMain({
     selectedLookup.ticker ??
     selectedLookupSeed ??
     defaultQuoteReferenceTicker;
-  const { articles, error, loading, meta, request } = useMarketNewsArticles({
+  const {
+    articles,
+    error,
+    loadOlder,
+    loading,
+    loadingOlder,
+    meta,
+    olderError,
+    request,
+  } = useMarketNewsArticles({
+    autoRefreshEnabled: storyPageIndex === 0,
     enabled: routeReady,
     limit: articleLimit,
     refreshKey,
@@ -121,6 +129,9 @@ export function MarketNewsMain({
     tickerSymbol,
     topic: activeTopic,
   });
+  const [olderFilterNotice, setOlderFilterNotice] = React.useState<
+    string | null
+  >(null);
 
   const lensOptions = React.useMemo(
     () =>
@@ -149,6 +160,29 @@ export function MarketNewsMain({
       }),
     [activeLens.id, articles, watchlist.symbols],
   );
+  React.useEffect(() => {
+    setOlderFilterNotice(null);
+  }, [activeLens.id, request]);
+  const handleLoadOlder = React.useCallback(async () => {
+    setOlderFilterNotice(null);
+    const addedArticles = await loadOlder();
+    if (!addedArticles.length) return;
+
+    const visibleAddedArticles = filterArticlesByLens({
+      articles: addedArticles,
+      lensId: activeLens.id,
+      watchlistSymbols: watchlist.symbols,
+    });
+
+    if (!visibleAddedArticles.length) {
+      setOlderFilterNotice(
+        "Older stories loaded, but none match this filter. You can load another batch or choose All.",
+      );
+      return;
+    }
+
+    handleNextPage(true);
+  }, [activeLens.id, handleNextPage, loadOlder, watchlist.symbols]);
   const sortedArticles = React.useMemo(
     () =>
       sortMarketNewsArticles({
@@ -286,7 +320,7 @@ export function MarketNewsMain({
             <section
               className="min-w-0"
               aria-label={`${request.title} stories`}
-              aria-busy={loading}
+              aria-busy={loading || loadingOlder}
             >
               <MarketNewsArticleLayout
                 articles={displayedArticles}
@@ -294,18 +328,22 @@ export function MarketNewsMain({
                 error={error}
                 feedStatus={shownStatusValue}
                 loading={loading}
-                pagination={
-                  {
-                    hasNextPage: pageWindow.hasNextPage,
-                    hasPreviousPage: pageWindow.hasPreviousPage,
-                    loading,
-                    pageIndex: pageWindow.pageIndex,
-                    pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
-                    totalLoaded: visibleArticles.length,
-                    onNextPage: () => handleNextPage(pageWindow.hasNextPage),
-                    onPreviousPage: handlePreviousPage,
-                  }
-                }
+                pagination={{
+                  canLoadOlder: Boolean(meta?.hasMore && meta.nextCursor),
+                  hasNextPage: pageWindow.hasNextPage,
+                  hasPreviousPage: pageWindow.hasPreviousPage,
+                  loading,
+                  loadingOlder,
+                  olderError,
+                  olderNotice: olderFilterNotice,
+                  pageIndex: pageWindow.pageIndex,
+                  pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
+                  reachedEnd: Boolean(meta && !meta.hasMore),
+                  totalLoaded: visibleArticles.length,
+                  onLoadOlder: handleLoadOlder,
+                  onNextPage: () => handleNextPage(pageWindow.hasNextPage),
+                  onPreviousPage: handlePreviousPage,
+                }}
                 providerWarning={displayState.providerWarning}
                 title={displayState.title}
               />

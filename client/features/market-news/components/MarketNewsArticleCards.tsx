@@ -3,42 +3,21 @@ import type { Article } from "@/services/news";
 import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import {
   formatArticleTime,
-  getArticleDomain,
   getArticleImage,
-  getArticleInvestorCues,
   getSafeArticleHref,
 } from "../lib/marketNewsArticles";
 import styles from "../styles/marketNews.module.css";
 
-const CUE_DESCRIPTIONS: Record<string, string> = {
-  Commodities: "Mentions energy, metals, or commodity-market inputs.",
-  Fresh: "Published within the recent market-news window.",
-  Macro: "Mentions economy, jobs, wages, consumers, or GDP.",
-  Opportunity: "Provider sentiment is positive.",
-  Property: "Mentions housing, mortgages, rent, or real estate.",
-  "Rate-sensitive": "Mentions rates, inflation, bonds, yields, CPI, or RBA.",
-  Risk: "Provider sentiment is negative.",
-  Technology:
-    "Mentions AI, technology, software, semiconductors, or cybersecurity.",
-  "Ticker-linked": "The story is linked to at least one market symbol.",
-};
-
-function chipLabel(value: string) {
-  return value === "Ticker-linked" ? "Ticker linked" : value;
-}
-
 function ArticleChip({
   children,
-  tone = "neutral",
   title,
 }: {
   children: ReactNode;
-  tone?: "neutral" | "signal" | "ticker";
   title: string;
 }) {
   return (
     <span
-      className={cn(styles.articleChip, styles[`articleChip_${tone}`])}
+      className={cn(styles.articleChip, styles.articleChip_ticker)}
       title={title}
     >
       {children}
@@ -48,16 +27,6 @@ function ArticleChip({
 
 function ArticleMeta({ article }: { article: Article }) {
   const relatedSymbols = article.relatedSymbols?.slice(0, 3) ?? [];
-  const domain =
-    article.provider === "demo"
-      ? "category demo"
-      : getArticleDomain(article.url);
-  const confidence =
-    typeof article.confidence === "number" &&
-    Number.isFinite(article.confidence)
-      ? article.confidence.toFixed(1)
-      : null;
-  const investorCues = getArticleInvestorCues(article);
 
   return (
     <div
@@ -69,39 +38,17 @@ function ArticleMeta({ article }: { article: Article }) {
     >
       <span>{article.source}</span>
       <span aria-hidden="true">-</span>
-      <span>{domain}</span>
-      <span aria-hidden="true">-</span>
       <time dateTime={article.publishedAt}>
         {formatArticleTime(article.publishedAt)}
       </time>
-      {article.providerLabel ? (
-        <ArticleChip title={`Fetched from ${article.providerLabel}`}>
-          {article.providerLabel}
-        </ArticleChip>
-      ) : null}
       {relatedSymbols.map((symbol) => (
         <ArticleChip
           key={symbol}
-          tone="ticker"
-          title={`Related market symbol: ${symbol}`}
+          title={`Story appears related to ${symbol}`}
         >
           {symbol}
         </ArticleChip>
       ))}
-      {investorCues.map((cue) => (
-        <ArticleChip
-          key={cue}
-          tone="signal"
-          title={CUE_DESCRIPTIONS[cue] ?? "Investor scanning signal."}
-        >
-          {chipLabel(cue)}
-        </ArticleChip>
-      ))}
-      {confidence ? (
-        <ArticleChip title="Approximate relevance score from the provider or local matching rules.">
-          Relevance {confidence}
-        </ArticleChip>
-      ) : null}
     </div>
   );
 }
@@ -111,6 +58,9 @@ function articleLinkProps(article: Article) {
   const external = /^https?:\/\//i.test(href);
 
   return {
+    "aria-label": external
+      ? `Read source article in a new tab: ${article.title}`
+      : `Read source article: ${article.title}`,
     href,
     rel: external ? "noopener noreferrer" : undefined,
     target: external ? "_blank" : undefined,
@@ -138,29 +88,23 @@ function ArticleVisual({
       />
     );
   }
-
-  const signal = article.relatedSymbols?.[0] ?? article.providerLabel ?? "NEWS";
-
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(styles.marketVisual, className)}
-      data-variant="feature"
-    >
-      <span className={styles.marketVisualLabel}>Market News</span>
-      <span className={styles.marketVisualSignal}>{signal}</span>
-    </div>
-  );
+  return null;
 }
 
 export type TopicFeedPagination = {
+  canLoadOlder: boolean;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
   loading: boolean;
+  loadingOlder: boolean;
+  olderError: string | null;
+  olderNotice?: string | null;
+  onLoadOlder: () => void | Promise<void>;
   onNextPage: () => void;
   onPreviousPage: () => void;
   pageIndex: number;
   pageSize: number;
+  reachedEnd: boolean;
   totalLoaded: number;
 };
 
@@ -179,6 +123,27 @@ export function TopicArticleFeed({
   const statusText =
     feedStatus ??
     `${articles.length} ${articles.length === 1 ? "story" : "stories"} shown`;
+  const continuationMode = Boolean(pagination && !pagination.hasNextPage);
+  const continuationMessage = !continuationMode
+    ? null
+    : pagination?.loadingOlder
+      ? "Loading older stories..."
+      : pagination?.olderError
+        ? pagination.olderError
+        : pagination?.olderNotice
+          ? pagination.olderNotice
+          : pagination?.reachedEnd
+            ? "No more stories are available from the current providers for this topic."
+            : null;
+  const nextButtonLabel = !continuationMode
+    ? "Next page"
+    : pagination?.loadingOlder
+      ? "Loading older stories..."
+      : pagination?.olderError
+        ? "Try loading older stories again"
+        : pagination?.reachedEnd
+          ? "No older stories"
+          : "Load older stories";
 
   return (
     <section className={styles.topicFeed} aria-label="Topic stories">
@@ -202,7 +167,6 @@ export function TopicArticleFeed({
                 styles.topicArticleLink,
                 getArticleImage(article) ? "" : styles.topicArticleLinkTextOnly,
               )}
-              aria-label={`Read source article: ${article.title}`}
             >
               {getArticleImage(article) ? (
                 <ArticleVisual
@@ -226,9 +190,20 @@ export function TopicArticleFeed({
 
       {pagination ? (
         <nav className={styles.topicPager} aria-label="Story pages">
-          <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
-            Page {pageNumber}
-          </p>
+          <div>
+            <p className={cn(styles.topicPagerStatus, fitText.subtle)}>
+              Page {pageNumber}
+            </p>
+            {continuationMessage ? (
+              <p
+                aria-live="polite"
+                className={cn(styles.topicPagerStatus, fitText.subtle)}
+                role="status"
+              >
+                {continuationMessage}
+              </p>
+            ) : null}
+          </div>
           <div className={styles.topicPagerActions}>
             <button
               type="button"
@@ -241,10 +216,21 @@ export function TopicArticleFeed({
             <button
               type="button"
               className={styles.topicPagerButton}
-              disabled={!pagination.hasNextPage || pagination.loading}
-              onClick={pagination.onNextPage}
+              disabled={
+                pagination.loading ||
+                pagination.loadingOlder ||
+                (!pagination.hasNextPage && !pagination.canLoadOlder)
+              }
+              onClick={() => {
+                if (pagination.hasNextPage) {
+                  pagination.onNextPage();
+                  return;
+                }
+
+                void pagination.onLoadOlder();
+              }}
             >
-              Next page
+              {nextButtonLabel}
             </button>
           </div>
         </nav>

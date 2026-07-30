@@ -6,6 +6,26 @@ import type {
 
 export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
   {
+    id: "top-stories",
+    label: "Top Stories",
+    description:
+      "The most important Australian and global market stories in one scan.",
+    topics: [
+      {
+        id: "top-stories",
+        label: "Top Stories",
+        eyebrow: "Market briefing",
+        description:
+          "A broad but finance-focused briefing across markets, companies, the economy, and household money.",
+        source: {
+          kind: "general",
+          context:
+            "Australia markets business economy companies investing finance",
+        },
+      },
+    ],
+  },
+  {
     id: "cost-of-living",
     label: "Cost of Living",
     description:
@@ -47,8 +67,8 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
       },
       {
         id: "international-markets",
-        label: "International Markets",
-        shortLabel: "International",
+        label: "Global Markets",
+        shortLabel: "Global",
         eyebrow: "Global market watch",
         description:
           "US, European, and Asian market headlines that can influence portfolio decisions.",
@@ -56,6 +76,20 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
           kind: "search",
           query: "global markets US Europe Asia stocks bonds currencies",
           context: "international stock markets global economy",
+        },
+      },
+      {
+        id: "companies-earnings",
+        label: "Companies & Earnings",
+        shortLabel: "Companies",
+        eyebrow: "Corporate signals",
+        description:
+          "Results, guidance, dividends, deals, and company news that can change an investment thesis.",
+        source: {
+          kind: "search",
+          query:
+            "Australia ASX companies earnings results profit revenue dividends deals",
+          context: "company earnings corporate results ASX business",
         },
       },
       {
@@ -79,15 +113,17 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
       "Personal finance, property, banking, superannuation, tax, and saving decisions.",
     topics: [
       {
-        id: "money-news",
-        label: "Money News",
-        eyebrow: "Everyday finance",
+        id: "money",
+        label: "Money Overview",
+        shortLabel: "Overview",
+        eyebrow: "Money decisions",
         description:
-          "Banking, superannuation, tax, saving, and consumer finance news for Australian investors.",
+          "A practical overview of personal finance, property, banking, superannuation, tax, and saving in Australia.",
         source: {
           kind: "search",
-          query: "Australia money news banking tax superannuation savings",
-          context: "Australian personal finance money news",
+          query:
+            "Australia personal finance property housing superannuation tax savings",
+          context: "Australian household money decisions",
         },
       },
       {
@@ -106,7 +142,7 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
       },
       {
         id: "property-news",
-        label: "Property News",
+        label: "Property & Housing",
         shortLabel: "Property",
         eyebrow: "Housing market",
         description:
@@ -118,17 +154,72 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
           context: "Australian property housing market",
         },
       },
+      {
+        id: "super-tax",
+        label: "Super & Tax",
+        eyebrow: "Long-term money",
+        description:
+          "Superannuation, retirement, ATO updates, tax policy, and rules that affect long-term wealth.",
+        source: {
+          kind: "search",
+          query:
+            "Australia superannuation retirement ATO tax policy capital gains",
+          context: "Australian superannuation tax retirement policy",
+        },
+      },
     ],
   },
   {
-    id: "work",
-    label: "Work",
+    id: "economy-work",
+    label: "Economy & Work",
     description:
-      "Labour market shifts, wages, career decisions, and workplace trends.",
+      "Economic policy, rates, inflation, jobs, wages, and workplace trends.",
     topics: [
       {
+        id: "economy-work",
+        label: "Economy & Work Overview",
+        shortLabel: "Overview",
+        eyebrow: "Economic picture",
+        description:
+          "A connected view of Australian growth, policy, rates, inflation, jobs, wages, and workplace trends.",
+        source: {
+          kind: "search",
+          query:
+            "Australia economy policy interest rates inflation jobs wages employment",
+          context: "Australian economy and work",
+        },
+      },
+      {
+        id: "economy-policy",
+        label: "Economy & Policy",
+        shortLabel: "Economy",
+        eyebrow: "Economic direction",
+        description:
+          "Growth, budgets, regulation, productivity, and policy changes that shape Australian markets.",
+        source: {
+          kind: "search",
+          query:
+            "Australian economy GDP budget Treasury policy productivity growth",
+          context: "Australian economy government policy budget growth",
+        },
+      },
+      {
+        id: "rates-inflation",
+        label: "Rates & Inflation",
+        shortLabel: "Rates",
+        eyebrow: "Macro pulse",
+        description:
+          "RBA decisions, inflation data, bond yields, and monetary-policy signals for investors and households.",
+        source: {
+          kind: "search",
+          query:
+            "Australia RBA interest rates cash rate inflation CPI bond yields",
+          context: "Australian rates inflation monetary policy RBA",
+        },
+      },
+      {
         id: "work",
-        label: "Work",
+        label: "Work & Wages",
         eyebrow: "Jobs and wages",
         description:
           "Employment, wages, workplace policy, and productivity stories that affect income and markets.",
@@ -148,7 +239,7 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     topics: [
       {
         id: "technology",
-        label: "Technology",
+        label: "Tech & AI",
         shortLabel: "Tech",
         eyebrow: "Innovation watch",
         description:
@@ -316,13 +407,7 @@ export const MARKET_NEWS_MARKET_SCOPES: readonly MarketNewsMarketScope[] = [
     tickers: MARKET_NEWS_ASIA_TICKERS,
     tickerSelection: {
       coreSymbols: ["000001.SS", "^N225", "^HSI", "^KS11"],
-      dynamicSymbols: [
-        "9988.HK",
-        "0700.HK",
-        "7203.T",
-        "6758.T",
-        "005930.KS",
-      ],
+      dynamicSymbols: ["9988.HK", "0700.HK", "7203.T", "6758.T", "005930.KS"],
       macroSymbols: ["USDJPY=X", "AUDJPY=X", "GC=F"],
       maxTickers: 8,
       trendingRegion: "SG",

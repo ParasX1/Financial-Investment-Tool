@@ -1,8 +1,6 @@
 import type { Article } from "@/services/news";
 import type { MarketNewsLensId, MarketNewsLensOption } from "../types";
 
-const HIGH_RELEVANCE_THRESHOLD = 0.72;
-
 function watchlistSet(symbols: readonly string[]) {
   return new Set(symbols.map((symbol) => symbol.toUpperCase()));
 }
@@ -36,15 +34,6 @@ export function articleMatchesLens({
   if (lensId === "ticker-linked") {
     return Boolean(article.relatedSymbols?.length);
   }
-  if (lensId === "high-relevance") {
-    return (
-      typeof article.confidence === "number" &&
-      Number.isFinite(article.confidence) &&
-      article.confidence >= HIGH_RELEVANCE_THRESHOLD
-    );
-  }
-  if (lensId === "positive") return article.sentiment === "positive";
-  if (lensId === "negative") return article.sentiment === "negative";
 
   return true;
 }
@@ -85,21 +74,6 @@ export function buildMarketNewsLensOptions({
       id: "ticker-linked",
       label: "Ticker stories",
       description: "Stories with market symbols attached.",
-    },
-    {
-      id: "high-relevance",
-      label: "High relevance",
-      description: "Stories with a stronger relevance score.",
-    },
-    {
-      id: "negative",
-      label: "Risks",
-      description: "Negative sentiment stories worth checking first.",
-    },
-    {
-      id: "positive",
-      label: "Opportunities",
-      description: "Positive sentiment stories for opportunity scanning.",
     },
   ];
 

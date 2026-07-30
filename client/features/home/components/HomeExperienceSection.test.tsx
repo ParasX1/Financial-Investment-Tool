@@ -13,5 +13,7 @@ describe("HomeExperienceSection", () => {
     expect(markup).not.toContain("Market context</figcaption>");
     expect(markup).not.toContain("Portfolio view</figcaption>");
     expect(markup).not.toContain("Shared review</figcaption>");
+    expect(markup).toContain("A research loop you can repeat.");
+    expect(markup).toContain("Check the source");
   });
 });

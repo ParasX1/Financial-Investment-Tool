@@ -34,6 +34,8 @@ const topicRequest: MarketNewsRequest = {
 function meta(overrides: Partial<NewsResponseMeta> = {}): NewsResponseMeta {
   return {
     attemptedProviders: ["google-news-rss"],
+    hasMore: true,
+    nextCursor: "cursor-1",
     provider: "google-news-rss",
     providerLabel: "Google News RSS",
     query: "Australia cost of living inflation wages bills interest rates",
@@ -112,7 +114,9 @@ describe("marketNewsDisplayState", () => {
 
     expect(state.title).toBe("Broad finance headlines");
     expect(state.summary).toContain("broader finance headlines");
-    expect(state.coverageNotice).toContain("exact category coverage is limited");
+    expect(state.coverageNotice).toContain(
+      "exact category coverage is limited",
+    );
     expect(state.providerWarning).toContain("Yahoo Finance RSS");
   });
 

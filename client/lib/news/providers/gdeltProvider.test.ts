@@ -25,8 +25,8 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("gdeltProvider", () => {
-  it("is enabled by default outside production and opt-in for production", () => {
-    expect(isGdeltNewsEnabled({ NODE_ENV: "development" })).toBe(true);
+  it("is opt-in so an unreliable auxiliary source cannot delay the default feed", () => {
+    expect(isGdeltNewsEnabled({ NODE_ENV: "development" })).toBe(false);
     expect(isGdeltNewsEnabled({ NODE_ENV: "production" })).toBe(false);
     expect(
       isGdeltNewsEnabled({
@@ -55,16 +55,29 @@ describe("gdeltProvider", () => {
     expect(url.searchParams.get("query")).toContain("ASX");
   });
 
-  it("parses compact GDELT seendate values", () => {
-    expect(parseGdeltSeenDate("20260616T113000Z")).toBe(
-      "2026-06-16T11:30:00Z",
+  it("uses an exact enddatetime instead of a relative timespan for continuation", () => {
+    const url = new URL(
+      buildGdeltUrl({
+        env: { GDELT_NEWS_TIMESPAN: "1d" },
+        request: {
+          ...request,
+          publishedBefore: "2026-07-20T12:34:56.000Z",
+          publishedBeforeKey: "story-72",
+        },
+      }),
     );
+
+    expect(url.searchParams.get("enddatetime")).toBe("20260720123456");
+    expect(url.searchParams.get("timespan")).toBeNull();
+  });
+
+  it("parses compact GDELT seendate values", () => {
+    expect(parseGdeltSeenDate("20260616T113000Z")).toBe("2026-06-16T11:30:00Z");
     expect(parseGdeltSeenDate("not-a-date")).toBe("not-a-date");
   });
 
   it("maps, filters, and dedupes GDELT articles", () => {
-    expect(
-      mapGdeltArticles([
+    const [article] = mapGdeltArticles([
         {
           domain: "example.com",
           seendate: "20260616T113000Z",
@@ -82,8 +95,9 @@ describe("gdeltProvider", () => {
           title: "Unsafe URL",
           url: "javascript:alert(1)",
         },
-      ]),
-    ).toMatchObject([
+      ]);
+
+    expect([article]).toMatchObject([
       {
         id: "https://example.com/asx",
         image: "https://example.com/asx.jpg",
@@ -94,6 +108,8 @@ describe("gdeltProvider", () => {
         title: "ASX investors watch banks and miners",
       },
     ]);
+    expect(article).not.toHaveProperty("confidence");
+    expect(article).not.toHaveProperty("sentiment");
   });
 
   it("drops unsafe social image URLs without dropping the article", () => {

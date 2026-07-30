@@ -5,8 +5,8 @@ import type { ServerNewsRequest } from "./types";
 const baseArticle = {
   id: "1",
   image: null,
-  provider: "marketaux",
-  providerLabel: "MarketAux",
+  provider: "google-news-rss",
+  providerLabel: "Google News RSS",
   publishedAt: "2026-06-16T04:00:00Z",
   source: "Yahoo Finance Australia",
   summary: "",
@@ -368,6 +368,39 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["local-super"]);
   });
 
+  it("keeps Personal Finance practical without accepting one generic money term", () => {
+    const request: ServerNewsRequest = {
+      context: "personal finance household money Australia",
+      kind: "search",
+      pageSize: "18",
+      query: "personal finance Australia mortgage retirement insurance savings",
+      topicId: "personal-finance",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "mortgage-only",
+            title: "Australian lenders expect mortgage demand to rise",
+          },
+          {
+            ...baseArticle,
+            id: "household-choice",
+            title: "Australians compare mortgage rates and insurance costs",
+          },
+          {
+            ...baseArticle,
+            id: "direct-guide",
+            title: "Personal finance guide for Australian savers",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["household-choice", "direct-guide"]);
+  });
+
   it("keeps international market stories using common US market language", () => {
     const request: ServerNewsRequest = {
       context: "global markets Wall Street stocks bonds",
@@ -464,6 +497,43 @@ describe("filterRelevantNewsArticles", () => {
     ).toEqual(["cba"]);
   });
 
+  it("does not cross-match an explicitly different Bitcoin quote currency", () => {
+    const request: ServerNewsRequest = {
+      context: "BTC-USD Bitcoin US dollar market news",
+      kind: "ticker",
+      pageSize: "18",
+      ticker: "BTC-USD",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "generic",
+            title: "Bitcoin rises as institutional demand improves",
+          },
+          {
+            ...baseArticle,
+            id: "aud-pair",
+            title: "BTC/AUD gains as the Australian dollar weakens",
+          },
+          {
+            ...baseArticle,
+            id: "usd-pair",
+            title: "BTC/USD advances after a volatile session",
+          },
+          {
+            ...baseArticle,
+            id: "both-pairs",
+            title: "BTC/USD and BTC/AUD diverge in regional trading",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["generic", "usd-pair", "both-pairs"]);
+  });
+
   it("keeps commodity stories that match commodity market language", () => {
     const request: ServerNewsRequest = {
       commodity: "commodities",
@@ -544,5 +614,168 @@ describe("filterRelevantNewsArticles", () => {
         request,
       ).map((article) => article.id),
     ).toEqual(["energy"]);
+  });
+
+  it.each([
+    {
+      expectedId: "top",
+      matchingTitle:
+        "ASX 200 rises as Australian inflation data changes the market outlook",
+      topicId: "top-stories",
+    },
+    {
+      expectedId: "earnings",
+      matchingTitle: "CBA earnings beat forecasts as profit and revenue rise",
+      topicId: "companies-earnings",
+    },
+    {
+      expectedId: "economy",
+      matchingTitle:
+        "Australian federal budget shifts the economic growth outlook",
+      topicId: "economy-policy",
+    },
+    {
+      expectedId: "rates",
+      matchingTitle:
+        "RBA interest rate decision keeps inflation outlook in focus",
+      topicId: "rates-inflation",
+    },
+    {
+      expectedId: "super",
+      matchingTitle:
+        "ATO updates superannuation tax rules for Australian workers",
+      topicId: "super-tax",
+    },
+  ])(
+    "keeps relevant $topicId coverage while rejecting unrelated lifestyle news",
+    ({ expectedId, matchingTitle, topicId }) => {
+      const request: ServerNewsRequest = {
+        context: topicId,
+        kind: "search",
+        pageSize: "18",
+        query: topicId,
+        topicId,
+      };
+
+      expect(
+        filterRelevantNewsArticles(
+          [
+            {
+              ...baseArticle,
+              id: expectedId,
+              title: matchingTitle,
+            },
+            {
+              ...baseArticle,
+              id: "lifestyle",
+              title: "Winter garden trends and the best flowers to plant",
+            },
+          ],
+          request,
+        ).map((article) => article.id),
+      ).toEqual([expectedId]);
+    },
+  );
+
+  it("treats an Australian inflation headline as high-signal cost-of-living news", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian household finance cost of living",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia cost of living inflation",
+      topicId: "cost-of-living",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "inflation",
+            title: "Australian inflation eases to its lowest level in two years",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["inflation"]);
+  });
+
+  it("keeps the Money overview broad within personal finance but rejects lifestyle stories", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian money decisions",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia personal finance property super tax",
+      topicId: "money",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "money",
+            title: "Australian mortgage borrowers build savings as rates fall",
+          },
+          {
+            ...baseArticle,
+            id: "atmos-energy",
+            title: "Atmos Energy Corporation $ATO shares bought by a US fund",
+          },
+          {
+            ...baseArticle,
+            id: "lifestyle",
+            title: "Ten winter recipes for a relaxed weekend at home",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["money"]);
+  });
+
+  it("keeps jobs and wages in the Economy & Work aggregate", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian economy and work",
+      kind: "search",
+      pageSize: "72",
+      query: "Australia economy jobs wages",
+      topicId: "economy-work",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "work",
+            title: "Australian jobs growth lifts wages across the labour market",
+          },
+        ],
+        request,
+      ).map((article) => article.id),
+    ).toEqual(["work"]);
+  });
+
+  it("does not mistake Treasury Wine Estates for economic policy", () => {
+    const request: ServerNewsRequest = {
+      context: "Australian economy policy",
+      kind: "search",
+      pageSize: "72",
+      query: "Australian economy Treasury policy",
+      topicId: "economy-policy",
+    };
+
+    expect(
+      filterRelevantNewsArticles(
+        [
+          {
+            ...baseArticle,
+            id: "wine",
+            title: "Treasury Wine Estates shares climb after a sales update",
+          },
+        ],
+        request,
+      ),
+    ).toEqual([]);
   });
 });

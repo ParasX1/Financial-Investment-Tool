@@ -7,7 +7,10 @@ import {
 describe("shared market chart helpers", () => {
   it("creates a safe one-symbol chart request", () => {
     expect(createMarketChartRequestKey(" cba.ax ")).toBe(
-      "/api/market/chart?symbol=CBA.AX",
+      "/api/market/chart?symbol=CBA.AX&range=1d",
+    );
+    expect(createMarketChartRequestKey("CBA.AX", "3m")).toBe(
+      "/api/market/chart?symbol=CBA.AX&range=3m",
     );
     expect(createMarketChartRequestKey("bad symbol")).toBeNull();
     expect(createMarketChartRequestKey(null)).toBeNull();
@@ -22,5 +25,11 @@ describe("shared market chart helpers", () => {
       300_000,
     );
     expect(getMarketChartRefreshInterval(undefined)).toBe(60_000);
+    expect(
+      getMarketChartRefreshInterval({ marketState: "REGULAR" }, "1m"),
+    ).toBe(300_000);
+    expect(
+      getMarketChartRefreshInterval({ marketState: "REGULAR" }, "max"),
+    ).toBe(3_600_000);
   });
 });

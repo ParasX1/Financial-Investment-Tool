@@ -7,12 +7,6 @@ import {
 import type { MarketNewsLensId, MarketNewsLensOption } from "../types";
 import styles from "../styles/marketNews.module.css";
 
-const PRIMARY_LENS_IDS = new Set<MarketNewsLensId>([
-  "all",
-  "watchlist",
-  "ticker-linked",
-]);
-
 function emptyLensTitle(label: string) {
   return label.toLowerCase().includes("stories")
     ? `No ${label} in this view`
@@ -28,12 +22,6 @@ export function MarketNewsLensBar({
   options: readonly MarketNewsLensOption[];
   onLensChange: (lensId: MarketNewsLensId) => void;
 }) {
-  const visibleOptions = options.filter(
-    (option) =>
-      PRIMARY_LENS_IDS.has(option.id) ||
-      option.count > 0 ||
-      option.id === activeLensId,
-  );
   const activeOption =
     options.find((option) => option.id === activeLensId) ?? options[0];
 
@@ -42,12 +30,11 @@ export function MarketNewsLensBar({
       <div className="min-w-0">
         <p className={cn(fitType.eyebrow, fitText.label)}>News filters</p>
         <p className={cn("mt-1", fitType.bodySm, fitText.body)}>
-          Narrow the current story set by watchlist, tickers, relevance, or
-          tone.
+          Narrow this story set by your watchlist or explicit ticker links.
         </p>
       </div>
       <div className={styles.lensGrid} role="list">
-        {visibleOptions.map((option) => {
+        {options.map((option) => {
           const active = option.id === activeLensId;
           const disabled = !active && !option.selectable;
           const title = disabled

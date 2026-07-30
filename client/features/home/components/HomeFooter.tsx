@@ -19,7 +19,12 @@ export function HomeFooter({
       <div className={styles.footerBrand}>
         <FitLogo className={styles.footerLogo} decorative size="small" />
         <p>
-          Portfolio analytics, market research, and learning tools in one place.
+          Portfolio analytics, market research, and guided learning in one
+          workspace.
+        </p>
+        <p>
+          FIT supports research and education. It does not provide personal
+          financial advice or execute trades.
         </p>
       </div>
 
