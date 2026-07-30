@@ -23,18 +23,30 @@ npm run dev
 
 to compile and host the frontend locally.
 
-1. Copy client/env.example and paste to client/.env.local
-2. Enter the your newsapi key
-3. Using npm run dev to testing
+1. Copy `client/.env.example` to `client/.env.local`.
+2. Add the browser-safe Supabase values and any server-only news API keys.
+3. Run `npm run dev`.
 
+Use `client/assets` for images imported by source files. Reserve
+`client/public/assets` for files that must be addressed by a public URL; do
+not keep duplicate copies unless both access modes are active.
 
 **Backend**
 
 We use flask to run our backend.
-In the `server` folder, use
+Use `server/.env.example` as the configuration checklist and provide its
+values through your shell or deployment environment. Then, in the `server`
+folder, install the backend development dependencies and run the app:
+
 ```
+python -m pip install -r requirements-dev.txt
 python -m src.server
 ```
+
+The backend can start without Supabase configuration. Routes that need
+Supabase return a configuration error until those values are provided.
+Exploratory analysis notebooks live in `server/notebooks`; they are not part
+of the Flask runtime source.
 
 ## Testing
 

@@ -24,8 +24,7 @@
   border: 1px solid var(--learning-accent-border, #1d2a5c);
 }
 
-.cardSupport,
-.actionPanel {
+.cardSupport {
   background: var(--learning-support-bg, #0a0818);
   border: 1px solid var(--learning-support-border, #1c2a5c);
 }
@@ -77,35 +76,4 @@
   background: var(--learning-active-bg, #101939);
   border: 1px solid var(--learning-active-border, #203773);
   color: var(--fit-color-accent-strong, #65a0fd);
-}
-
-.actionIcon {
-  background: rgba(83, 103, 255, 0.15);
-  color: #dbe4ff;
-}
-
-.actionButton {
-  background: linear-gradient(90deg, #2d5bf2, #8a21f0);
-  color: #ffffff;
-  transition:
-    filter 150ms ease,
-    transform 150ms ease;
-}
-
-.actionButton:hover {
-  filter: brightness(1.1);
-}
-
-.actionButton:active {
-  transform: translateY(1px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .actionButton {
-    transition: none;
-  }
-
-  .actionButton:active {
-    transform: none;
-  }
 }

@@ -1,0 +1,231 @@
+.monitorPanel {
+  margin-top: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--fit-color-border-subtle);
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(135deg, rgba(83, 103, 255, 0.08), transparent 38%),
+    var(--fit-color-surface);
+}
+
+.monitorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--fit-color-border-subtle);
+  padding: 1.25rem;
+}
+
+.monitorTitle {
+  margin: 0;
+  color: #fff;
+  font-size: var(--fit-type-size-xl);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-heading);
+}
+
+
+.monitorActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.monitorRefreshButton {
+  gap: 0.45rem;
+}
+
+.monitorGrid {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.62fr) minmax(0, 1.38fr);
+}
+
+.monitorSummary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  border-right: 1px solid var(--fit-color-border-subtle);
+  padding: 1.25rem;
+}
+
+.monitorCompany {
+  margin: 0;
+  color: var(--fit-color-text-body);
+  font-size: var(--fit-type-size-body-sm);
+}
+
+.monitorPrice {
+  display: block;
+  margin-top: 0.45rem;
+  color: #f2f5ff;
+  font-size: var(--fit-type-size-2xl);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--fit-type-leading-tight);
+}
+
+.monitorChange {
+  margin: 0.45rem 0 0;
+  font-size: var(--fit-type-size-body-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.monitorStatus {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.monitorStatus p {
+  margin: 0;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-caption);
+  line-height: var(--fit-type-leading-body);
+}
+
+.monitorStatus p:first-child {
+  color: var(--fit-color-text-body);
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.monitorStateDot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  background: var(--fit-color-text-label);
+}
+
+.monitorStateOpen { background: #53dec7; }
+.monitorStateExtended { background: #f1be6a; }
+.monitorStateClosed { background: var(--fit-color-text-label); }
+.monitorStateUnknown { background: #ff9bb0; }
+
+.monitorNewsLink {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--fit-color-accent);
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+  text-decoration: none;
+}
+
+.monitorNewsLink:hover {
+  color: #dce4ff;
+}
+
+.monitorChartCard {
+  min-width: 0;
+  padding: 1.25rem;
+  background: var(--fit-color-inner-surface);
+}
+
+.monitorChartHeading {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-caption);
+}
+
+.monitorChartHeading div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.monitorChartHeading span:first-child {
+  color: #fff;
+  font-size: var(--fit-type-size-body-sm);
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.monitorChartHeading small {
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-2xs);
+}
+
+.monitorChartLoading,
+.monitorChartError {
+  display: grid;
+  min-height: 14rem;
+  place-items: center;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-body-sm);
+  text-align: center;
+}
+
+.monitorChartLoading {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(123, 140, 255, 0.08),
+      transparent
+    );
+  animation: watchlistMonitorPulse 1.6s ease-in-out infinite;
+}
+
+.monitorChartError p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .monitorGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .monitorSummary {
+    border-right: 0;
+    border-bottom: 1px solid var(--fit-color-border-subtle);
+  }
+}
+
+@media (max-width: 640px) {
+  .monitorHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .monitorActions {
+    justify-content: space-between;
+  }
+
+  .monitorRefreshButton {
+    width: auto;
+  }
+
+  .monitorChartCard,
+  .monitorHeader,
+  .monitorSummary {
+    padding: 1rem;
+  }
+
+  .monitorPrice {
+    font-size: var(--fit-type-size-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitorChartLoading {
+    animation: none;
+  }
+}
+
+@keyframes watchlistMonitorPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

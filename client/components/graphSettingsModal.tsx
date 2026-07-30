@@ -47,6 +47,87 @@ interface GraphSettingsModalProps {
 const defaultStart = new Date();
 const isoDateOnly = (d: Date) => d.toISOString().slice(0, 10);
 
+const dialogPaperSx = {
+  bgcolor: 'var(--fit-color-surface, #09090b)',
+  color: '#fff',
+  fontFamily: 'var(--fit-font-family)',
+  border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+  borderRadius: '0.75rem',
+  backgroundImage: 'none',
+  boxShadow: '0 1.8rem 5rem rgba(0, 0, 0, 0.62)',
+};
+
+const fieldSx = {
+  '& .MuiInputLabel-root': {
+    color: 'var(--fit-color-text-muted, #8f98aa)',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: 'var(--fit-color-accent-strong, #65a0fd)',
+  },
+  '& .MuiFormHelperText-root': {
+    color: 'var(--fit-color-text-muted, #8f98aa)',
+  },
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'var(--fit-color-field, #18181b)',
+    color: '#fff',
+    borderRadius: '0.625rem',
+    '& fieldset': {
+      borderColor: 'var(--fit-color-border-control, #202230)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+    },
+  },
+};
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      bgcolor: 'var(--fit-color-surface, #09090b)',
+      color: '#fff',
+      border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+      borderRadius: '0.625rem',
+      '& .MuiMenuItem-root.Mui-selected': {
+        bgcolor: 'var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))',
+      },
+      '& .MuiMenuItem-root:hover': {
+        bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
+      },
+    },
+  },
+};
+
+const secondaryButtonSx = {
+  color: '#dce4ff',
+  bgcolor: 'var(--fit-color-field, #18181b)',
+  border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+  borderRadius: '0.625rem',
+  textTransform: 'none',
+  fontWeight: 'var(--fit-type-weight-semibold)',
+  '&:hover': {
+    bgcolor: 'var(--fit-color-surface-soft, #111114)',
+    borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
+  },
+  '&:focus-visible': {
+    outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+    outlineOffset: 2,
+  },
+};
+
+const primaryButtonSx = {
+  ...secondaryButtonSx,
+  bgcolor: '#5d67ff',
+  color: '#fff',
+  borderColor: 'rgba(111, 124, 255, 0.62)',
+  '&:hover': {
+    bgcolor: '#7079ff',
+    borderColor: 'rgba(123, 140, 255, 0.72)',
+  },
+};
+
 const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, onApply }) => {
     // ————— Menu status —————
     const [metricType, setMetricType] = useState<MetricType>('BetaAnalysis');
@@ -91,16 +172,26 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
   
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-          <DialogTitle>Metrics Settings</DialogTitle>
-          <DialogContent dividers>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
+          <DialogTitle sx={{ fontSize: 'var(--fit-type-size-panel-title)', fontWeight: 'var(--fit-type-weight-semibold)', lineHeight: 'var(--fit-type-leading-heading)' }}>Metrics Settings</DialogTitle>
+          <DialogContent dividers sx={{ borderColor: 'var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))', color: 'var(--fit-color-text-body, #b9c1d0)' }}>
             <FormControl fullWidth margin="normal">
-              <InputLabel id="metric-type-label">Metric Type</InputLabel>
+              <InputLabel id="metric-type-label" sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&.Mui-focused': { color: 'var(--fit-color-accent-strong, #65a0fd)' } }}>Metric Type</InputLabel>
               <Select
                 labelId="metric-type-label"
                 value={metricType}
                 label="Metric Type"
                 onChange={handleMetricTypeChange}
+                MenuProps={selectMenuProps}
+                sx={{
+                  bgcolor: 'var(--fit-color-field, #18181b)',
+                  color: '#fff',
+                  borderRadius: '0.625rem',
+                  '& .MuiSelect-icon': { color: 'var(--fit-color-text-muted, #8f98aa)' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-border-control, #202230)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))' },
+                }}
               >
                 <MenuItem value="BetaAnalysis">Beta Analysis</MenuItem>
                 <MenuItem value="AlphaComparison">Alpha Comparison</MenuItem>
@@ -125,6 +216,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 InputLabelProps={{ shrink: true }}
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
               />
               <TextField
                 label="End Date"
@@ -134,6 +226,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 InputLabelProps={{ shrink: true }}
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
               />
             </Box>
 
@@ -145,6 +238,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 InputLabelProps={{ shrink: true }}
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
             />
     
             {/* Conditional inputs based on metricType */}
@@ -156,6 +250,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 onChange={(e) => setMarketTicker(e.target.value)}
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
               />
             )}
     
@@ -168,6 +263,7 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
               />
             )}
     
@@ -181,12 +277,13 @@ const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, 
                 helperText="Enter a value between 0 and 1"
                 fullWidth
                 margin="normal"
+                sx={fieldSx}
               />
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button onClick={handleApply} variant="contained">
+          <DialogActions sx={{ borderTop: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))', p: 2 }}>
+            <Button onClick={onClose} sx={secondaryButtonSx}>Cancel</Button>
+            <Button onClick={handleApply} variant="contained" sx={primaryButtonSx}>
               Apply
             </Button>
           </DialogActions>

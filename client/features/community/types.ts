@@ -1,9 +1,27 @@
+// File purpose: Defines shared Community TypeScript contracts for posts, comments, feeds, and UI state.
 export type CommunityFeedView =
   | "top"
   | "new"
   | "my-posts"
+  | "saved"
   | "liked"
   | "commented";
+
+export type CommunityPostType =
+  | "question"
+  | "analysis"
+  | "news"
+  | "portfolio"
+  | "discussion";
+
+export type CommunityTimeFrame = "short" | "medium" | "long";
+
+export type CommunityReportReason =
+  | "spam_or_scam"
+  | "misleading_financial_claim"
+  | "market_manipulation"
+  | "harassment"
+  | "other";
 
 export type CommunityFeedCounts = Record<CommunityFeedView, number>;
 
@@ -19,16 +37,32 @@ export type DiscussionDraft = {
   title: string;
   body: string;
   tags: string[];
+  postType: CommunityPostType | "";
+  timeFrame: CommunityTimeFrame | "";
+  tickers: string[];
+  tickerInput: string;
+  sourceUrl: string;
   imageFile: File | null;
   imagePreviewUrl: string | null;
 };
 
 export type DiscussionDraftField = "title" | "body";
 
+export type DiscussionDraftMetadataField =
+  | "postType"
+  | "timeFrame"
+  | "tickerInput"
+  | "sourceUrl";
+
 export type DiscussionPostInput = {
   title: string;
   body: string;
   tags: string[];
+  postType: CommunityPostType;
+  timeFrame: CommunityTimeFrame | null;
+  tickers: string[];
+  symbol: string | null;
+  sourceUrl: string | null;
   imageUrl?: string | null;
   imagePath?: string | null;
 };
@@ -43,6 +77,11 @@ export type SeedPost = {
   time: string;
   sortTime: number;
   tags: string[];
+  postType?: CommunityPostType;
+  timeFrame?: CommunityTimeFrame | null;
+  tickers?: string[];
+  symbol?: string | null;
+  sourceUrl?: string | null;
   imageUrl?: string | null;
   imagePath?: string | null;
   commentCount: number;
@@ -54,6 +93,14 @@ export type DBPost = {
   title: string;
   body?: string | null;
   tags?: string[] | null;
+  post_type?: string | null;
+  time_frame?: string | null;
+  symbol?: string | null;
+  post_tickers?: Array<{
+    symbol?: string | null;
+    position?: number | null;
+  }> | null;
+  source_url?: string | null;
   image_url?: string | null;
   image_path?: string | null;
   votes: number;
@@ -69,7 +116,7 @@ export type PostUI = SeedPost & {
 export type CommentRow = {
   id: string;
   post_id: string;
-  user_name: string;
+  user_name: string | null;
   body: string;
   image_url: string | null;
   image_path?: string | null;

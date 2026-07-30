@@ -1,3 +1,4 @@
+// File purpose: Provides the Community page skip-link shell for accessible route entrypoints.
 import * as React from "react";
 import { FitPageShell } from "@/components/shared/FitPageShell";
 

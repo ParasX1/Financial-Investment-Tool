@@ -1,6 +1,7 @@
+// File purpose: Renders the confirmation dialog used before deleting posts or comments.
 import * as React from "react";
-import communityStyles from "@/styles/community.module.css";
-import { FOCUS_VISIBLE, cn } from "../design";
+import communityStyles from "../styles/community.module.css";
+import { FOCUS_VISIBLE, cn, fitType } from "../design";
 import type { PendingDelete } from "../types";
 
 export function DeleteConfirmDialog({
@@ -82,17 +83,20 @@ export function DeleteConfirmDialog({
         ref={dialogRef}
         className={cn(
           "w-full max-w-[420px] rounded-xl bg-[#09090b] p-5 text-white shadow-2xl",
-          communityStyles.panelBorder
+          communityStyles.panelBorder,
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
       >
-        <h2 id={titleId} className="text-lg font-bold">
+        <h2 id={titleId} className={fitType.panelTitle}>
           {pending.title}
         </h2>
-        <p id={descriptionId} className="mt-2 text-sm leading-6 text-[#c4ccdc]">
+        <p
+          id={descriptionId}
+          className={cn("mt-2 text-[#c4ccdc]", fitType.bodySm)}
+        >
           {pending.message}
         </p>
 
@@ -103,8 +107,9 @@ export function DeleteConfirmDialog({
             onClick={onCancel}
             disabled={busy}
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-semibold text-[#c4ccdc] transition-colors hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-50",
-              FOCUS_VISIBLE
+              "rounded-lg px-4 py-2 text-[#c4ccdc] transition-colors hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-50",
+              fitType.control,
+              FOCUS_VISIBLE,
             )}
           >
             Cancel
@@ -114,8 +119,9 @@ export function DeleteConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
             className={cn(
-              "rounded-lg bg-[#ff3d68] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#ff5b7c] disabled:cursor-not-allowed disabled:opacity-50",
-              FOCUS_VISIBLE
+              "rounded-lg bg-[#ff3d68] px-4 py-2 text-white transition-colors hover:bg-[#ff5b7c] disabled:cursor-not-allowed disabled:opacity-50",
+              fitType.control,
+              FOCUS_VISIBLE,
             )}
           >
             {busy ? "Deleting…" : "Delete"}

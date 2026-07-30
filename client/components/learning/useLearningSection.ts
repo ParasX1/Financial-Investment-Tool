@@ -1,23 +1,33 @@
 import * as React from "react";
 import { useRouter } from "next/router";
 
-function getQuerySection(value: string | string[] | undefined) {
-  return typeof value === "string" ? value : null;
+type LearningSectionQuery = string | readonly string[] | null | undefined;
+
+function normalizeQuerySection(value: LearningSectionQuery) {
+  return {
+    value: typeof value === "string" ? value : null,
+    hasInvalidShape: Array.isArray(value),
+  };
 }
 
 export function resolveLearningSection(
-  querySection: string | null,
+  querySection: LearningSectionQuery,
   sectionIds: readonly string[],
   defaultSectionId: string,
 ) {
   const validSections = new Set(sectionIds);
+  const normalizedQuery = normalizeQuerySection(querySection);
 
   return {
     activeId:
-      querySection && validSections.has(querySection)
-        ? querySection
+      normalizedQuery.value && validSections.has(normalizedQuery.value)
+        ? normalizedQuery.value
         : defaultSectionId,
-    shouldClearQuery: Boolean(querySection && !validSections.has(querySection)),
+    shouldClearQuery:
+      normalizedQuery.hasInvalidShape ||
+      Boolean(
+        normalizedQuery.value && !validSections.has(normalizedQuery.value),
+      ),
   };
 }
 
@@ -32,9 +42,8 @@ export function useLearningSection(
   React.useEffect(() => {
     if (!router.isReady) return;
 
-    const querySection = getQuerySection(router.query.section);
     const nextSection = resolveLearningSection(
-      querySection,
+      router.query.section,
       sectionIds,
       defaultSectionId,
     );

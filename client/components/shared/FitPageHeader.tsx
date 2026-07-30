@@ -1,4 +1,4 @@
-import { cn, fitText } from "./uiPrimitives";
+import { cn, fitText, fitType } from "./uiPrimitives";
 
 export function FitPageHeader({
   className,
@@ -13,12 +13,13 @@ export function FitPageHeader({
 }) {
   return (
     <header className={cn("mb-6 sm:mb-7", className)}>
-      <h1 className="text-balance text-[28px] font-extrabold leading-tight tracking-normal text-white sm:text-[30px]">
+      <h1 className={cn("text-balance text-white", fitType.pageTitle)}>
         {title}
       </h1>
       <p
         className={cn(
-          "mt-2 text-pretty text-[15px] leading-6",
+          "mt-2 text-pretty",
+          fitType.body,
           fitText.body,
           subtitleClassName ?? "max-w-[42rem]",
         )}

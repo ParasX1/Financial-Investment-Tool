@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 // import BoltIcon from "@mui/icons-material/Bolt";
-import ModalLogin from "@/components/Modal/ModalLogin";
-import ModalSignUp from "@/components/Modal/ModalSignUp";
 import { useAuth } from "@/components/authContext";
+import { AuthDialog, useAuthDialog } from "@/features/auth";
+import { FitLogo } from "@/components/shared/FitLogo";
 import { useRouter } from "next/navigation";
 
 export interface NavbarElem {
@@ -18,8 +18,7 @@ interface NavbarProps {
 
 export function Navbar({ items }: NavbarProps) {
     const { user, loading, signOut } = useAuth()
-    const [showSignUp, setShowSignUp] = useState(false)
-    const [showLogIn, setShowLogIn] = useState(false)
+    const authDialog = useAuthDialog()
     const router = useRouter()
 
     const [visible, setVisible] = useState(true)
@@ -61,16 +60,22 @@ export function Navbar({ items }: NavbarProps) {
                 transition: 'transform 0.3s ease',
             }}>
                 <Toolbar sx={{ gap: 2 }}>
-                    {/* Logo */}
-                    <Typography variant="h2" sx={{
-                        background: 'linear-gradient(45deg, #5a5afc 30%, #ea19ea 90%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                    }} onClick={() => router.push('/')}>
-                        FIT
-                    </Typography>
+                    <Box
+                        component="button"
+                        type="button"
+                        aria-label="Go to FIT home"
+                        sx={{
+                            alignItems: 'center',
+                            background: 'transparent',
+                            border: 0,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            p: 0,
+                        }}
+                        onClick={() => router.push('/')}
+                    >
+                        <FitLogo decorative size="medium" />
+                    </Box>
 
                     {/* Nav links */}
                     {items.map((item) => (
@@ -108,19 +113,19 @@ export function Navbar({ items }: NavbarProps) {
                                 <Button
                                     color="inherit"
                                     disabled={loading}
-                                    onClick={() => setShowLogIn(true)}
+                                    onClick={() => authDialog.openSignIn()}
                                 >
                                     Sign In
                                 </Button>
                                 <Button
                                     variant="contained"
                                     disabled={loading}
-                                    onClick={() => setShowSignUp(true)}
+                                    onClick={() => authDialog.openSignUp()}
                                     sx={{
-                                        background: 'linear-gradient(45deg, #5a5afc 30%, #ea19ea 90%)',
+                                        background: 'var(--fit-color-brand-gradient)',
                                         color: 'white',
                                         fontWeight: 'bold',
-                                        '&:hover': { background: 'linear-gradient(45deg, #4444e0 30%, #c010c0 90%)' },
+                                        '&:hover': { background: 'var(--fit-color-brand-gradient-hover)' },
                                     }}
                                 >
                                     Get FIT
@@ -131,8 +136,7 @@ export function Navbar({ items }: NavbarProps) {
                 </Toolbar>
             </AppBar>
 
-            <ModalLogin show={showLogIn} onHide={() => setShowLogIn(false)} />
-            <ModalSignUp show={showSignUp} onHide={() => setShowSignUp(false)} setLogin={setShowLogIn} />
+            <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
         </>
     )
 }

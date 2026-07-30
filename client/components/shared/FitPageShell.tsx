@@ -19,12 +19,13 @@ export function FitPageShell({
         html,
         body,
         #__next {
-          background: var(--fit-color-page-bg);
+          background: var(--fit-page-background);
           color-scheme: dark;
           min-height: 100%;
         }
 
         html {
+          background-color: var(--fit-color-page-bg) !important;
           scrollbar-gutter: stable;
         }
 

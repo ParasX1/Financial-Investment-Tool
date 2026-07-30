@@ -1,3 +1,4 @@
+// File purpose: Provides textarea auto-resize behavior for long comment and post drafts.
 import * as React from "react";
 
 export function useAutoResizeTextarea(value: string) {

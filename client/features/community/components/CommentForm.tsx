@@ -1,12 +1,14 @@
+// File purpose: Renders the comment composer, image attachment controls, validation feedback, and submit action.
 import * as React from "react";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import communityStyles from "@/styles/community.module.css";
+import communityStyles from "../styles/community.module.css";
 import { COMMENT_IMAGE_TYPES } from "../constants";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
+import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
 import type { NewComment } from "../types";
-import { getErrorMessage, validateCommentImage } from "../utils";
+import { getErrorMessage } from "../lib/communityErrors";
+import { validateCommentImage } from "../lib/communityValidation";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({
@@ -33,7 +35,7 @@ export function CommentForm({
     () => () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     },
-    [previewUrl]
+    [previewUrl],
   );
 
   function handleFile(nextFile?: File | null) {
@@ -86,7 +88,11 @@ export function CommentForm({
   return (
     <form
       onSubmit={submit}
-      className={cn(communityUi.softPanel, "p-[12px]", communityStyles.softBorder)}
+      className={cn(
+        communityUi.softPanel,
+        "p-[12px]",
+        communityStyles.softBorder,
+      )}
     >
       <label htmlFor={commentInputId} className="sr-only">
         Add a comment
@@ -102,9 +108,10 @@ export function CommentForm({
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
-          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-sm text-[#e2e7f2]",
+          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-[#e2e7f2]",
+          fitType.bodySm,
           communityStyles.softBorder,
-          "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20"
+          "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
         )}
       />
 
@@ -112,7 +119,7 @@ export function CommentForm({
         <div
           className={cn(
             "mt-[12px] overflow-hidden rounded-md bg-black/30",
-            communityStyles.softBorder
+            communityStyles.softBorder,
           )}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -133,7 +140,9 @@ export function CommentForm({
           accept={COMMENT_IMAGE_TYPES.join(",")}
           className="hidden"
           disabled={busy || !canAttachImage}
-          onChange={(event) => handleFile(event.currentTarget.files?.[0] ?? null)}
+          onChange={(event) =>
+            handleFile(event.currentTarget.files?.[0] ?? null)
+          }
         />
         <div className="flex min-w-0 items-center gap-2">
           <button
@@ -144,7 +153,7 @@ export function CommentForm({
               communityUi.iconButton,
               "h-9 w-9 text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
               communityUi.disabled,
-              FOCUS_VISIBLE
+              FOCUS_VISIBLE,
             )}
             title={attachImageLabel}
             aria-label={attachImageLabel}
@@ -158,10 +167,11 @@ export function CommentForm({
               onClick={() => handleFile(null)}
               disabled={busy}
               className={cn(
-                "inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
+                "inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
+                fitType.caption,
                 communityUi.disabled,
                 communityStyles.softBorder,
-                FOCUS_VISIBLE
+                FOCUS_VISIBLE,
               )}
               title="Remove attachment"
               aria-label={`Remove attachment ${file.name}`}
@@ -176,10 +186,11 @@ export function CommentForm({
           type="submit"
           disabled={busy || !text.trim()}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[14px] py-[8px] text-sm font-semibold text-white transition-colors",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[14px] py-[8px] text-white transition-colors",
+            fitType.control,
             "hover:bg-[#7079ff]",
             communityUi.disabled,
-            FOCUS_VISIBLE
+            FOCUS_VISIBLE,
           )}
         >
           <SendRoundedIcon sx={{ fontSize: 16 }} aria-hidden="true" />
@@ -190,8 +201,9 @@ export function CommentForm({
       {errorMessage ? (
         <p
           className={cn(
-            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-sm text-[#ffd9e2]",
-            communityStyles.wrapAnywhere
+            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-[#ffd9e2]",
+            fitType.bodySm,
+            communityStyles.wrapAnywhere,
           )}
           role="alert"
         >

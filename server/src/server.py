@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import os
 import traceback
-from .stocks import sanitiseStockJson
 from .metrics import (
     fetch_stock_data,
     calculate_beta,
@@ -16,65 +16,37 @@ from .metrics import (
     calculate_efficient_frontier
 )
 
+from .supabase_client import (
+    SupabaseConfigurationError,
+    get_supabase_client,
+)
 
-from supabase import create_client, Client
 
-def create_app():
+def create_app(test_config=None, supabase_client=None):
     # app instance
     app = Flask(__name__)
+    app.config.from_mapping(
+        SUPABASE_URL=os.getenv("SUPABASE_URL"),
+        SUPABASE_KEY=os.getenv("SUPABASE_KEY"),
+    )
     app.config.from_prefixed_env()
+    if test_config is not None:
+        app.config.update(test_config)
+    if supabase_client is not None:
+        app.extensions["supabase"] = supabase_client
     CORS(app)
 
-    # supabase: Client = create_client(app.config["SUPABASE_URL"], app.config["SUPABASE_KEY"])
 
-    SUPABASE_URL = "https://egjnhetinyoyrhbetbxi.supabase.co"
-    SUPABASE_KEY = "sb_publishable_XKRo3ReKDr3s3cZM5zbjMQ_VyQLJFaC"
-
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-
-    # returns a list of stocks the user holds
-    # takes the user id as input
+    # These routes trusted a caller-supplied user id and accessed Users with a
+    # publishable key. Keep an explicit response for old clients, but never
+    # bypass the Users RLS policy.
     @app.route("/api/stocks/get", methods=["POST"])
-    def stocks_get():
-        data = request.json
-        userid = data["id"]
-        try:
-            response = (supabase.table("Users")
-                        .select("stock_ids")
-                        .eq("id", userid)
-                        .single()
-                        .execute()
-                        )
-            if response:
-                return response.data["stock_ids"]["stocks"], 200
-            else:
-                raise KeyError()
-        except (KeyError, TypeError):
-            return jsonify({
-                "error": "No such user with ID " + userid
-            }), 404
-    # update columns in user stock entries for a single user
-    # each update can only target one column at a time
     @app.route("/api/stocks/set", methods=["POST"])
-    def stocks_set():
-        try:
-            data = request.json
-            userid = data["id"]
-            json = data["json"]
-            if not sanitiseStockJson(json):
-                raise KeyError("Invalid JSON")
-            resp = (supabase.table("Users")
-                    .update({"stock_ids": json})
-                    .eq("id", userid)
-                    .execute()
-                    )
-            if not resp:
-                raise KeyError("Couldn't find table entry")
-            return jsonify({"message": "OK"}), 200
-        except KeyError as e:
-            return jsonify({"error": f"Something went wrong: {e}"}), 500
-        
+    def legacy_user_stocks():
+        return jsonify({
+            "error": "This legacy portfolio endpoint is no longer available."
+        }), 410
+
     # Example stock tickers, market index, and date range for testing
     start_date = '2023-01-01'
     end_date = '2024-01-01'
@@ -92,15 +64,25 @@ def create_app():
         #     ]
         # print(stock_data_json)
         
-        response = (
-            supabase.table("stock_data")
-            .select("MSFT")
-            .execute()
-        )
-        
-        # print(response)
-        data = response.data
-        return(data)
+        try:
+            supabase = get_supabase_client(app)
+        except SupabaseConfigurationError:
+            return jsonify({
+                "error": "Market data service is not configured."
+            }), 503
+
+        try:
+            response = (
+                supabase.table("stock_data")
+                .select("MSFT")
+                .execute()
+            )
+            return jsonify(response.data)
+        except Exception:
+            traceback.print_exc()
+            return jsonify({
+                "error": "Market data is temporarily unavailable."
+            }), 502
         # return jsonify(fixed_data)
         # return jsonify(stock_data_json)
 
@@ -232,4 +214,3 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True, port=8080)
-    

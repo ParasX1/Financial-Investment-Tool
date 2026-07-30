@@ -414,12 +414,15 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
         left:     isFullscreen ? 0 : 'unset',
         width:    isFullscreen ? '100vw' : '100%',
         height:   isFullscreen ? '100vh' : height,
-        bgcolor:  '#111',
-        border:   '1px solid #555',
+        bgcolor:  'var(--fit-color-surface-soft, #111114)',
+        color: '#fff',
+        fontFamily: 'var(--fit-font-family)',
+        border:   '1px solid var(--fit-color-border-panel, #27272a)',
         borderRadius: isMainVariant ? 2 : 0,
         p:        isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
         overflow: 'hidden',
         zIndex:   isFullscreen ? 1000 : 'unset',
+        boxShadow: isMainVariant ? 'inset 0 1px 0 rgba(255, 255, 255, 0.035)' : 'none',
       }}
     >
       {isMainVariant && (
@@ -449,24 +452,37 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 height: 'clamp(32px, 3.8vh, 38px)',
                 minWidth: 'clamp(144px, 9.2vw, 174px)',
                 color: '#fff',
-                fontSize: 'clamp(12px, 0.75vw, 14px)',
-                borderRadius: 1,
-                '.MuiSelect-icon': { color: '#fff' },
+                bgcolor: 'var(--fit-color-field, #18181b)',
+                fontSize: 'var(--fit-type-size-body-sm)',
+                borderRadius: '0.625rem',
+                '.MuiSelect-icon': { color: 'var(--fit-color-text-muted, #8f98aa)' },
                 '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#2f80ff',
+                  borderColor: 'var(--fit-color-border-control, #202230)',
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#5b9cff',
+                  borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
                 },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#2f80ff',
+                  borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+                },
+                '&:focus-visible': {
+                  outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+                  outlineOffset: 2,
                 },
               }}
               MenuProps={{
                 PaperProps: {
                   sx: {
-                    bgcolor: '#15151a',
+                    bgcolor: 'var(--fit-color-surface, #09090b)',
                     color: '#fff',
+                    border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
+                    borderRadius: '0.625rem',
+                    '& .MuiMenuItem-root.Mui-selected': {
+                      bgcolor: 'var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))',
+                    },
+                    '& .MuiMenuItem-root:hover': {
+                      bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
+                    },
                   },
                 },
               }}
@@ -481,7 +497,7 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 </MenuItem>
               ))}
             </Select>
-            <Box sx={{ color: '#8d93a1', fontSize: 'clamp(11px, 0.7vw, 13px)', whiteSpace: 'nowrap' }}>
+            <Box sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', fontSize: 'var(--fit-type-size-caption)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
               {selectedStocks.length} stocks
             </Box>
           </Box>
@@ -491,12 +507,21 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               <span>
                 <IconButton
                   size="small"
+                  aria-label={index === 0 ? 'Main view' : 'Switch to main view'}
                   onClick={() => onSwap(index)}
                   disabled={index === 0}
                   sx={{
-                    color: '#9aa0aa',
+                    color: 'var(--fit-color-text-muted, #8f98aa)',
+                    '&:hover': {
+                      color: 'var(--fit-color-accent-strong, #65a0fd)',
+                      bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
+                    },
+                    '&:focus-visible': {
+                      outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+                      outlineOffset: 2,
+                    },
                     '&.Mui-disabled': {
-                      color: 'rgba(154,160,170,0.32)',
+                      color: 'rgba(143, 152, 170, 0.32)',
                     },
                   }}
                 >
@@ -505,12 +530,12 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
               </span>
             </Tooltip>
             <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
-              <IconButton size="small" onClick={handleFullscreenToggle} sx={{ color: '#9aa0aa' }}>
+              <IconButton aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} size="small" onClick={handleFullscreenToggle} sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&:hover': { color: 'var(--fit-color-accent-strong, #65a0fd)', bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))' }, '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 } }}>
                 {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
               </IconButton>
             </Tooltip>
             <Tooltip title="Clear" arrow>
-              <IconButton size="small" onClick={() => onClear(index)} sx={{ color: '#9aa0aa' }}>
+              <IconButton aria-label="Clear chart" size="small" onClick={() => onClear(index)} sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&:hover': { color: '#ff9bb0', bgcolor: 'rgba(255, 61, 104, 0.1)' }, '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 } }}>
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             </Tooltip>
