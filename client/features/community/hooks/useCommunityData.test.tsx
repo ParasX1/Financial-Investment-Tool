@@ -149,6 +149,7 @@ describe("useCommunityData account-scoped resource", () => {
       ownerKey: "user:user-a",
       posts: [oldPost],
       likedPostIds: [oldPost.id],
+      savedPostIds: [],
       commentsState: createCommentsState([oldPost]),
     });
     const userBLoad = deferred<ReturnType<typeof result>>();

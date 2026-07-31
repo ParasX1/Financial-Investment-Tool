@@ -30,6 +30,7 @@ describe("community memory ownership", () => {
       ownerKey: "user:user-a",
       posts: [],
       likedPostIds: ["post-1"],
+      savedPostIds: [],
       commentsState: createCommentsState([]),
     };
     rememberCommunityData(cache);
@@ -83,6 +84,7 @@ describe("community memory ownership", () => {
       ownerKey: "user:user-a",
       posts: [],
       likedPostIds: [],
+      savedPostIds: [],
       commentsState: createCommentsState([]),
     };
     rememberCommunityData(cache);

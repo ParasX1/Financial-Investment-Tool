@@ -16,12 +16,14 @@ function imageFile(overrides: Partial<File> = {}) {
 }
 
 function createStorageClient() {
-  const upload = jest.fn(async () => ({ error: null }));
-  const remove = jest.fn(async () => ({ error: null }));
+  const upload = jest.fn(async (_path: string, _file: File) => ({
+    error: null,
+  }));
+  const remove = jest.fn(async (_paths: string[]) => ({ error: null }));
   const getPublicUrl = jest.fn((path: string) => ({
     data: { publicUrl: `https://cdn.example.com/${path}` },
   }));
-  const from = jest.fn(() => ({ upload, remove, getPublicUrl }));
+  const from = jest.fn((_bucket: string) => ({ upload, remove, getPublicUrl }));
 
   return {
     db: { storage: { from } } as any,

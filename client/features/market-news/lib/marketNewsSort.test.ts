@@ -2,12 +2,12 @@ import { describe, expect, it } from "@jest/globals";
 import type { Article } from "@/lib/news/contracts";
 import { sortMarketNewsArticles } from "./marketNewsSort";
 
-function article(
-  id: string,
-  overrides: Partial<Article> = {},
-): Article {
+function article(id: string, overrides: Partial<Article> = {}): Article {
+  const { image = null, ...articleOverrides } = overrides;
+
   return {
     id,
+    image,
     provider: "demo",
     providerLabel: "Demo",
     publishedAt: "2026-06-01T00:00:00.000Z",
@@ -16,7 +16,7 @@ function article(
     summary: "",
     title: id,
     url: `#${id}`,
-    ...overrides,
+    ...articleOverrides,
   };
 }
 

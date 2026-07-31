@@ -6,12 +6,12 @@ describe("profileDependencies", () => {
       resolveProfileAvatarBucket({
         NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET: "member-avatars",
         NEXT_PUBLIC_SUPABASE_BUCKET: "comment-images",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe("member-avatars");
     expect(
       resolveProfileAvatarBucket({
         NEXT_PUBLIC_SUPABASE_BUCKET: "comment-images",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe("avatars");
   });
 });

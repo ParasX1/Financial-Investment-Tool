@@ -47,9 +47,11 @@ function createRequest({
 describe("/api/market/ticker-strip", () => {
   beforeEach(() => {
     mockBuildMarketNewsTickerStripSnapshot.mockResolvedValue({
+      scopeId: "australia",
       providerLabel: "Yahoo Finance",
       refreshMs: 60_000,
       source: "live",
+      strategy: "core-plus-dynamic-movers",
       tickers: [],
       updatedAt: "2026-06-21T00:00:00.000Z",
       warnings: [],

@@ -103,6 +103,11 @@ describe("Community post mapping", () => {
       title: "Title-only update",
       body: "",
       tags: [],
+      postType: "discussion",
+      timeFrame: null,
+      tickers: [],
+      symbol: null,
+      sourceUrl: null,
     });
 
     expect(remotePost.body).toBe("");
@@ -250,6 +255,11 @@ describe("Community feed filtering", () => {
         title: "Local draft",
         body: "My local discussion",
         tags: [],
+        postType: "discussion",
+        timeFrame: null,
+        tickers: [],
+        symbol: null,
+        sourceUrl: null,
       }),
       id: "local-1",
       votes: 2,
@@ -310,6 +320,7 @@ describe("Community feed filtering", () => {
       query: "",
       view: "top",
       likedPostIds: new Set(["post-2"]),
+      savedPostIds: new Set<string>(),
       commentsState,
       currentUserId: "user-1",
     });
@@ -352,6 +363,7 @@ describe("Community feed filtering", () => {
       view: "top",
       now,
       likedPostIds: new Set(),
+      savedPostIds: new Set<string>(),
       commentsState,
       currentUserId: "user-1",
     });
@@ -388,6 +400,7 @@ describe("Community feed filtering", () => {
       now,
       commentsState,
       currentUserId: "user-1",
+      savedPostIds: new Set<string>(),
     };
 
     const unliked = getVisibleCommunityPosts({
@@ -419,6 +432,7 @@ describe("Community feed filtering", () => {
       query: "sec.gov",
       view: "new",
       likedPostIds: new Set(),
+      savedPostIds: new Set<string>(),
       commentsState,
       currentUserId: "user-1",
     });
@@ -454,6 +468,7 @@ describe("Community feed filtering", () => {
       topTimeRange: "past-week",
       now,
       likedPostIds: new Set(),
+      savedPostIds: new Set<string>(),
       commentsState,
       currentUserId: "user-1",
     });
@@ -484,6 +499,7 @@ describe("Community feed filtering", () => {
       topTimeRange: "past-hour",
       now,
       likedPostIds: new Set(["older-liked", "recent-liked"]),
+      savedPostIds: new Set<string>(),
       commentsState,
       currentUserId: "user-1",
     });

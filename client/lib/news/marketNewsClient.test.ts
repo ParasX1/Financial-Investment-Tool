@@ -28,22 +28,24 @@ describe("market news service client", () => {
   });
 
   it("returns validated market news payloads", async () => {
-    global.fetch = jest.fn(async () =>
-      jsonResponse({
-        articles: [
-          {
-            id: "story",
-            image: null,
-            publishedAt: "2026-06-21T04:00:00Z",
-            source: "Market Desk",
-            summary: "Summary",
-            title: "Story",
-            url: "https://example.com/story",
-          },
-        ],
-        meta: validMeta,
-      }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        jsonResponse({
+          articles: [
+            {
+              id: "story",
+              image: null,
+              publishedAt: "2026-06-21T04:00:00Z",
+              source: "Market Desk",
+              summary: "Summary",
+              title: "Story",
+              url: "https://example.com/story",
+            },
+          ],
+          meta: validMeta,
+        }),
+      );
 
     const result = await fetchMarketNews({
       context: "cost of living",
@@ -61,12 +63,14 @@ describe("market news service client", () => {
   });
 
   it("bypasses browser and shared caches only for an explicit refresh", async () => {
-    global.fetch = jest.fn(async () =>
-      jsonResponse({
-        articles: [],
-        meta: validMeta,
-      }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        jsonResponse({
+          articles: [],
+          meta: validMeta,
+        }),
+      );
 
     await fetchMarketNews(
       {
@@ -86,16 +90,18 @@ describe("market news service client", () => {
   });
 
   it("requests an older batch with an opaque continuation cursor", async () => {
-    global.fetch = jest.fn(async () =>
-      jsonResponse({
-        articles: [],
-        meta: {
-          ...validMeta,
-          hasMore: false,
-          nextCursor: null,
-        },
-      }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        jsonResponse({
+          articles: [],
+          meta: {
+            ...validMeta,
+            hasMore: false,
+            nextCursor: null,
+          },
+        }),
+      );
 
     await fetchOlderMarketNews(
       {
@@ -115,9 +121,11 @@ describe("market news service client", () => {
   });
 
   it("rejects malformed JSON success responses instead of showing an empty feed", async () => {
-    global.fetch = jest.fn(
-      async () => new Response("<html>not json</html>", { status: 200 }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        new Response("<html>not json</html>", { status: 200 }),
+      );
 
     await expect(
       fetchMarketNews({
@@ -129,11 +137,13 @@ describe("market news service client", () => {
   });
 
   it("rejects missing response metadata instead of fabricating an unknown provider", async () => {
-    global.fetch = jest.fn(async () =>
-      jsonResponse({
-        articles: [],
-      }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        jsonResponse({
+          articles: [],
+        }),
+      );
 
     await expect(
       fetchMarketNews({
@@ -150,12 +160,14 @@ describe("market news service client", () => {
       nextCursor: _nextCursor,
       ...legacyMeta
     } = validMeta;
-    global.fetch = jest.fn(async () =>
-      jsonResponse({
-        articles: [],
-        meta: legacyMeta,
-      }),
-    ) as jest.MockedFunction<typeof fetch>;
+    global.fetch = jest
+      .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+      .mockResolvedValue(
+        jsonResponse({
+          articles: [],
+          meta: legacyMeta,
+        }),
+      );
 
     await expect(
       fetchMarketNews({

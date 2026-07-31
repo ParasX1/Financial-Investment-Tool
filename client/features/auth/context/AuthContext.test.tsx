@@ -31,7 +31,13 @@ describe("AuthProvider lifecycle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     auth.onAuthStateChange.mockReturnValue({
-      data: { subscription: { unsubscribe } },
+      data: {
+        subscription: {
+          id: "auth-subscription",
+          callback: jest.fn(),
+          unsubscribe,
+        },
+      },
     });
   });
 

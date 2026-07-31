@@ -26,16 +26,16 @@ describe("Community atomic post creation migration", () => {
     expect(migration).toMatch(/count\(distinct ticker\)/);
     expect(migration).toMatch(/symbol,[\s\S]*v_tickers\[1\]/);
     expect(migration).toMatch(
-      /create constraint trigger post_tickers_primary_consistency[\s\S]*deferrable initially deferred/s,
+      /create constraint trigger post_tickers_primary_consistency[\s\S]*deferrable initially deferred/,
     );
     expect(migration).toMatch(
-      /ticker\.position = 0[\s\S]*ticker\.symbol = post\.symbol/s,
+      /ticker\.position = 0[\s\S]*ticker\.symbol = post\.symbol/,
     );
     expect(migration).toMatch(
-      /revoke execute on function public\.create_community_post_with_tickers[\s\S]*from public, anon, authenticated/s,
+      /revoke execute on function public\.create_community_post_with_tickers[\s\S]*from public, anon, authenticated/,
     );
     expect(migration).toMatch(
-      /grant execute on function public\.create_community_post_with_tickers[\s\S]*to authenticated/s,
+      /grant execute on function public\.create_community_post_with_tickers[\s\S]*to authenticated/,
     );
     expect(migration).not.toContain("security definer");
   });
