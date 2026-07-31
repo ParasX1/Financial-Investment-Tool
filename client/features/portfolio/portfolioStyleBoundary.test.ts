@@ -110,4 +110,24 @@ describe("Portfolio stylesheet boundaries", () => {
       expect(lineCount).toBeLessThanOrEqual(500);
     });
   });
+
+  it("defines every Portfolio custom property used by an owner module", () => {
+    const styles = styleModules
+      .map(({ file }) => readFileSync(join(stylesRoot, file), "utf8"))
+      .join("\n");
+    const usedProperties = [
+      ...styles.matchAll(/var\((--portfolio-[a-z0-9-]+)/g),
+    ].map((match) => match[1]);
+    const definedProperties = new Set(
+      [...styles.matchAll(/(--portfolio-[a-z0-9-]+)\s*:/g)].map(
+        (match) => match[1],
+      ),
+    );
+
+    expect(
+      [...new Set(usedProperties)].filter(
+        (property) => !definedProperties.has(property),
+      ),
+    ).toEqual([]);
+  });
 });
