@@ -40,33 +40,33 @@ export const helpSections = Object.freeze([
   {
     id: "portfolio",
     label: "Portfolio",
-    subtitle: "Compare stocks and customise analytics charts",
+    subtitle: "Scan six metrics, investigate one, and preserve your research desk",
     icon: AccountBalanceWalletRoundedIcon,
     faqs: [
       {
         question: "What is the Portfolio page used for?",
         answer:
-          "Portfolio is an analytics workspace for comparing selected stocks across interactive metric charts. It does not record trades or represent a brokerage account.",
+          "Portfolio is a historical research workspace for comparing a shared stock universe across up to six simultaneous metric cards. Board scans relationships, Focus explains one metric in depth, and Observation arranges the same cards full-screen. It does not record trades or represent a brokerage account.",
       },
       {
         question: "How do I add stocks to my portfolio?",
         answer:
-          "Enter or choose a ticker symbol in the stock selector. You can compare up to 5 stocks at a time. Select a ticker chip to include or exclude it from charts; use the chip's remove control to delete it from the selector.",
+          "Enter or choose a ticker symbol in the shared universe. You can compare up to 5 stocks at a time. Changes remain a draft until you choose Run analysis, so editing one symbol does not repeatedly refresh every chart.",
       },
       {
         question: "What metrics can I analyze?",
         answer:
-          "FIT provides 10 analytics views: Cumulative Return, Beta Analysis, Alpha Comparison, Max Drawdown, Volatility, Sharpe Ratio, Sortino Ratio, Value at Risk, Market Correlation, and the simulated Efficient Frontier portfolio cloud.",
+          "FIT provides 10 analytics: Cumulative Return, Beta, Alpha, Drawdown, Volatility, Sharpe Ratio, Sortino Ratio, Value at Risk, Rolling Correlation, and Simulated Portfolios. Configure up to six cards at once; Focus adds method, assumptions, limitations, and an accessible summary table.",
       },
       {
-        question: "Can I customize the dashboard layout?",
+        question: "How do Board, Focus, and Observation work?",
         answer:
-          "Each analytics card can display a different metric. Use the metric control in a card, switch a secondary card into the main view, enter fullscreen, or clear a chart.",
+          "Board shows the complete multi-chart deck. Focus expands any card without deleting the others. Observation opens the same cards in persistent draggable and resizable windows on desktop, or a usable vertical stack on mobile. Escape returns to Board.",
       },
       {
         question: "How do I change the date range for analysis?",
         answer:
-          "Use the Start Date and End Date pickers below the stock selector. Select your desired date range to analyze historical performance for that specific period.",
+          "Use a 3M, 6M, YTD, 1Y, 3Y, or 5Y global preset, then choose Run analysis. Cards are Linked by default; a card can use a visible local date or model-input override and return to the global assumptions at any time.",
       },
     ],
   },

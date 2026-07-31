@@ -28,11 +28,11 @@ export const guideSections = Object.freeze([
     label: "Sortino Ratio",
     icon: TrackChangesRoundedIcon,
     description:
-      "The Sortino Ratio is a variation of the Sharpe Ratio that only considers downside volatility. It focuses on harmful volatility rather than all price movement.",
+      "FIT measures downside deviation from the daily risk-free target across the full return sample, so upside days remain in the denominator as zero shortfall rather than being discarded.",
     formula:
       "Sortino Ratio = (Annualised Average Return - Risk-Free Rate) / Annualised Downside Deviation",
     interpretation:
-      "A higher Sortino Ratio is better. Values above 2.0 are generally strong. This measure is especially useful when investors care more about downside losses than upside fluctuations.",
+      "Higher is better only across comparable periods and assumptions. If no return falls below the daily target, FIT reports an unbounded ratio explicitly instead of inventing a finite score.",
     takeaway:
       "Use Sortino Ratio when the key question is whether returns compensate you for downside risk.",
   },
@@ -92,11 +92,11 @@ export const guideSections = Object.freeze([
     label: "Value at Risk",
     icon: QueryStatsRoundedIcon,
     description:
-      "FIT uses historical Value at Risk to estimate a lower-tail one-day return threshold from the observed daily returns in the selected date range.",
+      "FIT uses historical Value at Risk to report the positive magnitude of a lower-tail one-day loss threshold from observed daily returns.",
     formula:
-      "Historical VaR (95% confidence) = 5th percentile of observed daily returns",
+      "Historical VaR loss magnitude = max(0, - selected lower-tail return percentile)",
     interpretation:
-      "A Historical VaR of -3% means 5% of the observed daily returns were at or below -3%. It is a historical return threshold, not a guaranteed maximum loss or a dollar-loss forecast.",
+      "At the selected confidence, a Historical VaR of 3% means only the chosen tail probability of observed daily returns fell below -3%. Lower is better, but this is a threshold rather than a maximum or dollar-loss forecast.",
     takeaway:
       "Use FIT's Historical VaR as one downside threshold and pair it with Max Drawdown to understand losses beyond that threshold.",
   },
@@ -105,11 +105,11 @@ export const guideSections = Object.freeze([
     label: "Efficient Frontier",
     icon: AccountTreeRoundedIcon,
     description:
-      "FIT currently simulates 10,000 random long-only portfolios and plots their annualised expected return against risk. The result is a portfolio cloud that approximates the opportunity set; it is not a mathematically filtered frontier.",
+      "FIT deterministically samples 10,000 long-only portfolios from a Dirichlet distribution and plots annualised estimated return against risk. The cloud is a sampled opportunity set, not a mathematically optimized frontier.",
     formula:
       "Each sample: Expected Return = Weights x Annualised Mean Returns; Risk = Square Root of (Weights x Covariance Matrix x Weights)",
     interpretation:
-      "Each point is one random allocation whose weights sum to 100%. The upper-left boundary of the cloud can approximate efficient choices, but FIT does not currently filter or optimize those boundary points.",
+      "Each point is one sampled allocation whose non-negative weights sum to 100%. FIT labels the best sampled Sharpe and lowest sampled volatility points; neither is claimed to be the exact optimum.",
     takeaway:
       "Use the simulated cloud to explore diversification and risk-return trade-offs, while treating its apparent frontier as an approximation rather than an optimizer result.",
   },

@@ -1,84 +1,88 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
+  Select,
   TextField,
-  Box
-} from '@mui/material';
+} from "@mui/material";
+import { METRIC_REGISTRY } from "@/features/portfolio/data/metricRegistry";
 
-// Optional metric types
 export type MetricType =
-  | 'BetaAnalysis'
-  | 'AlphaComparison'
-  | 'MaxDrawdownAnalysis'
-  | 'CumulativeReturnComparison'
-  | 'SortinoRatioVisualization'
-  | 'MarketCorrelationAnalysis'
-  | 'SharpeRatioMatrix'
-  | 'VolatilityAnalysis'
-  | 'ValueAtRiskAnalysis'
-  | 'EfficientFrontierVisualization';
+  | "BetaAnalysis"
+  | "AlphaComparison"
+  | "MaxDrawdownAnalysis"
+  | "CumulativeReturnComparison"
+  | "SortinoRatioVisualization"
+  | "MarketCorrelationAnalysis"
+  | "SharpeRatioMatrix"
+  | "VolatilityAnalysis"
+  | "ValueAtRiskAnalysis"
+  | "EfficientFrontierVisualization";
 
-  export interface GraphSettings {
-    metricType: MetricType;
-    metricParams: {
-      startDate: string;
-      endDate: string;
-      marketTicker?: string;
-      riskFreeRate?: number;
-      confidenceLevel?: number;
-    };
-    stockColour: string;
-  }
+export interface GraphSettings {
+  metricType: MetricType;
+  metricParams: {
+    startDate: string;
+    endDate: string;
+    marketTicker?: string;
+    riskFreeRate?: number;
+    confidenceLevel?: number;
+  };
+  stockColour: string;
+}
 
 interface GraphSettingsModalProps {
   open: boolean;
   onClose: () => void;
   onApply: (settings: GraphSettings) => void;
+  initialSettings?: GraphSettings | null;
 }
 
-const defaultStart = new Date();
-const isoDateOnly = (d: Date) => d.toISOString().slice(0, 10);
+const defaultEnd = new Date();
+const defaultStart = new Date(defaultEnd);
+defaultStart.setFullYear(defaultStart.getFullYear() - 1);
+const isoDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 
 const dialogPaperSx = {
-  bgcolor: 'var(--fit-color-surface, #09090b)',
-  color: '#fff',
-  fontFamily: 'var(--fit-font-family)',
-  border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
-  borderRadius: '0.75rem',
-  backgroundImage: 'none',
-  boxShadow: '0 1.8rem 5rem rgba(0, 0, 0, 0.62)',
+  bgcolor: "var(--fit-color-surface, #09090b)",
+  color: "#fff",
+  fontFamily: "var(--fit-font-family)",
+  border: "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+  borderRadius: "0.75rem",
+  backgroundImage: "none",
+  boxShadow: "0 1.8rem 5rem rgba(0, 0, 0, 0.62)",
 };
 
 const fieldSx = {
-  '& .MuiInputLabel-root': {
-    color: 'var(--fit-color-text-muted, #8f98aa)',
+  "& .MuiInputLabel-root": {
+    color: "var(--fit-color-text-muted, #8f98aa)",
   },
-  '& .MuiInputLabel-root.Mui-focused': {
-    color: 'var(--fit-color-accent-strong, #65a0fd)',
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--fit-color-accent-strong, #65a0fd)",
   },
-  '& .MuiFormHelperText-root': {
-    color: 'var(--fit-color-text-muted, #8f98aa)',
+  "& .MuiFormHelperText-root": {
+    color: "var(--fit-color-text-muted, #8f98aa)",
   },
-  '& .MuiOutlinedInput-root': {
-    bgcolor: 'var(--fit-color-field, #18181b)',
-    color: '#fff',
-    borderRadius: '0.625rem',
-    '& fieldset': {
-      borderColor: 'var(--fit-color-border-control, #202230)',
+  "& .MuiOutlinedInput-root": {
+    bgcolor: "var(--fit-color-field, #18181b)",
+    color: "#fff",
+    borderRadius: "0.625rem",
+    "& fieldset": {
+      borderColor: "var(--fit-color-border-control, #202230)",
     },
-    '&:hover fieldset': {
-      borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
+    "&:hover fieldset": {
+      borderColor:
+        "var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))",
     },
-    '&.Mui-focused fieldset': {
-      borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))",
     },
   },
 };
@@ -86,209 +90,273 @@ const fieldSx = {
 const selectMenuProps = {
   PaperProps: {
     sx: {
-      bgcolor: 'var(--fit-color-surface, #09090b)',
-      color: '#fff',
-      border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
-      borderRadius: '0.625rem',
-      '& .MuiMenuItem-root.Mui-selected': {
-        bgcolor: 'var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))',
+      bgcolor: "var(--fit-color-surface, #09090b)",
+      color: "#fff",
+      border:
+        "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+      borderRadius: "0.625rem",
+      "& .MuiMenuItem-root.Mui-selected": {
+        bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))",
       },
-      '& .MuiMenuItem-root:hover': {
-        bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
+      "& .MuiMenuItem-root:hover": {
+        bgcolor: "var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))",
       },
     },
   },
 };
 
 const secondaryButtonSx = {
-  color: '#dce4ff',
-  bgcolor: 'var(--fit-color-field, #18181b)',
-  border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
-  borderRadius: '0.625rem',
-  textTransform: 'none',
-  fontWeight: 'var(--fit-type-weight-semibold)',
-  '&:hover': {
-    bgcolor: 'var(--fit-color-surface-soft, #111114)',
-    borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
-  },
-  '&:focus-visible': {
-    outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
-    outlineOffset: 2,
+  color: "#dce4ff",
+  bgcolor: "var(--fit-color-field, #18181b)",
+  border: "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+  borderRadius: "0.625rem",
+  textTransform: "none",
+  fontWeight: "var(--fit-type-weight-semibold)",
+  "&:hover": {
+    bgcolor: "var(--fit-color-surface-soft, #111114)",
+    borderColor:
+      "var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))",
   },
 };
 
 const primaryButtonSx = {
   ...secondaryButtonSx,
-  bgcolor: '#5d67ff',
-  color: '#fff',
-  borderColor: 'rgba(111, 124, 255, 0.62)',
-  '&:hover': {
-    bgcolor: '#7079ff',
-    borderColor: 'rgba(123, 140, 255, 0.72)',
+  bgcolor: "#5d67ff",
+  color: "#fff",
+  borderColor: "rgba(111, 124, 255, 0.62)",
+  "&:hover": {
+    bgcolor: "#7079ff",
+    borderColor: "rgba(123, 140, 255, 0.72)",
   },
 };
 
-const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({ open, onClose, onApply }) => {
-    // ————— Menu status —————
-    const [metricType, setMetricType] = useState<MetricType>('BetaAnalysis');
-    const [startDate, setStartDate] = useState<string>(isoDateOnly(defaultStart));
-    const [endDate, setEndDate] = useState<string>(isoDateOnly(defaultStart));
-    const [marketTicker, setMarketTicker] = useState<string>('AMZN');
-    const [riskFreeRate, setRiskFreeRate] = useState<number>(0.01);
-    const [confidenceLevel, setConfidenceLevel] = useState<number>(0.05);
-    const [stockColour, setStockColour] = useState<string>('#fc03d7');
+const defaultSettings = (): GraphSettings => ({
+  metricType: "CumulativeReturnComparison",
+  metricParams: {
+    startDate: isoDateOnly(defaultStart),
+    endDate: isoDateOnly(defaultEnd),
+    marketTicker: "SPY",
+    riskFreeRate: 0.01,
+    confidenceLevel: 0.05,
+  },
+  stockColour: "#65a0fd",
+});
 
-    // After user clicks, collect parameters and callback
-    const handleApply = () => {
-      
-      const params: GraphSettings['metricParams'] = { startDate, endDate };
-      
-      if (metricType === 'BetaAnalysis' || metricType === 'MarketCorrelationAnalysis') {
-        params.marketTicker = marketTicker;
-      }
-      if (metricType === 'AlphaComparison' || metricType === 'SharpeRatioMatrix' || metricType === 'SortinoRatioVisualization') {
-        params.riskFreeRate = riskFreeRate;
-      }
-      if (metricType === 'ValueAtRiskAnalysis') {
-        params.confidenceLevel = confidenceLevel;
-      }
+const metricOptions = Object.values(METRIC_REGISTRY);
 
-      const settings: GraphSettings = {
-        metricType,
-        metricParams: params,
-        stockColour
-      };
+const GraphSettingsModal: React.FC<GraphSettingsModalProps> = ({
+  open,
+  onClose,
+  onApply,
+  initialSettings,
+}) => {
+  const fallback = useMemo(defaultSettings, []);
+  const [metricType, setMetricType] = useState<MetricType>(fallback.metricType);
+  const [startDate, setStartDate] = useState<string>(
+    fallback.metricParams.startDate,
+  );
+  const [endDate, setEndDate] = useState<string>(fallback.metricParams.endDate);
+  const [marketTicker, setMarketTicker] = useState<string>("SPY");
+  const [riskFreeRate, setRiskFreeRate] = useState<number>(0.01);
+  const [confidenceLevel, setConfidenceLevel] = useState<number>(0.05);
+  const [stockColour, setStockColour] = useState<string>("#65a0fd");
 
-    
-      // Pass all Settings to the parent component
-      onApply(settings);
-      onClose();
+  useEffect(() => {
+    if (!open) return;
+    const source = initialSettings ?? fallback;
+    setMetricType(source.metricType);
+    setStartDate(source.metricParams.startDate);
+    setEndDate(source.metricParams.endDate);
+    setMarketTicker(source.metricParams.marketTicker ?? "SPY");
+    setRiskFreeRate(source.metricParams.riskFreeRate ?? 0.01);
+    setConfidenceLevel(source.metricParams.confidenceLevel ?? 0.05);
+    setStockColour(source.stockColour);
+  }, [fallback, initialSettings, open]);
+
+  const metric = METRIC_REGISTRY[metricType];
+  const usesBenchmark = Boolean(metric.requiresBenchmark);
+  const usesRiskFreeRate = Boolean(metric.usesRiskFreeRate);
+  const usesConfidenceLevel = Boolean(metric.usesConfidenceLevel);
+
+  const handleApply = () => {
+    const metricParams: GraphSettings["metricParams"] = {
+      startDate,
+      endDate,
     };
 
-    const handleMetricTypeChange = (event: any) => {
-      const newMetricType = event.target.value as MetricType;
-      setMetricType(newMetricType);
-    };
-  
+    if (usesBenchmark) {
+      metricParams.marketTicker = marketTicker.trim().toUpperCase() || "SPY";
+    }
+    if (usesRiskFreeRate) {
+      metricParams.riskFreeRate = riskFreeRate;
+    }
+    if (usesConfidenceLevel) {
+      metricParams.confidenceLevel = confidenceLevel;
+    }
 
-    return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
-          <DialogTitle sx={{ fontSize: 'var(--fit-type-size-panel-title)', fontWeight: 'var(--fit-type-weight-semibold)', lineHeight: 'var(--fit-type-leading-heading)' }}>Metrics Settings</DialogTitle>
-          <DialogContent dividers sx={{ borderColor: 'var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))', color: 'var(--fit-color-text-body, #b9c1d0)' }}>
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="metric-type-label" sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&.Mui-focused': { color: 'var(--fit-color-accent-strong, #65a0fd)' } }}>Metric Type</InputLabel>
-              <Select
-                labelId="metric-type-label"
-                value={metricType}
-                label="Metric Type"
-                onChange={handleMetricTypeChange}
-                MenuProps={selectMenuProps}
-                sx={{
-                  bgcolor: 'var(--fit-color-field, #18181b)',
-                  color: '#fff',
-                  borderRadius: '0.625rem',
-                  '& .MuiSelect-icon': { color: 'var(--fit-color-text-muted, #8f98aa)' },
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-border-control, #202230)' },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))' },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))' },
-                }}
-              >
-                <MenuItem value="BetaAnalysis">Beta Analysis</MenuItem>
-                <MenuItem value="AlphaComparison">Alpha Comparison</MenuItem>
-                <MenuItem value="MaxDrawdownAnalysis">Max Drawdown</MenuItem>
-                <MenuItem value="CumulativeReturnComparison">Cumulative Return</MenuItem>
-                <MenuItem value="SortinoRatioVisualization">Sortino Ratio</MenuItem>
-                <MenuItem value="MarketCorrelationAnalysis">Market Correlation</MenuItem>
-                <MenuItem value="SharpeRatioMatrix">Sharpe Ratio</MenuItem>
-                <MenuItem value="VolatilityAnalysis">Volatility</MenuItem>
-                <MenuItem value="ValueAtRiskAnalysis">Value at Risk</MenuItem>
-                <MenuItem value="EfficientFrontierVisualization">Efficient Frontier</MenuItem>
-              </Select>
-            </FormControl>
-    
-            {/* Common date range inputs */}
-            <Box display="flex" gap={2}>
-              <TextField
-                label="Start Date"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-              />
-              <TextField
-                label="End Date"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-              />
-            </Box>
+    onApply({
+      metricType,
+      metricParams,
+      stockColour,
+    });
+    onClose();
+  };
 
-            <TextField
-                label="Series Color"
-                type="color"
-                value={stockColour}
-                onChange={e=>setStockColour(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-            />
-    
-            {/* Conditional inputs based on metricType */}
-            {['BetaAnalysis', 'MarketCorrelationAnalysis'].includes(metricType) && (
-              <TextField
-                label="Market Ticker"
-                placeholder="AMZN"
-                value={marketTicker}
-                onChange={(e) => setMarketTicker(e.target.value)}
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-              />
-            )}
-    
-            {['AlphaComparison', 'SharpeRatioMatrix', 'SortinoRatioVisualization'].includes(metricType) && (
-              <TextField
-                label="Risk-Free Rate"
-                type="number"
-                inputProps={{ step: 0.001, min: 0 }}
-                value={riskFreeRate}
-                onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-              />
-            )}
-    
-            {metricType === 'ValueAtRiskAnalysis' && (
-              <TextField
-                label="Confidence Level"
-                type="number"
-                inputProps={{ step: 0.01, min: 0, max: 1 }}
-                value={confidenceLevel}
-                onChange={(e) => setConfidenceLevel(parseFloat(e.target.value) || 0)}
-                helperText="Enter a value between 0 and 1"
-                fullWidth
-                margin="normal"
-                sx={fieldSx}
-              />
-            )}
-          </DialogContent>
-          <DialogActions sx={{ borderTop: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))', p: 2 }}>
-            <Button onClick={onClose} sx={secondaryButtonSx}>Cancel</Button>
-            <Button onClick={handleApply} variant="contained" sx={primaryButtonSx}>
-              Apply
-            </Button>
-          </DialogActions>
-        </Dialog>
-      );
-    };
-    
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ sx: dialogPaperSx }}
+    >
+      <DialogTitle
+        sx={{
+          fontSize: "var(--fit-type-size-panel-title)",
+          fontWeight: "var(--fit-type-weight-semibold)",
+          lineHeight: "var(--fit-type-leading-heading)",
+        }}
+      >
+        Metric settings
+      </DialogTitle>
+      <DialogContent
+        dividers
+        sx={{
+          borderColor:
+            "var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+          color: "var(--fit-color-text-body, #b9c1d0)",
+        }}
+      >
+        <FormControl fullWidth margin="normal">
+          <InputLabel
+            id="metric-type-label"
+            sx={{
+              color: "var(--fit-color-text-muted, #8f98aa)",
+              "&.Mui-focused": {
+                color: "var(--fit-color-accent-strong, #65a0fd)",
+              },
+            }}
+          >
+            Metric type
+          </InputLabel>
+          <Select
+            labelId="metric-type-label"
+            value={metricType}
+            label="Metric type"
+            onChange={(event) => setMetricType(event.target.value as MetricType)}
+            MenuProps={selectMenuProps}
+            sx={{
+              bgcolor: "var(--fit-color-field, #18181b)",
+              color: "#fff",
+              borderRadius: "0.625rem",
+              "& .MuiSelect-icon": {
+                color: "var(--fit-color-text-muted, #8f98aa)",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "var(--fit-color-border-control, #202230)",
+              },
+            }}
+          >
+            {metricOptions.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Box display="flex" gap={2}>
+          <TextField
+            label="Start date"
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            margin="normal"
+            sx={fieldSx}
+          />
+          <TextField
+            label="End date"
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            margin="normal"
+            sx={fieldSx}
+          />
+        </Box>
+
+        <TextField
+          label="Series color"
+          type="color"
+          value={stockColour}
+          onChange={(event) => setStockColour(event.target.value)}
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+          margin="normal"
+          sx={fieldSx}
+        />
+
+        {usesBenchmark && (
+          <TextField
+            label="Benchmark ticker"
+            placeholder="SPY"
+            value={marketTicker}
+            onChange={(event) => setMarketTicker(event.target.value)}
+            fullWidth
+            margin="normal"
+            sx={fieldSx}
+          />
+        )}
+
+        {usesRiskFreeRate && (
+          <TextField
+            label="Risk-free rate"
+            type="number"
+            inputProps={{ step: 0.001, min: -1, max: 1 }}
+            value={riskFreeRate}
+            onChange={(event) => setRiskFreeRate(Number(event.target.value))}
+            helperText="Annual decimal rate, for example 0.01 = 1%."
+            fullWidth
+            margin="normal"
+            sx={fieldSx}
+          />
+        )}
+
+        {usesConfidenceLevel && (
+          <TextField
+            label="Tail probability"
+            type="number"
+            inputProps={{ step: 0.01, min: 0.001, max: 0.999 }}
+            value={confidenceLevel}
+            onChange={(event) =>
+              setConfidenceLevel(Number(event.target.value))
+            }
+            helperText="Use 0.05 for 95% VaR, 0.01 for 99% VaR."
+            fullWidth
+            margin="normal"
+            sx={fieldSx}
+          />
+        )}
+      </DialogContent>
+      <DialogActions
+        sx={{
+          borderTop:
+            "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+          p: 2,
+        }}
+      >
+        <Button onClick={onClose} sx={secondaryButtonSx}>
+          Cancel
+        </Button>
+        <Button onClick={handleApply} variant="contained" sx={primaryButtonSx}>
+          Apply
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 export default GraphSettingsModal;

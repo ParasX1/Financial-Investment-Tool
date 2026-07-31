@@ -1,155 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, IconButton, MenuItem, Select, Tooltip } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
-import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import OHLCChart from './ohlc';
-import BarGraph from './bargraph';
-import LineGraph from './linegraph';
-import GraphSettingsModal, {GraphSettings, MetricType} from './graphSettingsModal';
-import { fetchMetrics, MetricsResponse } from './fetchMetrics';
-import { CardSettings } from '@/pages/dashboardView';
-import ScatterPlotGraph from './scatterplot';
-import HeatMap from './heatmap';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Button, IconButton, MenuItem, Select, Tooltip } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
+import OpenInFullIcon from "@mui/icons-material/OpenInFull";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import TuneIcon from "@mui/icons-material/Tune";
+import BarGraph from "./bargraph";
+import { fetchMetrics, type MetricsResponse } from "./fetchMetrics";
+import GraphSettingsModal, {
+  type GraphSettings,
+  type MetricType,
+} from "./graphSettingsModal";
+import HeatMap from "./heatmap";
+import LineGraph from "./linegraph";
+import ScatterPlotGraph from "./scatterplot";
+import { METRIC_REGISTRY, formatMetricValue } from "@/features/portfolio/data/metricRegistry";
+import type { CardSettings } from "@/features/portfolio/boardTypes";
+import { validateAnalysisRange } from "@/features/portfolio/lib/portfolioAnalytics";
 
-type OHLCData = {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-  };
-  
-const appleOHLCData = [
-    { date: '2025-03-01', open: 218.2, high: 221.5, low: 215.6, close: 220.3 },
-    { date: '2025-03-04', open: 220.3, high: 224.1, low: 219.5, close: 223.2 },
-    { date: '2025-03-05', open: 223.2, high: 225.0, low: 221.4, close: 222.1 },
-    { date: '2025-03-06', open: 222.1, high: 223.7, low: 218.0, close: 219.3 },
-    { date: '2025-03-07', open: 219.3, high: 221.9, low: 217.1, close: 220.7 },
-    { date: '2025-03-08', open: 220.7, high: 225.4, low: 219.6, close: 224.8 },
-    { date: '2025-03-11', open: 224.8, high: 226.9, low: 223.1, close: 225.3 },
-    { date: '2025-03-12', open: 225.3, high: 229.6, low: 224.0, close: 228.2 },
-    { date: '2025-03-13', open: 228.2, high: 230.4, low: 225.5, close: 226.7 },
-    { date: '2025-03-14', open: 226.7, high: 227.5, low: 223.3, close: 224.0 },
-    { date: '2025-03-15', open: 224.0, high: 225.7, low: 221.2, close: 222.9 },
-    { date: '2025-03-18', open: 222.9, high: 226.1, low: 222.0, close: 225.5 },
-    { date: '2025-03-19', open: 225.5, high: 227.0, low: 224.1, close: 225.2 },
-    { date: '2025-03-20', open: 225.2, high: 226.6, low: 222.8, close: 223.4 },
-    { date: '2025-03-21', open: 223.4, high: 225.9, low: 221.7, close: 222.3 },
-    { date: '2025-03-22', open: 222.3, high: 223.5, low: 218.9, close: 219.8 },
-    { date: '2025-03-25', open: 219.8, high: 221.7, low: 217.6, close: 218.3 },
-    { date: '2025-03-26', open: 218.3, high: 220.1, low: 216.0, close: 219.0 },
-    { date: '2025-03-27', open: 219.0, high: 221.0, low: 217.4, close: 220.6 },
-    { date: '2025-03-28', open: 220.6, high: 223.2, low: 219.5, close: 221.8 },
-  ];
+const metricOptions: { value: MetricType; label: string }[] = Object.values(
+  METRIC_REGISTRY,
+).map((metric) => ({
+  value: metric.id,
+  label: metric.label,
+}));
 
-  const googleOHLCData = [
-    { date: '2025-03-01', open: 1325, high: 1340, low: 1310, close: 1332 },
-    { date: '2025-03-04', open: 1332, high: 1350, low: 1320, close: 1341 },
-    { date: '2025-03-05', open: 1341, high: 1358, low: 1330, close: 1353 },
-    { date: '2025-03-06', open: 1353, high: 1362, low: 1345, close: 1357 },
-    { date: '2025-03-07', open: 1357, high: 1375, low: 1340, close: 1369 },
-    { date: '2025-03-08', open: 1369, high: 1390, low: 1360, close: 1384 },
-    { date: '2025-03-11', open: 1384, high: 1395, low: 1372, close: 1379 },
-    { date: '2025-03-12', open: 1379, high: 1388, low: 1365, close: 1371 },
-    { date: '2025-03-13', open: 1371, high: 1378, low: 1354, close: 1360 },
-    { date: '2025-03-14', open: 1360, high: 1372, low: 1348, close: 1351 },
-    { date: '2025-03-15', open: 1351, high: 1369, low: 1335, close: 1357 },
-    { date: '2025-03-18', open: 1357, high: 1370, low: 1342, close: 1353 },
-    { date: '2025-03-19', open: 1353, high: 1365, low: 1339, close: 1347 },
-    { date: '2025-03-20', open: 1347, high: 1356, low: 1325, close: 1333 },
-    { date: '2025-03-21', open: 1333, high: 1344, low: 1320, close: 1330 },
-    { date: '2025-03-22', open: 1330, high: 1342, low: 1314, close: 1325 },
-    { date: '2025-03-25', open: 1325, high: 1337, low: 1308, close: 1319 },
-    { date: '2025-03-26', open: 1319, high: 1330, low: 1305, close: 1322 },
-    { date: '2025-03-27', open: 1322, high: 1335, low: 1310, close: 1331 },
-    { date: '2025-03-28', open: 1331, high: 1346, low: 1321, close: 1340 },
-  ];
-
-  const amazonOHLCData = [
-    { date: '2025-03-01', open: 3190, high: 3220, low: 3170, close: 3208 },
-    { date: '2025-03-04', open: 3208, high: 3250, low: 3192, close: 3239 },
-    { date: '2025-03-05', open: 3239, high: 3270, low: 3210, close: 3244 },
-    { date: '2025-03-06', open: 3244, high: 3266, low: 3220, close: 3233 },
-    { date: '2025-03-07', open: 3233, high: 3260, low: 3208, close: 3250 },
-    { date: '2025-03-08', open: 3250, high: 3285, low: 3230, close: 3274 },
-    { date: '2025-03-11', open: 3274, high: 3300, low: 3251, close: 3262 },
-    { date: '2025-03-12', open: 3262, high: 3280, low: 3237, close: 3243 },
-    { date: '2025-03-13', open: 3243, high: 3258, low: 3214, close: 3220 },
-    { date: '2025-03-14', open: 3220, high: 3244, low: 3195, close: 3211 },
-    { date: '2025-03-15', open: 3211, high: 3230, low: 3187, close: 3196 },
-    { date: '2025-03-18', open: 3196, high: 3215, low: 3172, close: 3205 },
-    { date: '2025-03-19', open: 3205, high: 3221, low: 3183, close: 3210 },
-    { date: '2025-03-20', open: 3210, high: 3235, low: 3195, close: 3223 },
-    { date: '2025-03-21', open: 3223, high: 3242, low: 3204, close: 3214 },
-    { date: '2025-03-22', open: 3214, high: 3228, low: 3189, close: 3198 },
-    { date: '2025-03-25', open: 3198, high: 3217, low: 3170, close: 3182 },
-    { date: '2025-03-26', open: 3182, high: 3204, low: 3160, close: 3173 },
-    { date: '2025-03-27', open: 3173, high: 3190, low: 3151, close: 3184 },
-    { date: '2025-03-28', open: 3184, high: 3209, low: 3167, close: 3195 },
-  ];
-
-  const microsoftOHLCData = [
-    { date: '2025-03-01', open: 288, high: 292, low: 284, close: 290 },
-    { date: '2025-03-04', open: 290, high: 295, low: 288, close: 293 },
-    { date: '2025-03-05', open: 293, high: 296, low: 290, close: 292 },
-    { date: '2025-03-06', open: 292, high: 294, low: 288, close: 289 },
-    { date: '2025-03-07', open: 289, high: 291, low: 285, close: 286 },
-    { date: '2025-03-08', open: 286, high: 289, low: 282, close: 285 },
-    { date: '2025-03-11', open: 285, high: 287, low: 281, close: 283 },
-    { date: '2025-03-12', open: 283, high: 285, low: 280, close: 281 },
-    { date: '2025-03-13', open: 281, high: 284, low: 278, close: 280 },
-    { date: '2025-03-14', open: 280, high: 283, low: 276, close: 278 },
-    { date: '2025-03-15', open: 278, high: 280, low: 274, close: 277 },
-    { date: '2025-03-18', open: 277, high: 281, low: 273, close: 276 },
-    { date: '2025-03-19', open: 276, high: 280, low: 272, close: 274 },
-    { date: '2025-03-20', open: 274, high: 278, low: 270, close: 272 },
-    { date: '2025-03-21', open: 272, high: 275, low: 268, close: 270 },
-    { date: '2025-03-22', open: 270, high: 273, low: 266, close: 269 },
-    { date: '2025-03-25', open: 269, high: 272, low: 265, close: 268 },
-    { date: '2025-03-26', open: 268, high: 271, low: 264, close: 267 },
-    { date: '2025-03-27', open: 267, high: 270, low: 263, close: 266 },
-    { date: '2025-03-28', open: 266, high: 269, low: 262, close: 265 },
-  ];
-  
-const stockDataMap: { [key: string]: OHLCData[] } = {
-    AAPL: appleOHLCData,
-    GOOGL: googleOHLCData,
-    AMZN: amazonOHLCData,
-    MSFT: microsoftOHLCData,
-    META: googleOHLCData,
-    TSLA: appleOHLCData,
-    NVDA: microsoftOHLCData,
-    NFLX: amazonOHLCData,
-    JPM: microsoftOHLCData,
-    V: appleOHLCData,
-    BAC: microsoftOHLCData,
-    WMT: googleOHLCData,
-    KO: appleOHLCData,
-    DIS: amazonOHLCData,
-    PFE: microsoftOHLCData,
-    INTC: googleOHLCData,
-    ORCL: appleOHLCData,
-    CRM: amazonOHLCData,
-    ADBE: googleOHLCData,
-    CSCO: microsoftOHLCData,
-  };
-
-const metricOptions: { value: MetricType; label: string }[] = [
-  { value: 'BetaAnalysis', label: 'Beta Analysis' },
-  { value: 'AlphaComparison', label: 'Alpha Comparison' },
-  { value: 'MaxDrawdownAnalysis', label: 'Max Drawdown' },
-  { value: 'CumulativeReturnComparison', label: 'Cumulative Return' },
-  { value: 'SortinoRatioVisualization', label: 'Sortino Ratio' },
-  { value: 'MarketCorrelationAnalysis', label: 'Market Correlation' },
-  { value: 'SharpeRatioMatrix', label: 'Sharpe Ratio' },
-  { value: 'VolatilityAnalysis', label: 'Volatility' },
-  { value: 'ValueAtRiskAnalysis', label: 'Value at Risk' },
-  { value: 'EfficientFrontierVisualization', label: 'Efficient Frontier' },
-];
-
-interface StockChartCardProps {
+type StockChartCardProps = {
   index: number;
   selectedStocks: string[];
   isActive: boolean;
@@ -157,12 +33,94 @@ interface StockChartCardProps {
   onClear: (index: number) => void;
   onSwap: (index: number) => void;
   onActivate: (index: number) => void;
-  onUpdateSettings: (index: number, settings: CardSettings) => void;
+  onUpdateSettings: (index: number, settings: Partial<CardSettings>) => void;
   height?: number | string;
   showSwap?: boolean;
-  variant?: 'default' | 'main';
-  chartLayout?: 'default' | 'compact';
-}
+  variant?: "default" | "main";
+  chartLayout?: "default" | "compact";
+};
+
+type LoadState = "idle" | "loading" | "success" | "error";
+
+const localDate = (date: Date) => {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+};
+
+const getCardValidationMessage = (
+  metricType: MetricType,
+  selectedStocks: string[],
+  dateRange: CardSettings["dateRange"],
+) => {
+  const metric = METRIC_REGISTRY[metricType];
+  const today = localDate(new Date());
+  const rangeError = validateAnalysisRange(dateRange.start, dateRange.end, today);
+  if (rangeError) return rangeError;
+  if (!selectedStocks.length) return "Select at least one stock to populate the board.";
+  if (selectedStocks.length < metric.minimumSymbols) {
+    return `${metric.label} needs at least ${metric.minimumSymbols} stocks.`;
+  }
+  return null;
+};
+
+const buildInitialSettings = (cardSettings: CardSettings): GraphSettings => ({
+  metricType: cardSettings.metricType,
+  metricParams: {
+    startDate: cardSettings.dateRange.start,
+    endDate: cardSettings.dateRange.end,
+    marketTicker: cardSettings.marketTicker ?? "SPY",
+    riskFreeRate: cardSettings.riskRate ?? 0.01,
+    confidenceLevel: cardSettings.confidenceLevel ?? 0.05,
+  },
+  stockColour: cardSettings.barColor,
+});
+
+const StateMessage = ({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}) => (
+  <Box
+    sx={{
+      height: "100%",
+      display: "grid",
+      placeItems: "center",
+      textAlign: "center",
+      px: 3,
+      py: 4,
+    }}
+  >
+    <Box sx={{ maxWidth: 420 }}>
+      <Box
+        sx={{
+          display: "inline-flex",
+          px: 1.5,
+          py: 0.5,
+          borderRadius: 999,
+          border: "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+          color: "var(--fit-color-text-label, #8f98aa)",
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          mb: 1.5,
+        }}
+      >
+        Portfolio
+      </Box>
+      <Box sx={{ color: "#eef2fb", fontWeight: 600, fontSize: 18, mb: 1 }}>
+        {title}
+      </Box>
+      <Box sx={{ color: "var(--fit-color-text-muted, #a7b0c2)", fontSize: 14, lineHeight: 1.6 }}>
+        {body}
+      </Box>
+      {action ? <Box sx={{ mt: 2 }}>{action}</Box> : null}
+    </Box>
+  </Box>
+);
 
 const StockChartCard: React.FC<StockChartCardProps> = ({
   index,
@@ -175,37 +133,120 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
   onUpdateSettings,
   height = 400,
   showSwap = true,
-  variant = 'default',
-  chartLayout = 'default',
+  variant = "default",
+  chartLayout = "default",
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 500, height: 400 });
   const [showSettings, setShowSettings] = useState(false);
-
-  const [chartData, setChartData] = useState<MetricsResponse[]>([]);
-
+  const [chartData, setChartData] = useState<MetricsResponse | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const buttonBackgroundColor = '#777'; // Grey background color
-  const buttonHoverColor = '#555'; // Darker grey on hover
-
   const { barColor, dateRange, metricType, graphMade } = cardSettings;
-  const isCompactChart = chartLayout === 'compact';
+  const metric = METRIC_REGISTRY[metricType];
+  const validationMessage = useMemo(
+    () => getCardValidationMessage(metricType, selectedStocks, dateRange),
+    [dateRange, metricType, selectedStocks],
+  );
+  const isCompactChart = chartLayout === "compact";
+  const isMainVariant = variant === "main";
+  const availableChartWidth = Math.max(dimensions.width - 32, 120);
+  const chartWidth = Math.floor(availableChartWidth);
+  const chartVerticalReserve = isMainVariant
+    ? Math.min(isCompactChart ? 84 : 112, Math.max(isCompactChart ? 64 : 86, dimensions.height * 0.24))
+    : 90;
+  const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
 
-  const handleFullscreenToggle = () => setIsFullscreen((f) => !f);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height: nextHeight } = entry.contentRect;
+      setDimensions({
+        width: Math.max(320, Math.floor(width)),
+        height: Math.max(240, Math.floor(nextHeight)),
+      });
+    });
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isActive || !graphMade || validationMessage) {
+      setChartData(null);
+      setLoadState("idle");
+      setLoadError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const run = async () => {
+      setLoadState("loading");
+      setLoadError(null);
+
+      try {
+        const nextData = await fetchMetrics({
+          tickers: selectedStocks,
+          settings: {
+            metricType,
+            metricParams: {
+              startDate: dateRange.start,
+              endDate: dateRange.end,
+              marketTicker: cardSettings.marketTicker ?? "SPY",
+              riskFreeRate: cardSettings.riskRate ?? 0.01,
+              confidenceLevel: cardSettings.confidenceLevel ?? 0.05,
+            },
+            stockColour: barColor,
+          },
+          signal: abortController.signal,
+        });
+        if (cancelled) return;
+        setChartData(nextData);
+        setLoadState("success");
+      } catch (error) {
+        if (abortController.signal.aborted || cancelled) return;
+        setChartData(null);
+        setLoadState("error");
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Metric data is temporarily unavailable.",
+        );
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
+  }, [
+    barColor,
+    cardSettings.confidenceLevel,
+    cardSettings.marketTicker,
+    cardSettings.riskRate,
+    dateRange.end,
+    dateRange.start,
+    graphMade,
+    isActive,
+    metricType,
+    selectedStocks,
+    validationMessage,
+  ]);
+
+  const handleFullscreenToggle = () => setIsFullscreen((value) => !value);
 
   const handleMetricSelect = (nextMetricType: MetricType) => {
     onUpdateSettings(index, {
-      ...cardSettings,
       metricType: nextMetricType,
       graphMade: true,
     });
-
     onActivate(index);
   };
 
-  const handleApplySettings = async (settings: GraphSettings) => {
-    
+  const handleApplySettings = (settings: GraphSettings) => {
     onUpdateSettings(index, {
       barColor: settings.stockColour,
       dateRange: {
@@ -218,276 +259,272 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
       confidenceLevel: settings.metricParams.confidenceLevel,
       graphMade: true,
     });
-
     onActivate(index);
   };
 
-  useEffect(() => {
+  const chart = useMemo(() => {
+    if (!chartData) return null;
 
-    if (!isActive || selectedStocks.length === 0 || !graphMade) {
-      setChartData([]);
-      return;
-    }
+    switch (metric.chartKind) {
+      case "bar": {
+        const values = selectedStocks
+          .map((ticker) => ({
+            label: ticker,
+            value: chartData.series.singleValue?.[ticker],
+          }))
+          .filter((entry) => Number.isFinite(entry.value));
 
-    console.log("rendering")
-    const fetchAllData = async () => {
+        if (!values.length) return null;
 
-      const allData = await fetchMetrics({
-          tickers: selectedStocks,
-          settings: {
-            metricType: metricType as any,
-            metricParams: {
-              startDate: dateRange.start,
-              endDate: dateRange.end,
-              marketTicker: cardSettings.marketTicker || 'SPY',
-              riskFreeRate: cardSettings.riskRate || 0.01,
-              confidenceLevel: cardSettings.confidenceLevel || 0.05,
-            },
-            stockColour: barColor
-          },
-        });
-
-      setChartData([allData]);
-    };
-
-    fetchAllData();
-  }, [isActive, selectedStocks, dateRange.start, dateRange.end, barColor, metricType, graphMade, cardSettings]);
-
-  // resize observer
-  useEffect(() => {
-    const ob = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setDimensions({ width, height });
-    });
-    if (containerRef.current) ob.observe(containerRef.current);
-    return () => ob.disconnect();
-  }, []);
-
-  // choose chart component 
-  const renderChart = () => {
-    if (chartData.length === 0 || selectedStocks.length === 0){
-      return null;
-    }
-    
-    switch (metricType.toLowerCase()) {
-    case 'betaanalysis':
-    case 'alphacomparison':
-    case 'sortinoratiovisualization':
-    case 'sharperatiomatrix':
-    case 'volatilityanalysis':
-    case 'valueatriskanalysis':
-      const singleValue = chartData[0].series.singleValue || {};
-      const validTickers = Object.entries(singleValue).filter(
-        ([, data]) => (typeof data === 'number' && !isNaN(data)) || (data && typeof (data as any).value === 'number')
-      ).sort(
-        ([tickerA], [tickerB]) => {
-          const indexA = selectedStocks.indexOf(tickerA);
-          const indexB = selectedStocks.indexOf(tickerB);
-          return (indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA) -
-            (indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB);
-        }
-      );
-
-      if (validTickers.length === 0) {
-        return null
+        return (
+          <BarGraph
+            data={values as Array<{ label: string; value: number }>}
+            width={chartWidth}
+            height={chartHeight}
+            barColor={barColor}
+            compact={isCompactChart}
+            valueFormat={(value) => formatMetricValue(metricType, value)}
+            ariaLabel={`${metric.label} comparison`}
+          />
+        );
       }
+      case "line": {
+        const series = selectedStocks
+          .map((ticker) => ({
+            ticker,
+            values: (chartData.series.timeSeries?.[ticker] ?? []).map((point) => ({
+              date: new Date(`${point.date}T00:00:00`),
+              value: point.value,
+            })),
+          }))
+          .filter((entry) => entry.values.length > 0);
 
+        if (!series.length) return null;
+
+        return (
+          <LineGraph
+            data={series}
+            width={chartWidth}
+            height={chartHeight}
+            mainColor={barColor}
+            compact={isCompactChart}
+            valueFormat={(value) => formatMetricValue(metricType, value)}
+            ariaLabel={`${metric.label} over time`}
+          />
+        );
+      }
+      case "heatmap": {
+        const matrix = chartData.series.correlationMatrix ?? {};
+        const benchmark = cardSettings.marketTicker ?? "SPY";
+        const labels = Array.from(
+          new Set([...selectedStocks, ...Object.keys(matrix), benchmark]),
+        ).filter(Boolean);
+
+        if (!labels.length) return null;
+
+        return (
+          <HeatMap
+            data={labels.map((rowLabel) =>
+              labels.map((columnLabel) => matrix[rowLabel]?.[columnLabel] ?? Number.NaN),
+            )}
+            labels={labels}
+            width={chartWidth}
+            height={chartHeight}
+            barColor={barColor}
+            ariaLabel={`${metric.label} matrix`}
+          />
+        );
+      }
+      case "scatter": {
+        const portfolio = chartData.series.portfolio;
+        if (!portfolio) return null;
+        const points = portfolio.returns.map((pointReturn, pointIndex) => ({
+          risk: portfolio.risks[pointIndex] ?? Number.NaN,
+          return: pointReturn,
+          sharpe: portfolio.sharpe_ratios[pointIndex],
+          weights: portfolio.weights[pointIndex] ?? [],
+        }));
+        if (!points.length) return null;
+
+        return (
+          <ScatterPlotGraph
+            data={points}
+            width={chartWidth}
+            height={chartHeight}
+            mainColor={barColor}
+          />
+        );
+      }
+      default:
+        return null;
+    }
+  }, [
+    barColor,
+    cardSettings.marketTicker,
+    chartData,
+    chartHeight,
+    chartWidth,
+    isCompactChart,
+    metric,
+    metricType,
+    selectedStocks,
+  ]);
+
+  const metadata = [
+    metric.requiresBenchmark ? `Benchmark ${cardSettings.marketTicker ?? "SPY"}` : null,
+    metric.usesRiskFreeRate
+      ? `RF ${(100 * (cardSettings.riskRate ?? 0.01)).toFixed(1)}%`
+      : null,
+    metric.usesConfidenceLevel
+      ? `${Math.round((1 - (cardSettings.confidenceLevel ?? 0.05)) * 100)}% VaR`
+      : null,
+  ].filter(Boolean);
+
+  const body = () => {
+    if (!graphMade) {
       return (
-        <BarGraph
-          data={validTickers.map(([ticker, data]) => ({
-              label: ticker,
-              value: typeof data === 'number' ? data : (data as any).value
-            }))
+        <StateMessage
+          title="Choose a metric for this slot"
+          body="Each chart answers a different question about the same basket. Start with the preset or open settings for a custom metric."
+          action={
+            <Button
+              variant="contained"
+              onClick={() => setShowSettings(true)}
+              sx={{ bgcolor: "#5d67ff", textTransform: "none" }}
+            >
+              Configure chart
+            </Button>
           }
-          width={chartWidth}
-          height={chartHeight}
-          barColor={barColor}
-          compact={isCompactChart}
         />
       );
-    
-    case 'marketcorrelationanalysis':
-      const correlationData: number[][] = [];
-      const tickers = chartData[0].tickers || [];
-      const marketTicker = cardSettings.marketTicker || 'SPY';
-      
-      const allTickers = [...tickers];
-      if (!allTickers.includes(marketTicker)) {
-        allTickers.push(marketTicker);
-      }
-      
-      const corr = chartData[0].series.correlationMatrix || []
-      if (Object.keys(corr).length === 0) {
-        return null;
-      }
+    }
 
-      allTickers.forEach(rowTicker => {
-        const row: number[] = [];
-        allTickers.forEach(colTicker => {
-          const corr = chartData[0].series.correlationMatrix?.[rowTicker]?.[colTicker];
-          row.push(corr !== undefined ? corr : 0);
-        });
-        correlationData.push(row);
-      })
+    if (validationMessage) {
       return (
-        <HeatMap
-          data={correlationData}
-          labels={allTickers}
-          width={chartWidth}
-          height={chartHeight}
-          barColor={barColor}
+        <StateMessage
+          title={metric.label}
+          body={validationMessage}
+          action={
+            metric.minimumSymbols > 1 ? (
+              <Button
+                variant="outlined"
+                onClick={() => setShowSettings(true)}
+                sx={{ color: "#dce4ff", textTransform: "none" }}
+              >
+                Review settings
+              </Button>
+            ) : undefined
+          }
         />
       );
+    }
 
-    case 'cumulativereturncomparison':
-    case 'maxdrawdownanalysis':
-      const timeseries = chartData[0].series.timeSeries || {};
-      if (Object.keys(timeseries).length === 0) {
-        return null;
-      }
-
+    if (loadState === "loading") {
       return (
-        <LineGraph
-          data={chartData.flatMap((data) =>
-            data.tickers.map(ticker => ({
-              ticker: ticker,
-              values: (data.series.timeSeries?.[ticker] || []).map(point => ({
-                date: new Date(point.date),
-                value: point.value
-              }))
-            }))
-          )}
-          width={chartWidth}
-          height={chartHeight}
-          mainColor={barColor}
-          compact={isCompactChart}
+        <StateMessage
+          title={`Loading ${metric.label}`}
+          body="Refreshing the chart with the latest board inputs."
         />
       );
-    
-    case 'efficientfrontiervisualization':
-      const portfolio = chartData[0].series.portfolio || { returns: [], risks: [], sharpe_ratios: [] };
-      if (!portfolio || portfolio.returns.length === 0 || portfolio.risks.length === 0 || portfolio.sharpe_ratios.length === 0) {
-        return null;
+    }
+
+    if (loadState === "error") {
+      return (
+        <StateMessage
+          title="Metric unavailable"
+          body={loadError ?? "Metric data is temporarily unavailable."}
+        />
+      );
+    }
+
+    if (!chart) {
+      const statusValues = Object.values(chartData?.series.singleValueStatuses ?? {}).map((entry) => entry.status);
+      if (metricType === "SortinoRatioVisualization" && statusValues.length) {
+        const noDownsideCount = statusValues.filter((status) => status === "infinite").length;
+        return (
+          <StateMessage
+            title={noDownsideCount === statusValues.length ? "No downside shortfall observed" : "Sortino needs downside observations"}
+            body={noDownsideCount === statusValues.length ? "The selected window did not produce returns below the risk-free target, so Sortino is undefined rather than zero." : "Sortino only becomes numeric when the series has enough downside shortfall to estimate downside deviation."}
+          />
+        );
       }
 
       return (
-      <ScatterPlotGraph
-        data={chartData.flatMap((data) => {
-          const portfolio = data.series.portfolio;
-          if (!portfolio) return [];
+        <StateMessage
+          title="No usable data"
+          body="The selected symbols do not have enough overlapping history for this metric."
+        />
+      );
+    }
 
-          return portfolio.returns.map((point, i) => ({
-            risk: portfolio.risks[i],
-            return: portfolio.returns[i],
-            sharpe: portfolio.sharpe_ratios[i],
-          }));
-        })}
-        width={chartWidth}
-        height={chartHeight}
-        mainColor={barColor}
-      />
-    );
+    return chart;
+  };
 
-    default:
-      console.log('[renderChart] Unsupported metricType:', metricType);
-      return null;
-    };
-  }
-
-  const isMainVariant = variant === 'main';
-  const availableChartWidth = Math.max(dimensions.width - 32, 120);
-  const chartWidth = Math.floor(availableChartWidth);
-  const chartVerticalReserve = isMainVariant
-    ? Math.min(isCompactChart ? 62 : 90, Math.max(isCompactChart ? 48 : 66, dimensions.height * 0.16))
-    : 90;
-  const chartHeight = Math.max(dimensions.height - chartVerticalReserve, 80);
-  const chart = renderChart();
-  const showGraph = isActive && selectedStocks.length > 0 && graphMade && chart !== null;
-
-  // render
   return (
     <Box
       ref={containerRef}
       sx={{
-        position: isFullscreen ? 'fixed' : 'relative',
-        top:      isFullscreen ? 0 : 'unset',
-        left:     isFullscreen ? 0 : 'unset',
-        width:    isFullscreen ? '100vw' : '100%',
-        height:   isFullscreen ? '100vh' : height,
-        bgcolor:  'var(--fit-color-surface-soft, #111114)',
-        color: '#fff',
-        fontFamily: 'var(--fit-font-family)',
-        border:   '1px solid var(--fit-color-border-panel, #27272a)',
+        position: isFullscreen ? "fixed" : "relative",
+        top: isFullscreen ? 0 : "unset",
+        left: isFullscreen ? 0 : "unset",
+        width: isFullscreen ? "100vw" : "100%",
+        height: isFullscreen ? "100vh" : height,
+        bgcolor: "var(--fit-color-surface-soft, #111114)",
+        color: "#fff",
+        fontFamily: "var(--fit-font-family)",
+        border: "1px solid var(--fit-color-border-panel, #27272a)",
         borderRadius: isMainVariant ? 2 : 0,
-        p:        isMainVariant ? 'clamp(10px, 0.85vw, 16px)' : '1rem',
-        overflow: 'hidden',
-        zIndex:   isFullscreen ? 1000 : 'unset',
-        boxShadow: isMainVariant ? 'inset 0 1px 0 rgba(255, 255, 255, 0.035)' : 'none',
+        p: isMainVariant ? "clamp(10px, 0.85vw, 16px)" : "1rem",
+        overflow: "hidden",
+        zIndex: isFullscreen ? 1000 : "unset",
+        boxShadow: isMainVariant
+          ? "inset 0 1px 0 rgba(255, 255, 255, 0.035)"
+          : "none",
       }}
     >
-      {isMainVariant && (
+      <Box
+        sx={{
+          position: "absolute",
+          top: "clamp(10px, 0.85vw, 16px)",
+          left: "clamp(10px, 0.85vw, 16px)",
+          right: "clamp(10px, 0.85vw, 16px)",
+          zIndex: 2,
+          display: "grid",
+          gap: 1.25,
+        }}
+      >
         <Box
           sx={{
-            position: 'absolute',
-            top: 'clamp(10px, 0.85vw, 16px)',
-            left: 'clamp(10px, 0.85vw, 16px)',
-            right: 'clamp(10px, 0.85vw, 16px)',
-            zIndex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1.5,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
             <Select
               size="small"
               value={metricType}
               renderValue={(value) =>
-                graphMade
-                  ? metricOptions.find(option => option.value === value)?.label
-                  : 'Select Metric'
+                metricOptions.find((option) => option.value === value)?.label ??
+                "Select metric"
               }
               sx={{
-                height: 'clamp(32px, 3.8vh, 38px)',
-                minWidth: 'clamp(144px, 9.2vw, 174px)',
-                color: '#fff',
-                bgcolor: 'var(--fit-color-field, #18181b)',
-                fontSize: 'var(--fit-type-size-body-sm)',
-                borderRadius: '0.625rem',
-                '.MuiSelect-icon': { color: 'var(--fit-color-text-muted, #8f98aa)' },
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--fit-color-border-control, #202230)',
+                height: "clamp(32px, 3.8vh, 38px)",
+                minWidth: "clamp(170px, 12vw, 220px)",
+                color: "#fff",
+                bgcolor: "var(--fit-color-field, #18181b)",
+                fontSize: 13,
+                borderRadius: "0.625rem",
+                ".MuiSelect-icon": {
+                  color: "var(--fit-color-text-muted, #8f98aa)",
                 },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--fit-color-brand-border-hover, rgba(123, 140, 255, 0.44))',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
-                },
-                '&:focus-visible': {
-                  outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
-                  outlineOffset: 2,
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    bgcolor: 'var(--fit-color-surface, #09090b)',
-                    color: '#fff',
-                    border: '1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))',
-                    borderRadius: '0.625rem',
-                    '& .MuiMenuItem-root.Mui-selected': {
-                      bgcolor: 'var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))',
-                    },
-                    '& .MuiMenuItem-root:hover': {
-                      bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
-                    },
-                  },
+                ".MuiOutlinedInput-notchedOutline": {
+                  borderColor: "var(--fit-color-border-control, #202230)",
                 },
               }}
             >
-              {metricOptions.map(option => (
+              {metricOptions.map((option) => (
                 <MenuItem
                   key={option.value}
                   value={option.value}
@@ -497,31 +534,35 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 </MenuItem>
               ))}
             </Select>
-            <Box sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', fontSize: 'var(--fit-type-size-caption)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+            <Box
+              sx={{
+                color: "var(--fit-color-text-muted, #8f98aa)",
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
               {selectedStocks.length} stocks
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={index === 0 ? 'Main view' : 'Switch to main view'} arrow>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Tooltip title={index === 0 ? "Main view" : "Switch to main view"} arrow>
               <span>
                 <IconButton
                   size="small"
-                  aria-label={index === 0 ? 'Main view' : 'Switch to main view'}
+                  aria-label={index === 0 ? "Main view" : "Switch to main view"}
                   onClick={() => onSwap(index)}
-                  disabled={index === 0}
+                  disabled={index === 0 || !showSwap}
                   sx={{
-                    color: 'var(--fit-color-text-muted, #8f98aa)',
-                    '&:hover': {
-                      color: 'var(--fit-color-accent-strong, #65a0fd)',
-                      bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))',
+                    color: "var(--fit-color-text-muted, #8f98aa)",
+                    "&:hover": {
+                      color: "var(--fit-color-accent-strong, #65a0fd)",
+                      bgcolor:
+                        "var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))",
                     },
-                    '&:focus-visible': {
-                      outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))',
-                      outlineOffset: 2,
-                    },
-                    '&.Mui-disabled': {
-                      color: 'rgba(143, 152, 170, 0.32)',
+                    "&.Mui-disabled": {
+                      color: "rgba(143, 152, 170, 0.32)",
                     },
                   }}
                 >
@@ -529,84 +570,109 @@ const StockChartCard: React.FC<StockChartCardProps> = ({
                 </IconButton>
               </span>
             </Tooltip>
-            <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} arrow>
-              <IconButton aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} size="small" onClick={handleFullscreenToggle} sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&:hover': { color: 'var(--fit-color-accent-strong, #65a0fd)', bgcolor: 'var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))' }, '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 } }}>
-                {isFullscreen ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
+            <Tooltip title="Chart settings" arrow>
+              <IconButton
+                aria-label="Open chart settings"
+                size="small"
+                onClick={() => setShowSettings(true)}
+                sx={{
+                  color: "var(--fit-color-text-muted, #8f98aa)",
+                  "&:hover": {
+                    color: "var(--fit-color-accent-strong, #65a0fd)",
+                    bgcolor:
+                      "var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))",
+                  },
+                }}
+              >
+                <TuneIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={isFullscreen ? "Exit fullscreen" : "Fullscreen"} arrow>
+              <IconButton
+                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                size="small"
+                onClick={handleFullscreenToggle}
+                sx={{
+                  color: "var(--fit-color-text-muted, #8f98aa)",
+                  "&:hover": {
+                    color: "var(--fit-color-accent-strong, #65a0fd)",
+                    bgcolor:
+                      "var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))",
+                  },
+                }}
+              >
+                {isFullscreen ? (
+                  <CloseFullscreenIcon fontSize="small" />
+                ) : (
+                  <OpenInFullIcon fontSize="small" />
+                )}
               </IconButton>
             </Tooltip>
             <Tooltip title="Clear" arrow>
-              <IconButton aria-label="Clear chart" size="small" onClick={() => onClear(index)} sx={{ color: 'var(--fit-color-text-muted, #8f98aa)', '&:hover': { color: '#ff9bb0', bgcolor: 'rgba(255, 61, 104, 0.1)' }, '&:focus-visible': { outline: '2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))', outlineOffset: 2 } }}>
+              <IconButton
+                aria-label="Clear chart"
+                size="small"
+                onClick={() => onClear(index)}
+                sx={{
+                  color: "var(--fit-color-text-muted, #8f98aa)",
+                  "&:hover": {
+                    color: "#ff9bb0",
+                    bgcolor: "rgba(255, 61, 104, 0.1)",
+                  },
+                }}
+              >
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
         </Box>
-      )}
 
-          {/* controls */}
-          {!isMainVariant && (
-          <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-            {showSwap && (
-              <Button variant="contained" size="small" onClick={() => onSwap(index)}>↔</Button>
-            )}
-            <Button variant="contained" size="small" onClick={() => onClear(index)}>×</Button>
-            <Button variant="contained" size="small" onClick={handleFullscreenToggle}>
-              {isFullscreen ? '⤡' : '⤢'}
-            </Button>
-          <Button variant="contained" size="small" onClick={() => setShowSettings(true)}>
-            ⚙︎
-          </Button>
+        <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ color: "#eef2fb", fontSize: 16, fontWeight: 600 }}>
+            {metric.description}
+          </Box>
+          <Box
+            sx={{
+              mt: 0.5,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 0.75,
+              color: "var(--fit-color-text-muted, #8f98aa)",
+              fontSize: 12,
+            }}
+          >
+            <Box>{dateRange.start} → {dateRange.end}</Box>
+            {metadata.map((item) => (
+              <Box key={item}>{item}</Box>
+            ))}
+          </Box>
         </Box>
-          )}
+      </Box>
+
       <Box
         sx={{
           pt: isMainVariant
             ? isCompactChart
-              ? 'clamp(42px, 5vh, 48px)'
-              : 'clamp(48px, 6vh, 56px)'
+              ? "clamp(82px, 11vh, 102px)"
+              : "clamp(92px, 13vh, 122px)"
             : 0,
-          height: '100%',
-          display: 'flex',
-          justifyContent: isCompactChart ? 'center' : 'flex-start',
-          alignItems: 'flex-start',
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "stretch",
         }}
       >
-      {showGraph ? (
-        <>
-          {chart}
-      </>
-      ) : !isMainVariant ? (
-        <Button
-        variant="contained"
-        onClick={() => setShowSettings(true)}
-        sx={{
-          position: 'absolute',
-          top: 'calc(50% - 20px)',
-          left: 'calc(50% - 20px)',
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          minWidth: 'unset',
-          backgroundColor: buttonBackgroundColor,
-          color: 'white',
-          fontSize: '24px',
-          '&:hover': {
-            backgroundColor: buttonHoverColor,
-          },
-        }}
-      >
-        +
-      </Button>
-    ) : null}
+        {body()}
       </Box>
+
       <GraphSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
         onApply={handleApplySettings}
+        initialSettings={buildInitialSettings(cardSettings)}
       />
     </Box>
   );
 };
 
 export default StockChartCard;
-export { stockDataMap };

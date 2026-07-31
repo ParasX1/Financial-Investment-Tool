@@ -25,8 +25,10 @@ describe("helpContent", () => {
     const copy = sectionCopy("portfolio");
 
     expect(copy).toMatch(/compare up to 5 stocks/i);
-    expect(copy).toMatch(/switch.*main view.*fullscreen.*clear/i);
-    expect(copy).toMatch(/10 analytics views/i);
+    expect(copy).toMatch(/Board.*Focus.*Observation/i);
+    expect(copy).toMatch(/up to six simultaneous metric cards/i);
+    expect(copy).toMatch(/10 analytics/i);
+    expect(copy).toMatch(/Run analysis/i);
     expect(copy).toMatch(/ticker symbol/i);
     expect(copy).not.toMatch(/manage stocks/i);
     expect(copy).not.toMatch(/company name/i);
