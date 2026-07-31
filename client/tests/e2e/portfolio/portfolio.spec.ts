@@ -50,10 +50,52 @@ const responseFor = (url: string) => {
   return {};
 };
 
-const addSymbol = async (page: import("@playwright/test").Page, symbol: string) => {
+const addSymbol = async (
+  page: import("@playwright/test").Page,
+  symbol: string,
+) => {
   const input = page.locator("input#portfolio-stock-select");
   await input.fill(symbol);
   await input.press("Enter");
+};
+
+const expectInsideObservationCanvas = async (
+  observationWindow: import("@playwright/test").Locator,
+  observationCanvas: import("@playwright/test").Locator,
+) => {
+  const [windowBox, canvasBox] = await Promise.all([
+    observationWindow.boundingBox(),
+    observationCanvas.boundingBox(),
+  ]);
+
+  expect(windowBox).not.toBeNull();
+  expect(canvasBox).not.toBeNull();
+  if (!windowBox || !canvasBox) {
+    throw new Error("Observation geometry is not measurable");
+  }
+
+  expect(windowBox.x).toBeGreaterThanOrEqual(canvasBox.x - 1);
+  expect(windowBox.y).toBeGreaterThanOrEqual(canvasBox.y - 1);
+  expect(windowBox.x + windowBox.width).toBeLessThanOrEqual(
+    canvasBox.x + canvasBox.width + 1,
+  );
+  expect(windowBox.y + windowBox.height).toBeLessThanOrEqual(
+    canvasBox.y + canvasBox.height + 1,
+  );
+};
+
+const expectAllObservationWindowsInsideCanvas = async (
+  observationWindows: import("@playwright/test").Locator,
+  observationCanvas: import("@playwright/test").Locator,
+) => {
+  const windowCount = await observationWindows.count();
+  expect(windowCount).toBeGreaterThan(0);
+  for (let index = 0; index < windowCount; index += 1) {
+    await expectInsideObservationCanvas(
+      observationWindows.nth(index),
+      observationCanvas,
+    );
+  }
 };
 
 test("supports Board, Focus, and persistent Observation without losing the six-card deck", async ({
@@ -93,7 +135,9 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   );
   await correlationCard.locator("rect.cell").nth(1).click();
   await expect(
-    correlationCard.getByRole("status").filter({ hasText: "Rolling correlation" }),
+    correlationCard
+      .getByRole("status")
+      .filter({ hasText: "Rolling correlation" }),
   ).toBeVisible();
 
   const portfolioCard = page.locator(
@@ -104,9 +148,7 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
     portfolioCard.getByText("Pinned sampled portfolio"),
   ).toBeVisible();
 
-  await page
-    .getByRole("button", { name: "Focus Cumulative return" })
-    .click();
+  await page.getByRole("button", { name: "Focus Cumulative return" }).click();
   await expect(page.getByRole("region", { name: "Focus mode" })).toBeVisible();
   await expect(
     page.getByText("View summary values and accessible data table"),
@@ -139,6 +181,101 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
 });
 
+test("reflows persisted Observation windows after reopen and desktop canvas shrink", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/Portfolio");
+  await page.getByRole("button", { name: "Observation" }).click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Portfolio Observation mode",
+  });
+  const canvas = dialog.locator('[class*="observationCanvas"]');
+  const observationWindows = dialog.locator('[class*="observationWindow"]');
+  await dialog.getByRole("button", { name: "Auto arrange" }).click();
+
+  const draggedWindow = observationWindows.first();
+  const dragHandle = draggedWindow.locator('[class*="observationHandle"]');
+  const [canvasBox, dragHandleBox] = await Promise.all([
+    canvas.boundingBox(),
+    dragHandle.boundingBox(),
+  ]);
+  expect(canvasBox).not.toBeNull();
+  expect(dragHandleBox).not.toBeNull();
+  if (!canvasBox || !dragHandleBox) {
+    throw new Error("Observation drag controls are not measurable");
+  }
+
+  await page.mouse.move(dragHandleBox.x + 12, dragHandleBox.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width - 1,
+    canvasBox.y + canvasBox.height - 1,
+    { steps: 4 },
+  );
+  await page.mouse.up();
+  await expectInsideObservationCanvas(draggedWindow, canvas);
+
+  const resizedWindow = observationWindows.nth(1);
+  const resizeHandle = resizedWindow.getByRole("button", {
+    name: /^Resize /,
+  });
+  const resizeHandleBox = await resizeHandle.boundingBox();
+  expect(resizeHandleBox).not.toBeNull();
+  if (!resizeHandleBox) {
+    throw new Error("Observation resize control is not measurable");
+  }
+
+  await page.mouse.move(
+    resizeHandleBox.x + resizeHandleBox.width / 2,
+    resizeHandleBox.y + resizeHandleBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width - 1,
+    canvasBox.y + canvasBox.height - 1,
+    { steps: 4 },
+  );
+  await page.mouse.up();
+  await expectInsideObservationCanvas(resizedWindow, canvas);
+
+  const draggedLargeBox = await draggedWindow.boundingBox();
+  expect(draggedLargeBox).not.toBeNull();
+  if (!draggedLargeBox) {
+    throw new Error("Persisted Observation window is not measurable");
+  }
+  expect(draggedLargeBox.x + draggedLargeBox.width).toBeGreaterThan(960);
+
+  await dialog.getByRole("button", { name: "Done" }).click();
+  // Workspace writes are debounced by 220 ms.
+  await page.waitForTimeout(300);
+  await page.setViewportSize({ width: 960, height: 700 });
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Multi-metric Portfolio board" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Observation" }).click();
+  const reopenedDialog = page.getByRole("dialog", {
+    name: "Portfolio Observation mode",
+  });
+  const reopenedCanvas = reopenedDialog.locator('[class*="observationCanvas"]');
+  const reopenedWindows = reopenedDialog.locator(
+    '[class*="observationWindow"]',
+  );
+  await expect(reopenedWindows).toHaveCount(6);
+  await expectAllObservationWindowsInsideCanvas(
+    reopenedWindows,
+    reopenedCanvas,
+  );
+
+  await page.setViewportSize({ width: 820, height: 640 });
+  await expectAllObservationWindowsInsideCanvas(
+    reopenedWindows,
+    reopenedCanvas,
+  );
+});
+
 test("changes only one card and remains operable without horizontal overflow on mobile", async ({
   page,
 }) => {
@@ -165,7 +302,9 @@ test("changes only one card and remains operable without horizontal overflow on 
     .getByRole("combobox", { name: "Metric" });
   await secondCardMetric.selectOption("ValueAtRiskAnalysis");
   await expect.poll(() => metricRequests.length).toBe(7);
-  expect(metricRequests.filter((url) => url.includes("valueatriskanalysis"))).toHaveLength(1);
+  expect(
+    metricRequests.filter((url) => url.includes("valueatriskanalysis")),
+  ).toHaveLength(1);
 
   await page.getByRole("button", { name: "Observation" }).click();
   await expect(page.locator('[class*="observationWindow"]')).toHaveCount(6);

@@ -13,15 +13,21 @@ const normaliseSymbols = (values: string[]) =>
   ).slice(0, 5);
 
 const dateMonthsAgo = (today: string, months: number) => {
-  const date = new Date(`${today}T12:00:00`);
-  date.setMonth(date.getMonth() - months);
-  return date.toISOString().slice(0, 10);
+  const [year, month, day] = today.split("-").map(Number);
+  const targetMonthIndex = year * 12 + (month - 1) - months;
+  const targetYear = Math.floor(targetMonthIndex / 12);
+  const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
+  const targetDay = Math.min(day, lastDayOfTargetMonth);
+  return `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(
+    targetDay,
+  ).padStart(2, "0")}`;
 };
 
 const dateYearsAgo = (today: string, years: number) => {
-  const date = new Date(`${today}T12:00:00`);
-  date.setFullYear(date.getFullYear() - years);
-  return date.toISOString().slice(0, 10);
+  return dateMonthsAgo(today, years * 12);
 };
 
 const presets = [
@@ -206,7 +212,9 @@ export const PortfolioCommandBar = ({
               />
             </label>
             <label htmlFor="portfolio-risk-free-rate">
-              <span>Annual risk-free % · Alpha, Sharpe, Sortino, Portfolios</span>
+              <span>
+                Annual risk-free % · Alpha, Sharpe, Sortino, Portfolios
+              </span>
               <input
                 id="portfolio-risk-free-rate"
                 type="number"

@@ -8,6 +8,12 @@ import type { PortfolioMetricType } from "../types";
 import baseStyles from "../styles/PortfolioScreen.module.css";
 import workspaceStyles from "../styles/PortfolioTraderWorkspace.module.css";
 
+const allocationWeightFormatter = new Intl.NumberFormat("en-AU", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 const useChartDimensions = (compact: boolean) => {
   const ref = useRef<HTMLDivElement | null>(null);
   const minimumHeight = compact ? 180 : 320;
@@ -136,7 +142,7 @@ export const PortfolioChart = ({
             .map((symbol, index) => {
               const weight = point.weights?.[index];
               return Number.isFinite(weight)
-                ? `${symbol} ${formatMetricValue(metricType, weight!, true)}`
+                ? `${symbol} ${allocationWeightFormatter.format(weight!)}`
                 : null;
             })
             .filter(Boolean)
@@ -146,10 +152,7 @@ export const PortfolioChart = ({
             detail: `${formatMetricValue(
               metricType,
               point.return,
-            )} return · ${formatMetricValue(
-              metricType,
-              point.risk,
-            )} risk${
+            )} return · ${formatMetricValue(metricType, point.risk)} risk${
               Number.isFinite(point.sharpe)
                 ? ` · Sharpe ${point.sharpe!.toFixed(2)}`
                 : ""

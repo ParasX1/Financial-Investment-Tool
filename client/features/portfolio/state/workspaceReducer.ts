@@ -129,7 +129,12 @@ export const portfolioWorkspaceReducer = (
       return withCardsAndLayout(state, [...state.cards, duplicate]);
     }
     case "deleteCard": {
-      if (state.cards.length <= 1) return state;
+      if (
+        state.cards.length <= 1 ||
+        !state.cards.some((card) => card.id === action.cardId)
+      ) {
+        return state;
+      }
       const cards = state.cards.filter((card) => card.id !== action.cardId);
       const next = withCardsAndLayout(state, cards);
       return state.view.mode === "focus" && state.view.cardId === action.cardId

@@ -8,7 +8,25 @@ import type {
 } from "../types";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import { PortfolioMetricCard as MetricCard } from "./PortfolioMetricCard";
+import {
+  constrainObservationDrag,
+  constrainObservationResize,
+  constrainObservationWindow,
+} from "./portfolioObservationGeometry";
 import styles from "../styles/PortfolioTraderWorkspace.module.css";
+
+const OBSERVATION_DESKTOP_MINIMUM_WIDTH = 721;
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+const hasEqualGeometry = (
+  current: PortfolioObserverWindow,
+  next: Pick<PortfolioObserverWindow, "x" | "y" | "width" | "height">,
+) =>
+  current.x === next.x &&
+  current.y === next.y &&
+  current.width === next.width &&
+  current.height === next.height;
 
 export const PortfolioObservation = ({
   cards,
@@ -40,25 +58,65 @@ export const PortfolioObservation = ({
     patch: Partial<PortfolioObserverWindow>,
   ) => void;
   onWindowVisibility: (cardId: string, visible: boolean) => void;
-  onMetricChange: (
-    cardId: string,
-    metricType: PortfolioMetricType,
-  ) => void;
-  onOverride: (
-    cardId: string,
-    patch: Partial<PortfolioAnalysisInputs>,
-  ) => void;
+  onMetricChange: (cardId: string, metricType: PortfolioMetricType) => void;
+  onOverride: (cardId: string, patch: Partial<PortfolioAnalysisInputs>) => void;
   onResetInputs: (cardId: string) => void;
   onFocus: (cardId: string) => void;
   onPromote: (cardId: string) => void;
   onDuplicate: (cardId: string) => void;
   onDelete: (cardId: string) => void;
 }) => {
+  const canvasRef = React.useRef<HTMLDivElement>(null);
+  const layoutRef = React.useRef(layout);
+  const onWindowChangeRef = React.useRef(onWindowChange);
+  layoutRef.current = layout;
+  onWindowChangeRef.current = onWindowChange;
   const visibleCards = cards.filter((card) => layout[card.id]?.visible);
   const maximumZ = Math.max(
     10,
     ...Object.values(layout).map((windowState) => windowState.z),
   );
+
+  const reconcileWindows = React.useCallback(() => {
+    const canvas = canvasRef.current;
+    if (
+      !canvas ||
+      typeof window === "undefined" ||
+      window.innerWidth < OBSERVATION_DESKTOP_MINIMUM_WIDTH
+    ) {
+      return;
+    }
+
+    const canvasRect = canvas.getBoundingClientRect();
+    if (canvasRect.width <= 0 || canvasRect.height <= 0) return;
+
+    Object.entries(layoutRef.current).forEach(([cardId, windowState]) => {
+      const constrained = constrainObservationWindow(windowState, canvasRect);
+      if (hasEqualGeometry(windowState, constrained)) return;
+      onWindowChangeRef.current(cardId, constrained);
+    });
+  }, []);
+
+  useIsomorphicLayoutEffect(() => {
+    reconcileWindows();
+  }, [layout, onWindowChange, reconcileWindows]);
+
+  useIsomorphicLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof window === "undefined") return;
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(reconcileWindows);
+    resizeObserver?.observe(canvas);
+    window.addEventListener("resize", reconcileWindows);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", reconcileWindows);
+    };
+  }, [reconcileWindows]);
 
   const bringForward = (cardId: string) => {
     if (layout[cardId]?.z === maximumZ) return;
@@ -71,47 +129,45 @@ export const PortfolioObservation = ({
     mode: "drag" | "resize",
   ) => {
     if (event.button !== 0 || window.innerWidth <= 720) return;
+    const canvas = canvasRef.current;
     const windowState = layout[cardId];
-    if (!windowState) return;
+    if (!canvas || !windowState) return;
     event.preventDefault();
     event.stopPropagation();
     bringForward(cardId);
+    const pointerId = event.pointerId;
+    const pointerTarget = event.currentTarget;
+    pointerTarget.setPointerCapture(pointerId);
     const startX = event.clientX;
     const startY = event.clientY;
     const origin = { ...windowState };
     const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      const canvasRect = canvas.getBoundingClientRect();
+      const delta = {
+        x: moveEvent.clientX - startX,
+        y: moveEvent.clientY - startY,
+      };
       if (mode === "drag") {
-        const maximumX = Math.max(8, window.innerWidth - origin.width - 8);
-        const maximumY = Math.max(8, window.innerHeight - origin.height - 8);
-        onWindowChange(cardId, {
-          x: Math.min(
-            maximumX,
-            Math.max(8, origin.x + moveEvent.clientX - startX),
-          ),
-          y: Math.min(
-            maximumY,
-            Math.max(8, origin.y + moveEvent.clientY - startY),
-          ),
-        });
+        onWindowChange(
+          cardId,
+          constrainObservationDrag(origin, delta, canvasRect),
+        );
       } else {
-        const maximumWidth = Math.max(300, window.innerWidth - origin.x - 8);
-        const maximumHeight = Math.max(220, window.innerHeight - origin.y - 8);
-        onWindowChange(cardId, {
-          width: Math.min(
-            maximumWidth,
-            Math.max(300, origin.width + moveEvent.clientX - startX),
-          ),
-          height: Math.min(
-            maximumHeight,
-            Math.max(220, origin.height + moveEvent.clientY - startY),
-          ),
-        });
+        onWindowChange(
+          cardId,
+          constrainObservationResize(origin, delta, canvasRect),
+        );
       }
     };
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
+      if (pointerTarget.hasPointerCapture(pointerId)) {
+        pointerTarget.releasePointerCapture(pointerId);
+      }
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -138,9 +194,7 @@ export const PortfolioObservation = ({
           <button
             type="button"
             onClick={() =>
-              cards.forEach((card) =>
-                onWindowVisibility(card.id, true),
-              )
+              cards.forEach((card) => onWindowVisibility(card.id, true))
             }
             disabled={visibleCards.length === cards.length}
           >
@@ -152,7 +206,7 @@ export const PortfolioObservation = ({
         </div>
       </header>
 
-      <div className={styles.observationCanvas}>
+      <div ref={canvasRef} className={styles.observationCanvas}>
         {!visibleCards.length && (
           <div className={styles.observationEmpty}>
             <strong>No visible windows</strong>
@@ -160,9 +214,7 @@ export const PortfolioObservation = ({
             <button
               type="button"
               onClick={() =>
-                cards.forEach((card) =>
-                  onWindowVisibility(card.id, true),
-                )
+                cards.forEach((card) => onWindowVisibility(card.id, true))
               }
             >
               Restore board cards
@@ -191,7 +243,9 @@ export const PortfolioObservation = ({
                   startPointerAction(event, card.id, "drag")
                 }
               >
-                <span>Drag · {METRIC_REGISTRY[card.metricType].shortLabel}</span>
+                <span>
+                  Drag · {METRIC_REGISTRY[card.metricType].shortLabel}
+                </span>
                 <button
                   type="button"
                   onPointerDown={(event) => event.stopPropagation()}

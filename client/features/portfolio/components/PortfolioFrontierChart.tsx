@@ -25,14 +25,27 @@ const positionTooltip = (
   const tooltipWidth = 170;
   const tooltipHeight = 36 + itemCount * 28;
   const gap = 12;
-  const left =
+  const candidateLeft =
     event.clientX + tooltipWidth + gap > window.innerWidth
       ? event.clientX - tooltipWidth - gap
       : event.clientX + gap;
-  const top =
+  const candidateTop =
     event.clientY + tooltipHeight + gap > window.innerHeight
       ? event.clientY - tooltipHeight - gap
       : event.clientY + gap;
+  const clampToViewport = (
+    candidate: number,
+    size: number,
+    viewportSize: number,
+  ) => {
+    const maximumWithGap = viewportSize - size - gap;
+    if (maximumWithGap >= gap) {
+      return Math.min(Math.max(candidate, gap), maximumWithGap);
+    }
+    return Math.min(Math.max(candidate, 0), Math.max(0, viewportSize - size));
+  };
+  const left = clampToViewport(candidateLeft, tooltipWidth, window.innerWidth);
+  const top = clampToViewport(candidateTop, tooltipHeight, window.innerHeight);
 
   tooltip.style("left", `${left}px`).style("top", `${top}px`);
 };
@@ -278,8 +291,10 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
       .attr("fill-opacity", finitePoints.length > 350 ? 0.2 : 0.34)
       .attr("tabindex", 0)
       .attr("role", "button")
-      .attr("aria-label", (point) =>
-        `Portfolio: risk ${TOOLTIP_PERCENT_FORMAT(point.risk)}, return ${TOOLTIP_PERCENT_FORMAT(point.return)}`,
+      .attr(
+        "aria-label",
+        (point) =>
+          `Portfolio: risk ${TOOLTIP_PERCENT_FORMAT(point.risk)}, return ${TOOLTIP_PERCENT_FORMAT(point.return)}`,
       )
       .on("click", (_event, point) => onPointSelect?.(point))
       .on("keydown", (event: KeyboardEvent, point) => {

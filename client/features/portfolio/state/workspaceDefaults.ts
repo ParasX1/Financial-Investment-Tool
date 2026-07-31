@@ -55,8 +55,15 @@ export const createObserverLayout = (
 ): PortfolioObserverLayout => {
   const padding = 16;
   const gap = 12;
-  const availableWidth = Math.max(900, viewportWidth) - padding * 2;
-  const availableHeight = Math.max(660, viewportHeight) - padding * 2;
+  const usesStackedMobileLayout = viewportWidth <= 720;
+  const canvasWidth = usesStackedMobileLayout
+    ? Math.max(900, viewportWidth)
+    : viewportWidth;
+  const canvasHeight = usesStackedMobileLayout
+    ? Math.max(660, viewportHeight)
+    : viewportHeight;
+  const availableWidth = canvasWidth - padding * 2;
+  const availableHeight = canvasHeight - padding * 2;
   const thirdWidth = (availableWidth - gap * 2) / 3;
   const halfHeight = (availableHeight - gap) / 2;
   const positions = [
@@ -100,14 +107,28 @@ export const createObserverLayout = (
 
   return cards.reduce<PortfolioObserverLayout>((layout, card, index) => {
     const position = positions[index] ?? positions[positions.length - 1];
+    const width = Math.max(300, Math.round(position.width));
+    const height = Math.max(220, Math.round(position.height));
+    const x = usesStackedMobileLayout
+      ? Math.round(position.x)
+      : Math.min(
+          Math.round(position.x),
+          Math.max(padding, canvasWidth - padding - width),
+        );
+    const y = usesStackedMobileLayout
+      ? Math.round(position.y)
+      : Math.min(
+          Math.round(position.y),
+          Math.max(padding, canvasHeight - padding - height),
+        );
     return {
       ...layout,
       [card.id]: {
         cardId: card.id,
-        x: Math.round(position.x),
-        y: Math.round(position.y),
-        width: Math.max(300, Math.round(position.width)),
-        height: Math.max(220, Math.round(position.height)),
+        x,
+        y,
+        width,
+        height,
         z: 10 + index,
         visible: true,
       },

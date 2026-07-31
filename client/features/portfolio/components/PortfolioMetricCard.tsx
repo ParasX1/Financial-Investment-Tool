@@ -90,7 +90,9 @@ export const PortfolioMetricCard = ({
         <div className={styles.cardState}>
           <span aria-hidden="true">＋</span>
           <strong>Add a shared universe</strong>
-          <p>The board will run this metric when you apply at least one symbol.</p>
+          <p>
+            The board will run this metric when you apply at least one symbol.
+          </p>
         </div>
       );
     }
@@ -154,15 +156,15 @@ export const PortfolioMetricCard = ({
             compact={compact}
           />
           {status === "stale" && (
-            <div className={styles.updatingBadge}>Updating · previous result</div>
+            <div className={styles.updatingBadge}>
+              Updating · previous result
+            </div>
           )}
         </div>
         <div className={styles.cardInsight}>
           <span>
-            {tableModel?.keyFigures[0]?.label ?? "Method"}
-            <strong>
-              {tableModel?.keyFigures[0]?.value ?? metric.method}
-            </strong>
+            {tableModel?.keyFigures[0]?.label ?? "Method"}{" "}
+            <strong>{tableModel?.keyFigures[0]?.value ?? metric.method}</strong>
           </span>
           {variant === "hero" && <p>{metric.interpretation}</p>}
         </div>
@@ -332,9 +334,7 @@ export const PortfolioMetricCard = ({
               type="date"
               value={settings.endDate}
               max={today}
-              onChange={(event) =>
-                onOverride({ endDate: event.target.value })
-              }
+              onChange={(event) => onOverride({ endDate: event.target.value })}
             />
           </label>
           {metric.requiresBenchmark && (
@@ -389,7 +389,6 @@ export const PortfolioMetricCard = ({
           )}
         </div>
       </details>
-
     </section>
   );
 };
