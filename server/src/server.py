@@ -30,6 +30,17 @@ from .routes.legacy_metrics import create_legacy_metrics_blueprint
 from .routes.legacy_stocks import create_legacy_stocks_blueprint
 from .routes.market_data import create_market_data_blueprint
 from .routes.metrics import create_metrics_blueprint
+from .routes.top_picks import create_top_picks_blueprint
+from .supabase_client import get_supabase_client
+from .top_picks.repository import SupabaseTickerRepository
+from .top_picks.service import (
+    DEFAULT_BENCHMARK_TICKER,
+    DEFAULT_RISK_FREE_RATE,
+    DEFAULT_RISK_FREE_RATE_AS_OF,
+    DEFAULT_RISK_FREE_RATE_SOURCE,
+    DEFAULT_UNIVERSE_LIMIT,
+    TopPicksService,
+)
 
 
 __all__ = [
@@ -61,17 +72,70 @@ def _get_calculator(calculator_name):
     return globals()[calculator_name]
 
 
-def create_app(test_config=None, supabase_client=None):
+def _get_top_picks_service(app):
+    existing_service = app.extensions.get("top_picks_service")
+    if existing_service is not None:
+        return existing_service
+
+    service = TopPicksService(
+        ticker_repository=SupabaseTickerRepository(
+            get_supabase_client(app)
+        ),
+        calculator_provider=_get_calculator,
+        market_data_provider=lambda tickers, start_date, end_date: (
+            fetch_stock_data(tickers, start_date, end_date)
+        ),
+        benchmark_ticker=app.config["TOP_PICKS_BENCHMARK"],
+        risk_free_rate=app.config["TOP_PICKS_RISK_FREE_RATE"],
+        risk_free_rate_source=app.config[
+            "TOP_PICKS_RISK_FREE_RATE_SOURCE"
+        ],
+        risk_free_rate_as_of=app.config[
+            "TOP_PICKS_RISK_FREE_RATE_AS_OF"
+        ],
+        universe_limit=app.config["TOP_PICKS_UNIVERSE_LIMIT"],
+    )
+    app.extensions["top_picks_service"] = service
+    return service
+
+
+def create_app(
+    test_config=None,
+    supabase_client=None,
+    top_picks_service=None,
+):
     app = Flask(__name__)
     app.config.from_mapping(
         SUPABASE_URL=os.getenv("SUPABASE_URL"),
         SUPABASE_KEY=os.getenv("SUPABASE_KEY"),
+        TOP_PICKS_BENCHMARK=os.getenv(
+            "TOP_PICKS_BENCHMARK",
+            DEFAULT_BENCHMARK_TICKER,
+        ),
+        TOP_PICKS_RISK_FREE_RATE=os.getenv(
+            "TOP_PICKS_RISK_FREE_RATE",
+            DEFAULT_RISK_FREE_RATE,
+        ),
+        TOP_PICKS_RISK_FREE_RATE_SOURCE=os.getenv(
+            "TOP_PICKS_RISK_FREE_RATE_SOURCE",
+            DEFAULT_RISK_FREE_RATE_SOURCE,
+        ),
+        TOP_PICKS_RISK_FREE_RATE_AS_OF=os.getenv(
+            "TOP_PICKS_RISK_FREE_RATE_AS_OF",
+            DEFAULT_RISK_FREE_RATE_AS_OF,
+        ),
+        TOP_PICKS_UNIVERSE_LIMIT=os.getenv(
+            "TOP_PICKS_UNIVERSE_LIMIT",
+            DEFAULT_UNIVERSE_LIMIT,
+        ),
     )
     app.config.from_prefixed_env()
     if test_config is not None:
         app.config.update(test_config)
     if supabase_client is not None:
         app.extensions["supabase"] = supabase_client
+    if top_picks_service is not None:
+        app.extensions["top_picks_service"] = top_picks_service
 
     CORS(app)
     app.register_blueprint(create_metrics_blueprint(_get_calculator))
@@ -80,6 +144,9 @@ def create_app(test_config=None, supabase_client=None):
     )
     app.register_blueprint(create_market_data_blueprint())
     app.register_blueprint(create_legacy_stocks_blueprint())
+    app.register_blueprint(
+        create_top_picks_blueprint(_get_top_picks_service)
+    )
     return app
 
 
