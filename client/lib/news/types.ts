@@ -1,14 +1,12 @@
-import type { Article } from "@/services/news";
+import type {
+  Article,
+  MarketNewsRequestKind,
+  NewsResponseMeta,
+} from "./contracts";
 
 export type NewsProviderId = string;
 
-export type ServerNewsRequestKind =
-  | "general"
-  | "regional"
-  | "industry"
-  | "commodity"
-  | "search"
-  | "ticker";
+export type ServerNewsRequestKind = MarketNewsRequestKind;
 
 export interface ServerNewsRequest {
   kind: ServerNewsRequestKind;
@@ -44,18 +42,17 @@ export interface NewsProvider {
   ) => Promise<Article[]>;
 }
 
-export interface NewsResponseMeta {
+export type ServerNewsResponseMeta = Omit<
+  NewsResponseMeta,
+  "attemptedProviders" | "hasMore" | "nextCursor" | "provider"
+> & {
   attemptedProviders: NewsProviderId[];
   hasMore?: boolean;
   nextCursor?: string | null;
   provider: NewsProviderId | "none";
-  providerLabel: string;
-  query: string;
-  strictCategory: boolean;
-  warnings: string[];
-}
+};
 
 export interface ServerNewsResponse {
   articles: Article[];
-  meta: NewsResponseMeta;
+  meta: ServerNewsResponseMeta;
 }

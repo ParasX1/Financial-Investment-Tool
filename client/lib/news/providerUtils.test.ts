@@ -5,7 +5,7 @@ import {
   normaliseNewsPageSize,
   safeExternalUrl,
 } from "./providerUtils";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 
 const baseArticle: Article = {
   id: "base",

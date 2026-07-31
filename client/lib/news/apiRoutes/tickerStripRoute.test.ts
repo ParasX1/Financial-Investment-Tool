@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import handler from "@/pages/api/market/ticker-strip";
-import { buildMarketNewsTickerStripSnapshot } from "@/features/market-news/lib/marketNewsTickerStripService";
+import { buildMarketNewsTickerStripSnapshot } from "@/lib/news/tickerStrip";
 
-jest.mock("@/features/market-news/lib/marketNewsTickerStripService", () => ({
+jest.mock("@/lib/news/tickerStrip", () => ({
+  ...jest.requireActual("@/lib/news/tickerStrip"),
   buildMarketNewsTickerStripSnapshot: jest.fn(),
 }));
 

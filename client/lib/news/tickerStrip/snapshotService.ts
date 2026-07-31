@@ -1,33 +1,18 @@
 import type {
   MarketNewsMarketScope,
-  MarketNewsMarketScopeId,
-  MarketNewsTicker,
-} from "../types";
+  MarketNewsQuoteResponse,
+  MarketNewsSparklineResponse,
+  MarketNewsTickerStripSnapshot,
+  MarketNewsTickerStripSource,
+} from "./types";
 import {
   buildMarketNewsTickerFallback,
   selectMarketNewsTickerSymbols,
   type SelectedMarketNewsTicker,
-} from "./marketNewsDynamicTickers";
-import {
-  resolveMarketNewsTickerQuoteState,
-  type MarketNewsQuoteResponse,
-  type MarketNewsSparklineResponse,
-} from "./marketNewsTickerQuotes";
+} from "./dynamicTickers";
+import { resolveMarketNewsTickerQuoteState } from "./quoteState";
 
 export const MARKET_NEWS_TICKER_STRIP_REFRESH_MS = 60_000;
-
-export type MarketNewsTickerStripSource = "live" | "mixed" | "fallback";
-
-export interface MarketNewsTickerStripSnapshot {
-  scopeId: MarketNewsMarketScopeId;
-  providerLabel: string;
-  source: MarketNewsTickerStripSource;
-  strategy: "core-plus-dynamic-movers";
-  refreshMs: number;
-  updatedAt: string | null;
-  tickers: readonly MarketNewsTicker[];
-  warnings: readonly string[];
-}
 
 type MarketNewsTickerFetch = (
   input: string,
@@ -75,8 +60,12 @@ function isFiniteNumber(value: unknown): value is number {
 function selectionForScope(marketScope: MarketNewsMarketScope) {
   return (
     marketScope.tickerSelection ?? {
-      coreSymbols: marketScope.tickers.slice(0, 3).map((ticker) => ticker.symbol),
-      dynamicSymbols: marketScope.tickers.slice(3).map((ticker) => ticker.symbol),
+      coreSymbols: marketScope.tickers
+        .slice(0, 3)
+        .map((ticker) => ticker.symbol),
+      dynamicSymbols: marketScope.tickers
+        .slice(3)
+        .map((ticker) => ticker.symbol),
       macroSymbols: [],
       maxTickers: marketScope.tickers.length,
       trendingRegion: marketScope.shortLabel,
@@ -192,8 +181,8 @@ async function fetchYahooSparkline({
     symbol,
   )}?range=1d&interval=5m`;
   const json = await fetchJson(fetcher, url);
-  const result =
-    (json as {
+  const result = (
+    json as {
       chart?: {
         result?: Array<{
           indicators?: { quote?: Array<{ close?: Array<number | null> }> };
@@ -206,7 +195,8 @@ async function fetchYahooSparkline({
           timestamp?: number[];
         }>;
       };
-    })?.chart?.result?.[0];
+    }
+  )?.chart?.result?.[0];
   const timestamps = result?.timestamp ?? [];
   const closes = result?.indicators?.quote?.[0]?.close ?? [];
   const points = timestamps
@@ -355,7 +345,8 @@ export async function buildMarketNewsTickerStripSnapshot({
     const ticker = resolvedTicker.ticker;
 
     if (resolvedTicker.recoveredLiveData) liveCount += 1;
-    if (ticker.sparklineSource === "unavailable") unavailableSparklineCount += 1;
+    if (ticker.sparklineSource === "unavailable")
+      unavailableSparklineCount += 1;
 
     return ticker;
   });
@@ -369,7 +360,9 @@ export async function buildMarketNewsTickerStripSnapshot({
           "Live Yahoo Finance quote data was unavailable, so quote cards show no live data.",
         ]
       : source === "mixed"
-        ? ["Some quote snapshots are unavailable because Yahoo Finance did not return live quote data."]
+        ? [
+            "Some quote snapshots are unavailable because Yahoo Finance did not return live quote data.",
+          ]
         : []),
     ...(unavailableSparklineCount
       ? [

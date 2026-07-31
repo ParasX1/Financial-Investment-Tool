@@ -1,6 +1,8 @@
 import { describe, expect, it, jest } from "@jest/globals";
-import { resolveMarketNewsMarketScope } from "./marketNewsNavigation";
-import { buildMarketNewsTickerStripSnapshot } from "./marketNewsTickerStripService";
+import {
+  buildMarketNewsTickerStripSnapshot,
+  resolveMarketNewsMarketScope,
+} from "./index";
 
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {
@@ -23,7 +25,7 @@ function quoteRow(symbol: string, changePct: number, price = 100) {
   };
 }
 
-describe("marketNewsTickerStripService", () => {
+describe("tickerStrip snapshot service", () => {
   it("builds one live ticker strip snapshot with stable anchors, ranked movers, and macro context", async () => {
     const fetcher = jest.fn(async (input: string | URL | Request) => {
       const url = String(input);
@@ -314,9 +316,7 @@ describe("marketNewsTickerStripService", () => {
                 indicators: {
                   quote: [
                     {
-                      close: isFallbackRange
-                        ? [75.8, 75.9, 76.2, 76.54]
-                        : [],
+                      close: isFallbackRange ? [75.8, 75.9, 76.2, 76.54] : [],
                     },
                   ],
                 },
@@ -342,9 +342,7 @@ describe("marketNewsTickerStripService", () => {
                 indicators: {
                   quote: [
                     {
-                      close: isFallbackRange
-                        ? [4246, 4230, 4200, 4172.9]
-                        : [],
+                      close: isFallbackRange ? [4246, 4230, 4200, 4172.9] : [],
                     },
                   ],
                 },
@@ -397,7 +395,8 @@ describe("marketNewsTickerStripService", () => {
     expect(snapshot.warnings).toContain(
       "Some Yahoo 1D quote lines are unavailable, so those cards show price metadata without a sparkline.",
     );
-    expect(fetcher.mock.calls.some(([url]) => String(url).includes("range=5d")))
-      .toBe(false);
+    expect(
+      fetcher.mock.calls.some(([url]) => String(url).includes("range=5d")),
+    ).toBe(false);
   });
 });

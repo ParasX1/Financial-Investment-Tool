@@ -1,6 +1,8 @@
-import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
-
-export type MarketNewsTickerSignal = NonNullable<MarketNewsTicker["signal"]>;
+import type {
+  MarketNewsMarketScope,
+  MarketNewsTicker,
+  MarketNewsTickerSignal,
+} from "./types";
 
 export const MARKET_NEWS_QUOTE_UNAVAILABLE_VALUE = "Quote unavailable";
 export const MARKET_NEWS_QUOTE_UNAVAILABLE_CHANGE = "No live data";
@@ -74,7 +76,8 @@ export function selectMarketNewsTickerSymbols({
   trendingSymbols?: readonly string[];
   watchlistSymbols?: readonly string[];
 }): SelectedMarketNewsTicker[] {
-  const selection = marketScope.tickerSelection ?? fallbackSelection(marketScope);
+  const selection =
+    marketScope.tickerSelection ?? fallbackSelection(marketScope);
   const maxTickers = Math.max(1, selection.maxTickers);
   const coreSymbols = uniqueSymbols(selection.coreSymbols);
   const macroSymbols = uniqueSymbols(selection.macroSymbols);
@@ -96,10 +99,7 @@ export function selectMarketNewsTickerSymbols({
 
   coreSymbols.forEach((symbol) => add(symbol, "Core"));
 
-  const dynamicSlots = Math.max(
-    0,
-    maxTickers - selected.length - macroSlots,
-  );
+  const dynamicSlots = Math.max(0, maxTickers - selected.length - macroSlots);
   const dynamicCandidates = [
     ...uniqueSymbols(watchlistSymbols).map((symbol) => ({
       signal: "Watchlist" as const,

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
-import { MARKET_NEWS_MARKET_SCOPES } from "../data/marketNewsConfig";
+
 import {
+  MARKET_NEWS_MARKET_SCOPES,
   buildMarketNewsTickerFallback,
   selectMarketNewsTickerSymbols,
-} from "./marketNewsDynamicTickers";
+} from "./index";
 
 const australia = MARKET_NEWS_MARKET_SCOPES.find(
   (scope) => scope.id === "australia",

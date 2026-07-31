@@ -1,4 +1,4 @@
-import type { Article, MarketNewsFetchResult } from "@/services/news";
+import type { Article, MarketNewsFetchResult } from "@/lib/news/contracts";
 import type { MarketNewsRequest } from "../types";
 import {
   MARKET_NEWS_LOAD_ERROR,

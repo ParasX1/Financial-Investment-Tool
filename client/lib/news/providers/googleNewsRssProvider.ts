@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import {
   buildGoogleNewsSearchQueries,
   buildGoogleNewsSearchQuery,

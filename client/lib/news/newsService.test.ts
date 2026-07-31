@@ -3,7 +3,7 @@ import {
   fetchMarketNewsWithProviders,
   resolveNewsProviders,
 } from "./newsService";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import type { NewsProvider, NewsProviderId, ServerNewsRequest } from "./types";
 
 const request: ServerNewsRequest = {

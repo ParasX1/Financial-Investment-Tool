@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import type { MarketNewsTicker } from "../types";
 import { buildMarketNewsRailSummary } from "./marketNewsRailSummary";
 

@@ -4,7 +4,7 @@ import type {
   MarketNewsSortId,
   MarketNewsTopicId,
 } from "../types";
-import { resolveMarketNewsMarketScope } from "./marketNewsNavigation";
+import { resolveMarketNewsMarketScope } from "@/lib/news/tickerStrip";
 import type { MarketNewsRouteState } from "./marketNewsRouting";
 
 export interface MarketNewsViewState {

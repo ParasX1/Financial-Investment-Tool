@@ -1,4 +1,4 @@
-import { MARKET_NEWS_NAV_GROUPS } from "@/features/market-news/data/marketNewsConfig";
+import { MARKET_NEWS_NAV_GROUPS } from "./catalog";
 import type { ServerNewsRequest } from "./types";
 
 const PUBLIC_MARKET_NEWS_CACHE_CONTROL =
@@ -35,9 +35,7 @@ export function isPublicMarketNewsTopicRequest(request: ServerNewsRequest) {
   }
 
   if (request.kind === "commodity" && topic.source.kind === "commodity") {
-    return (
-      normalized(request.commodity) === normalized(topic.source.commodity)
-    );
+    return normalized(request.commodity) === normalized(topic.source.commodity);
   }
 
   if (request.kind === "general" && topic.source.kind === "general") {

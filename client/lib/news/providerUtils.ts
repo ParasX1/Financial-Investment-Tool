@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import { buildNewsSearchProfile } from "./queryPacks";
 import type { ServerNewsRequest } from "./types";
 

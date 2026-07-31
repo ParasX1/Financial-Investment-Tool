@@ -1,11 +1,7 @@
-import {
-  MARKET_NEWS_MARKET_SCOPES,
-  MARKET_NEWS_NAV_GROUPS,
-} from "../data/marketNewsConfig";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
+import type { MarketNewsMarketScope } from "@/lib/news/tickerStrip";
 import type {
   MarketNewsGroupId,
-  MarketNewsMarketScope,
-  MarketNewsMarketScopeId,
   MarketNewsNavGroup,
   MarketNewsRequest,
   MarketNewsTopic,
@@ -14,8 +10,6 @@ import type {
 
 export const defaultMarketNewsTopicId: MarketNewsTopicId =
   MARKET_NEWS_NAV_GROUPS[0]!.topics[0]!.id;
-export const defaultMarketNewsMarketScopeId: MarketNewsMarketScopeId =
-  MARKET_NEWS_MARKET_SCOPES[0]!.id;
 
 export function getMarketNewsTopics(
   groups: readonly MarketNewsNavGroup[] = MARKET_NEWS_NAV_GROUPS,
@@ -50,17 +44,6 @@ export function getMarketNewsGroupIdForTopic(
 ): MarketNewsGroupId {
   return (
     getMarketNewsGroupForTopic(topicId)?.id ?? MARKET_NEWS_NAV_GROUPS[0]!.id
-  );
-}
-
-export function resolveMarketNewsMarketScope(
-  scopeId: string | null | undefined,
-  scopes: readonly MarketNewsMarketScope[] = MARKET_NEWS_MARKET_SCOPES,
-): MarketNewsMarketScope {
-  return (
-    scopes.find((scope) => scope.id === scopeId) ??
-    scopes.find((scope) => scope.id === defaultMarketNewsMarketScopeId) ??
-    scopes[0]!
   );
 }
 

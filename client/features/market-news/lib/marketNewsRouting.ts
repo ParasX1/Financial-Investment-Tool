@@ -1,18 +1,16 @@
 import type { ParsedUrlQuery } from "querystring";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
   MARKET_NEWS_MARKET_SCOPES,
-  MARKET_NEWS_NAV_GROUPS,
-} from "../data/marketNewsConfig";
+  defaultMarketNewsMarketScopeId,
+} from "@/lib/news/tickerStrip";
 import type {
   MarketNewsLensId,
   MarketNewsMarketScopeId,
   MarketNewsSortId,
   MarketNewsTopicId,
 } from "../types";
-import {
-  defaultMarketNewsMarketScopeId,
-  defaultMarketNewsTopicId,
-} from "./marketNewsNavigation";
+import { defaultMarketNewsTopicId } from "./marketNewsNavigation";
 
 const MARKET_NEWS_LENS_IDS: readonly MarketNewsLensId[] = [
   "all",

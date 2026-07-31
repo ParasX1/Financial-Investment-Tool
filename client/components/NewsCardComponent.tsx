@@ -8,8 +8,9 @@ import { Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Tun
 import { useTheme, useMediaQuery } from '@mui/material';
 import {
   fetchGeneralNews, fetchRegionalNews, fetchIndustryNews,
-  fetchCommodityNews, fetchTickerNews, fetchSearchNews, Article
+  fetchCommodityNews, fetchTickerNews, fetchSearchNews
 } from '@/services/news';
+import type { Article } from '@/lib/news/contracts';
 
 const regionalOptions  = [ 'au','cn','jp','us','gb' ];
 const industryOptions  = [ 'technology','health','finance','internet','pharmaceutical' ];

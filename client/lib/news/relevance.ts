@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import { resolveNewsTopicProfileId } from "./newsTopicProfiles";
 import { getSymbolResultFilter } from "./symbolAliases";
 import type { ServerNewsRequest } from "./types";

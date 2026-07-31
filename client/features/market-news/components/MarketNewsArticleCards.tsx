@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import {
   formatArticleTime,

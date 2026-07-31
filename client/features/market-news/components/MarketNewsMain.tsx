@@ -2,16 +2,16 @@ import * as React from "react";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
 import { cn } from "@/components/shared/uiPrimitives";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
   MARKET_NEWS_MARKET_SCOPES,
-  MARKET_NEWS_NAV_GROUPS,
-} from "../data/marketNewsConfig";
+  redactMarketNewsTickerFallback,
+} from "@/lib/news/tickerStrip";
 import {
   buildMarketNewsLensOptions,
   filterArticlesByLens,
 } from "../lib/marketNewsLens";
 import { buildMarketNewsDisplayState } from "../lib/marketNewsDisplayState";
-import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
 import {
   MARKET_NEWS_TOPIC_PAGE_SIZE,
   getMarketNewsFetchLimit,

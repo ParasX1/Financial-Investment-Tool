@@ -1,6 +1,6 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
 
 function article(index: number): Article {

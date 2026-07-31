@@ -1,17 +1,17 @@
 import { describe, expect, it } from "@jest/globals";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
   MARKET_NEWS_MARKET_SCOPES,
-  MARKET_NEWS_NAV_GROUPS,
-} from "../data/marketNewsConfig";
+  defaultMarketNewsMarketScopeId,
+  resolveMarketNewsMarketScope,
+} from "@/lib/news/tickerStrip";
 import { hasNewsTopicQueryPack } from "@/lib/news/queryPacks";
 import { hasNewsTopicRelevanceProfile } from "@/lib/news/relevance";
 import {
   buildMarketNewsRequest,
-  defaultMarketNewsMarketScopeId,
   defaultMarketNewsTopicId,
   getMarketNewsGroupForTopic,
   getMarketNewsTopics,
-  resolveMarketNewsMarketScope,
   resolveMarketNewsTopic,
 } from "./marketNewsNavigation";
 

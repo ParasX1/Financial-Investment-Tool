@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import type { ServerNewsRequest, ServerNewsResponse } from "./types";
 
 const CURSOR_VERSION = 1;

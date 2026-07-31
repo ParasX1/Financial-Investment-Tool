@@ -9,8 +9,8 @@ import type {
   MarketNewsMarketScopeId,
   MarketNewsTicker,
 } from "../types";
-import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
-import type { MarketNewsTickerStripSource } from "../lib/marketNewsTickerStripService";
+import { redactMarketNewsTickerFallback } from "@/lib/news/tickerStrip";
+import type { MarketNewsTickerStripSource } from "@/lib/news/tickerStrip";
 import { MarketNewsSparkline } from "./MarketNewsSparkline";
 import styles from "../styles/marketNews.module.css";
 
