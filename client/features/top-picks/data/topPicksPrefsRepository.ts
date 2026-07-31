@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getConfiguredSupabaseClient } from "@/lib/supabase";
 import type { TopPicksPrefs, TopPicksSortKey } from "../types";
 
 const DEFAULT_PREFS: TopPicksPrefs = {
@@ -27,6 +27,14 @@ const requireUserId = (userId: string): string => {
   return normalized;
 };
 
+const requireClient = () => {
+  const client = getConfiguredSupabaseClient();
+  if (!client) {
+    throw new Error("Supabase is not configured for Top Picks preferences.");
+  }
+  return client;
+};
+
 const normalizePrefs = (value: unknown): TopPicksPrefs => {
   const record =
     typeof value === "object" && value !== null
@@ -50,7 +58,8 @@ export async function loadTopPicksPrefs(
   userId: string,
 ): Promise<TopPicksPrefs> {
   const normalizedUserId = requireUserId(userId);
-  const { data, error } = await supabase
+  const client = requireClient();
+  const { data, error } = await client
     .from("top_picks_prefs")
     .select("sort_key, sort_dir, page_size")
     .eq("user_id", normalizedUserId)
@@ -65,8 +74,9 @@ export async function saveTopPicksPrefs(
   prefs: TopPicksPrefs,
 ): Promise<void> {
   const normalizedUserId = requireUserId(userId);
+  const client = requireClient();
   const normalizedPrefs = normalizePrefs(prefs);
-  const { error } = await supabase.from("top_picks_prefs").upsert({
+  const { error } = await client.from("top_picks_prefs").upsert({
     user_id: normalizedUserId,
     ...normalizedPrefs,
     updated_at: new Date().toISOString(),

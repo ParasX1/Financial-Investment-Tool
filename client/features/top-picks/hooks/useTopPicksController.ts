@@ -23,6 +23,8 @@ const hasLocalStorage = () =>
 
 const LS_COLUMNS_PREFIX = "topPicks.visibleCols";
 const SIGNED_OUT_SCOPE = "signed-out";
+const PREFS_LOAD_ERROR_MESSAGE = "Unable to load Top Picks preferences.";
+const PREFS_SAVE_ERROR_MESSAGE = "Unable to save Top Picks preferences.";
 
 const columnsStorageKey = (scopeKey: string): string =>
   `${LS_COLUMNS_PREFIX}:${scopeKey}`;
@@ -69,6 +71,87 @@ type PrefsHydration = {
   scopeKey: string;
   status: "loading" | "ready" | "failed";
 } | null;
+
+type PrefsSaveRequest = {
+  scopeKey: string;
+  userId: string;
+  prefs: TopPicksPrefs;
+  onSuccess: (isLatest: boolean) => void;
+  onError: () => void;
+};
+
+type PrefsSaveScopeState = {
+  active: boolean;
+  pending: PrefsSaveRequest | null;
+};
+
+type PrefsSaveQueueState = ReadonlyMap<string, PrefsSaveScopeState>;
+
+type PrefsSaveQueue = {
+  enqueue: (request: PrefsSaveRequest) => void;
+};
+
+const createPrefsSaveQueue = (): PrefsSaveQueue => {
+  let state: PrefsSaveQueueState = new Map();
+
+  const setScopeState = (scopeKey: string, scopeState: PrefsSaveScopeState) => {
+    state = new Map([...state, [scopeKey, scopeState]]);
+  };
+
+  const deleteScopeState = (scopeKey: string) => {
+    state = new Map([...state].filter(([key]) => key !== scopeKey));
+  };
+
+  const runNext = (scopeKey: string) => {
+    const scopeState = state.get(scopeKey);
+    if (!scopeState || scopeState.active || scopeState.pending === null) return;
+
+    const request = scopeState.pending;
+    setScopeState(scopeKey, { active: true, pending: null });
+
+    const settle = (callback: (isLatest: boolean) => void) => {
+      const settledScopeState = state.get(scopeKey);
+      if (!settledScopeState) return;
+
+      try {
+        callback(settledScopeState.pending === null);
+      } finally {
+        const latestScopeState = state.get(scopeKey);
+        if (!latestScopeState) return;
+        if (latestScopeState.pending === null) {
+          deleteScopeState(scopeKey);
+          return;
+        }
+        setScopeState(scopeKey, { ...latestScopeState, active: false });
+        runNext(scopeKey);
+      }
+    };
+
+    void Promise.resolve()
+      .then(() => saveTopPicksPrefs(request.userId, request.prefs))
+      .then(
+        () => settle(request.onSuccess),
+        () => settle(() => request.onError()),
+      );
+  };
+
+  return {
+    enqueue: (request) => {
+      const scopeState = state.get(request.scopeKey) ?? {
+        active: false,
+        pending: null,
+      };
+      setScopeState(request.scopeKey, {
+        ...scopeState,
+        pending: request,
+      });
+      runNext(request.scopeKey);
+    },
+  };
+};
+
+// Module lifetime preserves same-scope write ordering across controller remounts.
+const prefsSaveQueue = createPrefsSaveQueue();
 
 const defaultSort = (): TopPicksSortState => ({
   key: defaultPrefs.sort_key,
@@ -211,9 +294,9 @@ export function useTopPicksController() {
         setPageState(1);
         setPrefsHydration({ scopeKey: preferenceScopeKey, status: "ready" });
       })
-      .catch((reason: unknown) => {
+      .catch(() => {
         if (!active) return;
-        console.error("Unable to load Top Picks preferences", reason);
+        console.error(PREFS_LOAD_ERROR_MESSAGE);
         setPrefsHydration({ scopeKey: preferenceScopeKey, status: "failed" });
       });
 
@@ -232,23 +315,29 @@ export function useTopPicksController() {
       !userId ||
       !prefsDirty ||
       !preferenceScopeReady ||
+      preferenceScopeKey === null ||
       prefsHydration?.scopeKey !== preferenceScopeKey
     ) {
       return;
     }
 
     let active = true;
-    saveTopPicksPrefs(userId, {
-      sort_key: sort.key,
-      sort_dir: sort.dir,
-      page_size: pageSize,
-    })
-      .then(() => {
-        if (active) setPrefsDirty(false);
-      })
-      .catch((reason: unknown) => {
-        console.error("Unable to save Top Picks preferences", reason);
-      });
+    prefsSaveQueue.enqueue({
+      scopeKey: preferenceScopeKey,
+      userId,
+      prefs: {
+        sort_key: sort.key,
+        sort_dir: sort.dir,
+        page_size: pageSize,
+      },
+      onSuccess: (isLatest) => {
+        if (active && isLatest) setPrefsDirty(false);
+      },
+      onError: () => {
+        if (!active) return;
+        console.error(PREFS_SAVE_ERROR_MESSAGE);
+      },
+    });
 
     return () => {
       active = false;

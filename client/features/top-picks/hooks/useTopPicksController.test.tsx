@@ -55,10 +55,12 @@ const rowFor = (symbol: string): TopPicksRow => ({
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((next) => {
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((next, fail) => {
     resolve = next;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, reject, resolve };
 };
 
 const installMemoryStorage = () => {
@@ -350,6 +352,9 @@ describe("useTopPicksController", () => {
         pageSize: 25,
       }),
     );
+    expect(consoleError.mock.calls).toEqual([
+      ["Unable to load Top Picks preferences."],
+    ]);
     expect(mockSaveTopPicksPrefs).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -377,6 +382,347 @@ describe("useTopPicksController", () => {
 
     renderer!.unmount();
     consoleError.mockRestore();
+  });
+
+  it("serializes saves and coalesces queued preferences to the latest state", async () => {
+    const firstSave = deferred<void>();
+    const latestSave = deferred<void>();
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs
+      .mockImplementationOnce(() => firstSave.promise)
+      .mockImplementationOnce(() => latestSave.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      latest!.toggleSort("alpha");
+      await flushEffects();
+    });
+    await act(async () => {
+      latest!.setPageSize(50);
+      await flushEffects();
+      latest!.toggleSort("alpha");
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      firstSave.resolve(undefined);
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+    expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+      sort_key: "alpha",
+      sort_dir: "asc",
+      page_size: 50,
+    });
+
+    await act(async () => {
+      latestSave.resolve(undefined);
+      await flushEffects();
+    });
+    renderer!.unmount();
+  });
+
+  it("keeps the latest preferences dirty when an older save succeeds before the latest save fails", async () => {
+    const firstSave = deferred<void>();
+    const latestSave = deferred<void>();
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs
+      .mockImplementationOnce(() => firstSave.promise)
+      .mockImplementationOnce(() => latestSave.promise)
+      .mockResolvedValueOnce(undefined);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.toggleSort("alpha");
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        latest!.setPageSize(50);
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        firstSave.resolve(undefined);
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+      expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+        sort_key: "alpha",
+        sort_dir: "desc",
+        page_size: 50,
+      });
+
+      const sensitiveFailure = new Error("database details must stay private");
+      await act(async () => {
+        latestSave.reject(sensitiveFailure);
+        await flushEffects();
+      });
+      expect(consoleError.mock.calls).toEqual([
+        ["Unable to save Top Picks preferences."],
+      ]);
+
+      await act(async () => {
+        latest!.toggleSort("alpha");
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(3);
+      expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+        sort_key: "alpha",
+        sort_dir: "asc",
+        page_size: 50,
+      });
+    } finally {
+      renderer!.unmount();
+      consoleError.mockRestore();
+    }
+  });
+
+  it("continues the latest queued save after unmounting without surfacing its stale failure", async () => {
+    const firstSave = deferred<void>();
+    const latestSave = deferred<void>();
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs
+      .mockImplementationOnce(() => firstSave.promise)
+      .mockImplementationOnce(() => latestSave.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      latest!.toggleSort("alpha");
+      await flushEffects();
+      latest!.setPageSize(50);
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      renderer!.unmount();
+      await flushEffects();
+      firstSave.resolve(undefined);
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+    expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+      sort_key: "alpha",
+      sort_dir: "desc",
+      page_size: 50,
+    });
+    await act(async () => {
+      latestSave.reject(new Error("unmounted write failed"));
+      await flushEffects();
+    });
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("serializes same-account saves across an unmount and remount", async () => {
+    const staleSave = deferred<void>();
+    const remountedSave = deferred<void>();
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs
+      .mockImplementationOnce(() => staleSave.promise)
+      .mockImplementationOnce(() => remountedSave.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let firstRenderer: ReactTestRenderer | undefined;
+    let secondRenderer: ReactTestRenderer | undefined;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        firstRenderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.toggleSort("alpha");
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        firstRenderer!.unmount();
+        secondRenderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.setPageSize(50);
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        staleSave.resolve(undefined);
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+      expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+        sort_key: "sharpe",
+        sort_dir: "desc",
+        page_size: 50,
+      });
+    } finally {
+      await act(async () => {
+        staleSave.resolve(undefined);
+        remountedSave.resolve(undefined);
+        await flushEffects();
+      });
+      firstRenderer?.unmount();
+      secondRenderer?.unmount();
+    }
+  });
+
+  it("does not let a stalled save block another account scope", async () => {
+    const accountASave = deferred<void>();
+    const accountBSave = deferred<void>();
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs.mockImplementation((userId) =>
+      userId === "account-a" ? accountASave.promise : accountBSave.promise,
+    );
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      latest!.toggleSort("alpha");
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(1);
+    expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-a", {
+      sort_key: "alpha",
+      sort_dir: "desc",
+      page_size: 25,
+    });
+
+    mockAuthState = { user: { id: "account-b" }, loading: false };
+    await act(async () => {
+      renderer!.update(<Probe />);
+      await flushEffects();
+      latest!.setPageSize(50);
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+    expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-b", {
+      sort_key: "sharpe",
+      sort_dir: "desc",
+      page_size: 50,
+    });
+
+    await act(async () => {
+      accountBSave.resolve(undefined);
+      await flushEffects();
+    });
+    await act(async () => {
+      latest!.toggleSort("alpha");
+      await flushEffects();
+    });
+    expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(3);
+    expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-b", {
+      sort_key: "alpha",
+      sort_dir: "desc",
+      page_size: 50,
+    });
+
+    await act(async () => {
+      accountASave.resolve(undefined);
+      await flushEffects();
+    });
+    renderer!.unmount();
+  });
+
+  it("isolates stale save failures from the next account scope", async () => {
+    const accountASave = deferred<void>();
+    const accountBSave = deferred<void>();
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    mockSaveTopPicksPrefs.mockImplementation((userId) =>
+      userId === "account-a" ? accountASave.promise : accountBSave.promise,
+    );
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.toggleSort("alpha");
+        await flushEffects();
+      });
+
+      mockAuthState = { user: { id: "account-b" }, loading: false };
+      await act(async () => {
+        renderer!.update(<Probe />);
+        await flushEffects();
+        latest!.setPageSize(50);
+        await flushEffects();
+      });
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+      expect(mockSaveTopPicksPrefs).toHaveBeenLastCalledWith("account-b", {
+        sort_key: "sharpe",
+        sort_dir: "desc",
+        page_size: 50,
+      });
+
+      await act(async () => {
+        accountASave.reject(new Error("account A write failed"));
+        await flushEffects();
+      });
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockSaveTopPicksPrefs).toHaveBeenCalledTimes(2);
+
+      await act(async () => {
+        accountBSave.resolve(undefined);
+        await flushEffects();
+      });
+    } finally {
+      renderer!.unmount();
+      consoleError.mockRestore();
+    }
   });
 
   it("prevents clearing every visible column", async () => {
