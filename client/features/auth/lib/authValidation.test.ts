@@ -1,4 +1,4 @@
-import { validateAuthForm } from "./authValidation";
+import { validateAuthForm, validateNewPassword } from "./authValidation";
 
 const PASSWORD_FIELD = ["pass", "word"].join("") as "password";
 
@@ -31,6 +31,36 @@ describe("validateAuthForm", () => {
       lastName: "Enter your last name.",
       [PASSWORD_FIELD]: "Use at least 8 characters.",
     });
+  });
+
+  it("keeps shorter existing passwords valid for sign-in while enforcing new-password bounds", () => {
+    expect(
+      validateAuthForm("sign-in", {
+        email: "student@example.com",
+        [PASSWORD_FIELD]: "seven77",
+      }).errors,
+    ).toEqual({});
+    expect(
+      validateAuthForm("sign-in", {
+        email: "student@example.com",
+        [PASSWORD_FIELD]: "",
+      }).errors,
+    ).toEqual({
+      [PASSWORD_FIELD]: "Enter your password.",
+    });
+    expect(
+      validateAuthForm("sign-in", {
+        email: "student@example.com",
+        [PASSWORD_FIELD]: "a".repeat(129),
+      }).errors,
+    ).toEqual({
+      [PASSWORD_FIELD]: "Use 128 characters or fewer.",
+    });
+    expect(validateNewPassword("seven77")).toBe("Use at least 8 characters.");
+    expect(validateNewPassword("eight888")).toBeUndefined();
+    expect(validateNewPassword("a".repeat(129))).toBe(
+      "Use 128 characters or fewer.",
+    );
   });
 
   it("rejects malformed and excessively long inputs", () => {

@@ -1,5 +1,10 @@
 import * as React from "react";
-import { AuthDialog, useAuthDialog } from "@/features/auth";
+import {
+  AuthDialog,
+  NEW_PASSWORD_HELPER_TEXT,
+  useAuthDialog,
+  validateNewPassword,
+} from "@/features/auth";
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
@@ -61,9 +66,9 @@ export function ProfileMain() {
     hasAccount && profile.profileLoading && !profile.profileSnapshot;
   const dialogIsCurrent = Boolean(
     !profile.authLoading &&
-      profile.profileSnapshot &&
-      dialogOwnerUserId &&
-      dialogOwnerUserId === profile.user?.id,
+    profile.profileSnapshot &&
+    dialogOwnerUserId &&
+    dialogOwnerUserId === profile.user?.id,
   );
 
   const resetDialogState = React.useCallback(() => {
@@ -162,9 +167,8 @@ export function ProfileMain() {
       if (!dialogIsCurrent) return;
       const nextErrors: typeof passwordErrors = {};
 
-      if (!passwordDraft.newPassword || passwordDraft.newPassword.length < 6) {
-        nextErrors.newPassword = "Password must be at least 6 characters.";
-      }
+      const newPasswordError = validateNewPassword(passwordDraft.newPassword);
+      if (newPasswordError) nextErrors.newPassword = newPasswordError;
       if (passwordDraft.newPassword !== passwordDraft.confirmPassword) {
         nextErrors.confirmPassword =
           "New password and confirmation do not match.";
@@ -437,7 +441,7 @@ export function ProfileMain() {
             autoComplete="new-password"
             disabled={profile.updatingPassword}
             error={passwordErrors.newPassword}
-            helperText="6+ characters."
+            helperText={NEW_PASSWORD_HELPER_TEXT}
             id="profile-dialog-new-password"
             label="New password"
             type="password"

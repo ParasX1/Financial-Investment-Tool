@@ -9,6 +9,9 @@ import {
   jest,
 } from "@jest/globals";
 import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
+import { getAuthErrorMessage } from "../../auth/lib/authErrors";
+import { validateNewPassword } from "../../auth/lib/authValidation";
+import { ProfileAccountError } from "../data/profileAccountClient";
 import type { ProfileControllerDependencies } from "../data/profileDependencies";
 import { ProfileAvatarStorageError } from "../data/profileAvatarStorage";
 
@@ -80,7 +83,9 @@ function createDependencies(): ProfileControllerDependencies {
 describe("useProfileController session lifecycle", () => {
   beforeAll(() => {
     jest.doMock("@/features/auth", () => ({
+      getAuthErrorMessage,
       useAuth: () => mockAuthState,
+      validateNewPassword,
     }));
     useProfileController =
       require("./useProfileController").useProfileController;
@@ -535,7 +540,14 @@ describe("useProfileController session lifecycle", () => {
       ).toBe(false);
       expect(await latest!.saveEmail({ email: "not-an-email" })).toBe(false);
       expect(await latest!.savePhone({ phone: "123" })).toBe(false);
-      expect(await latest!.changePassword("short", "different")).toBe(false);
+      expect(await latest!.changePassword("", "")).toBe(false);
+      expect(await latest!.changePassword("seven77", "seven77")).toBe(false);
+      expect(await latest!.changePassword("strong78", "different8")).toBe(
+        false,
+      );
+      expect(
+        await latest!.changePassword("a".repeat(129), "a".repeat(129)),
+      ).toBe(false);
     });
     expect(dependencies.usersRepository.saveIdentity).not.toHaveBeenCalled();
     expect(dependencies.usersRepository.savePhone).not.toHaveBeenCalled();
@@ -543,6 +555,10 @@ describe("useProfileController session lifecycle", () => {
       dependencies.accountClient.requestEmailChange,
     ).not.toHaveBeenCalled();
     expect(dependencies.accountClient.updatePassword).not.toHaveBeenCalled();
+    expect(latest!.message).toEqual({
+      tone: "error",
+      text: "Use 128 characters or fewer.",
+    });
 
     (
       dependencies.usersRepository.saveIdentity as jest.Mock<any>
@@ -563,19 +579,76 @@ describe("useProfileController session lifecycle", () => {
 
     (
       dependencies.accountClient.updatePassword as jest.Mock<any>
-    ).mockRejectedValueOnce(new Error("auth internals"));
+    ).mockRejectedValueOnce(
+      new ProfileAccountError("password_update", new Error("auth internals")),
+    );
     await act(async () => {
-      expect(await latest!.changePassword("strong7", "strong7")).toBe(false);
+      expect(await latest!.changePassword("strong78", "strong78")).toBe(false);
     });
     expect(latest).toMatchObject({
       message: {
         tone: "error",
-        text: "Password update failed. Please sign in again and retry.",
+        text: "Password update failed. Please try again.",
       },
       updatingPassword: false,
     });
     renderer!.unmount();
   });
+
+  it.each([
+    {
+      cause: { code: "weak_password", message: "provider details" },
+      expected: "Choose a stronger password and try again.",
+      scenario: "weak passwords",
+    },
+    {
+      cause: { status: 429 },
+      expected: "Too many attempts. Wait a moment, then try again.",
+      scenario: "rate limits",
+    },
+    {
+      cause: { name: "AuthRetryableFetchError" },
+      expected:
+        "We couldn't reach the account service. Check your connection and try again.",
+      scenario: "retryable network failures",
+    },
+  ])(
+    "maps wrapped password-update $scenario to safe feedback",
+    async ({ cause, expected }) => {
+      mockAuthState = {
+        loading: false,
+        user: user("user-a", "alice@example.com"),
+      };
+      const dependencies = createDependencies();
+      (
+        dependencies.accountClient.updatePassword as jest.Mock<any>
+      ).mockRejectedValueOnce(
+        new ProfileAccountError("password_update", cause),
+      );
+      let latest: ReturnType<typeof useProfileController> | null = null;
+      let renderer: ReactTestRenderer;
+
+      function Probe() {
+        latest = useProfileController(dependencies);
+        return null;
+      }
+
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushPromises();
+      });
+      await act(async () => {
+        expect(await latest!.changePassword("strong78", "strong78")).toBe(
+          false,
+        );
+      });
+      expect(latest).toMatchObject({
+        message: { tone: "error", text: expected },
+        updatingPassword: false,
+      });
+      renderer!.unmount();
+    },
+  );
 
   it("uploads avatars, rolls back failed profile saves, and revokes previews", async () => {
     mockAuthState = {
@@ -700,11 +773,11 @@ describe("useProfileController session lifecycle", () => {
     });
 
     await act(async () => {
-      expect(await latest!.changePassword("strong7", "strong7")).toBe(true);
+      expect(await latest!.changePassword("strong78", "strong78")).toBe(true);
       await latest!.resendVerification();
     });
     expect(dependencies.accountClient.updatePassword).toHaveBeenCalledWith(
-      "strong7",
+      "strong78",
     );
     expect(dependencies.accountClient.resendVerification).toHaveBeenCalledWith({
       email: "alice@example.com",

@@ -1,5 +1,9 @@
 import * as React from "react";
-import { useAuth } from "@/features/auth";
+import {
+  getAuthErrorMessage,
+  useAuth,
+  validateNewPassword,
+} from "@/features/auth";
 import {
   defaultProfileDependencies,
   type ProfileControllerDependencies,
@@ -240,9 +244,9 @@ export function useProfileController(
   );
   const profileVisible = Boolean(
     !authLoading &&
-      user &&
-      profileOwner?.userId === user.id &&
-      profileOwner.sessionToken === authSession.token,
+    user &&
+    profileOwner?.userId === user.id &&
+    profileOwner.sessionToken === authSession.token,
   );
   const profileReady =
     profileVisible && Boolean(profileSnapshot) && !profileLoading;
@@ -649,11 +653,9 @@ export function useProfileController(
       const ownerId = user.id;
       const ownerToken = authSession.token;
 
-      if (!newPassword || newPassword.length < 6) {
-        setMessage({
-          tone: "error",
-          text: "Password must be at least 6 characters.",
-        });
+      const passwordError = validateNewPassword(newPassword);
+      if (passwordError) {
+        setMessage({ tone: "error", text: passwordError });
         return false;
       }
 
@@ -670,12 +672,12 @@ export function useProfileController(
 
       try {
         await accountClient.updatePassword(newPassword);
-      } catch {
+      } catch (error) {
         if (isSessionCurrent(ownerId, ownerToken)) {
           setUpdatingPassword(false);
           setMessage({
             tone: "error",
-            text: "Password update failed. Please sign in again and retry.",
+            text: getAuthErrorMessage(error, "password-update"),
           });
         }
         return false;
