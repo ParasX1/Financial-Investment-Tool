@@ -108,9 +108,28 @@ export const usePortfolioMetric = ({
   const [error, setError] = useState<string | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
   const dataRef = useRef<MetricsResponse | null>(null);
+  const {
+    benchmark,
+    confidenceLevel,
+    endDate,
+    metricType,
+    riskFreeRate,
+    startDate,
+  } = settings;
+  const requestSettings = useMemo<PortfolioAnalysisSettings>(
+    () => ({
+      benchmark,
+      confidenceLevel,
+      endDate,
+      metricType,
+      riskFreeRate,
+      startDate,
+    }),
+    [benchmark, confidenceLevel, endDate, metricType, riskFreeRate, startDate],
+  );
   const baseQueryKey = useMemo(
-    () => createQueryKey(symbols, settings),
-    [settings, symbols],
+    () => createQueryKey(symbols, requestSettings),
+    [requestSettings, symbols],
   );
   const requestKey = `${baseQueryKey}:${retryVersion}`;
 
@@ -139,7 +158,7 @@ export const usePortfolioMetric = ({
       setStatus(
         cached.data.metadata?.missingSymbols?.length
           ? "partial"
-          : responseHasData(cached.data, settings)
+          : responseHasData(cached.data, requestSettings)
             ? "success"
             : "empty",
       );
@@ -148,14 +167,14 @@ export const usePortfolioMetric = ({
 
     setStatus(dataRef.current ? "stale" : "loading");
     setError(null);
-    requestMetric(baseQueryKey, symbols, settings)
+    requestMetric(baseQueryKey, symbols, requestSettings)
       .then((response) => {
         if (!active) return;
         setData(response);
         setStatus(
           response.metadata?.missingSymbols?.length
             ? "partial"
-            : responseHasData(response, settings)
+            : responseHasData(response, requestSettings)
               ? "success"
               : "empty",
         );
@@ -173,7 +192,7 @@ export const usePortfolioMetric = ({
     return () => {
       active = false;
     };
-  }, [baseQueryKey, requestKey, settings.metricType, symbols, validationError]);
+  }, [baseQueryKey, requestKey, requestSettings, symbols, validationError]);
 
   const retry = useCallback(() => {
     metricCache.delete(baseQueryKey);
