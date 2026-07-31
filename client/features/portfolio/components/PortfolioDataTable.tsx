@@ -2,7 +2,7 @@ import React from "react";
 import type { MetricsResponse } from "@/lib/market-metrics";
 import { formatMetricValue, METRIC_REGISTRY } from "../data/metricRegistry";
 import type { PortfolioMetricType } from "../types";
-import styles from "../styles/PortfolioScreen.module.css";
+import styles from "../styles/PortfolioDataTable.module.css";
 
 export type PortfolioKeyFigure = {
   label: string;
@@ -36,34 +36,42 @@ const buildSingleValueModel = (
     return status.replaceAll("_", " ");
   };
   const symbols = Array.from(
-    new Set([...data.tickers, ...Object.keys(values), ...Object.keys(statuses)]),
+    new Set([
+      ...data.tickers,
+      ...Object.keys(values),
+      ...Object.keys(statuses),
+    ]),
   );
   const hasStatuses = Object.keys(statuses).length > 0;
 
   return {
-    columns: [
-      "Symbol",
-      metric.label,
-      ...(hasStatuses ? ["Observations"] : []),
-    ],
+    columns: ["Symbol", metric.label, ...(hasStatuses ? ["Observations"] : [])],
     rows: symbols.flatMap((symbol) => {
       const value = values[symbol];
       const status = statuses[symbol];
       if (Number.isFinite(value)) {
-        return [[
-          symbol,
-          formatMetricValue(metricType, value),
-          ...(hasStatuses
-            ? [status?.observations === undefined ? "—" : String(status.observations)]
-            : []),
-        ]];
+        return [
+          [
+            symbol,
+            formatMetricValue(metricType, value),
+            ...(hasStatuses
+              ? [
+                  status?.observations === undefined
+                    ? "—"
+                    : String(status.observations),
+                ]
+              : []),
+          ],
+        ];
       }
       if (!status) return [];
-      return [[
-        symbol,
-        statusText(status.status),
-        status.observations === undefined ? "—" : String(status.observations),
-      ]];
+      return [
+        [
+          symbol,
+          statusText(status.status),
+          status.observations === undefined ? "—" : String(status.observations),
+        ],
+      ];
     }),
     keyFigures: leader
       ? [
@@ -78,12 +86,12 @@ const buildSingleValueModel = (
           },
         ]
       : Object.entries(statuses)
-            .filter(([, status]) => status.status === "infinite")
-            .slice(0, 1)
-            .map(([symbol]) => ({
-              label: "Unbounded Sortino",
-              value: `${symbol} · no downside shortfall`,
-            })),
+          .filter(([, status]) => status.status === "infinite")
+          .slice(0, 1)
+          .map(([symbol]) => ({
+            label: "Unbounded Sortino",
+            value: `${symbol} · no downside shortfall`,
+          })),
   };
 };
 const buildTimeSeriesModel = (

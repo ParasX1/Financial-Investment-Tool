@@ -13,7 +13,7 @@ import {
   constrainObservationResize,
   constrainObservationWindow,
 } from "./portfolioObservationGeometry";
-import styles from "../styles/PortfolioTraderWorkspace.module.css";
+import styles from "../styles/PortfolioObservation.module.css";
 
 const OBSERVATION_DESKTOP_MINIMUM_WIDTH = 721;
 const useIsomorphicLayoutEffect =

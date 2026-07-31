@@ -7,7 +7,7 @@ import { PortfolioMetricCard } from "../components/PortfolioMetricCard";
 import { PortfolioObservation } from "../components/PortfolioObservation";
 import { usePortfolioWorkspaceController } from "../hooks/usePortfolioWorkspaceController";
 import { formatPortfolioDate } from "../state/workspaceSelectors";
-import styles from "../styles/PortfolioTraderWorkspace.module.css";
+import styles from "../styles/PortfolioWorkspaceShell.module.css";
 
 export const PortfolioScreen = () => {
   const { user, loading: authLoading } = useAuth();
@@ -38,9 +38,7 @@ export const PortfolioScreen = () => {
         >
           <PortfolioMetricCard
             card={card}
-            variant={
-              index === 0 ? "hero" : index < 3 ? "standard" : "compact"
-            }
+            variant={index === 0 ? "hero" : index < 3 ? "standard" : "compact"}
             {...getCardProps(card.id)}
           />
         </div>
@@ -134,10 +132,7 @@ export const PortfolioScreen = () => {
             {workspace.view.mode === "focus" && focusedCard && (
               <section className={styles.focusView} aria-label="Focus mode">
                 <div className={styles.focusToolbar}>
-                  <button
-                    type="button"
-                    onClick={actions.showBoard}
-                  >
+                  <button type="button" onClick={actions.showBoard}>
                     ← Back to Board
                   </button>
                   <span>Esc returns without changing the deck</span>

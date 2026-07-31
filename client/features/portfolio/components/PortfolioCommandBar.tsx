@@ -1,7 +1,7 @@
 import React from "react";
 import { Autocomplete, Chip, TextField } from "@mui/material";
 import type { PortfolioAnalysisInputs } from "../types";
-import styles from "../styles/PortfolioTraderWorkspace.module.css";
+import styles from "../styles/PortfolioCommandBar.module.css";
 
 const normaliseSymbols = (values: string[]) =>
   Array.from(

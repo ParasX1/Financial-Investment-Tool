@@ -110,7 +110,7 @@ describe("site-wide page background contract", () => {
       "features/portfolio/screens/PortfolioScreen.tsx",
     );
     const styles = readClientSource(
-      "features/portfolio/styles/PortfolioScreen.module.css",
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
     );
 
     expect(route).toContain("export default PortfolioScreen");

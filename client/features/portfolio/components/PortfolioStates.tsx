@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "../styles/PortfolioScreen.module.css";
+import styles from "../styles/PortfolioStates.module.css";
 
 type PortfolioErrorStateProps = {
   message: string;

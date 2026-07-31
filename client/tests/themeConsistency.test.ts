@@ -5,6 +5,9 @@ import { describe, expect, it } from "@jest/globals";
 const readClientSource = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), "utf8");
 
+const readPortfolioStyles = (...relativePaths: string[]) =>
+  relativePaths.map(readClientSource).join("\n");
+
 const openingTagContaining = (source: string, uniqueText: string) => {
   const textIndex = source.indexOf(uniqueText);
   expect(textIndex).toBeGreaterThanOrEqual(0);
@@ -36,8 +39,12 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
   });
 
   it("keeps the redesigned Portfolio workspace on the shared FIT foundation", () => {
-    const styles = readClientSource(
-      "features/portfolio/styles/PortfolioTraderWorkspace.module.css",
+    const styles = readPortfolioStyles(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
+      "features/portfolio/styles/PortfolioCommandBar.module.css",
+      "features/portfolio/styles/PortfolioMetricCard.module.css",
+      "features/portfolio/styles/PortfolioObservation.module.css",
+      "features/portfolio/styles/PortfolioChart.module.css",
     );
 
     expect(styles).toContain("var(--fit-page-background)");
@@ -89,7 +96,7 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
       "features/portfolio/screens/PortfolioScreen.tsx",
     );
     const styles = readClientSource(
-      "features/portfolio/styles/PortfolioTraderWorkspace.module.css",
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
     );
     const titleTag = openingTagContaining(
       screen,
@@ -127,18 +134,26 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
   });
 
   it("defines a readable single-column mobile Board and stacked Observation", () => {
-    const styles = readClientSource(
-      "features/portfolio/styles/PortfolioTraderWorkspace.module.css",
+    const shellStyles = readClientSource(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
     );
-    const mobileRules = styles.slice(
-      styles.indexOf("@media (max-width: 720px)"),
+    const observationStyles = readClientSource(
+      "features/portfolio/styles/PortfolioObservation.module.css",
+    );
+    const shellMobileRules = shellStyles.slice(
+      shellStyles.indexOf("@media (max-width: 720px)"),
+    );
+    const observationMobileRules = observationStyles.slice(
+      observationStyles.indexOf("@media (max-width: 720px)"),
     );
 
-    expect(mobileRules).toMatch(/\.board[\s\S]*grid-template-columns:\s*1fr/);
-    expect(mobileRules).toMatch(/\.boardSlot,[\s\S]*min-height:\s*330px/);
-    expect(mobileRules).toMatch(
+    expect(shellMobileRules).toMatch(/\.board[\s\S]*grid-template-columns:\s*1fr/);
+    expect(shellMobileRules).toMatch(/\.boardSlot,[\s\S]*min-height:\s*330px/);
+    expect(observationMobileRules).toMatch(
       /\.observationWindow[\s\S]*position:\s*relative !important/,
     );
-    expect(mobileRules).toMatch(/\.observationResize[\s\S]*display:\s*none/);
+    expect(observationMobileRules).toMatch(
+      /\.observationResize[\s\S]*display:\s*none/,
+    );
   });
 });

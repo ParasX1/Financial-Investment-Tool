@@ -11,7 +11,7 @@ import { usePortfolioMetric } from "../hooks/usePortfolioMetric";
 import { PortfolioChart } from "./PortfolioChart";
 import { getPortfolioTableModel } from "./PortfolioDataTable";
 import { PortfolioMetricWorkspace } from "./PortfolioMetricWorkspace";
-import styles from "../styles/PortfolioTraderWorkspace.module.css";
+import styles from "../styles/PortfolioMetricCard.module.css";
 
 type CardVariant = "hero" | "standard" | "compact" | "focus" | "observer";
 

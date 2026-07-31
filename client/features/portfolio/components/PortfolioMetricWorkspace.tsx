@@ -7,7 +7,7 @@ import {
   getPortfolioTableModel,
   PortfolioDataTable,
 } from "./PortfolioDataTable";
-import styles from "../styles/PortfolioScreen.module.css";
+import styles from "../styles/PortfolioMetricWorkspace.module.css";
 
 export const PortfolioMetricWorkspace = ({
   data,

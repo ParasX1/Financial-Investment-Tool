@@ -5,8 +5,7 @@ import { PortfolioFrontierChart } from "./PortfolioFrontierChart";
 import { formatMetricValue, METRIC_REGISTRY } from "../data/metricRegistry";
 import { toCorrelationHeatMapModel } from "../lib/portfolioChartModel";
 import type { PortfolioMetricType } from "../types";
-import baseStyles from "../styles/PortfolioScreen.module.css";
-import workspaceStyles from "../styles/PortfolioTraderWorkspace.module.css";
+import chartStyles from "../styles/PortfolioChart.module.css";
 
 const allocationWeightFormatter = new Intl.NumberFormat("en-AU", {
   style: "percent",
@@ -177,8 +176,8 @@ export const PortfolioChart = ({
   return (
     <div
       ref={ref}
-      className={`${baseStyles.chartCanvas} ${
-        compact ? workspaceStyles.chartCanvasCompact : ""
+      className={`${chartStyles.chartCanvas} ${
+        compact ? chartStyles.chartCanvasCompact : ""
       }`}
       aria-label={`${metric.label} chart`}
       data-benchmark={benchmark}
@@ -187,7 +186,7 @@ export const PortfolioChart = ({
       {chart}
       {pinnedSelection && (
         <div
-          className={workspaceStyles.chartSelection}
+          className={chartStyles.chartSelection}
           role="status"
           aria-live="polite"
         >
