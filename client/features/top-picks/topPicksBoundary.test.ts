@@ -45,18 +45,31 @@ describe("Top Picks feature boundary", () => {
     expect(columnsSource).not.toContain("sortableMetricValue");
   });
 
-  it("owns preferences behind the canonical auth and Supabase boundaries", () => {
+  it("keeps auth-scoped preferences and persistence behind dedicated modules", () => {
     const repositorySource = source(
       "features/top-picks/data/topPicksPrefsRepository.ts",
     );
     const controllerSource = source(
       "features/top-picks/hooks/useTopPicksController.ts",
     );
+    const preferencesSource = source(
+      "features/top-picks/hooks/useTopPicksPreferences.ts",
+    );
+    const queueSource = source(
+      "features/top-picks/hooks/topPicksPrefsSaveQueue.ts",
+    );
+    const visibleColumnsSource = source(
+      "features/top-picks/hooks/useTopPicksVisibleColumns.ts",
+    );
 
     expect(repositorySource).toContain('from "@/lib/supabase"');
     expect(controllerSource).toContain('from "@/features/auth"');
-    expect(controllerSource).toContain("preferenceScopeReady");
-    expect(controllerSource).toContain("prefsDirty");
+    expect(controllerSource).toContain("useTopPicksPreferences");
+    expect(controllerSource).toContain("useTopPicksVisibleColumns");
+    expect(preferencesSource).toContain("preferenceScopeReady");
+    expect(preferencesSource).toContain("prefsDirty");
+    expect(queueSource).toContain("saveTopPicksPrefs");
+    expect(visibleColumnsSource).toContain("localStorage");
   });
 
   it("removes global service shims after consumers move into the feature", () => {
