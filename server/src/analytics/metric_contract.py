@@ -1,11 +1,9 @@
 from datetime import date, datetime, timezone
 import math
-import re
 
-from ..metrics import normalize_tickers
+from ..market_primitives import TICKER_PATTERN, normalize_tickers
 
 
-TICKER_PATTERN = re.compile(r"^[A-Z0-9^][A-Z0-9.^=-]{0,14}$")
 MAX_STOCK_TICKERS = 5
 MAX_PORTFOLIOS = 10000
 

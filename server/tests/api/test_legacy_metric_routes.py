@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -11,12 +11,13 @@ def client():
     return app.test_client()
 
 
-def test_legacy_alpha_route_passes_the_market_ticker_to_calculator(client):
-    with patch(
-        "src.server.calculate_alpha",
-        return_value={"AAPL": 0.04},
-    ) as calculator:
-        response = client.get("/api/alphacomparison")
+def test_legacy_alpha_route_passes_the_market_ticker_to_calculator():
+    calculator = Mock(return_value={"AAPL": 0.04})
+    app = create_app(
+        {"TESTING": True},
+        calculator_provider={"calculate_alpha": calculator}.__getitem__,
+    )
+    response = app.test_client().get("/api/alphacomparison")
 
     assert response.status_code == 200
     assert response.get_json() == {"AAPL": 0.04}
@@ -29,16 +30,19 @@ def test_legacy_alpha_route_passes_the_market_ticker_to_calculator(client):
     )
 
 
-def test_legacy_correlation_route_returns_calculator_mapping(client):
+def test_legacy_correlation_route_returns_calculator_mapping():
     result = {
         "AAPL": {"AAPL": 0.75, "SPY": 0.65},
         "SPY": {"AAPL": 0.65, "SPY": 1.0},
     }
-    with patch(
-        "src.server.calculate_correlation_with_market",
-        return_value=result,
-    ) as calculator:
-        response = client.get("/api/marketcorrelationanalysis")
+    calculator = Mock(return_value=result)
+    app = create_app(
+        {"TESTING": True},
+        calculator_provider={
+            "calculate_correlation_with_market": calculator,
+        }.__getitem__,
+    )
+    response = app.test_client().get("/api/marketcorrelationanalysis")
 
     assert response.status_code == 200
     assert response.get_json() == result

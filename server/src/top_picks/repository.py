@@ -1,4 +1,4 @@
-from ..analytics.metric_contract import TICKER_PATTERN
+from ..market_primitives import TICKER_PATTERN
 from .contracts import Ticker
 
 

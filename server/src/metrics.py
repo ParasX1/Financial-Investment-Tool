@@ -8,6 +8,12 @@ import yfinance as yf   # Used to fetch stock data from Yahoo Finance
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
 
+from .market_primitives import (
+    calculate_returns,
+    get_adjusted_close_prices,
+    normalize_tickers,
+)
+
 STOCK_DATA_CACHE_TTL_SECONDS = 120
 _stock_data_cache = {}
 _stock_data_lock = RLock()
@@ -16,19 +22,6 @@ _stock_data_lock = RLock()
 def clear_stock_data_cache():
     with _stock_data_lock:
         _stock_data_cache.clear()
-
-
-def normalize_tickers(stock_tickers):
-    if isinstance(stock_tickers, str):
-        stock_tickers = [stock_tickers]
-
-    normalized = []
-    for ticker in stock_tickers:
-        clean_ticker = str(ticker).strip().upper()
-        if clean_ticker and clean_ticker not in normalized:
-            normalized.append(clean_ticker)
-
-    return normalized
 
 
 def ensure_multiindex_stock_data(stock_data, stock_tickers):
@@ -130,78 +123,6 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
         return stock_data
 
 
-def _find_price_field(labels):
-    normalized_labels = {
-        str(label).strip().casefold(): label
-        for label in labels
-    }
-    for candidate in ("Adj Close", "Close"):
-        matched_label = normalized_labels.get(candidate.casefold())
-        if matched_label is not None:
-            return matched_label
-    return None
-
-
-def _normalize_price_frame(price_data, requested_tickers):
-    if isinstance(price_data, pd.Series):
-        price_data = price_data.to_frame()
-    else:
-        price_data = price_data.copy()
-
-    normalized_tickers = normalize_tickers(requested_tickers or [])
-    if len(normalized_tickers) == 1 and price_data.shape[1] == 1:
-        price_data.columns = [normalized_tickers[0]]
-    elif not isinstance(price_data.columns, pd.MultiIndex):
-        price_data.columns = [
-            str(column).strip().upper()
-            for column in price_data.columns
-        ]
-
-    price_data = price_data.apply(pd.to_numeric, errors="coerce")
-    return price_data.dropna(axis=1, how="all")
-
-
-def get_adjusted_close_prices(data, requested_tickers=None):
-    if data is None or data.empty:
-        return pd.DataFrame()
-
-    if isinstance(data.columns, pd.MultiIndex):
-        for level in range(data.columns.nlevels):
-            field = _find_price_field(data.columns.get_level_values(level))
-            if field is not None:
-                try:
-                    price_data = data.xs(field, level=level, axis=1)
-                except (KeyError, ValueError):
-                    continue
-                return _normalize_price_frame(
-                    price_data,
-                    requested_tickers,
-                )
-        return pd.DataFrame(index=data.index)
-
-    field = _find_price_field(data.columns)
-    if field is not None:
-        return _normalize_price_frame(data[field], requested_tickers)
-
-    normalized_tickers = normalize_tickers(requested_tickers or [])
-    columns_by_ticker = {
-        str(column).strip().upper(): column
-        for column in data.columns
-    }
-    available_columns = [
-        columns_by_ticker[ticker]
-        for ticker in normalized_tickers
-        if ticker in columns_by_ticker
-    ]
-    if not available_columns:
-        return pd.DataFrame(index=data.index)
-
-    return _normalize_price_frame(
-        data.loc[:, available_columns],
-        normalized_tickers,
-    )
-
-
 def select_available_prices(adj_close, requested_tickers):
     available_tickers = []
     for ticker in requested_tickers:
@@ -213,12 +134,6 @@ def select_available_prices(adj_close, requested_tickers):
 
     return adj_close[available_tickers].dropna(axis=1, how='all')
 
-
-def calculate_returns(price_frame):
-    if price_frame.empty:
-        return pd.DataFrame(index=price_frame.index)
-
-    return price_frame.pct_change(fill_method=None).dropna(how='all')
 
 # Function to calculate Beta
 def calculate_beta(stock_tickers, market_ticker, start_date, end_date):

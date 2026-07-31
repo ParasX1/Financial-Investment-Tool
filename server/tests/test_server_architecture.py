@@ -1,4 +1,4 @@
-from ast import Import, ImportFrom, parse, walk
+from ast import FunctionDef, Import, ImportFrom, parse, walk
 from pathlib import Path
 
 from src.server import create_app
@@ -63,6 +63,23 @@ def test_server_module_is_an_application_factory_not_a_route_container():
 
     assert "def create_app(" in source
     assert "@app.route" not in source
+
+
+def test_server_module_is_a_narrow_composition_root():
+    server_module = SERVER_SOURCE / "server.py"
+    tree = parse(server_module.read_text(encoding="utf-8"))
+    top_level_functions = [
+        node.name for node in tree.body if isinstance(node, FunctionDef)
+    ]
+
+    assert top_level_functions == ["create_app"]
+    assert not {
+        "analytics.metric_contract",
+        "metrics",
+        "supabase_client",
+        "top_picks.repository",
+        "top_picks.service",
+    }.intersection(imported_modules(server_module))
 
 
 def test_route_modules_do_not_import_financial_calculators():

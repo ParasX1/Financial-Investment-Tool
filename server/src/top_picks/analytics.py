@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from ..metrics import calculate_returns, get_adjusted_close_prices
+from ..market_primitives import (
+    calculate_returns,
+    get_adjusted_close_prices,
+)
 
 
 ANNUALISATION_DAYS = 252

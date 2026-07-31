@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 import math
 
-from ..analytics.metric_contract import TICKER_PATTERN
+from ..market_primitives import TICKER_PATTERN
 from .analytics import (
     ANNUALISATION_DAYS,
     calculate_information_ratios,

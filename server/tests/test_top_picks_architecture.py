@@ -34,3 +34,13 @@ def test_top_picks_route_contains_no_financial_calculations():
     assert "from ..metrics import" not in source
     assert "annualized_active_return" not in source
     assert "tracking_error" not in source
+
+
+def test_top_picks_domain_does_not_depend_on_legacy_metric_layers():
+    modules = list((SERVER_SOURCE / "top_picks").glob("*.py"))
+
+    assert modules
+    for module in modules:
+        source = module.read_text(encoding="utf-8")
+        assert "from ..metrics import" not in source
+        assert "from ..analytics." not in source
