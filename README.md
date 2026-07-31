@@ -62,12 +62,18 @@ cd server
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
 python -m src.server
 ```
 
-On PowerShell, activate with `.\.venv\Scripts\Activate.ps1` instead of the `source` command.
+On PowerShell, activate with `.\.venv\Scripts\Activate.ps1` and create the
+configuration file with `Copy-Item .env.example .env`.
 
-The backend can start without Supabase configuration. Endpoints that require it return a configuration error until `SUPABASE_URL` and `SUPABASE_KEY` are provided.
+The local runner loads `server/.env` before creating the Flask app. Replace its
+placeholders with the same Supabase project URL and browser-safe publishable key
+used by the frontend. Process environment values take precedence. The backend
+can still start without Supabase configuration, but endpoints that require it
+return a configuration error.
 
 ### Supabase
 

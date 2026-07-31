@@ -29,12 +29,17 @@ cd server
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
 python -m src.server
 ```
 
-PowerShell 不运行 `source`，改用 `.\.venv\Scripts\Activate.ps1` 激活环境。
+启动 Flask 前，请把 `server/.env` 中的两个占位值替换为前端所用的 Supabase
+project URL 和 browser-safe publishable key。PowerShell 不运行 `source`，请改用
+`.\.venv\Scripts\Activate.ps1` 激活环境，并用 `Copy-Item .env.example .env`
+创建配置文件。
 
 Flask API 地址是 `http://127.0.0.1:8080`。环境变量细节见[本地开发](#本地开发)。
+Portfolio analytics 可以在没有 Supabase 时运行，但 Top Picks 需要这两个配置值。
 
 ## 整体架构
 
@@ -314,12 +319,17 @@ PowerShell 使用 `Copy-Item .env.example .env.local`。
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
 python -m src.server
 ```
 
-PowerShell 改用 `.\.venv\Scripts\Activate.ps1` 激活环境。
+PowerShell 改用 `.\.venv\Scripts\Activate.ps1` 激活环境，并使用
+`Copy-Item .env.example .env` 创建配置文件。
 
-`server/.env.example` 是配置清单；Flask 不会自动加载它。需要时，把 `SUPABASE_URL` 和 `SUPABASE_KEY` 放入 process environment。
+`python -m src.server` 会先加载 `server/.env`，再创建 Flask app。请把占位值
+替换为前端所用的同一个 Supabase project URL 和 browser-safe publishable key。
+已有的 process environment 具有更高优先级。这个 public read path 绝不能使用
+secret 或 service-role key。
 
 ### Supabase
 

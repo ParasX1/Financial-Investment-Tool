@@ -127,6 +127,39 @@ def test_top_picks_route_requires_supabase_configuration():
     }
 
 
+@pytest.mark.parametrize(
+    ("url", "key"),
+    [
+        (
+            "your_supabase_project_url",
+            "your_supabase_publishable_key",
+        ),
+        ("not-a-url", "test-publishable-key"),
+        (
+            "https://project.supabase.co",
+            "your_supabase_publishable_key",
+        ),
+    ],
+)
+def test_top_picks_route_rejects_placeholder_or_invalid_supabase_config(
+    url,
+    key,
+):
+    app = create_app({
+        "TESTING": False,
+        "PROPAGATE_EXCEPTIONS": False,
+        "SUPABASE_URL": url,
+        "SUPABASE_KEY": key,
+    })
+
+    response = app.test_client().post("/api/top-picks", json={})
+
+    assert response.status_code == 503
+    assert response.get_json() == {
+        "error": "Top Picks service is not configured."
+    }
+
+
 def test_application_factory_registers_top_picks_blueprint():
     service = Mock()
     app = create_app(

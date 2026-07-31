@@ -29,12 +29,18 @@ cd server
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
 python -m src.server
 ```
 
-On PowerShell, activate with `.\.venv\Scripts\Activate.ps1` instead of the `source` command.
+Before starting Flask, replace both values in `server/.env` with the Supabase
+project URL and browser-safe publishable key used by the frontend. On
+PowerShell, activate with `.\.venv\Scripts\Activate.ps1` and create the file
+with `Copy-Item .env.example .env`.
 
-The Flask API opens at `http://127.0.0.1:8080`. See [Local setup](#local-setup) for environment details.
+The Flask API opens at `http://127.0.0.1:8080`. See [Local setup](#local-setup)
+for environment details. Portfolio analytics can run without Supabase, but Top
+Picks needs those two values.
 
 ## Architecture at a glance
 
@@ -315,12 +321,17 @@ From `server/`:
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+cp .env.example .env
 python -m src.server
 ```
 
-On PowerShell, activate with `.\.venv\Scripts\Activate.ps1` instead.
+On PowerShell, activate with `.\.venv\Scripts\Activate.ps1` and create the
+configuration file with `Copy-Item .env.example .env`.
 
-`server/.env.example` is a checklist; Flask does not automatically load it. Export `SUPABASE_URL` and `SUPABASE_KEY` in the process environment when needed.
+`python -m src.server` loads `server/.env` before it creates the Flask app.
+Replace the placeholders with the same project URL and browser-safe publishable
+key used by the frontend. Existing process environment values take precedence.
+Never use a secret or service-role key for this public read path.
 
 ### Supabase
 
