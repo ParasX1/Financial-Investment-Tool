@@ -52,3 +52,31 @@ def test_legacy_correlation_route_returns_calculator_mapping():
         "2023-01-01",
         "2024-01-01",
     )
+
+
+def test_legacy_metrics_compatibility_can_be_disabled_from_environment(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "LEGACY_METRICS_COMPATIBILITY_ENABLED",
+        "false",
+    )
+
+    app = create_app({"TESTING": True})
+
+    assert app.config["LEGACY_METRICS_COMPATIBILITY_ENABLED"] is False
+    assert app.test_client().get("/api/alphacomparison").status_code == 404
+
+
+@pytest.mark.parametrize("invalid_value", [None, "", "sometimes", 1])
+def test_legacy_metrics_compatibility_rejects_invalid_configuration(
+    invalid_value,
+):
+    with pytest.raises(
+        ValueError,
+        match="LEGACY_METRICS_COMPATIBILITY_ENABLED must be a boolean",
+    ):
+        create_app({
+            "TESTING": True,
+            "LEGACY_METRICS_COMPATIBILITY_ENABLED": invalid_value,
+        })

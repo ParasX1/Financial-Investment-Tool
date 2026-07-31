@@ -1,3 +1,5 @@
+"""HTTP adapters retained for legacy standalone metric endpoints."""
+
 from flask import Blueprint, jsonify
 
 

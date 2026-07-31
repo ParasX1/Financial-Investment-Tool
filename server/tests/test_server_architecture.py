@@ -58,6 +58,24 @@ def test_server_factory_preserves_all_public_market_endpoint_rules():
     }.issubset(rules)
 
 
+def test_legacy_metrics_compatibility_can_be_disabled_independently():
+    app = create_app({
+        "TESTING": True,
+        "LEGACY_METRICS_COMPATIBILITY_ENABLED": False,
+    })
+    rules = {
+        (rule.rule, frozenset(rule.methods - {"HEAD", "OPTIONS"}))
+        for rule in app.url_map.iter_rules()
+    }
+
+    assert "legacy_metrics" not in app.blueprints
+    assert not {
+        (path, frozenset({"GET"}))
+        for path in LEGACY_METRIC_PATHS
+    }.intersection(rules)
+    assert ("/api/metrics/<metric_type>", frozenset({"POST"})) in rules
+
+
 def test_server_module_is_an_application_factory_not_a_route_container():
     source = (SERVER_SOURCE / "server.py").read_text(encoding="utf-8")
 
@@ -80,6 +98,28 @@ def test_server_module_is_a_narrow_composition_root():
         "top_picks.repository",
         "top_picks.service",
     }.intersection(imported_modules(server_module))
+
+
+def test_server_composes_legacy_metrics_through_compatibility_boundary():
+    server_module = SERVER_SOURCE / "server.py"
+    modules = imported_modules(server_module)
+
+    assert "compat.legacy_metrics" in modules
+    assert "routes.legacy_metrics" not in modules
+
+
+def test_normal_metric_path_does_not_depend_on_compatibility_package():
+    normal_metric_modules = [
+        SERVER_SOURCE / "routes" / "metrics.py",
+        SERVER_SOURCE / "analytics" / "metric_contract.py",
+        SERVER_SOURCE / "analytics" / "metric_service.py",
+    ]
+
+    for metric_module in normal_metric_modules:
+        assert not any(
+            module == "compat" or module.startswith("compat.")
+            for module in imported_modules(metric_module)
+        )
 
 
 def test_route_modules_do_not_import_financial_calculators():
