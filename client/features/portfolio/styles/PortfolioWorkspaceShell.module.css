@@ -7,6 +7,7 @@
   --portfolio-surface: rgba(9, 13, 20, 0.92);
   --portfolio-raised: rgba(15, 21, 31, 0.96);
   --portfolio-accent: #65a0fd;
+  --portfolio-accent-soft: rgba(101, 160, 253, 0.12);
   --portfolio-green: #58d6a5;
   min-height: 100dvh;
   overflow-x: clip;
