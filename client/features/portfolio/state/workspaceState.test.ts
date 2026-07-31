@@ -4,7 +4,7 @@ import {
   getEffectiveCardSettings,
   migrateWorkspaceState,
   portfolioWorkspaceReducer,
-} from "./workspaceModel";
+} from ".";
 
 const TODAY = "2026-07-28";
 

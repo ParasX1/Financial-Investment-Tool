@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import { validateAnalysisRange } from "../lib/portfolioAnalytics";
-import { getEffectiveCardSettings } from "../lib/workspaceModel";
+import { getEffectiveCardSettings } from "../state/workspaceSelectors";
 import type {
   PortfolioAnalysisInputs,
   PortfolioMetricCard as PortfolioMetricCardModel,

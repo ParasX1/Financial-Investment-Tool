@@ -55,4 +55,31 @@ describe("Portfolio feature boundary", () => {
       expect(existsSync(join(clientRoot, path))).toBe(false);
     });
   });
+  it("keeps screen rendering separate from workspace orchestration", () => {
+    const screenSource = source(
+      "features/portfolio/screens/PortfolioScreen.tsx",
+    );
+
+    expect(screenSource).toContain("usePortfolioWorkspaceController");
+    expect(screenSource).not.toMatch(
+      /\b(?:useEffect|useMemo|useState|localStorage|loadPortfolioConfig|savePortfolioConfig|portfolioWorkspaceReducer)\b/,
+    );
+  });
+
+  it("splits workspace state into cohesive feature-local modules", () => {
+    [
+      "features/portfolio/state/workspaceDefaults.ts",
+      "features/portfolio/state/workspaceReducer.ts",
+      "features/portfolio/state/workspaceMigrations.ts",
+      "features/portfolio/state/workspaceStorage.ts",
+      "features/portfolio/state/workspaceSelectors.ts",
+      "features/portfolio/hooks/usePortfolioWorkspaceController.ts",
+    ].forEach((path) => {
+      expect(existsSync(join(clientRoot, path))).toBe(true);
+    });
+
+    expect(source("features/portfolio/lib/workspaceModel.ts")).not.toContain(
+      "switch (action.type)",
+    );
+  });
 });
