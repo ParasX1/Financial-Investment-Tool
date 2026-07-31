@@ -14,7 +14,8 @@
     "rebuild": "npm run clean && npm run build",
     "test": "jest",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "test:portfolio-top-picks:coverage": "jest --config jest.portfolio-top-picks.config.js --runInBand"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
