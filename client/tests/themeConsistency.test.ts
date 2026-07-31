@@ -147,7 +147,9 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
       observationStyles.indexOf("@media (max-width: 720px)"),
     );
 
-    expect(shellMobileRules).toMatch(/\.board[\s\S]*grid-template-columns:\s*1fr/);
+    expect(shellMobileRules).toMatch(
+      /\.board[\s\S]*grid-template-columns:\s*1fr/,
+    );
     expect(shellMobileRules).toMatch(/\.boardSlot,[\s\S]*min-height:\s*330px/);
     expect(observationMobileRules).toMatch(
       /\.observationWindow[\s\S]*position:\s*relative !important/,

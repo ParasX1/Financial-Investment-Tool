@@ -158,11 +158,7 @@ function ChartRangeSelector({
   value: MarketChartRangeId;
 }) {
   return (
-    <div
-      className={styles.rangeSelector}
-      role="group"
-      aria-label="Chart range"
-    >
+    <div className={styles.rangeSelector} role="group" aria-label="Chart range">
       {MARKET_CHART_RANGE_OPTIONS.map((range) => (
         <button
           key={range.id}
@@ -312,7 +308,9 @@ export function WatchlistMarketMonitorView({
               <span>{range.label} price trend</span>
               <small>{pointCadenceLabel(chart)}</small>
             </div>
-            {chartState.refreshing && chart ? <span>Updating trend…</span> : null}
+            {chartState.refreshing && chart ? (
+              <span>Updating trend…</span>
+            ) : null}
           </div>
 
           <ChartRangeSelector
@@ -381,7 +379,9 @@ function ComparisonSummaryCard({
         <span>{companyName}</span>
       </div>
       <div>
-        <strong>{formatPrice(quote?.price ?? null, quote?.currency ?? null)}</strong>
+        <strong>
+          {formatPrice(quote?.price ?? null, quote?.currency ?? null)}
+        </strong>
         <span className={change.className}>{change.label}</span>
       </div>
       <Link
