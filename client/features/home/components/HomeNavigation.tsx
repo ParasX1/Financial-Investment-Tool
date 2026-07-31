@@ -35,7 +35,7 @@ export function HomeNavigation({
         <div className={styles.navActions}>
           {signedIn ? (
             <Link
-              href="/dashboardView"
+              href="/Portfolio"
               className={styles.navPrimary}
             >
               Dashboard

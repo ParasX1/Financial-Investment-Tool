@@ -1,4 +1,4 @@
-import supabase from "@/components/supabase";
+import { supabase } from "@/lib/supabase";
 
 type PortfolioPrefs = { tags: string[] };
 

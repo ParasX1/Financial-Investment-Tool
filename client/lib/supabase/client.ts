@@ -8,10 +8,9 @@ const configuredPublishableKey =
 const supabaseUrl = configuredUrl ?? "http://localhost:54321";
 const supabaseKey =
   configuredPublishableKey ?? "missing-supabase-publishable-key";
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export function getConfiguredSupabaseClient(): SupabaseClient | null {
   return configuredUrl && configuredPublishableKey ? supabase : null;
 }
-
-export default supabase;

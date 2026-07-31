@@ -10,10 +10,11 @@ describe("Market News data boundaries", () => {
   it("consumes saved symbols without owning Watchlist persistence or auth", () => {
     const watchlistHook = source("useMarketNewsWatchlist.ts");
 
-    expect(watchlistHook).toContain("@/features/watchlist/savedSymbols");
+    expect(watchlistHook).toContain('from "@/features/watchlist"');
+    expect(watchlistHook).not.toMatch(/@\/features\/watchlist\//);
     expect(watchlistHook).not.toContain("createWatchlistRepository");
-    expect(watchlistHook).not.toContain("@/components/supabase");
-    expect(watchlistHook).not.toContain("@/components/authContext");
+    expect(watchlistHook).not.toContain("@/lib/supabase");
+    expect(watchlistHook).not.toContain("@/features/auth");
   });
 
   it("uses the shared market-data public API instead of its internals", () => {

@@ -2,7 +2,7 @@ import {
   MARKET_NEWS_MALFORMED_RESPONSE_ERROR,
   fetchMarketNews,
   fetchOlderMarketNews,
-} from "./news";
+} from "./marketNewsClient";
 
 const originalFetch = global.fetch;
 

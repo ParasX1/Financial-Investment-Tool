@@ -15,7 +15,14 @@ const openingTagContaining = (source: string, uniqueText: string) => {
 
 describe("Portfolio Analytics and Top Picks theme contract", () => {
   it("keeps Top Picks on the shared FIT token system", () => {
-    const source = readClientSource("pages/TopPicks.tsx");
+    const source = [
+      "features/top-picks/screens/TopPicksScreen.tsx",
+      "features/top-picks/components/TopPicksTable.tsx",
+      "features/top-picks/components/TopPicksToolbar.tsx",
+      "features/top-picks/components/topPicksSx.ts",
+    ]
+      .map(readClientSource)
+      .join("\n");
 
     [
       "--fit-font-family",
@@ -41,7 +48,9 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
   });
 
   it("removes the legacy Top Picks white control and blue-purple CTA", () => {
-    const source = readClientSource("pages/TopPicks.tsx");
+    const source = readClientSource(
+      "features/top-picks/screens/TopPicksScreen.tsx",
+    );
 
     expect(source).not.toMatch(/bgcolor:\s*["']white["']/);
     expect(source).not.toContain(
@@ -50,7 +59,7 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
   });
 
   it("preserves a six-card Board with shared Focus and Observation modes", () => {
-    const route = readClientSource("pages/dashboardView.tsx");
+    const route = readClientSource("pages/Portfolio.tsx");
     const screen = readClientSource(
       "features/portfolio/screens/PortfolioScreen.tsx",
     );
@@ -59,12 +68,14 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
     expect(screen).toContain('aria-label="Multi-metric Portfolio board"');
     expect(screen).toContain("<PortfolioMetricCard");
     expect(screen).toContain("<PortfolioObservation");
-    expect(screen).toContain('view: { mode: "focus"');
-    expect(screen).toContain('view: { mode: "observation"');
+    expect(screen).toContain('workspace.view.mode === "focus"');
+    expect(screen).toContain('workspace.view.mode === "observation"');
   });
 
   it("renders Top Picks through the shared page-header typography contract", () => {
-    const source = readClientSource("pages/TopPicks.tsx");
+    const source = readClientSource(
+      "features/top-picks/screens/TopPicksScreen.tsx",
+    );
     const headerTag = openingTagContaining(source, 'title="Top Picks"');
 
     expect(headerTag).toMatch(/^<FitPageHeader\b/);
@@ -123,17 +134,11 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
       styles.indexOf("@media (max-width: 720px)"),
     );
 
-    expect(mobileRules).toMatch(
-      /\.board[\s\S]*grid-template-columns:\s*1fr/,
-    );
-    expect(mobileRules).toMatch(
-      /\.boardSlot,[\s\S]*min-height:\s*330px/,
-    );
+    expect(mobileRules).toMatch(/\.board[\s\S]*grid-template-columns:\s*1fr/);
+    expect(mobileRules).toMatch(/\.boardSlot,[\s\S]*min-height:\s*330px/);
     expect(mobileRules).toMatch(
       /\.observationWindow[\s\S]*position:\s*relative !important/,
     );
-    expect(mobileRules).toMatch(
-      /\.observationResize[\s\S]*display:\s*none/,
-    );
+    expect(mobileRules).toMatch(/\.observationResize[\s\S]*display:\s*none/);
   });
 });

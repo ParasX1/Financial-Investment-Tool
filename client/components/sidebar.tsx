@@ -1,24 +1,21 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import type { SvgIconProps } from "@mui/material/SvgIcon";
-import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
-import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
-import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
-import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
-import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
-import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import "boxicons/css/boxicons.min.css";
-import { useAuth } from "@/components/authContext";
+import { useAuth } from "@/features/auth";
 import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { FitLogo } from "@/components/shared/FitLogo";
+import {
+  SIDEBAR_HOME_NAV_ITEM,
+  SIDEBAR_MAIN_NAV_ITEMS,
+  SIDEBAR_UTILITY_NAV_ITEMS,
+  isSidebarNavItemActive,
+  type SidebarNavItem,
+} from "@/components/navigation/sidebarNavigation";
 import { fitNav } from "@/components/shared/fitStyles";
 import { FIT_FOCUS_VISIBLE, fitType } from "@/components/shared/uiPrimitives";
 
@@ -39,8 +36,6 @@ let pointerTrackerStarted = false;
 let sidebarHasMounted = false;
 
 const focusRing = FIT_FOCUS_VISIBLE;
-
-type SidebarIcon = React.ElementType<SvgIconProps>;
 
 function rememberPointerPosition(event: { clientX: number; clientY: number }) {
   lastPointerPosition = { x: event.clientX, y: event.clientY };
@@ -115,73 +110,6 @@ function getInitialSidebarSnapshot() {
     responsiveReady: true,
     showLabel: expanded,
   };
-}
-
-interface SidebarNavItem {
-  href: string;
-  label: string;
-  icon: SidebarIcon;
-  gated?: boolean;
-  match?: (pathname: string) => boolean;
-}
-
-const mainNavItems: SidebarNavItem[] = [
-  {
-    href: "/dashboardView",
-    label: "Portfolio",
-    icon: AccountBalanceWalletRoundedIcon,
-    gated: true,
-  },
-  {
-    href: "/TopPicks",
-    label: "Top Picks",
-    icon: TrendingUpRoundedIcon,
-    gated: true,
-  },
-  {
-    href: "/MarketNews",
-    label: "Market News",
-    icon: NewspaperRoundedIcon,
-    gated: true,
-  },
-  {
-    href: "/Watchlist",
-    label: "Watchlist",
-    icon: BookmarkBorderRoundedIcon,
-    gated: true,
-  },
-  {
-    href: "/Community",
-    label: "Community",
-    icon: GroupsRoundedIcon,
-    gated: true,
-    match: (pathname) => pathname.startsWith("/Community"),
-  },
-  {
-    href: "/Guide",
-    label: "Guide",
-    icon: MenuBookRoundedIcon,
-    gated: true,
-  },
-];
-
-const utilityNavItems: SidebarNavItem[] = [
-  {
-    href: "/Help",
-    label: "Help",
-    icon: HelpOutlineRoundedIcon,
-  },
-  {
-    href: "/Profile",
-    label: "Profile",
-    icon: PersonOutlineRoundedIcon,
-    gated: true,
-  },
-];
-
-function isNavItemActive(item: SidebarNavItem, pathname: string) {
-  if (item.match) return item.match(pathname);
-  return pathname === item.href;
 }
 
 function SidebarItem({
@@ -587,7 +515,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     return (
       <li key={item.href} className="list-none">
         <SidebarItem
-          active={isNavItemActive(item, pathname)}
+          active={isSidebarNavItemActive(item, pathname)}
           expanded={expanded}
           item={item}
           locked={locked}
@@ -720,12 +648,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Primary navigation"
         >
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {mainNavItems.map(renderNavItem)}
+            {SIDEBAR_MAIN_NAV_ITEMS.map(renderNavItem)}
           </ul>
 
           <div className="mt-auto border-t border-[#141622] pt-4">
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {utilityNavItems.map(renderNavItem)}
+              {SIDEBAR_UTILITY_NAV_ITEMS.map(renderNavItem)}
               {user ? (
                 <li className="list-none">
                   <button
@@ -759,13 +687,12 @@ const Sidebar: React.FC<SidebarProps> = ({
               ) : null}
               <li className="list-none">
                 <SidebarItem
-                  active={pathname === "/"}
+                  active={isSidebarNavItemActive(
+                    SIDEBAR_HOME_NAV_ITEM,
+                    pathname,
+                  )}
                   expanded={expanded}
-                  item={{
-                    href: "/",
-                    label: "Back to Home",
-                    icon: HomeRoundedIcon,
-                  }}
+                  item={SIDEBAR_HOME_NAV_ITEM}
                   locked={false}
                   onNavigate={rememberNavigationInteraction}
                   showLabel={showLabel}

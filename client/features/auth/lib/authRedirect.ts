@@ -1,4 +1,4 @@
-const DEFAULT_AUTH_REDIRECT_PATH = "/dashboardView";
+export const DEFAULT_AUTH_REDIRECT_PATH = "/Portfolio";
 const SAFE_BASE_URL = "https://fit.local";
 
 export function getSafeAuthRedirectPath(

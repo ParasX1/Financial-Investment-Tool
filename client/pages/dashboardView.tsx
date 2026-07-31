@@ -1,3 +1,1 @@
-import { PortfolioScreen } from "@/features/portfolio";
-
-export default PortfolioScreen;
+export { default } from "./Portfolio";

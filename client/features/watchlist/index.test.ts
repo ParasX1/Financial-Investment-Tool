@@ -4,9 +4,13 @@ import { join } from "node:path";
 import * as watchlist from "./index";
 
 describe("watchlist feature public API", () => {
-  it("keeps the root entry focused on the route-ready screen", () => {
+  it("exposes the route screen and intentional saved-symbol capability", () => {
     expect(watchlist.WatchlistMain).toEqual(expect.any(Function));
-    expect(Object.keys(watchlist)).toEqual(["WatchlistMain"]);
+    expect(watchlist.useSavedWatchlistSymbols).toEqual(expect.any(Function));
+    expect(Object.keys(watchlist)).toEqual([
+      "WatchlistMain",
+      "useSavedWatchlistSymbols",
+    ]);
   });
 
   it("keeps the Next route behind the feature public API", () => {

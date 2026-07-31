@@ -9,7 +9,7 @@ import { useTheme, useMediaQuery } from '@mui/material';
 import {
   fetchGeneralNews, fetchRegionalNews, fetchIndustryNews,
   fetchCommodityNews, fetchTickerNews, fetchSearchNews
-} from '@/services/news';
+} from '@/lib/news/marketNewsClient';
 import type { Article } from '@/lib/news/contracts';
 
 const regionalOptions  = [ 'au','cn','jp','us','gb' ];

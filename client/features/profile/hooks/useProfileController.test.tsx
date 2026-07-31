@@ -79,7 +79,7 @@ function createDependencies(): ProfileControllerDependencies {
 
 describe("useProfileController session lifecycle", () => {
   beforeAll(() => {
-    jest.doMock("@/components/authContext", () => ({
+    jest.doMock("@/features/auth", () => ({
       useAuth: () => mockAuthState,
     }));
     useProfileController =

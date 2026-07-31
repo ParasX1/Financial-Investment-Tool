@@ -32,7 +32,7 @@ describe("Community Supabase client ownership", () => {
     ].join("-");
     delete process.env.NEXT_PUBLIC_ANON;
 
-    const sharedClient = require("@/components/supabase").default;
+    const sharedClient = require("@/lib/supabase").supabase;
     const { getCommunitySupabaseClient } = require("./communityClient");
 
     expect(getCommunitySupabaseClient()).toBe(sharedClient);

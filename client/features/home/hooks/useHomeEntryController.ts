@@ -4,7 +4,7 @@ import type { HomeEntryDestination, HomeRouteLink } from "../types";
 
 export type HomeAuthDialog = "login" | "signup" | null;
 
-const DEFAULT_HOME_DESTINATION: HomeEntryDestination = "/dashboardView";
+const DEFAULT_HOME_DESTINATION: HomeEntryDestination = "/Portfolio";
 
 type HomeEntryState = {
   authDialog: HomeAuthDialog;

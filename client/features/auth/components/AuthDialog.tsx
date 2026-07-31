@@ -5,7 +5,10 @@ import { useRouter } from "next/router";
 import { FitLogo } from "@/components/shared/FitLogo";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage } from "../lib/authErrors";
-import { getSafeAuthRedirectPath } from "../lib/authRedirect";
+import {
+  DEFAULT_AUTH_REDIRECT_PATH,
+  getSafeAuthRedirectPath,
+} from "../lib/authRedirect";
 import { validateAuthForm } from "../lib/authValidation";
 import type { AuthFieldErrors, AuthMode } from "../types";
 import styles from "../styles/authDialog.module.css";
@@ -26,7 +29,7 @@ const EMPTY_DRAFT = {
 
 export function AuthDialog({
   initialMode = "sign-in",
-  redirectTo = "/dashboardView",
+  redirectTo = DEFAULT_AUTH_REDIRECT_PATH,
   show,
   onHide,
 }: AuthDialogProps) {

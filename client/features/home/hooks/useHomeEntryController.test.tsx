@@ -82,7 +82,7 @@ describe("useHomeEntryController", () => {
     act(() => harness.latest.openSignUp());
 
     expect(harness.latest.authDialog).toBe("signup");
-    expect(harness.latest.redirectTo).toBe("/dashboardView");
+    expect(harness.latest.redirectTo).toBe("/Portfolio");
 
     act(() => harness.renderer.unmount());
   });
@@ -108,7 +108,7 @@ describe("useHomeEntryController", () => {
     });
 
     expect(harness.latest.authDialog).toBeNull();
-    expect(harness.latest.redirectTo).toBe("/dashboardView");
+    expect(harness.latest.redirectTo).toBe("/Portfolio");
     expect(navigate).not.toHaveBeenCalled();
 
     act(() => harness.renderer.unmount());

@@ -31,7 +31,7 @@ export function HomeHero({
 
         <div className={styles.heroActions}>
           {signedIn ? (
-            <Link href="/dashboardView" className={styles.primaryButton}>
+            <Link href="/Portfolio" className={styles.primaryButton}>
               Open dashboard
               <KeyboardArrowRightRoundedIcon
                 sx={{ fontSize: 18 }}

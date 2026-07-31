@@ -27,9 +27,7 @@ describe("Top Picks database contract", () => {
       "_create_top_picks_preferences.sql",
     ).toLowerCase();
 
-    expect(migration).toContain(
-      "create table public.top_picks_prefs",
-    );
+    expect(migration).toContain("create table public.top_picks_prefs");
     expect(migration).toContain("user_id uuid primary key");
     expect(migration).toContain(
       "alter table public.top_picks_prefs enable row level security",
@@ -44,9 +42,7 @@ describe("Top Picks database contract", () => {
     expect(migration.match(/\(select auth\.uid\(\)\) = user_id/g)).toHaveLength(
       4,
     );
-    expect(migration).toContain(
-      "check (page_size in (10, 25, 50, 100))",
-    );
+    expect(migration).toContain("check (page_size in (10, 25, 50, 100))");
   });
 
   it("seeds the established Australia-first equity universe idempotently", () => {

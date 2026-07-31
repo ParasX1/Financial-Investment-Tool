@@ -9,10 +9,12 @@ const source = (relativePath: string) =>
 
 describe("Portfolio feature boundary", () => {
   it("keeps the Next route thin and behind the feature public API", () => {
-    const routeSource = source("pages/dashboardView.tsx");
+    const routeSource = source("pages/Portfolio.tsx");
+    const legacyAlias = source("pages/dashboardView.tsx");
 
     expect(routeSource).toMatch(/from\s+["']@\/features\/portfolio["']/);
     expect(routeSource).not.toMatch(/from\s+["']@\/features\/portfolio\//);
+    expect(legacyAlias).toContain('export { default } from "./Portfolio"');
   });
 
   it("owns its preferences and frontier renderer inside the feature", () => {

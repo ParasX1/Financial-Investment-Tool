@@ -22,7 +22,7 @@ describe("homeContent", () => {
       "/Help",
       "/MarketNews",
       "/Profile",
-      "/dashboardView",
+      "/Portfolio",
     ]);
     const allRoutes = [
       ...homeRouteLinks.map((link) => link.href),

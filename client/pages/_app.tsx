@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import { ThemeProvider } from "@mui/material/styles";
 import type { AppProps } from "next/app";
 import React from "react";
-import { AuthProvider } from "@/components/authContext";
+import { AuthProvider } from "@/features/auth";
 import { ToastContainer } from "react-toastify";
 import { theme } from "@/styles/theme";
 

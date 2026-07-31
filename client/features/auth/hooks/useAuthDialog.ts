@@ -1,7 +1,6 @@
 import * as React from "react";
+import { DEFAULT_AUTH_REDIRECT_PATH } from "../lib/authRedirect";
 import type { AuthMode } from "../types";
-
-const DEFAULT_REDIRECT = "/dashboardView";
 
 type AuthDialogState = {
   mode: AuthMode | null;
@@ -11,13 +10,13 @@ type AuthDialogState = {
 export function useAuthDialog() {
   const [state, setState] = React.useState<AuthDialogState>({
     mode: null,
-    redirectTo: DEFAULT_REDIRECT,
+    redirectTo: DEFAULT_AUTH_REDIRECT_PATH,
   });
 
-  const openSignIn = React.useCallback((redirectTo = DEFAULT_REDIRECT) => {
+  const openSignIn = React.useCallback((redirectTo = DEFAULT_AUTH_REDIRECT_PATH) => {
     setState({ mode: "sign-in", redirectTo });
   }, []);
-  const openSignUp = React.useCallback((redirectTo = DEFAULT_REDIRECT) => {
+  const openSignUp = React.useCallback((redirectTo = DEFAULT_AUTH_REDIRECT_PATH) => {
     setState({ mode: "sign-up", redirectTo });
   }, []);
   const close = React.useCallback(() => {

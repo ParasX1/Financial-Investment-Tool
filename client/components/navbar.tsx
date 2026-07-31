@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 // import BoltIcon from "@mui/icons-material/Bolt";
-import { useAuth } from "@/components/authContext";
+import { useAuth } from "@/features/auth";
 import { AuthDialog, useAuthDialog } from "@/features/auth";
 import { FitLogo } from "@/components/shared/FitLogo";
 import { useRouter } from "next/navigation";
@@ -96,7 +96,7 @@ export function Navbar({ items }: NavbarProps) {
                                     color="inherit"
                                     // startIcon={<BoltIcon />}
                                     sx={{ fontWeight: 'bold' }}
-                                    onClick={() => router.push('/dashboardView')}
+                                    onClick={() => router.push('/Portfolio')}
                                 >
                                     Dashboard
                                 </Button>

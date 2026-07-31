@@ -12,7 +12,7 @@ let useMarketNewsWatchlist: typeof import("./useMarketNewsWatchlist")["useMarket
 
 describe("useMarketNewsWatchlist", () => {
   beforeAll(() => {
-    jest.doMock("@/features/watchlist/savedSymbols", () => ({
+    jest.doMock("@/features/watchlist", () => ({
       useSavedWatchlistSymbols: () => savedState,
     }));
     useMarketNewsWatchlist =

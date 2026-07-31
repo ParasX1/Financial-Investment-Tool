@@ -70,7 +70,7 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   });
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/dashboardView");
+  await page.goto("/Portfolio");
 
   await expect(
     page.getByRole("heading", {
@@ -153,7 +153,7 @@ test("changes only one card and remains operable without horizontal overflow on 
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/dashboardView");
+  await page.goto("/Portfolio");
   await addSymbol(page, "AAPL");
   await addSymbol(page, "MSFT");
   await page.getByRole("button", { name: "Run analysis" }).click();

@@ -34,12 +34,12 @@ async function flushPromises() {
 
 describe("useWatchlistController", () => {
   beforeAll(() => {
-    jest.doMock("@/components/authContext", () => ({
+    jest.doMock("@/features/auth", () => ({
       useAuth: () => mockAuthState,
     }));
-    jest.doMock("@/components/supabase", () => ({
+    jest.doMock("@/lib/supabase", () => ({
       __esModule: true,
-      default: {},
+      supabase: {},
     }));
     jest.doMock("../data/watchlistRepository", () => ({
       createWatchlistRepository: () => mockRepository,

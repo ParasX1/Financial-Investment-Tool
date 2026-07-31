@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useAuth } from "@/components/authContext";
+import { useAuth } from "@/features/auth";
 import {
   defaultProfileDependencies,
   type ProfileControllerDependencies,

@@ -20,7 +20,7 @@ export function HomeCtaSection({
         <h2 id="home-cta-title">{homeCta.title}</h2>
         <p>{homeCta.body}</p>
         {signedIn ? (
-          <Link href="/dashboardView" className={styles.primaryButton}>
+          <Link href="/Portfolio" className={styles.primaryButton}>
             {homeCta.primarySignedIn}
             <KeyboardArrowRightRoundedIcon sx={{ fontSize: 18 }} />
           </Link>

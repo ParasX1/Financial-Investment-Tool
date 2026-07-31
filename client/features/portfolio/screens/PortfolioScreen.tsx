@@ -1,6 +1,6 @@
 import React from "react";
 import Sidebar from "@/components/sidebar";
-import { useAuth } from "@/components/authContext";
+import { useAuth } from "@/features/auth";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import { PortfolioCommandBar } from "../components/PortfolioCommandBar";
 import { PortfolioMetricCard } from "../components/PortfolioMetricCard";
