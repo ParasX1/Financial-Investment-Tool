@@ -1,290 +1,113 @@
-// File purpose: Encapsulates Community Supabase table queries, schema fallback reads, inserts, deletes, and like RPC calls.
+// Stable Community repository facade. Current-schema Supabase access and
+// legacy migration compatibility remain separate implementation boundaries.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CommentRow, DBPost, DiscussionPostInput } from "../types";
 import {
   normalizeCommunityTickers,
   validateCommunityTickers,
 } from "../lib/communityTickers";
+import {
+  createCurrentCommunityPostWithTickers,
+  insertCurrentCommunityCommentRow,
+  loadCurrentCommentImagePathRowsForPost,
+  loadCurrentCommunityCommentRows,
+  loadCurrentCommunityPostRows,
+  selectCurrentCommentDeleteContext,
+  selectCurrentPostDeleteContext,
+} from "./communityCurrentRepository";
+import {
+  insertLegacyCompatibleCommunityCommentRow,
+  insertLegacyCompatibleCommunityPostRow,
+  isLegacyCommunityCommentSchemaError,
+  isLegacyCommunityPostSchemaError,
+  isMissingAtomicCommunityPostFunction,
+  loadLegacyCommunityCommentRows,
+  loadLegacyCommunityPostRows,
+  selectLegacyCommentDeleteContext,
+  selectLegacyPostDeleteContext,
+} from "./communityLegacyCompatibility";
+import type {
+  CommunityCommentInsert,
+  CommunityPostDraft,
+} from "./communityRepositoryContract";
 
-const CREATE_POST_WITH_TICKERS_RPC = "create_community_post_with_tickers";
+export {
+  deleteCommunityCommentRow,
+  deleteCommunityPostRow,
+  insertCommunityPostReportRow,
+  selectLikedPostRows,
+  selectSavedPostRows,
+  setCommunityPostLikeValue,
+  setCommunityPostSavedValue,
+} from "./communityCurrentRepository";
+export { isMissingAuthorIdColumn } from "./communityLegacyCompatibility";
+export type {
+  CommentDeleteContext,
+  PostDeleteContext,
+} from "./communityRepositoryContract";
 
-const COMMENT_SELECT =
-  "id, post_id, user_name, body, image_url, image_path, created_at, author_id";
-const COMMENT_SELECT_WITHOUT_IMAGE_PATH =
-  "id, post_id, user_name, body, image_url, created_at, author_id";
-const POST_SELECT_WITHOUT_TICKERS =
-  "id, title, body, tags, post_type, time_frame, symbol, source_url, image_url, image_path, votes, created_at, author_id";
-const POST_SELECT = `${POST_SELECT_WITHOUT_TICKERS}, post_tickers(symbol, position)`;
-const POST_SELECT_WITHOUT_CONTEXT =
-  "id, title, body, tags, image_url, image_path, votes, created_at, author_id";
-const POST_SELECT_WITHOUT_IMAGE_PATH =
-  "id, title, body, tags, post_type, time_frame, symbol, source_url, image_url, votes, created_at, author_id";
-const POST_SELECT_WITHOUT_IMAGE =
-  "id, title, body, tags, post_type, time_frame, symbol, source_url, votes, created_at, author_id";
-const POST_SELECT_WITHOUT_TAGS =
-  "id, title, body, post_type, time_frame, symbol, source_url, votes, created_at, author_id";
-const LEGACY_POST_SELECT = "id, title, votes, created_at, author_id";
-
-type CommunityQueryResult<T> = {
-  data: T | null;
-  error: unknown;
-};
-
-type CommunityInsertAttempt = {
-  values: Record<string, unknown>;
-  select: string;
-};
-
-export type PostDeleteContext = {
-  author_id: string | null;
-  image_path: string | null;
-};
-
-export type CommentDeleteContext = {
-  author_id?: string | null;
-  post_id?: string | null;
-  image_path: string | null;
-};
-
-export function isMissingAuthorIdColumn(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-
-  const details = error as { code?: string; message?: string };
-  return (
-    details.code === "42703" &&
-    Boolean(details.message?.toLowerCase().includes("author_id"))
-  );
-}
-
-function isMissingColumn(error: unknown, columnName: string) {
-  if (!error || typeof error !== "object") return false;
-
-  const details = error as { code?: string; message?: string };
-  const message = details.message?.toLowerCase() ?? "";
-  const column = columnName.toLowerCase();
-
-  return (
-    Boolean(message.includes(column)) &&
-    (details.code === "42703" ||
-      details.code === "PGRST204" ||
-      message.includes("column") ||
-      message.includes("schema cache"))
-  );
-}
-
-function isMissingExpectedPostColumn(error: unknown) {
-  return (
-    isMissingPostTickersRelation(error) ||
-    isMissingColumn(error, "post_type") ||
-    isMissingColumn(error, "time_frame") ||
-    isMissingColumn(error, "symbol") ||
-    isMissingColumn(error, "source_url") ||
-    isMissingColumn(error, "image_path") ||
-    isMissingColumn(error, "image_url") ||
-    isMissingColumn(error, "tags") ||
-    isMissingColumn(error, "body")
-  );
-}
-
-function isMissingPostTickersRelation(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const details = error as { code?: string; message?: string };
-  const message = details.message?.toLowerCase() ?? "";
-  return (
-    message.includes("post_tickers") &&
-    (details.code === "PGRST200" ||
-      details.code === "PGRST205" ||
-      message.includes("relationship") ||
-      message.includes("schema cache"))
-  );
-}
-
-function isMissingAtomicCreateFunction(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const details = error as { code?: string; message?: string };
-  const message = details.message?.toLowerCase() ?? "";
-  return (
-    message.includes(CREATE_POST_WITH_TICKERS_RPC) &&
-    (details.code === "PGRST202" ||
-      details.code === "42883" ||
-      message.includes("schema cache") ||
-      message.includes("could not find"))
-  );
-}
-
-function isMissingResearchContextColumn(error: unknown) {
-  return (
-    isMissingColumn(error, "post_type") ||
-    isMissingColumn(error, "time_frame") ||
-    isMissingColumn(error, "symbol") ||
-    isMissingColumn(error, "source_url")
-  );
-}
-
-function isMissingExpectedCommentColumn(error: unknown) {
-  return isMissingColumn(error, "image_path");
-}
+const MULTI_TICKER_MIGRATION_ERROR =
+  "A Community database update is required before multiple tickers can be published.";
+const COMMENT_CREATE_ERROR =
+  "Could not create comment with the current Community schema.";
 
 export async function loadCommunityPostRows(db: SupabaseClient) {
-  const initialResult = (await db
-    .from("posts")
-    .select(POST_SELECT)
-    .order("created_at", { ascending: false })) as CommunityQueryResult<
-    DBPost[]
-  >;
-  if (!isMissingExpectedPostColumn(initialResult.error)) return initialResult;
-
-  const selects = [
-    ...(isMissingPostTickersRelation(initialResult.error)
-      ? [POST_SELECT_WITHOUT_TICKERS]
-      : []),
-    POST_SELECT_WITHOUT_IMAGE_PATH,
-    POST_SELECT_WITHOUT_CONTEXT,
-    POST_SELECT_WITHOUT_IMAGE,
-    POST_SELECT_WITHOUT_TAGS,
-    LEGACY_POST_SELECT,
-  ];
-  let latestResult = initialResult;
-
-  for (const columns of selects) {
-    latestResult = (await db
-      .from("posts")
-      .select(columns)
-      .order("created_at", { ascending: false })) as CommunityQueryResult<
-      DBPost[]
-    >;
-
-    if (!isMissingExpectedPostColumn(latestResult.error)) return latestResult;
+  const currentResult = await loadCurrentCommunityPostRows(db);
+  if (!isLegacyCommunityPostSchemaError(currentResult.error)) {
+    return currentResult;
   }
 
-  return latestResult;
+  return loadLegacyCommunityPostRows(db, currentResult.error);
 }
 
 export async function loadCommunityCommentRows(
   db: SupabaseClient,
   postIds: string[],
 ) {
-  const selects = [COMMENT_SELECT, COMMENT_SELECT_WITHOUT_IMAGE_PATH];
-  let latestResult: CommunityQueryResult<CommentRow[]> | null = null;
-
-  for (const columns of selects) {
-    latestResult = (await db
-      .from("comments")
-      .select(columns)
-      .in("post_id", postIds)
-      .order("created_at", { ascending: false })) as CommunityQueryResult<
-      CommentRow[]
-    >;
-
-    if (!isMissingExpectedCommentColumn(latestResult.error)) {
-      return latestResult;
-    }
+  const currentResult = await loadCurrentCommunityCommentRows(db, postIds);
+  if (!isLegacyCommunityCommentSchemaError(currentResult.error)) {
+    return currentResult;
   }
 
-  return latestResult!;
+  return loadLegacyCommunityCommentRows(db, postIds);
 }
 
 export async function selectPostDeleteContext(
   db: SupabaseClient,
   postId: string,
 ) {
-  const result = (await db
-    .from("posts")
-    .select("author_id, image_path")
-    .eq("id", postId)
-    .single()) as CommunityQueryResult<PostDeleteContext>;
+  const currentResult = await selectCurrentPostDeleteContext(db, postId);
+  if (!isLegacyCommunityCommentSchemaError(currentResult.error)) {
+    return currentResult;
+  }
 
-  if (!isMissingColumn(result.error, "image_path")) return result;
-
-  const fallback = (await db
-    .from("posts")
-    .select("author_id")
-    .eq("id", postId)
-    .single()) as CommunityQueryResult<Omit<PostDeleteContext, "image_path">>;
-
-  return {
-    data: fallback.data ? { ...fallback.data, image_path: null } : null,
-    error: fallback.error,
-  };
+  return selectLegacyPostDeleteContext(db, postId);
 }
 
 export async function selectCommentDeleteContext(
   db: SupabaseClient,
   commentId: string,
 ) {
-  const result = (await db
-    .from("comments")
-    .select("author_id, post_id, image_path")
-    .eq("id", commentId)
-    .single()) as CommunityQueryResult<CommentDeleteContext>;
+  const currentResult = await selectCurrentCommentDeleteContext(db, commentId);
+  if (!isLegacyCommunityCommentSchemaError(currentResult.error)) {
+    return currentResult;
+  }
 
-  if (!isMissingColumn(result.error, "image_path")) return result;
-
-  const fallback = (await db
-    .from("comments")
-    .select("author_id, post_id")
-    .eq("id", commentId)
-    .single()) as CommunityQueryResult<
-    Omit<CommentDeleteContext, "image_path">
-  >;
-
-  return {
-    data: fallback.data ? { ...fallback.data, image_path: null } : null,
-    error: fallback.error,
-  };
+  return selectLegacyCommentDeleteContext(db, commentId);
 }
 
 export async function loadCommentImagePathRowsForPost(
   db: SupabaseClient,
   postId: string,
 ) {
-  const result = (await db
-    .from("comments")
-    .select("image_path")
-    .eq("post_id", postId)) as CommunityQueryResult<
-    Array<{ image_path?: string | null }>
-  >;
-
-  if (isMissingColumn(result.error, "image_path")) return [];
+  const result = await loadCurrentCommentImagePathRowsForPost(db, postId);
+  if (isLegacyCommunityCommentSchemaError(result.error)) return [];
   if (result.error) throw result.error;
-
   return result.data ?? [];
-}
-
-export async function selectLikedPostRows(
-  db: SupabaseClient,
-  postIds: string[],
-  currentUserId: string,
-) {
-  return (await db
-    .from("post_likes")
-    .select("post_id")
-    .eq("user_id", currentUserId)
-    .in("post_id", postIds)) as CommunityQueryResult<
-    Array<{ post_id: string }>
-  >;
-}
-
-export async function selectSavedPostRows(
-  db: SupabaseClient,
-  postIds: string[],
-  currentUserId: string,
-) {
-  return (await db
-    .from("post_saves")
-    .select("post_id")
-    .eq("user_id", currentUserId)
-    .in("post_id", postIds)) as CommunityQueryResult<
-    Array<{ post_id: string }>
-  >;
 }
 
 export async function insertCommunityPostRow(
   db: SupabaseClient,
-  postDraft: DiscussionPostInput & {
-    imageUrl: string | null;
-    imagePath: string | null;
-  },
+  postDraft: CommunityPostDraft,
   uid: string,
 ) {
   const requestedTickers =
@@ -293,257 +116,61 @@ export async function insertCommunityPostRow(
   if (tickerValidationError) throw new Error(tickerValidationError);
   const tickers = normalizeCommunityTickers(requestedTickers);
 
-  if (typeof db.rpc === "function") {
-    const atomicResult = (await db.rpc(CREATE_POST_WITH_TICKERS_RPC, {
-      p_title: postDraft.title,
-      p_body: postDraft.body,
-      p_tags: postDraft.tags,
-      p_post_type: postDraft.postType,
-      p_time_frame: postDraft.timeFrame,
-      p_tickers: tickers,
-      p_source_url: postDraft.sourceUrl,
-      p_image_url: postDraft.imageUrl,
-      p_image_path: postDraft.imagePath,
-    })) as CommunityQueryResult<DBPost | DBPost[]>;
-    const atomicRow = Array.isArray(atomicResult.data)
-      ? atomicResult.data[0]
-      : atomicResult.data;
+  const currentResult = await createCurrentCommunityPostWithTickers(
+    db,
+    postDraft,
+    tickers,
+  );
 
-    if (!atomicResult.error && atomicRow) {
+  if (currentResult) {
+    const currentRow = Array.isArray(currentResult.data)
+      ? currentResult.data[0]
+      : currentResult.data;
+
+    if (!currentResult.error && currentRow) {
       return {
-        ...atomicRow,
+        ...currentRow,
         post_tickers: tickers.map((symbol, position) => ({ symbol, position })),
       };
     }
-    if (!atomicResult.error) {
+    if (!currentResult.error) {
       throw new Error("Could not create the Community post transaction.");
     }
-    if (!isMissingAtomicCreateFunction(atomicResult.error)) {
-      throw atomicResult.error;
+    if (!isMissingAtomicCommunityPostFunction(currentResult.error)) {
+      throw currentResult.error;
     }
   }
 
-  if (tickers.length > 1) {
-    throw new Error(
-      "A Community database update is required before multiple tickers can be published.",
-    );
-  }
-
-  const hasImage = Boolean(postDraft.imageUrl || postDraft.imagePath);
-  const fullSchemaAttempt: CommunityInsertAttempt = {
-    values: {
-      title: postDraft.title,
-      body: postDraft.body,
-      tags: postDraft.tags,
-      post_type: postDraft.postType,
-      time_frame: postDraft.timeFrame,
-      symbol: postDraft.symbol,
-      source_url: postDraft.sourceUrl,
-      image_url: postDraft.imageUrl,
-      image_path: postDraft.imagePath,
-      author_id: uid,
-    },
-    select: POST_SELECT_WITHOUT_TICKERS,
-  };
-  const legacyAttempts: CommunityInsertAttempt[] = [
-    {
-      values: {
-        title: postDraft.title,
-        body: postDraft.body,
-        tags: postDraft.tags,
-        post_type: postDraft.postType,
-        time_frame: postDraft.timeFrame,
-        symbol: postDraft.symbol,
-        source_url: postDraft.sourceUrl,
-        image_url: postDraft.imageUrl,
-        author_id: uid,
-      },
-      select: POST_SELECT_WITHOUT_IMAGE_PATH,
-    },
-    {
-      values: {
-        title: postDraft.title,
-        body: postDraft.body,
-        tags: postDraft.tags,
-        image_url: postDraft.imageUrl,
-        author_id: uid,
-      },
-      select: POST_SELECT_WITHOUT_CONTEXT,
-    },
-    {
-      values: {
-        title: postDraft.title,
-        body: postDraft.body,
-        tags: postDraft.tags,
-        author_id: uid,
-      },
-      select: POST_SELECT_WITHOUT_IMAGE,
-    },
-    {
-      values: {
-        title: postDraft.title,
-        body: postDraft.body,
-        author_id: uid,
-      },
-      select: POST_SELECT_WITHOUT_TAGS,
-    },
-    {
-      values: {
-        title: `${postDraft.title}\n\n${postDraft.body}`,
-        author_id: uid,
-      },
-      select: LEGACY_POST_SELECT,
-    },
-  ];
-  const attempts = hasImage
-    ? [fullSchemaAttempt]
-    : [fullSchemaAttempt, ...legacyAttempts];
-  const hasExplicitResearchContext =
-    postDraft.postType !== "discussion" ||
-    Boolean(postDraft.timeFrame || postDraft.symbol || postDraft.sourceUrl);
-
-  for (const attempt of attempts) {
-    const { data: row, error } = (await db
-      .from("posts")
-      .insert(attempt.values)
-      .select(attempt.select)
-      .single()) as CommunityQueryResult<DBPost>;
-
-    if (hasExplicitResearchContext && isMissingResearchContextColumn(error)) {
-      throw new Error(
-        "A Community database update is required before this research context can be published.",
-      );
-    }
-    if (isMissingExpectedPostColumn(error)) continue;
-    if (error) throw error;
-    if (row) return row;
-  }
-
-  throw new Error("Could not create post with the current Community schema.");
+  if (tickers.length > 1) throw new Error(MULTI_TICKER_MIGRATION_ERROR);
+  return insertLegacyCompatibleCommunityPostRow(db, postDraft, uid);
 }
 
 export async function insertCommunityCommentRow({
   db,
-  postId,
-  text,
-  imageUrl,
-  imagePath,
-  uid,
-}: {
-  db: SupabaseClient;
-  postId: string;
-  text: string;
-  imageUrl?: string;
-  imagePath?: string;
-  uid: string;
-}) {
-  const hasImage = Boolean(imageUrl || imagePath);
-  const fullSchemaAttempt: CommunityInsertAttempt = {
-    values: {
-      post_id: postId,
-      body: text,
-      image_url: imageUrl ?? null,
-      image_path: imagePath ?? null,
-      author_id: uid,
-    },
-    select: COMMENT_SELECT,
-  };
-  const legacyAttempt: CommunityInsertAttempt = {
-    values: {
-      post_id: postId,
-      body: text,
-      image_url: imageUrl ?? null,
-      author_id: uid,
-    },
-    select: COMMENT_SELECT_WITHOUT_IMAGE_PATH,
-  };
+  ...input
+}: CommunityCommentInsert & { db: SupabaseClient }) {
+  const currentResult = await insertCurrentCommunityCommentRow(db, input);
 
-  const attempts = hasImage
-    ? [fullSchemaAttempt]
-    : [fullSchemaAttempt, legacyAttempt];
+  if (!currentResult.error && currentResult.data) return currentResult.data;
+  if (
+    currentResult.error &&
+    !isLegacyCommunityCommentSchemaError(currentResult.error)
+  ) {
+    throw currentResult.error;
+  }
+  if (input.imageUrl || input.imagePath) throw new Error(COMMENT_CREATE_ERROR);
 
-  for (const attempt of attempts) {
-    const { data: row, error } = (await db
-      .from("comments")
-      .insert(attempt.values)
-      .select(attempt.select)
-      .single()) as CommunityQueryResult<CommentRow>;
-
-    if (isMissingExpectedCommentColumn(error)) continue;
-    if (error) throw error;
-    if (row) return row;
+  const legacyResult = await insertLegacyCompatibleCommunityCommentRow(
+    db,
+    input,
+  );
+  if (!legacyResult.error && legacyResult.data) return legacyResult.data;
+  if (
+    legacyResult.error &&
+    !isLegacyCommunityCommentSchemaError(legacyResult.error)
+  ) {
+    throw legacyResult.error;
   }
 
-  throw new Error(
-    "Could not create comment with the current Community schema.",
-  );
-}
-
-export async function deleteCommunityPostRow(
-  db: SupabaseClient,
-  postId: string,
-  currentUserId: string,
-) {
-  return (await db
-    .from("posts")
-    .delete()
-    .eq("id", postId)
-    .eq("author_id", currentUserId)
-    .select("id")) as CommunityQueryResult<Array<{ id: string }>>;
-}
-
-export async function deleteCommunityCommentRow(
-  db: SupabaseClient,
-  commentId: string,
-  currentUserId: string,
-) {
-  return (await db
-    .from("comments")
-    .delete()
-    .eq("id", commentId)
-    .eq("author_id", currentUserId)
-    .select("id")) as CommunityQueryResult<Array<{ id: string }>>;
-}
-
-export async function setCommunityPostLikeValue(
-  db: SupabaseClient,
-  postId: string,
-  liked: boolean,
-) {
-  const { data, error } = await db.rpc(
-    liked ? "like_community_post" : "unlike_community_post",
-    { target_post_id: postId },
-  );
-
-  if (error) throw error;
-  return typeof data === "number" ? data : Number(data ?? 0);
-}
-
-export async function setCommunityPostSavedValue(
-  db: SupabaseClient,
-  postId: string,
-  currentUserId: string,
-  saved: boolean,
-) {
-  const query = saved
-    ? db.from("post_saves").insert({ post_id: postId })
-    : db
-        .from("post_saves")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", currentUserId);
-  const { error } = await query;
-  if (error) throw error;
-}
-
-export async function insertCommunityPostReportRow(
-  db: SupabaseClient,
-  input: { postId: string; reason: string; details: string | null },
-) {
-  const { error } = await db.from("post_reports").insert({
-    post_id: input.postId,
-    reason: input.reason,
-    details: input.details,
-  });
-  if (error) throw error;
+  throw new Error(COMMENT_CREATE_ERROR);
 }
