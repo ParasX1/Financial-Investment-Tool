@@ -4,7 +4,7 @@ import { useAuth } from "@/components/authContext";
 import {
   loadPortfolioConfig,
   savePortfolioConfig,
-} from "@/services/portfolioPrefs";
+} from "../data/portfolioPrefs";
 import { validateAnalysisRange } from "../lib/portfolioAnalytics";
 import {
   createDefaultWorkspace,

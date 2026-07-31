@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import type { MetricsResponse } from "@/components/fetchMetrics";
+import type { MetricsResponse } from "@/lib/market-metrics";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import type { PortfolioAnalysisSettings } from "../types";
 import { PortfolioChart } from "./PortfolioChart";

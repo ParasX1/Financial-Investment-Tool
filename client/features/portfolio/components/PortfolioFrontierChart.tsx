@@ -37,7 +37,7 @@ const positionTooltip = (
   tooltip.style("left", `${left}px`).style("top", `${top}px`);
 };
 
-interface ScatterPlotProps {
+interface PortfolioFrontierChartProps {
   data: { risk: number; return: number; sharpe?: number; weights?: number[] }[];
   onPointSelect?: (point: {
     risk: number;
@@ -50,7 +50,7 @@ interface ScatterPlotProps {
   mainColor?: string;
 }
 
-const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
+export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
   data,
   width = 500,
   height = 300,
@@ -372,5 +372,3 @@ const ScatterPlotGraph: React.FC<ScatterPlotProps> = ({
     </>
   );
 };
-
-export default ScatterPlotGraph;

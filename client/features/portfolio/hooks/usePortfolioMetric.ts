@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchMetrics, type MetricsResponse } from "@/components/fetchMetrics";
+import { fetchMetrics, type MetricsResponse } from "@/lib/market-metrics";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import type {
   PortfolioAnalysisSettings,
@@ -59,9 +59,7 @@ const createQueryKey = (
     startDate: settings.startDate,
     endDate: settings.endDate,
     ...(metric.requiresBenchmark ? { benchmark: settings.benchmark } : {}),
-    ...(metric.usesRiskFreeRate
-      ? { riskFreeRate: settings.riskFreeRate }
-      : {}),
+    ...(metric.usesRiskFreeRate ? { riskFreeRate: settings.riskFreeRate } : {}),
     ...(metric.usesConfidenceLevel
       ? { confidenceLevel: settings.confidenceLevel }
       : {}),
@@ -87,7 +85,6 @@ const requestMetric = (
         riskFreeRate: settings.riskFreeRate,
         confidenceLevel: settings.confidenceLevel,
       },
-      stockColour: "#65a0fd",
     },
   })
     .then((data) => {
@@ -176,13 +173,7 @@ export const usePortfolioMetric = ({
     return () => {
       active = false;
     };
-  }, [
-    baseQueryKey,
-    requestKey,
-    settings.metricType,
-    symbols,
-    validationError,
-  ]);
+  }, [baseQueryKey, requestKey, settings.metricType, symbols, validationError]);
 
   const retry = useCallback(() => {
     metricCache.delete(baseQueryKey);

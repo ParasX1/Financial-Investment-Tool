@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { MetricsResponse } from "@/components/fetchMetrics";
-import BarGraph from "@/components/bargraph";
-import HeatMap from "@/components/heatmap";
-import LineGraph from "@/components/linegraph";
-import ScatterPlotGraph from "@/components/scatterplot";
+import type { MetricsResponse } from "@/lib/market-metrics";
+import { BarGraph, HeatMap, LineGraph } from "@/components/charts";
+import { PortfolioFrontierChart } from "./PortfolioFrontierChart";
 import { formatMetricValue, METRIC_REGISTRY } from "../data/metricRegistry";
 import { toCorrelationHeatMapModel } from "../lib/portfolioChartModel";
 import type { PortfolioMetricType } from "../types";
@@ -128,7 +126,7 @@ export const PortfolioChart = ({
       weights: portfolio?.weights[index] ?? [],
     }));
     return (
-      <ScatterPlotGraph
+      <PortfolioFrontierChart
         data={points}
         width={dimensions.width}
         height={dimensions.height}

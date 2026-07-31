@@ -1,6 +1,6 @@
-import type { MetricType } from "@/components/graphSettingsModal";
+import type { MarketMetricType } from "@/lib/market-metrics";
 
-export type PortfolioMetricType = MetricType;
+export type PortfolioMetricType = MarketMetricType;
 
 export type PortfolioMetricCategory =
   | "Performance"
@@ -68,10 +68,7 @@ export type PortfolioObserverWindow = {
   visible: boolean;
 };
 
-export type PortfolioObserverLayout = Record<
-  string,
-  PortfolioObserverWindow
->;
+export type PortfolioObserverLayout = Record<string, PortfolioObserverWindow>;
 
 export type PortfolioWorkspaceState = {
   version: 3;

@@ -1,8 +1,5 @@
 import { METRICS_BASE } from "@/lib/apiBase";
-import {
-  fetchMetrics,
-  formatMetricsResponse,
-} from "./fetchMetrics";
+import { fetchMetrics, formatMetricsResponse } from ".";
 
 const originalFetch = global.fetch;
 
@@ -31,7 +28,6 @@ describe("fetchMetrics", () => {
           endDate: "2026-07-28",
           riskFreeRate: 0,
         },
-        stockColour: "#65a0fd",
       },
     });
 
@@ -73,20 +69,16 @@ describe("fetchMetrics", () => {
   });
 
   it("unwraps response metadata while remaining compatible with raw responses", () => {
-    const result = formatMetricsResponse(
-      ["AAPL"],
-      "VolatilityAnalysis",
-      {
-        data: { AAPL: 0.22 },
-        metadata: {
-          requestedSymbols: ["AAPL"],
-          availableSymbols: ["AAPL"],
-          missingSymbols: [],
-          method: "sample standard deviation",
-        },
-        warnings: [],
+    const result = formatMetricsResponse(["AAPL"], "VolatilityAnalysis", {
+      data: { AAPL: 0.22 },
+      metadata: {
+        requestedSymbols: ["AAPL"],
+        availableSymbols: ["AAPL"],
+        missingSymbols: [],
+        method: "sample standard deviation",
       },
-    );
+      warnings: [],
+    });
 
     expect(result.series.singleValue).toEqual({ AAPL: 0.22 });
     expect(result.metadata?.method).toBe("sample standard deviation");

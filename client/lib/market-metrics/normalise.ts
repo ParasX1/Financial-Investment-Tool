@@ -1,58 +1,10 @@
-import { METRICS_BASE } from "@/lib/apiBase";
-import { GraphSettings } from "./graphSettingsModal";
-
-export type PortfolioSeries = {
-  returns: number[];
-  risks: number[];
-  sharpe_ratios: number[];
-  asset_order: string[];
-  weights: number[][];
-  max_sharpe_index: number;
-  min_volatility_index: number;
-  sample_count?: number;
-  sampling_method?: string;
-  seed?: number;
-};
-
-export type MetricValueStatus = {
-  status: string;
-  observations?: number;
-};
-
-export type MetricsMetadata = {
-  requestedSymbols?: string[];
-  availableSymbols?: string[];
-  missingSymbols?: string[];
-  observationsBySymbol?: Record<string, number>;
-  actualStart?: string;
-  actualEnd?: string;
-  annualisationDays?: number;
-  priceField?: string;
-  benchmark?: string;
-  method?: string;
-  generatedAt?: string;
-};
-
-export interface MetricsResponse {
-  tickers: string[];
-  metricType: string;
-  series: {
-    timeSeries?: Record<string, Array<{ date: string; value: number }>>;
-    singleValue?: Record<string, number>;
-    singleValueStatuses?: Record<string, MetricValueStatus>;
-    portfolio?: PortfolioSeries;
-    correlationMatrix?: Record<string, Record<string, number>>;
-  };
-  metadata?: MetricsMetadata;
-  warnings?: string[];
-}
-
-interface FetchMetricsRequest {
-  tickers: string[];
-  settings: GraphSettings | null;
-  signal?: AbortSignal;
-}
-
+import type {
+  MarketMetricType,
+  MetricsMetadata,
+  MetricsResponse,
+  MetricValueStatus,
+  PortfolioSeries,
+} from "./types";
 type UnknownRecord = Record<string, unknown>;
 
 const isRecord = (value: unknown): value is UnknownRecord =>
@@ -248,9 +200,7 @@ const normaliseCorrelationMatrix = (
         },
         {},
       );
-      return Object.keys(row).length
-        ? { ...matrix, [rowTicker]: row }
-        : matrix;
+      return Object.keys(row).length ? { ...matrix, [rowTicker]: row } : matrix;
     },
     {},
   );
@@ -295,7 +245,7 @@ const normaliseMetadata = (value: unknown): MetricsMetadata | undefined => {
 
 export const formatMetricsResponse = (
   tickers: string[],
-  metricType: string,
+  metricType: MarketMetricType,
   payload: unknown,
 ): MetricsResponse => {
   const envelope = isRecord(payload) && "data" in payload ? payload : null;
@@ -343,34 +293,3 @@ export const formatMetricsResponse = (
   }
   return response;
 };
-
-export async function fetchMetrics(
-  req: FetchMetricsRequest,
-): Promise<MetricsResponse> {
-  if (!req.settings) throw new Error("Settings are required");
-  const { metricType, metricParams } = req.settings;
-  const { startDate, endDate, marketTicker, riskFreeRate, confidenceLevel } =
-    metricParams;
-  const response = await fetch(`${METRICS_BASE}/${metricType.toLowerCase()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal: req.signal,
-    body: JSON.stringify({
-      stock_tickers: req.tickers,
-      start_date: startDate,
-      end_date: endDate,
-      market_ticker: marketTicker || "SPY",
-      risk_free_rate: riskFreeRate ?? 0.01,
-      confidence_level: confidenceLevel ?? 0.05,
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message =
-      isRecord(data) && typeof data.error === "string"
-        ? data.error
-        : "Metrics are temporarily unavailable.";
-    throw new Error(message);
-  }
-  return formatMetricsResponse(req.tickers, metricType, data);
-}

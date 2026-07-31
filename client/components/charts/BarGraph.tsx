@@ -9,7 +9,7 @@ import {
   STOCK_SERIES_COLORS,
   getChartSeriesColor,
   getZeroAnchoredDomain,
-} from "./chartColors";
+} from "./ChartTheme";
 
 const compactNumberFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,

@@ -10,7 +10,7 @@ import {
   STOCK_SERIES_COLORS,
   getChartSeriesColor,
   getZeroAnchoredDomain,
-} from "./chartColors";
+} from "./ChartTheme";
 
 const HOVER_LINE_COLOR = "rgba(255,255,255,0.32)";
 const DAY_IN_MILLISECONDS = 86_400_000;

@@ -5,7 +5,7 @@ import {
   CHART_GRID_COLOR,
   CHART_TEXT_COLOR,
   CHART_TOOLTIP_BACKGROUND,
-} from "./chartColors";
+} from "./ChartTheme";
 
 const DEFAULT_POSITIVE_COLOR = "#007a3d";
 const DEFAULT_NEGATIVE_COLOR = "#c9435b";

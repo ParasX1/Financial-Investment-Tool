@@ -1,5 +1,5 @@
 import React from "react";
-import type { MetricsResponse } from "@/components/fetchMetrics";
+import type { MetricsResponse } from "@/lib/market-metrics";
 import { formatMetricValue, METRIC_REGISTRY } from "../data/metricRegistry";
 import type { PortfolioMetricType } from "../types";
 import styles from "../styles/PortfolioScreen.module.css";
