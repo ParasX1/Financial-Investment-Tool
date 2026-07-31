@@ -5,7 +5,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import Link from "next/link";
-import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
+import { getMarketNewsRouteHref } from "@/lib/routes/marketNews";
 import communityStyles from "../styles/community.module.css";
 import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
 import { getCommunityPostSignals } from "../lib/communitySignals";

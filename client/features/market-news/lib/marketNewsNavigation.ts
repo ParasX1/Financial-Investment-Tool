@@ -1,5 +1,6 @@
-import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import type { MarketNewsMarketScope } from "@/lib/news/tickerStrip";
+import { DEFAULT_MARKET_NEWS_TOPIC_ID } from "@/lib/news/catalog";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import type {
   MarketNewsGroupId,
   MarketNewsNavGroup,
@@ -9,7 +10,7 @@ import type {
 } from "../types";
 
 export const defaultMarketNewsTopicId: MarketNewsTopicId =
-  MARKET_NEWS_NAV_GROUPS[0]!.topics[0]!.id;
+  DEFAULT_MARKET_NEWS_TOPIC_ID;
 
 export function getMarketNewsTopics(
   groups: readonly MarketNewsNavGroup[] = MARKET_NEWS_NAV_GROUPS,

@@ -314,3 +314,6 @@ export const MARKET_NEWS_NAV_GROUPS: readonly MarketNewsNavGroup[] = [
     ],
   },
 ];
+
+export const DEFAULT_MARKET_NEWS_TOPIC_ID: MarketNewsTopicId =
+  MARKET_NEWS_NAV_GROUPS[0]!.topics[0]!.id;

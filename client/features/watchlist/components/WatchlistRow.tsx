@@ -5,7 +5,7 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import Link from "next/link";
-import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
+import { getMarketNewsRouteHref } from "@/lib/routes/marketNews";
 import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import styles from "../styles/watchlist.module.css";

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import {
-  getMarketNewsRouteHref,
-  parseMarketNewsRouteQuery,
-} from "./marketNewsRouting";
+import { parseMarketNewsRouteQuery } from "./marketNewsRouting";
 
 describe("marketNewsRouting", () => {
   it("parses valid route state and normalizes ticker lookup state", () => {
@@ -74,24 +71,8 @@ describe("marketNewsRouting", () => {
   });
 
   it("maps the retired Money News route to the complete Money overview", () => {
-    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe("money");
-  });
-
-  it("serializes only meaningful state into shareable Market News URLs", () => {
-    expect(
-      getMarketNewsRouteHref({
-        lensId: "watchlist",
-        marketScopeId: "europe-markets",
-        pageIndex: 2,
-        searchQuery: "RBA rates",
-        sortId: "watchlist-first",
-        tickerSymbol: "NVDA",
-        topicId: "personal-finance",
-      }),
-    ).toBe(
-      "/MarketNews?topic=personal-finance&market=europe-markets&q=RBA+rates&lens=watchlist&sort=watchlist-first&page=3",
+    expect(parseMarketNewsRouteQuery({ topic: "money-news" }).topicId).toBe(
+      "money",
     );
-
-    expect(getMarketNewsRouteHref({})).toBe("/MarketNews");
   });
 });

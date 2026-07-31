@@ -14,7 +14,7 @@ import {
   type MarketChartSnapshot,
   type MarketChartsResponse,
 } from "@/features/market-data";
-import { getMarketNewsRouteHref } from "@/features/market-news/lib/marketNewsRouting";
+import { getMarketNewsRouteHref } from "@/lib/routes/marketNews";
 import type { WatchlistItem, WatchlistQuote } from "../types";
 import sharedStyles from "../styles/watchlist.module.css";
 import styles from "../styles/watchlistMarketMonitor.module.css";
