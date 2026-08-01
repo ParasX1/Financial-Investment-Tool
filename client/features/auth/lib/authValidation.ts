@@ -2,8 +2,11 @@ import type { AuthFieldErrors, AuthMode } from "../types";
 
 const EMAIL_MAX_LENGTH = 254;
 const NAME_MAX_LENGTH = 80;
+const NEW_PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 128;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const NEW_PASSWORD_HELPER_TEXT = "Use 8 to 128 characters.";
 
 type AuthFormDraft = {
   email: string;
@@ -34,13 +37,22 @@ function validateName(name: string) {
   return undefined;
 }
 
-function validatePassword(password: string, mode: AuthMode) {
+export function validateNewPassword(password: string) {
   if (!password) return "Enter your password.";
   if (password.length > PASSWORD_MAX_LENGTH) {
     return "Use 128 characters or fewer.";
   }
-  if (mode === "sign-up" && password.length < 8) {
+  if (password.length < NEW_PASSWORD_MIN_LENGTH) {
     return "Use at least 8 characters.";
+  }
+  return undefined;
+}
+
+function validatePassword(password: string, mode: AuthMode) {
+  if (mode === "sign-up") return validateNewPassword(password);
+  if (!password) return "Enter your password.";
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return "Use 128 characters or fewer.";
   }
   return undefined;
 }

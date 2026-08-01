@@ -15,7 +15,7 @@ describe("HomeProductSection", () => {
     );
 
     expect(markup).toContain('aria-label="Portfolio requires sign in"');
-    expect(markup).not.toContain('href="/dashboardView"');
+    expect(markup).not.toContain('href="/Portfolio"');
     expect(markup).toContain("Start with the questions that matter.");
     expect(markup).toContain("What has driven performance?");
     expect(markup).not.toContain('role="list"');
@@ -31,7 +31,7 @@ describe("HomeProductSection", () => {
       />,
     );
 
-    expect(markup).toContain('href="/dashboardView"');
+    expect(markup).toContain('href="/Portfolio"');
     expect(markup).toContain('href="/MarketNews"');
     expect(markup).toContain('href="/Community"');
   });

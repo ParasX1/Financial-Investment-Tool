@@ -56,7 +56,7 @@ export function HomeFooter({
         <div className={styles.footerAccount}>
           <strong>Account</strong>
           {signedIn ? (
-            <Link href="/dashboardView" className={styles.footerLink}>
+            <Link href="/Portfolio" className={styles.footerLink}>
               Dashboard
             </Link>
           ) : (

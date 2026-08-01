@@ -1,4 +1,4 @@
-import type { NewsResponseMeta } from "@/services/news";
+import type { NewsResponseMeta } from "@/lib/news/contracts";
 import { MARKET_NEWS_LOAD_ERROR } from "./marketNewsArticleLoadState";
 import { resolveMarketNewsTopic } from "./marketNewsNavigation";
 import { buildMarketNewsDisplayState } from "./marketNewsDisplayState";

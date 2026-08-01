@@ -8,8 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import supabase from "../lib/supabaseClient";
-import { buildAuthRedirectTo } from "../lib/authRedirect";
+import { supabase } from "@/lib/supabase";
+import {
+  buildAuthRedirectTo,
+  DEFAULT_AUTH_REDIRECT_PATH,
+} from "../lib/authRedirect";
 import type { SignUpResult } from "../types";
 
 export type AuthContextValue = {
@@ -69,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string,
       password: string,
       metadata: Record<string, unknown> = {},
-      redirectTo = "/dashboardView",
+      redirectTo = DEFAULT_AUTH_REDIRECT_PATH,
     ): Promise<SignUpResult> => {
       const emailRedirectTo =
         typeof window === "undefined"
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(
-    async (redirectTo = "/dashboardView") => {
+    async (redirectTo = DEFAULT_AUTH_REDIRECT_PATH) => {
       const redirectUrl = buildAuthRedirectTo(
         window.location.origin,
         redirectTo,

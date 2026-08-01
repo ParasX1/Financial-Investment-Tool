@@ -32,7 +32,7 @@ export const homeRouteLinks = [
     description:
       "What has driven performance? See return and risk in context, then identify what deserves a closer look.",
     gated: true,
-    href: "/dashboardView",
+    href: "/Portfolio",
     icon: AccountBalanceWalletRoundedIcon,
     label: "Portfolio",
   },

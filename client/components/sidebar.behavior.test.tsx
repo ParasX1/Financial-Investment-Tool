@@ -19,14 +19,11 @@ jest.mock("next/link", () => {
 });
 
 
-jest.mock("@/components/authContext", () => ({
+jest.mock("@/features/auth", () => ({
   useAuth: () => ({
     signOut: jest.fn(),
     user: null,
   }),
-}));
-
-jest.mock("@/features/auth", () => ({
   AuthDialog: () => null,
   useAuthDialog: () => ({
     close: jest.fn(),

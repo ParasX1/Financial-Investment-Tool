@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 
 const ARTICLE_TIME_FORMATTER = new Intl.DateTimeFormat("en-AU", {
   day: "numeric",

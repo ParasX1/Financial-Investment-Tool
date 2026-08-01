@@ -11,6 +11,7 @@ const userPageEntrypoints = [
   "Guide.tsx",
   "Help.tsx",
   "MarketNews.tsx",
+  "Portfolio.tsx",
   "Profile.tsx",
   "TopPicks.tsx",
   "Watchlist.tsx",
@@ -94,13 +95,28 @@ describe("site-wide page background contract", () => {
   });
 
   it.each([
-    ["pages/TopPicks.tsx", 'component="main"'],
-    ["pages/dashboardView.tsx", 'component="main"'],
+    ["features/top-picks/screens/TopPicksScreen.tsx", 'component="main"'],
   ])("uses the shared background on the visible main in %s", (path, marker) => {
     const source = readClientSource(path);
     const mainTag = openingTagContaining(source, marker);
 
     expect(mainTag).toContain("var(--fit-page-background)");
+  });
+
+  it("keeps the Portfolio route thin and its feature shell on the shared background", () => {
+    const route = readClientSource("pages/Portfolio.tsx");
+    const legacyAlias = readClientSource("pages/dashboardView.tsx");
+    const screen = readClientSource(
+      "features/portfolio/screens/PortfolioScreen.tsx",
+    );
+    const styles = readClientSource(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
+    );
+
+    expect(route).toContain("export default PortfolioScreen");
+    expect(legacyAlias).toContain('export { default } from "./Portfolio"');
+    expect(screen).toContain("className={styles.page}");
+    expect(cssBlock(styles, ".page")).toContain("var(--fit-page-background)");
   });
 
   it("uses the shared background and glow on the standalone Home shell", () => {
@@ -187,6 +203,7 @@ describe("site-wide page background contract", () => {
     [
       ["pages/Profile.tsx", "<ProfileMain"],
       ["pages/MarketNews.tsx", "<MarketNewsMain"],
+      ["pages/TopPicks.tsx", "TopPicksScreen"],
     ].forEach(([path, marker]) => {
       expect(readClientSource(path)).toContain(marker);
     });

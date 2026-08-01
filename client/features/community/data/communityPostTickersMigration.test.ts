@@ -16,7 +16,7 @@ describe("Community post tickers migration", () => {
     expect(migration).toMatch(/position between 0 and 3/);
     expect(migration).toMatch(/primary key \(post_id, symbol\)/);
     expect(migration).toMatch(/unique \(post_id, position\)/);
-    expect(migration).toMatch(/select id, symbol, 0\s+from public\.posts/s);
+    expect(migration).toMatch(/select id, symbol, 0\s+from public\.posts/);
     expect(migration).toContain("create index post_tickers_symbol_idx");
   });
 
@@ -25,13 +25,13 @@ describe("Community post tickers migration", () => {
       "alter table public.post_tickers enable row level security",
     );
     expect(migration).toMatch(
-      /for select\s+to anon, authenticated\s+using \(true\)/s,
+      /for select\s+to anon, authenticated\s+using \(true\)/,
     );
     expect(migration).toMatch(
-      /for insert\s+to authenticated\s+with check \([\s\S]*auth\.uid\(\)[\s\S]*posts\.author_id/s,
+      /for insert\s+to authenticated\s+with check \([\s\S]*auth\.uid\(\)[\s\S]*posts\.author_id/,
     );
     expect(migration).toMatch(
-      /grant insert \(post_id, symbol, position\)\s+on table public\.post_tickers to authenticated/s,
+      /grant insert \(post_id, symbol, position\)\s+on table public\.post_tickers to authenticated/,
     );
     expect(migration).not.toMatch(/grant (?:all|update|delete).*to anon/i);
   });

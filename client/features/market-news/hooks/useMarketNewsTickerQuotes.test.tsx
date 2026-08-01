@@ -1,6 +1,6 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { resolveMarketNewsMarketScope } from "../lib/marketNewsNavigation";
+import { resolveMarketNewsMarketScope } from "@/lib/news/tickerStrip";
 import {
   buildMarketNewsTickerStripRequest,
   useMarketNewsTickerQuotes,

@@ -13,6 +13,14 @@ describe("Community smart tag suggestions", () => {
     const suggestions = getSmartTagSuggestions({
       title: "NVDA earnings risk after guidance",
       body: "I am comparing Nvidia revenue growth, valuation, and options IV before earnings.",
+      tags: [],
+      postType: "",
+      timeFrame: "",
+      tickers: [],
+      tickerInput: "",
+      sourceUrl: "",
+      imageFile: null,
+      imagePreviewUrl: null,
     });
 
     expect(suggestions.map((item) => item.label)).toEqual(
@@ -83,6 +91,13 @@ describe("Community smart tag suggestions", () => {
       title: "TSLA options risk before earnings",
       body: "Looking at implied volatility and downside hedges.",
       tags: [],
+      postType: "",
+      timeFrame: "",
+      tickers: [],
+      tickerInput: "",
+      sourceUrl: "",
+      imageFile: null,
+      imagePreviewUrl: null,
     });
 
     expect(selectedTags).toEqual(

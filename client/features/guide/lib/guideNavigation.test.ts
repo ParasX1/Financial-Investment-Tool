@@ -56,7 +56,11 @@ describe("guideNavigation", () => {
     expect(valueAtRisk.formula).toMatch(/percentile/i);
     expect(valueAtRisk.formula).not.toMatch(/z-score/i);
     expect(valueAtRisk.interpretation).toMatch(/daily return/i);
-    expect(efficientFrontier.description).toMatch(/random.*portfolio/i);
-    expect(efficientFrontier.description).toMatch(/not.*filtered frontier/i);
+    expect(efficientFrontier.description).toMatch(
+      /deterministically samples.*portfolios/i,
+    );
+    expect(efficientFrontier.description).toMatch(
+      /not.*mathematically optimized frontier/i,
+    );
   });
 });

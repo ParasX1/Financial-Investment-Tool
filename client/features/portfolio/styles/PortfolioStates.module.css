@@ -1,0 +1,87 @@
+.state {
+  display: grid;
+  min-height: 420px;
+  place-items: center;
+  align-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.stateMarker {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  place-items: center;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 50%;
+  color: var(--portfolio-accent);
+  background: var(--portfolio-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.statePulse {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 18px;
+  border: 2px solid rgba(101, 160, 253, 0.2);
+  border-top-color: var(--portfolio-accent);
+  border-radius: 50%;
+  animation: portfolio-spin 900ms linear infinite;
+}
+
+.stateEyebrow {
+  margin: 0 0 8px;
+  color: var(--portfolio-accent) !important;
+  font-size: 0.68rem !important;
+  font-weight: 740;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.state h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  font-weight: 600;
+}
+
+.state p {
+  max-width: 470px;
+  margin: 10px 0 0;
+  color: var(--portfolio-muted);
+  font-size: 0.83rem;
+  line-height: 1.6;
+}
+
+.state button {
+  min-height: 38px;
+  margin-top: 18px;
+  padding: 0 16px;
+  border: 1px solid rgba(101, 160, 253, 0.45);
+  border-radius: 9px;
+  color: #eaf3ff;
+  background: var(--portfolio-accent-soft);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 690;
+  cursor: pointer;
+}
+
+.stateError .stateMarker {
+  border-color: rgba(255, 110, 129, 0.4);
+  color: #ff9eaa;
+  background: rgba(255, 110, 129, 0.09);
+}
+
+@keyframes portfolio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statePulse {
+    animation-duration: 1800ms;
+  }
+}

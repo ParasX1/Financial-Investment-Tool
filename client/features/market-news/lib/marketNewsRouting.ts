@@ -1,18 +1,16 @@
 import type { ParsedUrlQuery } from "querystring";
+import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
   MARKET_NEWS_MARKET_SCOPES,
-  MARKET_NEWS_NAV_GROUPS,
-} from "../data/marketNewsConfig";
+  defaultMarketNewsMarketScopeId,
+} from "@/lib/news/tickerStrip";
 import type {
   MarketNewsLensId,
   MarketNewsMarketScopeId,
   MarketNewsSortId,
   MarketNewsTopicId,
 } from "../types";
-import {
-  defaultMarketNewsMarketScopeId,
-  defaultMarketNewsTopicId,
-} from "./marketNewsNavigation";
+import { defaultMarketNewsTopicId } from "./marketNewsNavigation";
 
 const MARKET_NEWS_LENS_IDS: readonly MarketNewsLensId[] = [
   "all",
@@ -97,52 +95,4 @@ export function parseMarketNewsRouteQuery(
     tickerSymbol,
     topicId: validTopicId(firstQueryValue(query.topic)),
   };
-}
-
-export function getMarketNewsRouteHref({
-  lensId,
-  marketScopeId,
-  pageIndex,
-  searchQuery,
-  sortId,
-  tickerSymbol,
-  topicId,
-}: Partial<MarketNewsRouteState>) {
-  const params = new URLSearchParams();
-  const nextTopicId = topicId ?? defaultMarketNewsTopicId;
-  const nextMarketScopeId = marketScopeId ?? defaultMarketNewsMarketScopeId;
-  const nextSearchQuery = searchQuery?.trim() ?? "";
-  const nextTickerSymbol = nextSearchQuery
-    ? ""
-    : (tickerSymbol?.trim().toUpperCase() ?? "");
-
-  if (nextTopicId !== defaultMarketNewsTopicId) {
-    params.set("topic", nextTopicId);
-  }
-
-  if (nextMarketScopeId !== defaultMarketNewsMarketScopeId) {
-    params.set("market", nextMarketScopeId);
-  }
-
-  if (nextSearchQuery) {
-    params.set("q", nextSearchQuery);
-  } else if (nextTickerSymbol) {
-    params.set("quote", nextTickerSymbol);
-  }
-
-  if (lensId && lensId !== "all") {
-    params.set("lens", lensId);
-  }
-
-  if (sortId && sortId !== "latest") {
-    params.set("sort", sortId);
-  }
-
-  if (typeof pageIndex === "number" && pageIndex > 0) {
-    params.set("page", String(pageIndex + 1));
-  }
-
-  const queryString = params.toString();
-
-  return queryString ? `/MarketNews?${queryString}` : "/MarketNews";
 }

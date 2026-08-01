@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import { compact, dedupeArticles } from "../providerUtils";
 import type { ServerNewsRequest } from "../types";
 

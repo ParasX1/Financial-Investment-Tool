@@ -1,0 +1,217 @@
+.observation {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  color: var(--portfolio-ink);
+  background: #05070b;
+  font-family: var(--fit-font-family);
+}
+
+.doneButton {
+  min-height: 43px;
+  padding: 0 16px;
+  border: 1px solid rgba(101, 160, 253, 0.6);
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, #526ce8, #3e82cd);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 760;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.observationToolbar {
+  display: flex;
+  height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--portfolio-border);
+  background: #0a0e15;
+}
+
+.observationToolbar > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.observationToolbar strong {
+  font-size: 0.9rem;
+}
+
+.observationToolbar p {
+  margin: 0;
+  color: var(--portfolio-muted);
+  font-size: 0.66rem;
+}
+
+.observationPulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--portfolio-green);
+  box-shadow: 0 0 0 5px rgba(88, 214, 165, 0.08);
+}
+
+.observationActions {
+  display: flex;
+  gap: 6px;
+}
+
+.observationActions button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--portfolio-border);
+  border-radius: 7px;
+  color: var(--portfolio-body);
+  background: rgba(20, 27, 39, 0.85);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.observationActions button:disabled {
+  opacity: 0.4;
+}
+
+.observationCanvas {
+  position: relative;
+  height: calc(100dvh - 58px);
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(101, 160, 253, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(101, 160, 253, 0.035) 1px, transparent 1px),
+    #05070b;
+  background-size: 28px 28px;
+}
+
+.observationWindow {
+  position: absolute;
+  display: flex;
+  min-width: 300px;
+  min-height: 220px;
+  flex-direction: column;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 9px;
+  overflow: hidden;
+  background: #090d14;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.44);
+}
+
+.observationHandle {
+  display: flex;
+  min-height: 29px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px 0 9px;
+  border-bottom: 1px solid var(--portfolio-border);
+  color: var(--portfolio-muted);
+  background: #101620;
+  font-size: 0.61rem;
+  font-weight: 700;
+  cursor: move;
+  user-select: none;
+}
+
+.observationHandle button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--portfolio-muted);
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.observationCardBody {
+  min-height: 0;
+  flex: 1;
+}
+
+.observationResize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  background: linear-gradient(135deg, transparent 50%, #65a0fd 50%);
+  cursor: nwse-resize;
+}
+
+.observationEmpty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  align-content: center;
+  color: var(--portfolio-muted);
+  text-align: center;
+}
+
+.observationEmpty p {
+  margin: 6px 0 12px;
+  font-size: 0.75rem;
+}
+
+.observationEmpty button {
+  min-height: 35px;
+  border: 1px solid rgba(101, 160, 253, 0.35);
+  border-radius: 7px;
+  color: #dceaff;
+  background: rgba(101, 160, 253, 0.1);
+  cursor: pointer;
+}
+
+.observation button:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .observationToolbar {
+    height: auto;
+    min-height: 58px;
+    align-items: flex-start;
+    padding-block: 8px;
+  }
+
+  .observationToolbar p {
+    display: none;
+  }
+
+  .observationActions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .observationCanvas {
+    display: grid;
+    height: calc(100dvh - 74px);
+    gap: 8px;
+    padding: 8px;
+    overflow-y: auto;
+  }
+
+  .observationWindow {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 350px !important;
+    min-width: 0;
+  }
+
+  .observationHandle {
+    cursor: default;
+  }
+
+  .observationResize {
+    display: none;
+  }
+}

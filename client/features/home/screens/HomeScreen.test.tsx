@@ -21,7 +21,7 @@ function buildController(overrides: Record<string, unknown> = {}) {
     closeAuthDialog: jest.fn<any>(),
     openLogin: jest.fn<any>(),
     openSignUp: jest.fn<any>(),
-    redirectTo: "/dashboardView",
+    redirectTo: "/Portfolio",
     selectRoute: jest.fn<any>(),
     signedIn: false,
     ...overrides,
@@ -180,7 +180,7 @@ describe("HomeScreenView", () => {
 
     expect(renderer.root.findByProps({ "aria-label": "Auth dialog" }).props).toMatchObject({
       "data-mode": "sign-up",
-      "data-redirect-to": "/dashboardView",
+      "data-redirect-to": "/Portfolio",
     });
     act(() => renderer.root.findByProps({ children: "Close auth" }).props.onClick());
     expect(mockController.closeAuthDialog).toHaveBeenCalledTimes(1);

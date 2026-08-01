@@ -15,12 +15,12 @@ async function flushPromises() {
 
 describe("useSavedWatchlistSymbols", () => {
   beforeAll(() => {
-    jest.doMock("@/components/authContext", () => ({
+    jest.doMock("@/features/auth", () => ({
       useAuth: () => mockAuthState,
     }));
-    jest.doMock("@/components/supabase", () => ({
+    jest.doMock("@/lib/supabase", () => ({
       __esModule: true,
-      default: {},
+      supabase: {},
     }));
     jest.doMock("../data/savedWatchlistSymbolsReader", () => ({
       createSavedWatchlistSymbolsReader: () => mockRepository,

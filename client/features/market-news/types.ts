@@ -1,107 +1,19 @@
-export type MarketNewsGroupId =
-  | "top-stories"
-  | "cost-of-living"
-  | "markets"
-  | "money"
-  | "economy-work"
-  | "technology";
+import type { MarketNewsSource, MarketNewsTopicId } from "@/lib/news/catalog";
+import type { MarketNewsMarketScopeId } from "@/lib/news/tickerStrip";
 
-export type MarketNewsTopicId =
-  | "top-stories"
-  | "cost-of-living"
-  | "money"
-  | "economy-work"
-  | "australian-markets"
-  | "international-markets"
-  | "companies-earnings"
-  | "commodities"
-  | "personal-finance"
-  | "property-news"
-  | "super-tax"
-  | "economy-policy"
-  | "rates-inflation"
-  | "work"
-  | "technology";
+export type {
+  MarketNewsGroupId,
+  MarketNewsNavGroup,
+  MarketNewsSource,
+  MarketNewsTopic,
+  MarketNewsTopicId,
+} from "@/lib/news/catalog";
 
-export type MarketNewsSource =
-  | {
-      kind: "general";
-      context: string;
-    }
-  | {
-      kind: "regional";
-      country: string;
-      context: string;
-    }
-  | {
-      kind: "industry";
-      industry: string;
-      context: string;
-    }
-  | {
-      kind: "commodity";
-      commodity: string;
-      context: string;
-    }
-  | {
-      kind: "search";
-      query: string;
-      context: string;
-    };
-
-export interface MarketNewsTopic {
-  id: MarketNewsTopicId;
-  label: string;
-  shortLabel?: string;
-  eyebrow: string;
-  description: string;
-  source: MarketNewsSource;
-}
-
-export interface MarketNewsNavGroup {
-  id: MarketNewsGroupId;
-  label: string;
-  description: string;
-  topics: readonly MarketNewsTopic[];
-}
-
-export interface MarketNewsTicker {
-  symbol: string;
-  label: string;
-  value: string;
-  change: string;
-  previousClose?: number;
-  tone: "positive" | "negative" | "neutral";
-  sparkline: readonly number[];
-  sparklineSource?: "live" | "unavailable" | "fallback";
-  marketState?: string;
-  signal?: "Core" | "Macro" | "Mover" | "Watchlist";
-}
-
-export type MarketNewsMarketScopeId =
-  | "australia"
-  | "us-markets"
-  | "europe-markets"
-  | "asia-markets"
-  | "cryptocurrencies"
-  | "rates"
-  | "commodities"
-  | "currencies";
-
-export interface MarketNewsMarketScope {
-  id: MarketNewsMarketScopeId;
-  label: string;
-  shortLabel: string;
-  description: string;
-  tickers: readonly MarketNewsTicker[];
-  tickerSelection?: {
-    coreSymbols: readonly string[];
-    dynamicSymbols: readonly string[];
-    macroSymbols: readonly string[];
-    maxTickers: number;
-    trendingRegion: string;
-  };
-}
+export type {
+  MarketNewsMarketScope,
+  MarketNewsMarketScopeId,
+  MarketNewsTicker,
+} from "@/lib/news/tickerStrip";
 
 export type MarketNewsLensId = "all" | "watchlist" | "ticker-linked";
 

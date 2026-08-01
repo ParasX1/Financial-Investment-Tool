@@ -1,7 +1,7 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MARKET_NEWS_MARKET_SCOPES } from "../data/marketNewsConfig";
-import { resolveMarketNewsMarketScope } from "../lib/marketNewsNavigation";
+import { MARKET_NEWS_MARKET_SCOPES } from "@/lib/news/tickerStrip";
+import { resolveMarketNewsMarketScope } from "@/lib/news/tickerStrip";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
 
 function renderTickerStrip() {

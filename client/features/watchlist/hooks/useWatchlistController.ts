@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useAuth } from "@/components/authContext";
-import supabase from "@/components/supabase";
+import { useAuth } from "@/features/auth";
+import { supabase } from "@/lib/supabase";
 import {
   WATCHLIST_LIMIT,
   WATCHLIST_SUCCESS_FEEDBACK_DURATION_MS,

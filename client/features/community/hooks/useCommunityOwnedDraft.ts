@@ -24,7 +24,16 @@ function canTransferDraft(previousOwner: string, nextOwner: string) {
 }
 
 export function useCommunityOwnedDraft(ownerKey: string) {
-  const draftState = useCommunityDraft();
+  const {
+    draft,
+    clearDraftTags: clearDraftTagsState,
+    resetDraft: resetDraftState,
+    setDraftField: setDraftFieldState,
+    setDraftImage: setDraftImageState,
+    setDraftMetadataField: setDraftMetadataFieldState,
+    setDraftTickers: setDraftTickersState,
+    toggleDraftTag: toggleDraftTagState,
+  } = useCommunityDraft();
   const ownerRef = React.useRef(ownerKey);
   const ownerMatches =
     ownerRef.current === ownerKey ||
@@ -36,9 +45,9 @@ export function useCommunityOwnedDraft(ownerKey: string) {
 
     ownerRef.current = ownerKey;
     if (!canTransferDraft(previousOwner, ownerKey)) {
-      draftState.resetDraft();
+      resetDraftState();
     }
-  }, [draftState.resetDraft, ownerKey]);
+  }, [ownerKey, resetDraftState]);
 
   const mayEditCurrentDraft = React.useCallback(
     () =>
@@ -48,44 +57,44 @@ export function useCommunityOwnedDraft(ownerKey: string) {
   );
 
   const setDraftField = React.useCallback(
-    (...args: Parameters<typeof draftState.setDraftField>) => {
-      if (mayEditCurrentDraft()) draftState.setDraftField(...args);
+    (...args: Parameters<typeof setDraftFieldState>) => {
+      if (mayEditCurrentDraft()) setDraftFieldState(...args);
     },
-    [draftState.setDraftField, mayEditCurrentDraft],
+    [mayEditCurrentDraft, setDraftFieldState],
   );
   const setDraftMetadataField = React.useCallback(
-    (...args: Parameters<typeof draftState.setDraftMetadataField>) => {
-      if (mayEditCurrentDraft()) draftState.setDraftMetadataField(...args);
+    (...args: Parameters<typeof setDraftMetadataFieldState>) => {
+      if (mayEditCurrentDraft()) setDraftMetadataFieldState(...args);
     },
-    [draftState.setDraftMetadataField, mayEditCurrentDraft],
+    [mayEditCurrentDraft, setDraftMetadataFieldState],
   );
   const toggleDraftTag = React.useCallback(
-    (...args: Parameters<typeof draftState.toggleDraftTag>) => {
-      if (mayEditCurrentDraft()) draftState.toggleDraftTag(...args);
+    (...args: Parameters<typeof toggleDraftTagState>) => {
+      if (mayEditCurrentDraft()) toggleDraftTagState(...args);
     },
-    [draftState.toggleDraftTag, mayEditCurrentDraft],
+    [mayEditCurrentDraft, toggleDraftTagState],
   );
   const setDraftTickers = React.useCallback(
-    (...args: Parameters<typeof draftState.setDraftTickers>) => {
-      if (mayEditCurrentDraft()) draftState.setDraftTickers(...args);
+    (...args: Parameters<typeof setDraftTickersState>) => {
+      if (mayEditCurrentDraft()) setDraftTickersState(...args);
     },
-    [draftState.setDraftTickers, mayEditCurrentDraft],
+    [mayEditCurrentDraft, setDraftTickersState],
   );
   const clearDraftTags = React.useCallback(() => {
-    if (mayEditCurrentDraft()) draftState.clearDraftTags();
-  }, [draftState.clearDraftTags, mayEditCurrentDraft]);
+    if (mayEditCurrentDraft()) clearDraftTagsState();
+  }, [clearDraftTagsState, mayEditCurrentDraft]);
   const setDraftImage = React.useCallback(
-    (...args: Parameters<typeof draftState.setDraftImage>) => {
-      if (mayEditCurrentDraft()) draftState.setDraftImage(...args);
+    (...args: Parameters<typeof setDraftImageState>) => {
+      if (mayEditCurrentDraft()) setDraftImageState(...args);
     },
-    [draftState.setDraftImage, mayEditCurrentDraft],
+    [mayEditCurrentDraft, setDraftImageState],
   );
   const resetDraft = React.useCallback(() => {
-    if (mayEditCurrentDraft()) draftState.resetDraft();
-  }, [draftState.resetDraft, mayEditCurrentDraft]);
+    if (mayEditCurrentDraft()) resetDraftState();
+  }, [mayEditCurrentDraft, resetDraftState]);
 
   return {
-    draft: ownerMatches ? draftState.draft : EMPTY_DRAFT,
+    draft: ownerMatches ? draft : EMPTY_DRAFT,
     setDraftField,
     setDraftMetadataField,
     setDraftTickers,

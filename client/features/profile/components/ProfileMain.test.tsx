@@ -72,9 +72,8 @@ describe("ProfileMain account-scoped dialog drafts", () => {
       useProfileController: () => mockProfile,
     }));
     jest.doMock("@/features/auth", () => {
-      const actual = jest.requireActual<typeof import("@/features/auth")>(
-        "@/features/auth",
-      );
+      const actual =
+        jest.requireActual<typeof import("@/features/auth")>("@/features/auth");
 
       return {
         ...actual,
@@ -88,15 +87,16 @@ describe("ProfileMain account-scoped dialog drafts", () => {
           onHide: () => void;
           redirectTo: string;
           show: boolean;
-        }) => show ? (
-          <section
-            aria-label="Auth dialog"
-            data-mode={initialMode}
-            data-redirect-to={redirectTo}
-          >
-            <button onClick={onHide}>Close auth</button>
-          </section>
-        ) : null,
+        }) =>
+          show ? (
+            <section
+              aria-label="Auth dialog"
+              data-mode={initialMode}
+              data-redirect-to={redirectTo}
+            >
+              <button onClick={onHide}>Close auth</button>
+            </section>
+          ) : null,
       };
     });
     jest.doMock("@/components/shared/FitPageHeader", () => ({
@@ -251,8 +251,8 @@ describe("ProfileMain account-scoped dialog drafts", () => {
       .findAllByType("input")
       .filter((input) => input.props.id?.startsWith("profile-dialog-"));
     act(() => {
-      inputs[0].props.onChange({ currentTarget: { value: "Secret7" } });
-      inputs[1].props.onChange({ currentTarget: { value: "Secret7" } });
+      inputs[0].props.onChange({ currentTarget: { value: "Secret78" } });
+      inputs[1].props.onChange({ currentTarget: { value: "Secret78" } });
     });
     await act(async () => {
       await renderer!.root.findByType("form").props.onSubmit({
@@ -351,7 +351,7 @@ describe("ProfileMain account-scoped dialog drafts", () => {
     act(() => {
       renderer!.root
         .findByProps({ id: "profile-dialog-new-password" })
-        .props.onChange("short");
+        .props.onChange("seven77");
       renderer!.root
         .findByProps({ id: "profile-dialog-confirm-password" })
         .props.onChange("different");
@@ -366,7 +366,11 @@ describe("ProfileMain account-scoped dialog drafts", () => {
     expect(
       renderer!.root.findByProps({ id: "profile-dialog-new-password" }).props
         .error,
-    ).toBe("Password must be at least 6 characters.");
+    ).toBe("Use at least 8 characters.");
+    expect(
+      renderer!.root.findByProps({ id: "profile-dialog-new-password" }).props
+        .helperText,
+    ).toBe("Use 8 to 128 characters.");
     expect(
       renderer!.root.findByProps({ id: "profile-dialog-confirm-password" })
         .props.error,
@@ -420,11 +424,12 @@ describe("ProfileMain account-scoped dialog drafts", () => {
     act(() =>
       renderer!.root.findByProps({ children: "Sign in" }).props.onClick(),
     );
-    expect(renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props)
-      .toMatchObject({
-        "data-mode": "sign-in",
-        "data-redirect-to": "/Profile",
-      });
+    expect(
+      renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props,
+    ).toMatchObject({
+      "data-mode": "sign-in",
+      "data-redirect-to": "/Profile",
+    });
     act(() =>
       renderer!.root.findByProps({ children: "Close auth" }).props.onClick(),
     );
@@ -433,10 +438,14 @@ describe("ProfileMain account-scoped dialog drafts", () => {
         .findByProps({ children: "Create account" })
         .props.onClick(),
     );
-    expect(renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props[
-      "data-mode"
-    ]).toBe("sign-up");
-    act(() => renderer!.root.findByProps({ children: "Close auth" }).props.onClick());
+    expect(
+      renderer!.root.findByProps({ "aria-label": "Auth dialog" }).props[
+        "data-mode"
+      ],
+    ).toBe("sign-up");
+    act(() =>
+      renderer!.root.findByProps({ children: "Close auth" }).props.onClick(),
+    );
 
     mockProfile = buildProfile({
       authLoading: true,

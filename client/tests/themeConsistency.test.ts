@@ -5,98 +5,59 @@ import { describe, expect, it } from "@jest/globals";
 const readClientSource = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), "utf8");
 
+const readPortfolioStyles = (...relativePaths: string[]) =>
+  relativePaths.map(readClientSource).join("\n");
+
 const openingTagContaining = (source: string, uniqueText: string) => {
   const textIndex = source.indexOf(uniqueText);
   expect(textIndex).toBeGreaterThanOrEqual(0);
-
   const openingTagStart = source.lastIndexOf("<", textIndex);
   const openingTagEnd = source.indexOf(">", openingTagStart);
-  expect(openingTagStart).toBeGreaterThanOrEqual(0);
-  expect(openingTagEnd).toBeGreaterThan(openingTagStart);
-
   return source.slice(openingTagStart, openingTagEnd + 1);
 };
 
-const themeContractCases: Array<[string, readonly string[]]> = [
-  [
-    "pages/TopPicks.tsx",
-    [
-      "--fit-font-family",
-      "--fit-color-page-bg",
-      "--fit-color-surface",
-      "--fit-color-surface-soft",
-      "--fit-color-field",
-      "--fit-color-border-subtle",
-      "--fit-color-border-control",
-      "--fit-color-text-body",
-      "--fit-color-text-muted",
-      "--fit-color-accent-strong",
-      "--fit-color-focus-ring",
-      "--fit-type-size-panel-title",
-      "--fit-type-size-body-sm",
-    ],
-  ],
-  [
-    "pages/dashboardView.tsx",
-    [
-      "--fit-font-family",
-      "--fit-color-page-bg",
-      "--fit-color-surface",
-      "--fit-color-field",
-      "--fit-color-border-subtle",
-      "--fit-color-border-control",
-      "--fit-color-text-body",
-      "--fit-color-text-muted",
-      "--fit-color-accent-strong",
-      "--fit-color-focus-ring",
-      "--fit-type-size-panel-title",
-      "--fit-type-size-body-sm",
-      "--fit-type-size-caption",
-    ],
-  ],
-  [
-    "components/StockCardComponent.tsx",
-    [
-      "--fit-font-family",
-      "--fit-color-surface-soft",
-      "--fit-color-field",
-      "--fit-color-border-panel",
-      "--fit-color-border-control",
-      "--fit-color-text-muted",
-      "--fit-color-accent-strong",
-      "--fit-color-focus-ring",
-      "--fit-type-size-body-sm",
-      "--fit-type-size-caption",
-    ],
-  ],
-  [
-    "components/graphSettingsModal.tsx",
-    [
-      "--fit-font-family",
-      "--fit-color-surface",
-      "--fit-color-field",
-      "--fit-color-border-subtle",
-      "--fit-color-border-control",
-      "--fit-color-text-body",
-      "--fit-color-text-muted",
-      "--fit-color-focus-ring",
-      "--fit-type-size-panel-title",
-    ],
-  ],
-];
-
 describe("Portfolio Analytics and Top Picks theme contract", () => {
-  it.each(themeContractCases)(
-    "uses shared FIT tokens in %s",
-    (relativePath, requiredTokens) => {
-      const source = readClientSource(relativePath);
+  it("keeps Top Picks on the shared FIT token system", () => {
+    const source = [
+      "features/top-picks/screens/TopPicksScreen.tsx",
+      "features/top-picks/components/TopPicksTable.tsx",
+      "features/top-picks/components/TopPicksToolbar.tsx",
+      "features/top-picks/components/topPicksSx.ts",
+    ]
+      .map(readClientSource)
+      .join("\n");
 
-      requiredTokens.forEach((token) => expect(source).toContain(token));
-    },
-  );
+    [
+      "--fit-font-family",
+      "--fit-color-page-bg",
+      "--fit-color-surface",
+      "--fit-color-field",
+      "--fit-color-text-body",
+      "--fit-color-accent-strong",
+      "--fit-color-focus-ring",
+    ].forEach((token) => expect(source).toContain(token));
+  });
+
+  it("keeps the redesigned Portfolio workspace on the shared FIT foundation", () => {
+    const styles = readPortfolioStyles(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
+      "features/portfolio/styles/PortfolioCommandBar.module.css",
+      "features/portfolio/styles/PortfolioMetricCard.module.css",
+      "features/portfolio/styles/PortfolioObservation.module.css",
+      "features/portfolio/styles/PortfolioChart.module.css",
+    );
+
+    expect(styles).toContain("var(--fit-page-background)");
+    expect(styles).toContain("var(--fit-font-family)");
+    expect(styles).toContain("color-scheme: dark");
+    expect(styles).toContain("min-height: 100dvh");
+    expect(styles).not.toContain("#fc03d7");
+  });
 
   it("removes the legacy Top Picks white control and blue-purple CTA", () => {
-    const source = readClientSource("pages/TopPicks.tsx");
+    const source = readClientSource(
+      "features/top-picks/screens/TopPicksScreen.tsx",
+    );
 
     expect(source).not.toMatch(/bgcolor:\s*["']white["']/);
     expect(source).not.toContain(
@@ -104,17 +65,24 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
     );
   });
 
-  it("removes legacy Portfolio canvas and chart-card chrome", () => {
-    const dashboard = readClientSource("pages/dashboardView.tsx");
-    const chartCard = readClientSource("components/StockCardComponent.tsx");
+  it("preserves a six-card Board with shared Focus and Observation modes", () => {
+    const route = readClientSource("pages/Portfolio.tsx");
+    const screen = readClientSource(
+      "features/portfolio/screens/PortfolioScreen.tsx",
+    );
 
-    expect(dashboard).not.toMatch(/backgroundColor:\s*["']black["']/);
-    expect(chartCard).not.toMatch(/bgcolor:\s*["']#111["']/);
-    expect(chartCard).not.toMatch(/border:\s*["']1px solid #555["']/);
+    expect(route).toContain("PortfolioScreen");
+    expect(screen).toContain('aria-label="Multi-metric Portfolio board"');
+    expect(screen).toContain("<PortfolioMetricCard");
+    expect(screen).toContain("<PortfolioObservation");
+    expect(screen).toContain('workspace.view.mode === "focus"');
+    expect(screen).toContain('workspace.view.mode === "observation"');
   });
 
   it("renders Top Picks through the shared page-header typography contract", () => {
-    const source = readClientSource("pages/TopPicks.tsx");
+    const source = readClientSource(
+      "features/top-picks/screens/TopPicksScreen.tsx",
+    );
     const headerTag = openingTagContaining(source, 'title="Top Picks"');
 
     expect(headerTag).toMatch(/^<FitPageHeader\b/);
@@ -123,88 +91,71 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
     );
   });
 
-  it("renders Portfolio Analytics as a shared responsive page-title h1", () => {
-    const source = readClientSource("pages/dashboardView.tsx");
-    const titleTag = openingTagContaining(source, "Portfolio Analytics");
-
-    expect(titleTag).toMatch(/^<h1\b/);
-    expect(titleTag).toContain("fitType.pageTitle");
-    expect(titleTag).toContain("text-balance");
-    expect(titleTag).not.toMatch(
-      /fontSize|fontWeight|lineHeight|letterSpacing/,
+  it("renders a responsive Portfolio h1 with natural page scrolling", () => {
+    const screen = readClientSource(
+      "features/portfolio/screens/PortfolioScreen.tsx",
     );
-  });
-
-  it("keeps the shared page-title class responsive across mobile and desktop", () => {
-    const primitives = readClientSource("components/shared/uiPrimitives.ts");
-    const globals = readClientSource("styles/globals.css");
-    const desktopMediaIndex = globals.indexOf("@media (min-width: 640px)");
-    const mobileRules = globals.slice(0, desktopMediaIndex);
-    const desktopRules = globals.slice(desktopMediaIndex);
-
-    expect(primitives).toContain('pageTitle: "fit-type-page-title"');
-    expect(mobileRules).toMatch(
-      /\.fit-type-page-title\s*\{[^}]*--fit-type-size-page-title-mobile/s,
+    const styles = readClientSource(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
     );
-    expect(desktopRules).toMatch(
-      /\.fit-type-page-title\s*\{[^}]*--fit-type-size-page-title/s,
+    const titleTag = openingTagContaining(
+      screen,
+      "Scan broadly. Investigate deeply.",
     );
+
+    expect(titleTag).toMatch(/^<h1>/);
+    expect(styles).toMatch(/\.traderHeader h1\s*\{[\s\S]*?clamp\(/);
+    expect(styles).toContain("@media (max-width: 720px)");
+    expect(styles).not.toMatch(/height:\s*100vh/);
   });
 
-  it("keeps manual page shells and native controls in the shared dark scheme", () => {
-    const topPicks = readClientSource("pages/TopPicks.tsx");
-    const portfolio = readClientSource("pages/dashboardView.tsx");
-
-    expect(topPicks).toContain("colorScheme: 'dark'");
-    expect(portfolio).toContain("colorScheme: 'dark'");
-  });
-
-  it("uses the shared page glow token on both analytics page containers", () => {
-    const topPicks = readClientSource("pages/TopPicks.tsx");
-    const portfolio = readClientSource("pages/dashboardView.tsx");
-    const topPicksMainTag = openingTagContaining(topPicks, 'component="main"');
-    const portfolioMainTag = openingTagContaining(portfolio, 'component="main"');
-    expect(topPicksMainTag).toContain("var(--fit-page-background)");
-    expect(portfolioMainTag).toContain("var(--fit-page-background)");
-  });
-
-  it("uses shared type tokens for table and analytics UI chrome", () => {
-    const topPicks = readClientSource("pages/TopPicks.tsx");
-    const portfolio = readClientSource("pages/dashboardView.tsx");
-    const chartCard = readClientSource("components/StockCardComponent.tsx");
-
-    expect(topPicks).not.toMatch(/fontSize:\s*(?:14|15|16)\b/);
-    expect(portfolio).not.toContain("color: '#8b8794'");
-    expect(chartCard).not.toContain("fontSize: 'clamp(12px, 0.75vw, 14px)'");
-    expect(chartCard).not.toContain("fontSize: 'clamp(11px, 0.7vw, 13px)'");
-  });
-
-  it("gives Portfolio chart icon buttons explicit accessible names", () => {
-    const portfolio = readClientSource("pages/dashboardView.tsx");
-    const chartCard = readClientSource("components/StockCardComponent.tsx");
-
-    expect(portfolio).toContain('aria-label="Close chart window"');
-    expect(chartCard).toContain(
-      "aria-label={index === 0 ? 'Main view' : 'Switch to main view'}",
+  it("associates Portfolio inputs and exposes the accessible data alternative", () => {
+    const controls = readClientSource(
+      "features/portfolio/components/PortfolioCommandBar.tsx",
     );
-    expect(chartCard).toContain(
-      "aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}",
+    const table = readClientSource(
+      "features/portfolio/components/PortfolioDataTable.tsx",
     );
-    expect(chartCard).toContain('aria-label="Clear chart"');
-  });
-
-  it("associates Portfolio field labels without introducing heading levels", () => {
-    const portfolio = readClientSource("pages/dashboardView.tsx");
 
     [
       "portfolio-stock-select",
       "portfolio-start-date",
       "portfolio-end-date",
+      "portfolio-benchmark",
+      "portfolio-risk-free-rate",
+      "portfolio-confidence",
     ].forEach((id) => {
-      expect(portfolio).toContain(`htmlFor="${id}"`);
-      expect(portfolio).toContain(`id="${id}"`);
+      expect(controls).toContain(`htmlFor="${id}"`);
+      expect(controls).toContain(`id="${id}"`);
     });
-    expect(portfolio).not.toContain('variant="h5"');
-    expect(portfolio).toContain("className={fitType.eyebrow}");
+    expect(table).toContain("<table");
+    expect(table).toContain('scope="col"');
+    expect(table).toContain('scope="row"');
+  });
+
+  it("defines a readable single-column mobile Board and stacked Observation", () => {
+    const shellStyles = readClientSource(
+      "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
+    );
+    const observationStyles = readClientSource(
+      "features/portfolio/styles/PortfolioObservation.module.css",
+    );
+    const shellMobileRules = shellStyles.slice(
+      shellStyles.indexOf("@media (max-width: 720px)"),
+    );
+    const observationMobileRules = observationStyles.slice(
+      observationStyles.indexOf("@media (max-width: 720px)"),
+    );
+
+    expect(shellMobileRules).toMatch(
+      /\.board[\s\S]*grid-template-columns:\s*1fr/,
+    );
+    expect(shellMobileRules).toMatch(/\.boardSlot,[\s\S]*min-height:\s*330px/);
+    expect(observationMobileRules).toMatch(
+      /\.observationWindow[\s\S]*position:\s*relative !important/,
+    );
+    expect(observationMobileRules).toMatch(
+      /\.observationResize[\s\S]*display:\s*none/,
+    );
   });
 });

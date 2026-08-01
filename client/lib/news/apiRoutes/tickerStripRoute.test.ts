@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import handler from "@/pages/api/market/ticker-strip";
-import { buildMarketNewsTickerStripSnapshot } from "@/features/market-news/lib/marketNewsTickerStripService";
+import { buildMarketNewsTickerStripSnapshot } from "@/lib/news/tickerStrip";
 
-jest.mock("@/features/market-news/lib/marketNewsTickerStripService", () => ({
+jest.mock("@/lib/news/tickerStrip", () => ({
+  ...jest.requireActual("@/lib/news/tickerStrip"),
   buildMarketNewsTickerStripSnapshot: jest.fn(),
 }));
 
@@ -46,9 +47,11 @@ function createRequest({
 describe("/api/market/ticker-strip", () => {
   beforeEach(() => {
     mockBuildMarketNewsTickerStripSnapshot.mockResolvedValue({
+      scopeId: "australia",
       providerLabel: "Yahoo Finance",
       refreshMs: 60_000,
       source: "live",
+      strategy: "core-plus-dynamic-movers",
       tickers: [],
       updatedAt: "2026-06-21T00:00:00.000Z",
       warnings: [],

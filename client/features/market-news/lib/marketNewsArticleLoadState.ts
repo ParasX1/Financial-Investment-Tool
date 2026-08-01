@@ -2,7 +2,7 @@ import type {
   Article,
   MarketNewsFetchResult,
   NewsResponseMeta,
-} from "@/services/news";
+} from "@/lib/news/contracts";
 import type { MarketNewsRequest } from "../types";
 
 export const MARKET_NEWS_LOAD_ERROR =

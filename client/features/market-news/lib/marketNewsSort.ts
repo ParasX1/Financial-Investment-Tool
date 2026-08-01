@@ -1,4 +1,4 @@
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import type { MarketNewsSortId, MarketNewsSortOption } from "../types";
 import { articleMatchesWatchlist } from "./marketNewsLens";
 

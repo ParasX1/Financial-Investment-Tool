@@ -1,7 +1,7 @@
 import * as React from "react";
 import { describe, expect, it } from "@jest/globals";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MARKET_NEWS_MARKET_SCOPES } from "../data/marketNewsConfig";
+import { MARKET_NEWS_MARKET_SCOPES } from "@/lib/news/tickerStrip";
 import { MarketNewsRightRail } from "./MarketNewsRightRail";
 
 describe("MarketNewsRightRail", () => {

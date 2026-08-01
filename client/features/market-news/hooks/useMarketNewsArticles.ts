@@ -1,9 +1,6 @@
 import * as React from "react";
-import {
-  fetchMarketNews,
-  fetchOlderMarketNews,
-  type MarketNewsFetchParams,
-} from "@/services/news";
+import { fetchMarketNews, fetchOlderMarketNews } from "@/lib/news/marketNewsClient";
+import type { MarketNewsFetchParams } from "@/lib/news/contracts";
 import type { MarketNewsRequest, MarketNewsTopic } from "../types";
 import {
   appendMarketNewsArticleLoad,

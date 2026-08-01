@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import type { Article } from "@/services/news";
+import type { Article } from "@/lib/news/contracts";
 import {
   articleMatchesWatchlist,
   buildMarketNewsLensOptions,

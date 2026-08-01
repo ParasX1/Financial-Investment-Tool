@@ -2,13 +2,15 @@ import * as React from "react";
 import { useRouter } from "next/router";
 import {
   defaultMarketNewsMarketScopeId,
-  defaultMarketNewsTopicId,
   resolveMarketNewsMarketScope,
+} from "@/lib/news/tickerStrip";
+import { getMarketNewsRouteHref } from "@/lib/routes/marketNews";
+import {
+  defaultMarketNewsTopicId,
   resolveMarketNewsTopic,
 } from "../lib/marketNewsNavigation";
 import { clampMarketNewsPageIndex } from "../lib/marketNewsPagination";
 import {
-  getMarketNewsRouteHref,
   parseMarketNewsRouteQuery,
   type MarketNewsRouteState,
 } from "../lib/marketNewsRouting";

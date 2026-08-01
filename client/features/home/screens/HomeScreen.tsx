@@ -2,7 +2,7 @@
 import * as React from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useAuth } from "@/components/authContext";
+import { useAuth } from "@/features/auth";
 import { AuthDialog } from "@/features/auth";
 import {
   homeExperiencePoints,

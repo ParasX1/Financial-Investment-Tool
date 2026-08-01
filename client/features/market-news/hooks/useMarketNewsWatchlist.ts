@@ -1,4 +1,4 @@
-import { useSavedWatchlistSymbols } from "@/features/watchlist/savedSymbols";
+import { useSavedWatchlistSymbols } from "@/features/watchlist";
 
 const MARKET_NEWS_WATCHLIST_ERROR =
   "Saved tickers could not be loaded. Watchlist news may be incomplete.";

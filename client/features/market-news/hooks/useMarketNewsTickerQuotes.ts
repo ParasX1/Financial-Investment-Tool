@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMarketQuotes } from "@/features/market-data";
 import type { MarketNewsMarketScope, MarketNewsTicker } from "../types";
-import { redactMarketNewsTickerFallback } from "../lib/marketNewsDynamicTickers";
+import { redactMarketNewsTickerFallback } from "@/lib/news/tickerStrip";
 import {
   overlayMarketNewsTickerQuotes,
   resolveMarketNewsTickerOverlayState,

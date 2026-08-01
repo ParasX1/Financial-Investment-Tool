@@ -1,11 +1,11 @@
 import * as React from "react";
 import renderer, { act } from "react-test-renderer";
 import { AuthProvider, useAuth } from "./AuthContext";
-import supabase from "../lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
-jest.mock("../lib/supabaseClient", () => ({
+jest.mock("@/lib/supabase", () => ({
   __esModule: true,
-  default: {
+  supabase: {
     auth: {
       getSession: jest.fn(),
       onAuthStateChange: jest.fn(),
@@ -31,7 +31,13 @@ describe("AuthProvider lifecycle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     auth.onAuthStateChange.mockReturnValue({
-      data: { subscription: { unsubscribe } },
+      data: {
+        subscription: {
+          id: "auth-subscription",
+          callback: jest.fn(),
+          unsubscribe,
+        },
+      },
     });
   });
 

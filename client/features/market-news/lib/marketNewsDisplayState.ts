@@ -1,4 +1,4 @@
-import type { NewsResponseMeta } from "@/services/news";
+import type { NewsResponseMeta } from "@/lib/news/contracts";
 import type {
   MarketNewsLensOption,
   MarketNewsRequest,
