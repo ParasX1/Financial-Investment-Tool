@@ -14,6 +14,34 @@ const cards: PortfolioMetricCard[] = [
   { id: "beta", metricType: "BetaAnalysis", overrides: {}, hiddenSymbols: [] },
 ];
 
+const boardCards: PortfolioMetricCard[] = [
+  ...cards,
+  {
+    id: "hidden-board-slot",
+    metricType: "VolatilityAnalysis",
+    overrides: {},
+    hiddenSymbols: [],
+  },
+  {
+    id: "bottom-left",
+    metricType: "SharpeRatioMatrix",
+    overrides: {},
+    hiddenSymbols: [],
+  },
+  {
+    id: "bottom-middle",
+    metricType: "MarketCorrelationAnalysis",
+    overrides: {},
+    hiddenSymbols: [],
+  },
+  {
+    id: "bottom-right",
+    metricType: "EfficientFrontierVisualization",
+    overrides: {},
+    hiddenSymbols: [],
+  },
+];
+
 const globalInputs = {
   startDate: "2025-07-31",
   endDate: "2026-07-31",
@@ -406,6 +434,77 @@ describe("PortfolioObservation", () => {
     expect(props.onWindowVisibility.mock.calls).toEqual([
       ["alpha", true],
       ["beta", true],
+    ]);
+  });
+
+  it("restores hidden windows to the Board five-window visibility model", () => {
+    const props = createProps({
+      cards: boardCards,
+      layout: {
+        alpha: {
+          cardId: "alpha",
+          x: 10,
+          y: 20,
+          width: 420,
+          height: 300,
+          z: 10,
+          visible: false,
+        },
+        beta: {
+          cardId: "beta",
+          x: 80,
+          y: 70,
+          width: 420,
+          height: 300,
+          z: 12,
+          visible: true,
+        },
+        "hidden-board-slot": {
+          cardId: "hidden-board-slot",
+          x: 120,
+          y: 90,
+          width: 420,
+          height: 300,
+          z: 13,
+          visible: true,
+        },
+        "bottom-left": {
+          cardId: "bottom-left",
+          x: 140,
+          y: 110,
+          width: 420,
+          height: 300,
+          z: 14,
+          visible: true,
+        },
+        "bottom-middle": {
+          cardId: "bottom-middle",
+          x: 160,
+          y: 130,
+          width: 420,
+          height: 300,
+          z: 15,
+          visible: false,
+        },
+        "bottom-right": {
+          cardId: "bottom-right",
+          x: 180,
+          y: 150,
+          width: 420,
+          height: 300,
+          z: 16,
+          visible: true,
+        },
+      },
+    });
+    const { root } = renderObservation(props);
+
+    act(() => findButton(root, "Restore hidden")?.props.onClick());
+
+    expect(props.onWindowVisibility.mock.calls).toEqual([
+      ["alpha", true],
+      ["hidden-board-slot", false],
+      ["bottom-middle", true],
     ]);
   });
 

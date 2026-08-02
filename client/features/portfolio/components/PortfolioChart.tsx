@@ -62,6 +62,16 @@ export const PortfolioChart = ({
     setPinnedSelection(null);
   }, [data, metricType]);
 
+  const renderedDimensions = useMemo(
+    () => ({
+      width: dimensions.width,
+      height: compact
+        ? Math.max(120, Math.floor(dimensions.height * 0.78))
+        : Math.max(260, Math.floor(dimensions.height * 0.84)),
+    }),
+    [compact, dimensions.height, dimensions.width],
+  );
+
   const chart = useMemo(() => {
     if (metric.chartKind === "bar") {
       const values = Object.entries(data.series.singleValue ?? {}).map(
@@ -70,8 +80,9 @@ export const PortfolioChart = ({
       return (
         <BarGraph
           data={values}
-          width={dimensions.width}
-          height={dimensions.height}
+          width={renderedDimensions.width}
+          height={renderedDimensions.height}
+          compact={compact}
           valueFormat={(value) => formatMetricValue(metricType, value)}
           ariaLabel={`${metric.label} comparison`}
         />
@@ -90,8 +101,9 @@ export const PortfolioChart = ({
       return (
         <LineGraph
           data={series}
-          width={dimensions.width}
-          height={dimensions.height}
+          width={renderedDimensions.width}
+          height={renderedDimensions.height}
+          compact={compact}
           valueFormat={(value) => formatMetricValue(metricType, value)}
           ariaLabel={`${metric.label} over time`}
         />
@@ -105,8 +117,9 @@ export const PortfolioChart = ({
         <HeatMap
           data={model.values}
           labels={model.labels}
-          width={dimensions.width}
-          height={dimensions.height}
+          width={renderedDimensions.width}
+          height={renderedDimensions.height}
+          compact={compact}
           ariaLabel={`${metric.label} matrix`}
           selectedCell={selectedCell}
           onCellSelect={(selection) => {
@@ -133,8 +146,8 @@ export const PortfolioChart = ({
     return (
       <PortfolioFrontierChart
         data={points}
-        width={dimensions.width}
-        height={dimensions.height}
+        width={renderedDimensions.width}
+        height={renderedDimensions.height}
         mainColor="#65a0fd"
         onPointSelect={(point) => {
           const allocation = (portfolio?.asset_order ?? [])
@@ -165,11 +178,12 @@ export const PortfolioChart = ({
     data.series.portfolio,
     data.series.singleValue,
     data.series.timeSeries,
-    dimensions.height,
-    dimensions.width,
+    compact,
     metric.chartKind,
     metric.label,
     metricType,
+    renderedDimensions.height,
+    renderedDimensions.width,
     selectedCell,
   ]);
 

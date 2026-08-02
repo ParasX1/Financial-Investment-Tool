@@ -60,6 +60,38 @@ describe("portfolioWorkspaceReducer", () => {
     expect(original.cards[1].overrides).toEqual({});
   });
 
+  it("syncs card date overrides back to linked history without clearing other overrides", () => {
+    const original = createDefaultWorkspace(TODAY);
+    const cardWithDates = {
+      ...original.cards[0],
+      overrides: {
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+        benchmark: "QQQ",
+        riskFreeRate: 0.03,
+      },
+    };
+    const cardWithoutDates = {
+      ...original.cards[1],
+      overrides: { confidenceLevel: 0.01 },
+    };
+    const workspace = {
+      ...original,
+      cards: [cardWithDates, cardWithoutDates, ...original.cards.slice(2)],
+    };
+
+    const synced = portfolioWorkspaceReducer(workspace, {
+      type: "syncCardDateOverridesToGlobal",
+    });
+
+    expect(synced.cards[0].overrides).toEqual({
+      benchmark: "QQQ",
+      riskFreeRate: 0.03,
+    });
+    expect(synced.cards[1]).toBe(cardWithoutDates);
+    expect(workspace.cards[0].overrides).toEqual(cardWithDates.overrides);
+  });
+
   it("promotes only an existing non-leading card", () => {
     const original = createDefaultWorkspace(TODAY);
 

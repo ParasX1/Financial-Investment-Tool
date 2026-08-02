@@ -18,7 +18,12 @@ const styleModules = [
   {
     file: "PortfolioCommandBar.module.css",
     owner: "components/PortfolioCommandBar.tsx",
-    selectors: [".commandBar", ".commandPrimary", ".globalAssumptions"],
+    selectors: [
+      ".commandBar",
+      ".commandPrimary",
+      ".commandSecondary",
+      ".inlineAssumptions",
+    ],
     foreignSelectors: [".board", ".metricCard", ".observation"],
   },
   {

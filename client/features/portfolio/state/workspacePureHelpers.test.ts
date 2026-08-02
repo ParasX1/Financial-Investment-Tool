@@ -8,8 +8,10 @@ import {
 import {
   formatPortfolioDate,
   hasPendingWorkspaceDraft,
+  isBoardVisibleCardIndex,
   mergePortfolioSymbolOptions,
   selectActiveFocusId,
+  selectBoardVisibleCards,
   selectFocusedCard,
 } from "./workspaceSelectors";
 
@@ -43,8 +45,9 @@ describe("workspace pure helpers", () => {
       x: 16,
       y: 16,
       width: 575,
-      height: 308,
+      height: 415,
     });
+    expect(layout[cards[2].id].visible).toBe(false);
     expect(layout[cards[6].id]).toMatchObject({
       x: layout[cards[5].id].x,
       y: layout[cards[5].id].y,
@@ -64,6 +67,22 @@ describe("workspace pure helpers", () => {
     expect(selectActiveFocusId(workspace)).toBe(workspace.cards[0].id);
     expect(selectActiveFocusId(staleFocus)).toBe("missing-card");
     expect(selectFocusedCard(staleFocus)).toBe(workspace.cards[0]);
+  });
+
+  it("selects the same five-card deck used by Board-linked views", () => {
+    const workspace = createDefaultWorkspace(TODAY);
+
+    expect(workspace.cards.map((card) => card.id)).toHaveLength(6);
+    expect(isBoardVisibleCardIndex(2)).toBe(false);
+    expect(
+      selectBoardVisibleCards(workspace.cards).map((card) => card.id),
+    ).toEqual([
+      workspace.cards[0].id,
+      workspace.cards[1].id,
+      workspace.cards[3].id,
+      workspace.cards[4].id,
+      workspace.cards[5].id,
+    ]);
   });
 
   it("returns undefined selectors for an empty workspace", () => {

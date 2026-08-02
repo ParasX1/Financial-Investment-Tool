@@ -13,6 +13,7 @@ import {
   constrainObservationResize,
   constrainObservationWindow,
 } from "./portfolioObservationGeometry";
+import { isBoardVisibleCardIndex } from "../state";
 import styles from "../styles/PortfolioObservation.module.css";
 
 const OBSERVATION_DESKTOP_MINIMUM_WIDTH = 721;
@@ -72,6 +73,13 @@ export const PortfolioObservation = ({
   layoutRef.current = layout;
   onWindowChangeRef.current = onWindowChange;
   const visibleCards = cards.filter((card) => layout[card.id]?.visible);
+  const boardVisibilityTargets = cards.map((card, index) => ({
+    card,
+    visible: isBoardVisibleCardIndex(index),
+  }));
+  const hasRestorableBoardVisibility = boardVisibilityTargets.some(
+    ({ card, visible }) => (layout[card.id]?.visible ?? false) !== visible,
+  );
   const maximumZ = Math.max(
     10,
     ...Object.values(layout).map((windowState) => windowState.z),
@@ -121,6 +129,13 @@ export const PortfolioObservation = ({
   const bringForward = (cardId: string) => {
     if (layout[cardId]?.z === maximumZ) return;
     onWindowChange(cardId, { z: maximumZ + 1 });
+  };
+
+  const restoreBoardVisibleWindows = () => {
+    boardVisibilityTargets.forEach(({ card, visible }) => {
+      if ((layout[card.id]?.visible ?? false) === visible) return;
+      onWindowVisibility(card.id, visible);
+    });
   };
 
   const startPointerAction = (
@@ -193,10 +208,8 @@ export const PortfolioObservation = ({
           </button>
           <button
             type="button"
-            onClick={() =>
-              cards.forEach((card) => onWindowVisibility(card.id, true))
-            }
-            disabled={visibleCards.length === cards.length}
+            onClick={restoreBoardVisibleWindows}
+            disabled={!hasRestorableBoardVisibility}
           >
             Restore hidden
           </button>
@@ -211,12 +224,7 @@ export const PortfolioObservation = ({
           <div className={styles.observationEmpty}>
             <strong>No visible windows</strong>
             <p>Restore the board cards or return to the Board.</p>
-            <button
-              type="button"
-              onClick={() =>
-                cards.forEach((card) => onWindowVisibility(card.id, true))
-              }
-            >
+            <button type="button" onClick={restoreBoardVisibleWindows}>
               Restore board cards
             </button>
           </div>

@@ -65,43 +65,51 @@ export const createObserverLayout = (
   const availableWidth = canvasWidth - padding * 2;
   const availableHeight = canvasHeight - padding * 2;
   const thirdWidth = (availableWidth - gap * 2) / 3;
-  const halfHeight = (availableHeight - gap) / 2;
+  const rowHeight = (availableHeight - gap * 2) / 3;
+  const topRowsHeight = rowHeight * 2 + gap;
+  const bottomRowY = padding + topRowsHeight + gap;
   const positions = [
     {
       x: padding,
       y: padding,
       width: thirdWidth * 2 + gap,
-      height: halfHeight,
+      height: topRowsHeight,
+      visible: true,
     },
     {
       x: padding + (thirdWidth + gap) * 2,
       y: padding,
       width: thirdWidth,
-      height: (halfHeight - gap) / 2,
+      height: topRowsHeight,
+      visible: true,
     },
     {
       x: padding + (thirdWidth + gap) * 2,
-      y: padding + (halfHeight + gap) / 2,
+      y: padding,
       width: thirdWidth,
-      height: (halfHeight - gap) / 2,
+      height: topRowsHeight,
+      visible: false,
     },
     {
       x: padding,
-      y: padding + halfHeight + gap,
+      y: bottomRowY,
       width: thirdWidth,
-      height: halfHeight,
+      height: rowHeight,
+      visible: true,
     },
     {
       x: padding + thirdWidth + gap,
-      y: padding + halfHeight + gap,
+      y: bottomRowY,
       width: thirdWidth,
-      height: halfHeight,
+      height: rowHeight,
+      visible: true,
     },
     {
       x: padding + (thirdWidth + gap) * 2,
-      y: padding + halfHeight + gap,
+      y: bottomRowY,
       width: thirdWidth,
-      height: halfHeight,
+      height: rowHeight,
+      visible: true,
     },
   ];
 
@@ -130,7 +138,7 @@ export const createObserverLayout = (
         width,
         height,
         z: 10 + index,
-        visible: true,
+        visible: position.visible,
       },
     };
   }, {});

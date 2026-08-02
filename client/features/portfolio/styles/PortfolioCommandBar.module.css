@@ -1,4 +1,5 @@
 .commandBar {
+  --portfolio-command-input-height: 31px;
   position: relative;
   z-index: 5;
   border: 1px solid var(--portfolio-border);
@@ -11,10 +12,18 @@
 
 .commandPrimary {
   display: grid;
-  grid-template-columns: minmax(280px, 1.2fr) minmax(390px, 1fr) auto;
+  grid-template-columns: minmax(420px, 1.12fr) minmax(390px, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 13px 14px 0;
+}
+
+.commandSecondary {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.12fr) minmax(390px, 1fr) auto;
   gap: 14px;
   align-items: end;
-  padding: 13px 14px 9px;
+  padding: 8px 14px 0;
 }
 
 .controlLabelRow {
@@ -41,10 +50,17 @@
   min-width: 0;
 }
 
+.inlineAssumptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .symbolChip {
   border: 1px solid rgba(101, 160, 253, 0.3) !important;
   color: #dfebff !important;
   background: rgba(101, 160, 253, 0.13) !important;
+  height: 18px !important;
   font-weight: 700 !important;
 }
 
@@ -83,12 +99,16 @@
 }
 
 .dateRow > span {
-  padding-bottom: 7px;
+  display: grid;
+  min-height: var(--portfolio-command-input-height);
+  align-items: center;
+  padding: 0 1px;
   color: var(--portfolio-muted);
+  font-size: 0.66rem;
 }
 
 .dateRow label,
-.assumptionGrid label {
+.inlineAssumptions label {
   display: grid;
   gap: 3px;
   color: var(--portfolio-muted);
@@ -98,11 +118,19 @@
   text-transform: uppercase;
 }
 
+.dateRow label,
+.inlineAssumptions label {
+  gap: 2px;
+  font-size: 0.54rem;
+  letter-spacing: 0.045em;
+}
+
 .dateRow input,
-.assumptionGrid input,
-.assumptionGrid select {
+.inlineAssumptions input,
+.inlineAssumptions select {
   width: 100%;
-  min-height: 31px;
+  height: var(--portfolio-command-input-height);
+  min-height: var(--portfolio-command-input-height);
   padding: 0 8px;
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 7px;
@@ -111,9 +139,11 @@
   color-scheme: dark;
   font: inherit;
   font-size: 0.72rem;
+  line-height: var(--portfolio-command-input-height);
 }
 
 .runButton {
+  align-self: end;
   min-height: 43px;
   padding: 0 16px;
   border: 1px solid rgba(101, 160, 253, 0.6);
@@ -157,33 +187,6 @@
   color: #ff9eaa;
 }
 
-.globalAssumptions {
-  position: relative;
-}
-
-.globalAssumptions summary {
-  color: var(--portfolio-body);
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.globalAssumptions[open] .assumptionGrid {
-  position: absolute;
-  right: 0;
-  top: 28px;
-  z-index: 20;
-  display: grid;
-  width: min(620px, 80vw);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 13px;
-  border: 1px solid var(--portfolio-border-strong);
-  border-radius: 10px;
-  background: #101620;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.44);
-}
-
 .runButton:focus-visible,
 .preset:focus-visible,
 .presetActive:focus-visible {
@@ -192,7 +195,8 @@
 }
 
 @media (max-width: 1180px) {
-  .commandPrimary {
+  .commandPrimary,
+  .commandSecondary {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -203,7 +207,12 @@
 }
 
 @media (max-width: 720px) {
-  .commandPrimary {
+  .commandPrimary,
+  .commandSecondary {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineAssumptions {
     grid-template-columns: 1fr;
   }
 
@@ -215,12 +224,4 @@
     align-items: flex-start;
   }
 
-  .globalAssumptions[open] .assumptionGrid {
-    position: fixed;
-    right: 9px;
-    left: 9px;
-    top: auto;
-    width: auto;
-    grid-template-columns: 1fr;
-  }
 }

@@ -1,20 +1,22 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { PortfolioCommandBar } from "./PortfolioCommandBar";
+import { PortfolioSymbolInput } from "./PortfolioSymbolInput";
 
 type TestElement = ReactElement<{
-  "aria-label"?: string;
   "aria-pressed"?: boolean;
   children?: ReactNode;
   disabled?: boolean;
   id?: string;
   onChange?: (...args: any[]) => void;
   onClick?: () => void;
-  placeholder?: string;
-  renderInput?: (params: Record<string, unknown>) => ReactElement;
-  renderTags?: (
-    value: string[],
-    getTagProps: (input: { index: number }) => Record<string, unknown>,
-  ) => ReactNode;
+  onSymbolsChange?: (symbols: string[]) => void;
+  symbolOptions?: string[];
+  symbols?: string[];
 }>;
 
 const collectElements = (node: ReactNode): TestElement[] => {
@@ -64,38 +66,16 @@ const renderCommandBar = (
 };
 
 describe("PortfolioCommandBar", () => {
-  it("normalises a user-entered universe and caps it at five symbols", () => {
+  it("passes universe controls into the dedicated symbol input", () => {
     const onSymbolsChange = jest.fn();
     const { elements } = renderCommandBar({ onSymbolsChange });
-    const autocomplete = elements.find(
-      (element) => element.props.id === "portfolio-stock-select",
+    const symbolInput = elements.find(
+      (element) => element.type === PortfolioSymbolInput,
     );
 
-    autocomplete?.props.onChange?.(null, [
-      " aapl ",
-      "MSFT",
-      "aapl",
-      "bad symbol",
-      "nvda",
-      "brk-b",
-      "^axjo",
-      "extra",
-    ]);
-
-    expect(onSymbolsChange).toHaveBeenCalledWith([
-      "AAPL",
-      "MSFT",
-      "NVDA",
-      "BRK-B",
-      "^AXJO",
-    ]);
-
-    const renderedTags = autocomplete?.props.renderTags?.(
-      ["AAPL", "MSFT"],
-      ({ index }) => ({ "data-tag-index": index }),
-    );
-    expect(collectText(renderedTags)).toBe("");
-    expect(Children.count(renderedTags)).toBe(2);
+    expect(symbolInput?.props.symbols).toEqual(["AAPL", "MSFT"]);
+    expect(symbolInput?.props.symbolOptions).toEqual(["AAPL", "MSFT", "NVDA"]);
+    expect(symbolInput?.props.onSymbolsChange).toBe(onSymbolsChange);
   });
 
   it("updates the linked range from presets and direct date inputs", () => {
@@ -126,7 +106,7 @@ describe("PortfolioCommandBar", () => {
       ...baseInputs,
       endDate: "2026-06-30",
     });
-    expect(collectText(tree)).toContain("Draft changes are not applied yet");
+    expect(collectText(tree)).toContain("Draft changes are pending.");
   });
 
   it("clamps annual presets to the final valid day in non-leap years", () => {
@@ -209,15 +189,14 @@ describe("PortfolioCommandBar", () => {
     expect(onApply).toHaveBeenCalledTimes(1);
   });
 
-  it("communicates the five-symbol input limit through the autocomplete", () => {
+  it("passes five selected symbols through without command-bar involvement", () => {
     const { elements } = renderCommandBar({
       symbols: ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL"],
     });
-    const autocomplete = elements.find(
-      (element) => element.props.id === "portfolio-stock-select",
+    const symbolInput = elements.find(
+      (element) => element.type === PortfolioSymbolInput,
     );
-    const textField = autocomplete?.props.renderInput?.({ id: "search" });
 
-    expect(textField?.props.placeholder).toBe("Five-symbol limit");
+    expect(symbolInput?.props.symbols).toHaveLength(5);
   });
 });

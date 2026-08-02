@@ -75,7 +75,9 @@ const LineGraph: React.FC<LineGraphProps> = ({
   const titleId = useId();
   const descriptionId = useId();
   const safeWidth = Number.isFinite(width) ? Math.max(width, 240) : 500;
-  const safeHeight = Number.isFinite(height) ? Math.max(height, 180) : 300;
+  const safeHeight = Number.isFinite(height)
+    ? Math.max(height, compact ? 132 : 180)
+    : 300;
 
   useEffect(() => {
     const usableData = data
@@ -160,10 +162,10 @@ const LineGraph: React.FC<LineGraphProps> = ({
         )} to ${valueFormat(maximumValue)}. Zero is the reference baseline.`,
       );
 
-    const topMargin = compact ? 8 : 18;
+    const topMargin = compact ? 12 : 24;
     const rightMargin = compact ? 14 : 22;
-    const bottomMargin = compact ? 48 : 56;
-    const leftMargin = compact ? 48 : 58;
+    const bottomMargin = compact ? 54 : 68;
+    const leftMargin = compact ? 44 : 58;
     const graphWidth = Math.max(1, safeWidth - leftMargin - rightMargin);
     const graphHeight = Math.max(1, safeHeight - topMargin - bottomMargin);
     const yTickCount = compact
@@ -317,7 +319,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
     const legend = group
       .append("g")
       .attr("class", "line-legend")
-      .attr("transform", `translate(0,${graphHeight + (compact ? 34 : 40)})`);
+      .attr("transform", `translate(0,${graphHeight + (compact ? 28 : 36)})`);
     const legendItems = legend
       .selectAll<SVGGElement, (typeof legendData)[number]>("g")
       .data(legendData)

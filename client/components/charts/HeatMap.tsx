@@ -52,6 +52,7 @@ interface HeatMapProps {
   width?: number;
   height?: number;
   barColor?: string;
+  compact?: boolean;
   ariaLabel?: string;
   selectedCell?: { row: number; column: number } | null;
   onCellSelect?: (selection: {
@@ -75,6 +76,7 @@ const HeatMap: React.FC<HeatMapProps> = ({
   width = 500,
   height = 500,
   barColor,
+  compact = false,
   ariaLabel,
   selectedCell,
   onCellSelect,
@@ -84,7 +86,9 @@ const HeatMap: React.FC<HeatMapProps> = ({
   const titleId = useId();
   const descriptionId = useId();
   const safeWidth = Number.isFinite(width) ? Math.max(width, 240) : 500;
-  const safeHeight = Number.isFinite(height) ? Math.max(height, 220) : 500;
+  const safeHeight = Number.isFinite(height)
+    ? Math.max(height, compact ? 140 : 220)
+    : 500;
 
   useEffect(() => {
     const rowCount = data.length;
@@ -169,13 +173,13 @@ const HeatMap: React.FC<HeatMapProps> = ({
       ...columnLabels.map((label) => label.length),
     );
     const topMargin = Math.min(
-      Math.max(44, longestLabelLength * 4.5),
-      safeHeight * 0.28,
+      Math.max(compact ? 38 : 52, longestLabelLength * (compact ? 3.4 : 4.5)),
+      safeHeight * (compact ? 0.3 : 0.34),
     );
-    const rightMargin = 16;
-    const bottomMargin = 18;
+    const rightMargin = compact ? 12 : 16;
+    const bottomMargin = compact ? 30 : 18;
     const leftMargin = Math.min(
-      Math.max(48, longestLabelLength * 7 + 14),
+      Math.max(compact ? 42 : 48, longestLabelLength * (compact ? 6 : 7) + 14),
       safeWidth * 0.3,
     );
     const graphWidth = Math.max(1, safeWidth - leftMargin - rightMargin);
@@ -361,6 +365,7 @@ const HeatMap: React.FC<HeatMapProps> = ({
   }, [
     ariaLabel,
     barColor,
+    compact,
     data,
     descriptionId,
     labels,

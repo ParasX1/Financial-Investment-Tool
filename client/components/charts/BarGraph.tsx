@@ -70,7 +70,9 @@ const BarGraph: React.FC<BarGraphProps> = ({
   const titleId = useId();
   const descriptionId = useId();
   const safeWidth = Number.isFinite(width) ? Math.max(width, 220) : 500;
-  const safeHeight = Number.isFinite(height) ? Math.max(height, 160) : 300;
+  const safeHeight = Number.isFinite(height)
+    ? Math.max(height, compact ? 132 : 160)
+    : 300;
 
   useEffect(() => {
     const usableData = data
@@ -138,10 +140,10 @@ const BarGraph: React.FC<BarGraphProps> = ({
         )} to ${valueFormat(maximum)}. Zero is the reference baseline.`,
       );
 
-    const topMargin = compact ? 8 : 20;
+    const topMargin = compact ? 12 : 26;
     const rightMargin = compact ? 12 : 20;
-    const bottomMargin = compact ? 38 : 48;
-    const leftMargin = compact ? 44 : 54;
+    const bottomMargin = compact ? 30 : 48;
+    const leftMargin = compact ? 40 : 54;
     const graphWidth = Math.max(1, safeWidth - leftMargin - rightMargin);
     const graphHeight = Math.max(1, safeHeight - topMargin - bottomMargin);
     const yTickCount = compact

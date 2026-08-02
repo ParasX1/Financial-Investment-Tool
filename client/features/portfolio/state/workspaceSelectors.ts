@@ -27,6 +27,11 @@ export const selectFocusedCard = (workspace: PortfolioWorkspaceState) => {
   );
 };
 
+export const isBoardVisibleCardIndex = (index: number) => index !== 2;
+
+export const selectBoardVisibleCards = (cards: PortfolioMetricCard[]) =>
+  cards.filter((_, index) => isBoardVisibleCardIndex(index));
+
 export const hasPendingWorkspaceDraft = (
   workspace: PortfolioWorkspaceState,
   draftSymbols: string[],

@@ -227,9 +227,12 @@ export const usePortfolioWorkspaceController = ({
         type: "setSymbols",
         symbols: draftSymbols,
       });
-      return portfolioWorkspaceReducer(withSymbols, {
+      const withGlobalInputs = portfolioWorkspaceReducer(withSymbols, {
         type: "updateGlobalInputs",
         patch: draftInputs,
+      });
+      return portfolioWorkspaceReducer(withGlobalInputs, {
+        type: "syncCardDateOverridesToGlobal",
       });
     });
     setAnnouncement(
@@ -287,7 +290,9 @@ export const usePortfolioWorkspaceController = ({
 
   const getCardProps = (cardId: string) => ({
     symbols: workspace.symbols,
+    draftSymbolCount: draftSymbols.length,
     globalInputs: workspace.globalInputs,
+    hasPendingDraft: pending,
     today,
     cardCount: workspace.cards.length,
     onMetricChange: (metricType: PortfolioMetricType) =>
