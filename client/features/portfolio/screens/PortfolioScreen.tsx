@@ -6,7 +6,7 @@ import { PortfolioCommandBar } from "../components/PortfolioCommandBar";
 import { PortfolioMetricCard } from "../components/PortfolioMetricCard";
 import { PortfolioObservation } from "../components/PortfolioObservation";
 import { usePortfolioWorkspaceController } from "../hooks/usePortfolioWorkspaceController";
-import { formatPortfolioDate } from "../state/workspaceSelectors";
+import { selectBoardVisibleCards } from "../state";
 import styles from "../styles/PortfolioWorkspaceShell.module.css";
 
 export const PortfolioScreen = () => {
@@ -29,16 +29,19 @@ export const PortfolioScreen = () => {
     userId: user?.id,
     authLoading,
   });
+
+  const boardCards = selectBoardVisibleCards(workspace.cards);
+
   const renderBoard = () => (
     <section className={styles.board} aria-label="Multi-metric Portfolio board">
-      {workspace.cards.map((card, index) => (
+      {boardCards.map((card, index) => (
         <div
           key={card.id}
           className={`${styles.boardSlot} ${styles[`boardSlot_${index}`]}`}
         >
           <PortfolioMetricCard
             card={card}
-            variant={index === 0 ? "hero" : index < 3 ? "standard" : "compact"}
+            variant={index === 0 ? "hero" : index === 1 ? "standard" : "compact"}
             {...getCardProps(card.id)}
           />
         </div>
@@ -54,12 +57,8 @@ export const PortfolioScreen = () => {
           <div className={styles.content}>
             <header className={styles.traderHeader}>
               <div>
-                <p className={styles.eyebrow}>Portfolio · research desk</p>
+                <p className={styles.eyebrow}>Portfolio research desk</p>
                 <h1>Scan broadly. Investigate deeply.</h1>
-                <p>
-                  One basket, six simultaneous lenses, and no lost context
-                  between Board, Focus, and Observation.
-                </p>
               </div>
               <div className={styles.modeSwitcher} aria-label="Workspace mode">
                 <button
@@ -98,42 +97,13 @@ export const PortfolioScreen = () => {
               onApply={actions.applyDraft}
             />
 
-            <section
-              className={styles.summaryStrip}
-              aria-label="Applied research context"
-            >
-              <div className={styles.summaryItem}>
-                <span>Applied universe</span>
-                <strong>
-                  {workspace.symbols.length
-                    ? workspace.symbols.join(" · ")
-                    : "Waiting for symbols"}
-                </strong>
-              </div>
-              <div className={styles.summaryItem}>
-                <span>Sample</span>
-                <strong>
-                  {formatPortfolioDate(workspace.globalInputs.startDate)} →{" "}
-                  {formatPortfolioDate(workspace.globalInputs.endDate)}
-                </strong>
-              </div>
-              <div className={styles.summaryItem}>
-                <span>Charts</span>
-                <strong>{workspace.cards.length} / 6 active</strong>
-              </div>
-              <div className={styles.summaryItem}>
-                <span>Freshness</span>
-                <strong>Historical · on demand</strong>
-              </div>
-            </section>
-
             {workspace.view.mode === "board" && renderBoard()}
 
             {workspace.view.mode === "focus" && focusedCard && (
               <section className={styles.focusView} aria-label="Focus mode">
                 <div className={styles.focusToolbar}>
                   <button type="button" onClick={actions.showBoard}>
-                    ← Back to Board
+                    Back to Board
                   </button>
                   <span>Esc returns without changing the deck</span>
                 </div>
@@ -146,7 +116,7 @@ export const PortfolioScreen = () => {
                   className={styles.focusFilmstrip}
                   aria-label="Other Portfolio charts"
                 >
-                  {workspace.cards.map((card, index) => (
+                  {boardCards.map((card, index) => (
                     <button
                       key={card.id}
                       type="button"

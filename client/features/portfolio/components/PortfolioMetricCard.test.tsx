@@ -102,7 +102,9 @@ const renderCard = (
   const props: React.ComponentProps<typeof PortfolioMetricCard> = {
     card: DEFAULT_CARD,
     symbols: ["AAPL", "MSFT"],
+    draftSymbolCount: 2,
     globalInputs: GLOBAL_INPUTS,
+    hasPendingDraft: false,
     today: "2026-07-31",
     variant: "standard",
     cardCount: 2,
@@ -224,6 +226,18 @@ describe("PortfolioMetricCard", () => {
       expect.objectContaining({ validationError: null }),
     );
 
+    const pendingUniverse = renderCard({
+      symbols: [],
+      draftSymbolCount: 1,
+      hasPendingDraft: true,
+    });
+    expect(textOf(pendingUniverse.renderer.root)).toContain(
+      "Analysis not applied",
+    );
+    expect(textOf(pendingUniverse.renderer.root)).toContain(
+      "Click Run analysis to apply 1 selected symbol to the charts.",
+    );
+
     setMetricState({ status: "invalid", data: null });
     const invalidRange = renderCard({
       globalInputs: {
@@ -299,7 +313,7 @@ describe("PortfolioMetricCard", () => {
     const partialText = textOf(partial.renderer.root);
 
     expect(partialText).toContain("Partial");
-    expect(partialText).toContain("BHP excluded for missing history.");
+    expect(partialText).toContain("No usable price history for BHP.");
     expect(partialText).toContain("Highest in comparison");
     expect(partialText).toContain(
       "Positive alpha means historical outperformance",

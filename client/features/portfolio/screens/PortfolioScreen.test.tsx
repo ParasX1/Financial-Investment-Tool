@@ -1,4 +1,9 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { useAuth } from "@/features/auth";
 import { PortfolioMetricCard } from "../components/PortfolioMetricCard";
 import { PortfolioObservation } from "../components/PortfolioObservation";
@@ -54,15 +59,37 @@ const collectText = (node: ReactNode): string => {
 };
 
 const cards = [
-  { id: "alpha", metricType: "AlphaComparison", overrides: {}, hiddenSymbols: [] },
+  {
+    id: "alpha",
+    metricType: "AlphaComparison",
+    overrides: {},
+    hiddenSymbols: [],
+  },
   {
     id: "sharpe",
     metricType: "SharpeRatioMatrix",
     overrides: { riskFreeRate: 0.05 },
     hiddenSymbols: [],
   },
-  { id: "drawdown", metricType: "MaxDrawdownAnalysis", overrides: {}, hiddenSymbols: [] },
+  {
+    id: "drawdown",
+    metricType: "MaxDrawdownAnalysis",
+    overrides: {},
+    hiddenSymbols: [],
+  },
   { id: "beta", metricType: "BetaAnalysis", overrides: {}, hiddenSymbols: [] },
+  {
+    id: "correlation",
+    metricType: "MarketCorrelationAnalysis",
+    overrides: {},
+    hiddenSymbols: [],
+  },
+  {
+    id: "frontier",
+    metricType: "EfficientFrontierVisualization",
+    overrides: {},
+    hiddenSymbols: [],
+  },
 ];
 
 const globalInputs = {
@@ -159,12 +186,20 @@ describe("PortfolioScreen", () => {
     expect(metricCards.map((element) => element.props.variant)).toEqual([
       "hero",
       "standard",
-      "standard",
+      "compact",
+      "compact",
       "compact",
     ]);
-    expect(controller.getCardProps).toHaveBeenCalledTimes(4);
-    expect(collectText(tree)).toContain("AAPL · MSFT");
-    expect(collectText(tree)).toContain("4 / 6 active");
+    expect(metricCards.map((element) => element.props.card?.id)).toEqual([
+      "alpha",
+      "sharpe",
+      "beta",
+      "correlation",
+      "frontier",
+    ]);
+    expect(controller.getCardProps).toHaveBeenCalledTimes(5);
+    expect(collectText(tree)).toContain("Portfolio research desk");
+    expect(collectText(tree)).toContain("Scan broadly. Investigate deeply.");
 
     elements
       .find((element) => collectText(element) === "Focus")
@@ -185,26 +220,23 @@ describe("PortfolioScreen", () => {
         element.type === PortfolioMetricCard && element.props.variant === "focus",
     );
     const filmstripButtons = elements.filter(
-      (element) =>
-        typeof element.props["aria-current"] === "boolean",
+      (element) => typeof element.props["aria-current"] === "boolean",
     );
 
     expect(focusCard?.props.card?.id).toBe("sharpe");
-    expect(filmstripButtons).toHaveLength(4);
-    expect(filmstripButtons.map((button) => button.props["aria-current"])).toEqual([
-      false,
-      true,
-      false,
-      false,
-    ]);
+    expect(filmstripButtons).toHaveLength(5);
+    expect(
+      filmstripButtons.map((button) => button.props["aria-current"]),
+    ).toEqual([false, true, false, false, false]);
     expect(collectText(tree)).toContain("Custom");
     expect(collectText(tree)).toContain("Linked");
+    expect(collectText(tree)).not.toContain("Drawdown");
 
     filmstripButtons[2].props.onClick?.();
     elements
-      .find((element) => collectText(element) === "← Back to Board")
+      .find((element) => collectText(element) === "Back to Board")
       ?.props.onClick?.();
-    expect(actions.focusCard).toHaveBeenCalledWith("drawdown");
+    expect(actions.focusCard).toHaveBeenCalledWith("beta");
     expect(actions.showBoard).toHaveBeenCalledTimes(1);
   });
 
@@ -237,7 +269,7 @@ describe("PortfolioScreen", () => {
     expect(collectText(tree)).toContain("Analysis ready");
   });
 
-  it("shows a safe empty-universe summary and omits a missing focus card", () => {
+  it("omits a missing focus card", () => {
     mockController("focus", {
       workspace: {
         cards,
@@ -251,7 +283,6 @@ describe("PortfolioScreen", () => {
     });
     const tree = PortfolioScreen();
 
-    expect(collectText(tree)).toContain("Waiting for symbols");
     expect(
       collectElements(tree).some(
         (element) =>

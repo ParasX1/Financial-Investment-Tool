@@ -92,17 +92,28 @@ describe("Portfolio workspace model", () => {
     expect(original.cards[0].metricType).toBe("CumulativeReturnComparison");
   });
 
-  it("creates bounded Observation geometry for the same stable card IDs", () => {
+  it("creates Board-aligned Observation geometry for the same stable card IDs", () => {
     const workspace = createDefaultWorkspace(TODAY);
     const layout = createObserverLayout(workspace.cards, 1440, 844);
 
     expect(Object.keys(layout)).toEqual(
       expect.arrayContaining(workspace.cards.map((card) => card.id)),
     );
+    expect(layout[workspace.cards[0].id]).toMatchObject({
+      x: 16,
+      y: 16,
+      visible: true,
+    });
+    expect(layout[workspace.cards[1].id]).toMatchObject({
+      x: layout[workspace.cards[5].id].x,
+      y: 16,
+      height: layout[workspace.cards[0].id].height,
+      visible: true,
+    });
+    expect(layout[workspace.cards[2].id].visible).toBe(false);
     Object.values(layout).forEach((windowState) => {
       expect(windowState.width).toBeGreaterThanOrEqual(300);
       expect(windowState.height).toBeGreaterThanOrEqual(220);
-      expect(windowState.visible).toBe(true);
     });
   });
 

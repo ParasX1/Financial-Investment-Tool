@@ -29,7 +29,9 @@ const statusLabel = {
 export const PortfolioMetricCard = ({
   card,
   symbols,
+  draftSymbolCount,
   globalInputs,
+  hasPendingDraft,
   today,
   variant,
   cardCount,
@@ -43,7 +45,9 @@ export const PortfolioMetricCard = ({
 }: {
   card: PortfolioMetricCardModel;
   symbols: string[];
+  draftSymbolCount: number;
   globalInputs: PortfolioAnalysisInputs;
+  hasPendingDraft: boolean;
   today: string;
   variant: CardVariant;
   cardCount: number;
@@ -79,20 +83,120 @@ export const PortfolioMetricCard = ({
   const isFocus = variant === "focus";
   const compact = !isFocus;
   const custom = Object.keys(card.overrides).length > 0;
+  const showHeaderSettings = variant === "hero";
+  const showCardSettings = variant === "focus" || variant === "observer";
   const missingSymbols = data?.metadata?.missingSymbols ?? [];
+  const responseWarnings = data?.warnings ?? [];
+  const missingHistoryMessage = missingSymbols.length
+    ? `No usable price history for ${missingSymbols.join(
+        ", ",
+      )}. They were excluded from this card; check the ticker format or use a longer date range.`
+    : null;
   const sortinoStatuses = Object.entries(
     data?.series.singleValueStatuses ?? {},
   ).filter(([, value]) => value.status !== "ok");
 
+  const renderSettingsFields = (placement: "header" | "panel") => (
+    <div
+      className={
+        placement === "header"
+          ? styles.cardHeaderSettings
+          : styles.cardSettingsGrid
+      }
+    >
+      {placement === "header" && (
+        <span className={styles.cardHeaderSettingsLabel}>
+          {custom ? "Local assumptions" : "Override linked assumptions"}
+        </span>
+      )}
+      <label>
+        <span>From</span>
+        <input
+          type="date"
+          value={settings.startDate}
+          max={today}
+          onChange={(event) => onOverride({ startDate: event.target.value })}
+        />
+      </label>
+      <label>
+        <span>To</span>
+        <input
+          type="date"
+          value={settings.endDate}
+          max={today}
+          onChange={(event) => onOverride({ endDate: event.target.value })}
+        />
+      </label>
+      {metric.requiresBenchmark && (
+        <label>
+          <span>Benchmark</span>
+          <input
+            value={settings.benchmark}
+            onChange={(event) =>
+              onOverride({
+                benchmark: event.target.value.toUpperCase(),
+              })
+            }
+          />
+        </label>
+      )}
+      {metric.usesRiskFreeRate && (
+        <label>
+          <span>Annual risk-free %</span>
+          <input
+            type="number"
+            step="0.1"
+            value={Number((settings.riskFreeRate * 100).toFixed(2))}
+            onChange={(event) =>
+              onOverride({
+                riskFreeRate: Number(event.target.value) / 100,
+              })
+            }
+          />
+        </label>
+      )}
+      {metric.usesConfidenceLevel && (
+        <label>
+          <span>VaR confidence</span>
+          <select
+            value={settings.confidenceLevel}
+            onChange={(event) =>
+              onOverride({
+                confidenceLevel: Number(event.target.value),
+              })
+            }
+          >
+            <option value={0.1}>90%</option>
+            <option value={0.05}>95%</option>
+            <option value={0.01}>99%</option>
+          </select>
+        </label>
+      )}
+      {placement === "panel" && custom && (
+        <button type="button" onClick={onResetInputs}>
+          Use all global inputs
+        </button>
+      )}
+    </div>
+  );
+
   const renderBody = () => {
     if (!symbols.length) {
+      const draftMessage =
+        hasPendingDraft && draftSymbolCount > 0
+          ? `Click Run analysis to apply ${draftSymbolCount} selected ${
+              draftSymbolCount === 1 ? "symbol" : "symbols"
+            } to the charts.`
+          : "The board will run this metric when you apply at least one symbol.";
       return (
         <div className={styles.cardState}>
           <span aria-hidden="true">＋</span>
-          <strong>Add a shared universe</strong>
-          <p>
-            The board will run this metric when you apply at least one symbol.
-          </p>
+          <strong>
+            {hasPendingDraft && draftSymbolCount > 0
+              ? "Analysis not applied"
+              : "Add a shared universe"}
+          </strong>
+          <p>{draftMessage}</p>
         </div>
       );
     }
@@ -131,7 +235,11 @@ export const PortfolioMetricCard = ({
         <div className={styles.cardState}>
           <span aria-hidden="true">—</span>
           <strong>No usable result</strong>
-          <p>Try a longer period or remove a symbol with sparse history.</p>
+          <p>
+            {missingHistoryMessage ??
+              responseWarnings[0] ??
+              "Try a longer period or remove a symbol with sparse history."}
+          </p>
         </div>
       );
     }
@@ -213,6 +321,7 @@ export const PortfolioMetricCard = ({
             {custom ? "Custom" : "Linked"}
           </span>
         </div>
+        {showHeaderSettings && renderSettingsFields("header")}
         <div className={styles.cardActions}>
           <span
             className={`${styles.cardStatus} ${styles[`status_${status}`]}`}
@@ -281,12 +390,15 @@ export const PortfolioMetricCard = ({
         )}
       </div>
 
-      {(missingSymbols.length > 0 ||
+      {(missingHistoryMessage ||
+        responseWarnings.length > 0 ||
         sortinoStatuses.length > 0 ||
         (status === "error" && data)) && (
         <div className={styles.cardWarning} role="status">
-          {missingSymbols.length > 0 &&
-            `${missingSymbols.join(", ")} excluded for missing history.`}
+          {missingHistoryMessage && <span>{missingHistoryMessage}</span>}
+          {responseWarnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
           {sortinoStatuses.map(([symbol, value]) => (
             <span key={symbol}>
               {symbol}:{" "}
@@ -312,83 +424,14 @@ export const PortfolioMetricCard = ({
 
       {renderBody()}
 
-      <details className={styles.cardSettings}>
-        <summary>
-          {custom ? "Local assumptions" : "Override linked assumptions"}
-        </summary>
-        <div className={styles.cardSettingsGrid}>
-          <label>
-            <span>From</span>
-            <input
-              type="date"
-              value={settings.startDate}
-              max={today}
-              onChange={(event) =>
-                onOverride({ startDate: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            <span>To</span>
-            <input
-              type="date"
-              value={settings.endDate}
-              max={today}
-              onChange={(event) => onOverride({ endDate: event.target.value })}
-            />
-          </label>
-          {metric.requiresBenchmark && (
-            <label>
-              <span>Benchmark</span>
-              <input
-                value={settings.benchmark}
-                onChange={(event) =>
-                  onOverride({
-                    benchmark: event.target.value.toUpperCase(),
-                  })
-                }
-              />
-            </label>
-          )}
-          {metric.usesRiskFreeRate && (
-            <label>
-              <span>Annual risk-free %</span>
-              <input
-                type="number"
-                step="0.1"
-                value={Number((settings.riskFreeRate * 100).toFixed(2))}
-                onChange={(event) =>
-                  onOverride({
-                    riskFreeRate: Number(event.target.value) / 100,
-                  })
-                }
-              />
-            </label>
-          )}
-          {metric.usesConfidenceLevel && (
-            <label>
-              <span>VaR confidence</span>
-              <select
-                value={settings.confidenceLevel}
-                onChange={(event) =>
-                  onOverride({
-                    confidenceLevel: Number(event.target.value),
-                  })
-                }
-              >
-                <option value={0.1}>90%</option>
-                <option value={0.05}>95%</option>
-                <option value={0.01}>99%</option>
-              </select>
-            </label>
-          )}
-          {custom && (
-            <button type="button" onClick={onResetInputs}>
-              Use all global inputs
-            </button>
-          )}
-        </div>
-      </details>
+      {showCardSettings && (
+        <details className={styles.cardSettings}>
+          <summary>
+            {custom ? "Local assumptions" : "Override linked assumptions"}
+          </summary>
+          {renderSettingsFields("panel")}
+        </details>
+      )}
     </section>
   );
 };

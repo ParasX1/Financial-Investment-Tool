@@ -12,8 +12,10 @@ export {
   formatPortfolioDate,
   getEffectiveCardSettings,
   hasPendingWorkspaceDraft,
+  isBoardVisibleCardIndex,
   mergePortfolioSymbolOptions,
   selectActiveFocusId,
+  selectBoardVisibleCards,
   selectFocusedCard,
 } from "./workspaceSelectors";
 export {

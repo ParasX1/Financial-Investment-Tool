@@ -5,17 +5,23 @@
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  border: 1px solid var(--portfolio-border);
-  border-radius: 12px;
+  border: 1px solid var(--portfolio-card-outline);
+  border-radius: 8px;
   overflow: hidden;
   background:
-    linear-gradient(145deg, rgba(101, 160, 253, 0.035), transparent 38%),
+    linear-gradient(145deg, rgba(101, 160, 253, 0.07), transparent 42%),
     var(--portfolio-surface);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 14px 38px rgba(0, 0, 0, 0.28),
+    0 2px 0 rgba(101, 160, 253, 0.1);
 }
 
 .metricCard:focus-within {
-  border-color: rgba(101, 160, 253, 0.43);
+  border-color: rgba(101, 160, 253, 0.82);
+  box-shadow:
+    0 0 0 1px rgba(101, 160, 253, 0.45),
+    0 16px 42px rgba(0, 0, 0, 0.36);
 }
 
 .metricCard_focus {
@@ -37,17 +43,65 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--portfolio-border);
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--portfolio-border-strong);
+  background:
+    linear-gradient(180deg, rgba(20, 30, 46, 0.82), rgba(10, 15, 23, 0.84)),
+    rgba(9, 13, 20, 0.9);
 }
 
 .cardIdentity,
 .cardActions,
-.cardMeta {
+.cardMeta,
+.cardHeaderSettings {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 5px;
+}
+
+.cardHeaderSettings {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 0 8px 0 60px;
+}
+
+.cardHeaderSettingsLabel {
+  flex: 0 0 auto;
+  max-width: 118px;
+  color: var(--portfolio-muted);
+  font-size: 0.52rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.cardHeaderSettings label {
+  display: grid;
+  min-width: 115px;
+  gap: 2px;
+  color: var(--portfolio-muted);
+  font-size: 0.52rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.cardHeaderSettings input,
+.cardHeaderSettings select {
+  width: 100%;
+  height: 25px;
+  padding: 0 7px;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 6px;
+  color: var(--portfolio-ink);
+  background: rgba(4, 7, 12, 0.74);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 700;
 }
 
 .cardIdentity select {
@@ -199,8 +253,9 @@
   min-height: 25px;
   padding: 4px 9px;
   overflow: hidden;
-  border-bottom: 1px solid rgba(143, 164, 196, 0.09);
+  border-bottom: 1px solid var(--portfolio-card-separator);
   color: var(--portfolio-muted);
+  background: rgba(4, 7, 12, 0.28);
   font-size: 0.58rem;
   white-space: nowrap;
 }
@@ -239,9 +294,9 @@
   flex: 1 1 auto;
   overflow: hidden;
   background:
-    linear-gradient(rgba(143, 164, 196, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(143, 164, 196, 0.026) 1px, transparent 1px),
-    rgba(4, 7, 12, 0.38);
+    linear-gradient(rgba(143, 164, 196, 0.036) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 164, 196, 0.036) 1px, transparent 1px),
+    rgba(4, 7, 12, 0.52);
   background-size: 26px 26px;
 }
 
@@ -264,7 +319,26 @@
   justify-content: space-between;
   gap: 10px;
   padding: 6px 9px;
-  border-top: 1px solid var(--portfolio-border);
+  border-top: 1px solid var(--portfolio-border-strong);
+  background: rgba(8, 12, 19, 0.82);
+}
+
+.metricCard_standard .cardInsight,
+.metricCard_compact .cardInsight {
+  min-height: 22px;
+  padding: 2px 7px;
+}
+
+.metricCard_standard .cardInsight span,
+.metricCard_compact .cardInsight span {
+  font-size: 0.45rem;
+  letter-spacing: 0.045em;
+}
+
+.metricCard_standard .cardInsight strong,
+.metricCard_compact .cardInsight strong {
+  margin-top: 0;
+  font-size: 0.54rem;
 }
 
 .cardInsight span {
@@ -299,7 +373,8 @@
 
 .cardSettings {
   flex: 0 0 auto;
-  border-top: 1px solid var(--portfolio-border);
+  border-top: 1px solid var(--portfolio-border-strong);
+  background: rgba(6, 10, 16, 0.88);
 }
 
 .cardSettings summary {
@@ -421,6 +496,8 @@
   background: rgba(143, 164, 196, 0.14);
 }
 
+.cardHeaderSettings input:focus-visible,
+.cardHeaderSettings select:focus-visible,
 .cardActions button:focus-visible,
 .cardMenu summary:focus-visible,
 .cardIdentity select:focus-visible,

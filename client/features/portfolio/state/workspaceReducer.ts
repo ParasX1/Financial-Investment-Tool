@@ -34,6 +34,7 @@ export type PortfolioWorkspaceAction =
       type: "updateGlobalInputs";
       patch: Partial<PortfolioAnalysisInputs>;
     }
+  | { type: "syncCardDateOverridesToGlobal" }
   | {
       type: "setCardMetric";
       cardId: string;
@@ -72,6 +73,20 @@ export const portfolioWorkspaceReducer = (
       return {
         ...state,
         globalInputs: { ...state.globalInputs, ...action.patch },
+      };
+    case "syncCardDateOverridesToGlobal":
+      return {
+        ...state,
+        cards: state.cards.map((card) => {
+          if (
+            card.overrides.startDate === undefined &&
+            card.overrides.endDate === undefined
+          ) {
+            return card;
+          }
+          const { startDate, endDate, ...overrides } = card.overrides;
+          return { ...card, overrides };
+        }),
       };
     case "setCardMetric":
       return {
@@ -126,7 +141,17 @@ export const portfolioWorkspaceReducer = (
         overrides: { ...source.overrides },
         hiddenSymbols: [...source.hiddenSymbols],
       };
-      return withCardsAndLayout(state, [...state.cards, duplicate]);
+      const next = withCardsAndLayout(state, [...state.cards, duplicate]);
+      return {
+        ...next,
+        observerLayout: {
+          ...next.observerLayout,
+          [duplicate.id]: {
+            ...next.observerLayout[duplicate.id],
+            visible: true,
+          },
+        },
+      };
     }
     case "deleteCard": {
       if (
@@ -178,7 +203,10 @@ export const portfolioWorkspaceReducer = (
           ...layout,
           [card.id]: {
             ...arranged[card.id],
-            visible: state.observerLayout[card.id]?.visible ?? true,
+            visible:
+              state.observerLayout[card.id]?.visible ??
+              arranged[card.id]?.visible ??
+              true,
           },
         }),
         {},
