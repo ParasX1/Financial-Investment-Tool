@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { fetchTopPicks } from "../api/fetchTopPicks";
 
 let topPicksPrewarmStarted = false;
+const PREWARM_DELAY_MS = 5000;
 
 export function TopPicksPrewarm() {
   const router = useRouter();
@@ -10,14 +11,21 @@ export function TopPicksPrewarm() {
 
   React.useEffect(() => {
     if (isTopPicksRoute || topPicksPrewarmStarted) return;
+    if (process.env.NEXT_PUBLIC_TOP_PICKS_PREWARM === "false") return;
     topPicksPrewarmStarted = true;
 
-    fetchTopPicks({
-      page: 1,
-      pageSize: 25,
-      sortKey: "sharpe",
-      sortDirection: "desc",
-    }).catch(() => undefined);
+    const timeout = window.setTimeout(() => {
+      fetchTopPicks({
+        page: 1,
+        pageSize: 25,
+        sortKey: "sharpe",
+        sortDirection: "desc",
+      }).catch(() => undefined);
+    }, PREWARM_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
   }, [isTopPicksRoute]);
 
   return null;

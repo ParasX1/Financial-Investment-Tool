@@ -1,6 +1,6 @@
 // File purpose: Safely renders the shared Community CommonMark/GFM contract.
 import * as React from "react";
-import Markdown, { type MarkdownToJSX } from "markdown-to-jsx/react";
+import Markdown, { type MarkdownToJSX } from "markdown-to-jsx";
 import communityStyles from "../styles/community.module.css";
 import { cn, fitType } from "../design";
 
