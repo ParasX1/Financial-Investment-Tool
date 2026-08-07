@@ -228,10 +228,10 @@ npm run dev:all
 - Flask backend: `http://127.0.0.1:8080`
 - Next frontend: `http://localhost:3000`
 
-脚本会优先使用当前已知可用的 Conda Python：
+脚本会优先使用配置好的后端 Python 环境：
 
 ```text
-C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe
+<conda-python>\python.exe
 ```
 
 这样可以避开 WindowsApps 中不可用的假 `python.exe` alias。
@@ -258,10 +258,10 @@ Client: http://localhost:3000
 Python 3.11.15
 ```
 
-但非交互 shell 一开始解析到的是：
+但非交互 shell 一开始解析到的是 Windows Store alias：
 
 ```text
-C:\Users\Johnny\AppData\Local\Microsoft\WindowsApps\python.exe
+<WindowsApps>\python.exe
 ```
 
 这个路径是 Windows Store alias，不是真正可用的 Python。
@@ -269,7 +269,7 @@ C:\Users\Johnny\AppData\Local\Microsoft\WindowsApps\python.exe
 解决方式是直接调用 Conda 环境中的 Python：
 
 ```powershell
-& C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe -m pytest ...
+& <conda-python>\python.exe -m pytest ...
 ```
 
 ## 验证结果
@@ -279,7 +279,7 @@ C:\Users\Johnny\AppData\Local\Microsoft\WindowsApps\python.exe
 运行命令：
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npx.cmd jest --config jest.portfolio-top-picks.config.js --runInBand features/top-picks/api/fetchTopPicks.test.ts features/top-picks/api/fetchTopPicks.edgeCases.test.ts features/top-picks/lib/topPicksColumns.test.ts features/top-picks/lib/topPicksCsv.test.ts features/top-picks/components/TopPicksTable.test.tsx features/top-picks/components/TopPicksColumnsDialog.test.tsx features/top-picks/screens/TopPicksScreen.test.tsx features/top-picks/topPicksBoundary.test.ts --coverage=false
 ```
 
@@ -293,8 +293,8 @@ npx.cmd jest --config jest.portfolio-top-picks.config.js --runInBand features/to
 运行命令：
 
 ```powershell
-cd D:\Financial-Investment-Tool
-& C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe -m pytest server\tests\top_picks server\tests\api\test_top_picks_app_config.py
+cd <repo>
+& <conda-python>\python.exe -m pytest server\tests\top_picks server\tests\api\test_top_picks_app_config.py
 ```
 
 结果：

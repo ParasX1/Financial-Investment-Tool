@@ -199,10 +199,10 @@ These start both:
 - Flask backend at `http://127.0.0.1:8080`
 - Next frontend at `http://localhost:3000`
 
-The script prefers the known Conda Python environment:
+The script prefers the configured backend Python environment:
 
 ```text
-C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe
+<conda-python>\python.exe
 ```
 
 This avoids the WindowsApps Python alias issue.
@@ -227,16 +227,17 @@ The interactive terminal had Python available:
 Python 3.11.15
 ```
 
-But the non-interactive tool shell initially resolved `python` to:
+But the non-interactive tool shell initially resolved `python` to a Windows
+Store alias:
 
 ```text
-C:\Users\Johnny\AppData\Local\Microsoft\WindowsApps\python.exe
+<WindowsApps>\python.exe
 ```
 
 The fix was to call the Conda environment's Python executable directly:
 
 ```powershell
-& C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe -m pytest ...
+& <conda-python>\python.exe -m pytest ...
 ```
 
 ## Verification
@@ -244,7 +245,7 @@ The fix was to call the Conda environment's Python executable directly:
 Frontend TopPicks targeted tests passed:
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npx.cmd jest --config jest.portfolio-top-picks.config.js --runInBand features/top-picks/api/fetchTopPicks.test.ts features/top-picks/api/fetchTopPicks.edgeCases.test.ts features/top-picks/lib/topPicksColumns.test.ts features/top-picks/lib/topPicksCsv.test.ts features/top-picks/components/TopPicksTable.test.tsx features/top-picks/components/TopPicksColumnsDialog.test.tsx features/top-picks/screens/TopPicksScreen.test.tsx features/top-picks/topPicksBoundary.test.ts --coverage=false
 ```
 
@@ -256,8 +257,8 @@ Result:
 Backend TopPicks tests passed:
 
 ```powershell
-cd D:\Financial-Investment-Tool
-& C:\Users\Johnny\miniconda3\envs\financeDev-server\python.exe -m pytest server\tests\top_picks server\tests\api\test_top_picks_app_config.py
+cd <repo>
+& <conda-python>\python.exe -m pytest server\tests\top_picks server\tests\api\test_top_picks_app_config.py
 ```
 
 Result:

@@ -194,7 +194,7 @@
 成功运行的测试：
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npm test -- PortfolioCommandBar.test.tsx PortfolioSymbolInput.test.ts PortfolioScreen.test.tsx --runInBand
 ```
 
@@ -206,7 +206,7 @@ npm test -- PortfolioCommandBar.test.tsx PortfolioSymbolInput.test.ts PortfolioS
 成功运行的格式检查：
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npx prettier --check features/portfolio/components/PortfolioMetricCard.tsx features/portfolio/components/PortfolioCommandBar.tsx features/portfolio/hooks/usePortfolioWorkspaceController.ts features/portfolio/components/PortfolioMetricCard.test.tsx features/portfolio/components/PortfolioChart.tsx
 ```
 

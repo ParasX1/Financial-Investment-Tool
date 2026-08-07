@@ -190,7 +190,7 @@ Added or updated tests around:
 Tests successfully run:
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npm test -- PortfolioCommandBar.test.tsx PortfolioSymbolInput.test.ts PortfolioScreen.test.tsx --runInBand
 ```
 
@@ -202,7 +202,7 @@ Result:
 Formatting check successfully run:
 
 ```powershell
-cd D:\Financial-Investment-Tool\client
+cd <repo>\client
 npx prettier --check features/portfolio/components/PortfolioMetricCard.tsx features/portfolio/components/PortfolioCommandBar.tsx features/portfolio/hooks/usePortfolioWorkspaceController.ts features/portfolio/components/PortfolioMetricCard.test.tsx features/portfolio/components/PortfolioChart.tsx
 ```
 
@@ -275,4 +275,3 @@ The Portfolio page is now closer to a research workspace:
 - clearer distinction between draft inputs and applied analysis
 - better chart readability inside constrained boxes
 - stricter ticker validation before the backend request
-
