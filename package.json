@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:all": "node scripts/dev-all.mjs"
+  },
   "dependencies": {
     "@nextui-org/react": "^2.4.6",
     "d3": "^7.9.0"

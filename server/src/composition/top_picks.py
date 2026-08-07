@@ -5,6 +5,7 @@ from ..supabase_client import get_supabase_client
 from ..top_picks.repository import SupabaseTickerRepository
 from ..top_picks.service import (
     DEFAULT_BENCHMARK_TICKER,
+    DEFAULT_CACHE_TTL_SECONDS,
     DEFAULT_RISK_FREE_RATE,
     DEFAULT_RISK_FREE_RATE_AS_OF,
     DEFAULT_RISK_FREE_RATE_SOURCE,
@@ -35,6 +36,10 @@ def configure_top_picks(app, environ=None):
         TOP_PICKS_UNIVERSE_LIMIT=environment.get(
             "TOP_PICKS_UNIVERSE_LIMIT",
             DEFAULT_UNIVERSE_LIMIT,
+        ),
+        TOP_PICKS_CACHE_TTL_SECONDS=environment.get(
+            "TOP_PICKS_CACHE_TTL_SECONDS",
+            DEFAULT_CACHE_TTL_SECONDS,
         ),
     )
 
@@ -85,6 +90,7 @@ def create_top_picks_service_provider(
                 "TOP_PICKS_RISK_FREE_RATE_AS_OF"
             ],
             universe_limit=app.config["TOP_PICKS_UNIVERSE_LIMIT"],
+            cache_ttl_seconds=app.config["TOP_PICKS_CACHE_TTL_SECONDS"],
         )
         app.extensions["top_picks_service"] = service
         return service

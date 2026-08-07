@@ -43,10 +43,10 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "ret1y",
-    label: "1Y Return",
+    label: "Cumulative return",
     align: "right",
     description:
-      "1Y cumulative return; unavailable when the full sample is not available.",
+      "Trailing 1Y cumulative return used for Top Picks ranking; unavailable when the full sample is not available.",
     unit: "percent",
     defaultVisible: true,
     format: (value, status) =>
@@ -57,7 +57,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "sharpe",
-    label: "Sharpe",
+    label: "Sharpe ratio",
     align: "right",
     description:
       "Annualized Sharpe ratio versus the configured risk-free rate.",
@@ -67,7 +67,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "sortino",
-    label: "Sortino",
+    label: "Sortino ratio",
     align: "right",
     description:
       "Sortino ratio using downside deviation; Unbounded means no downside deviation.",
@@ -77,7 +77,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "volatility",
-    label: "Volatility",
+    label: "Annualised volatility",
     align: "right",
     description: "Annualized volatility.",
     unit: "percent",
@@ -86,7 +86,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "maxDD",
-    label: "Max DD",
+    label: "Max drawdown",
     align: "right",
     description: "Peak-to-trough maximum drawdown.",
     unit: "percent",
@@ -95,7 +95,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "beta",
-    label: "Beta",
+    label: "Beta exposure",
     align: "right",
     description: "Beta versus the configured benchmark.",
     unit: "ratio",
@@ -104,7 +104,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "alpha",
-    label: "Alpha",
+    label: "Alpha vs benchmark",
     align: "right",
     description: "Annualized alpha versus the configured benchmark.",
     unit: "percent",
@@ -117,7 +117,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "infoRatio",
-    label: "Info Ratio",
+    label: "Information ratio",
     align: "right",
     description:
       "Information Ratio = annualized active return / tracking error.",

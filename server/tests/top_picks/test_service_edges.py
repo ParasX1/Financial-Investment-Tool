@@ -76,6 +76,12 @@ def test_injected_benchmark_and_rate_reach_market_calculations():
     ]
     assert information_calls[0][2] == "SPY"
     calls_by_name = {name: args for name, args, _ in calls}
+    assert calls_by_name["calculate_cumulative_return"][0] == [
+        "BHP.AX",
+        "SPY",
+    ]
+    assert calls_by_name["calculate_drawdown"][0] == ["BHP.AX", "SPY"]
+    assert calls_by_name["calculate_volatility"][0] == ["BHP.AX", "SPY"]
     assert calls_by_name["calculate_beta"][1] == "SPY"
     assert calls_by_name["calculate_alpha"][1] == "SPY"
     assert calls_by_name["calculate_alpha"][-1] == 0.025

@@ -20,6 +20,7 @@ def test_app_configures_top_picks_service_assumptions():
             "TOP_PICKS_RISK_FREE_RATE_SOURCE": "Configured source",
             "TOP_PICKS_RISK_FREE_RATE_AS_OF": "2026-07-01",
             "TOP_PICKS_UNIVERSE_LIMIT": 12,
+            "TOP_PICKS_CACHE_TTL_SECONDS": 30,
         },
         supabase_client=object(),
         top_picks_service_factory=service_factory,
@@ -38,6 +39,7 @@ def test_app_configures_top_picks_service_assumptions():
     assert kwargs["risk_free_rate_source"] == "Configured source"
     assert kwargs["risk_free_rate_as_of"] == "2026-07-01"
     assert kwargs["universe_limit"] == 12
+    assert kwargs["cache_ttl_seconds"] == 30
 
 
 def test_app_exposes_product_consistent_top_picks_defaults():
@@ -50,6 +52,7 @@ def test_app_exposes_product_consistent_top_picks_defaults():
     )
     assert app.config["TOP_PICKS_RISK_FREE_RATE_AS_OF"] == "2026-06-17"
     assert app.config["TOP_PICKS_UNIVERSE_LIMIT"] == 50
+    assert app.config["TOP_PICKS_CACHE_TTL_SECONDS"] == 600
 
 
 def test_app_loads_top_picks_configuration_from_process_environment(
@@ -63,6 +66,7 @@ def test_app_loads_top_picks_configuration_from_process_environment(
     )
     monkeypatch.setenv("TOP_PICKS_RISK_FREE_RATE_AS_OF", "2026-07-01")
     monkeypatch.setenv("TOP_PICKS_UNIVERSE_LIMIT", "12")
+    monkeypatch.setenv("TOP_PICKS_CACHE_TTL_SECONDS", "30")
 
     app = create_app({"TESTING": True})
 
@@ -73,3 +77,4 @@ def test_app_loads_top_picks_configuration_from_process_environment(
     )
     assert app.config["TOP_PICKS_RISK_FREE_RATE_AS_OF"] == "2026-07-01"
     assert app.config["TOP_PICKS_UNIVERSE_LIMIT"] == "12"
+    assert app.config["TOP_PICKS_CACHE_TTL_SECONDS"] == "30"

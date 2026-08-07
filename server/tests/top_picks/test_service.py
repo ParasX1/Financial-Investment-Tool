@@ -147,3 +147,77 @@ def test_service_paginates_after_sorting_the_whole_universe():
         "CCC"
     ]
     assert response["data"]["total"] == 3
+
+
+def test_service_reuses_cached_snapshot_across_sort_and_page_requests():
+    class CountingTickerRepository:
+        def __init__(self):
+            self.calls = 0
+
+        def list_tickers(self, limit):
+            self.calls += 1
+            return FakeTickerRepository().list_tickers(limit)
+
+    calls = []
+
+    def counting_calculator_provider(name):
+        calls.append(name)
+        return calculator_provider(name)
+
+    repository = CountingTickerRepository()
+    service = TopPicksService(
+        ticker_repository=repository,
+        calculator_provider=counting_calculator_provider,
+        market_data_provider=lambda *args: pd.DataFrame(),
+        information_ratio_provider=lambda *args: {
+            "AAA": 0.65,
+            "BBB": 0.30,
+        },
+        observation_count_provider=lambda *args: {
+            "AAA": 252,
+            "BBB": 252,
+        },
+        today_provider=lambda: date(2026, 7, 31),
+    )
+
+    first = service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+    second = service.get_page(TopPicksRequest(2, 2, "ret1y", "asc"))
+
+    assert repository.calls == 1
+    assert calls.count("calculate_sharpe_ratio") == 1
+    assert first["metadata"]["cacheStatus"] == "miss"
+    assert second["metadata"]["cacheStatus"] == "hit"
+    assert second["metadata"]["sortKey"] == "ret1y"
+    assert second["metadata"]["page"] == 2
+
+
+def test_service_can_disable_snapshot_cache_with_zero_ttl():
+    class CountingTickerRepository:
+        def __init__(self):
+            self.calls = 0
+
+        def list_tickers(self, limit):
+            self.calls += 1
+            return FakeTickerRepository().list_tickers(limit)
+
+    repository = CountingTickerRepository()
+    service = TopPicksService(
+        ticker_repository=repository,
+        calculator_provider=calculator_provider,
+        market_data_provider=lambda *args: pd.DataFrame(),
+        information_ratio_provider=lambda *args: {
+            "AAA": 0.65,
+            "BBB": 0.30,
+        },
+        observation_count_provider=lambda *args: {
+            "AAA": 252,
+            "BBB": 252,
+        },
+        cache_ttl_seconds=0,
+        today_provider=lambda: date(2026, 7, 31),
+    )
+
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+
+    assert repository.calls == 2

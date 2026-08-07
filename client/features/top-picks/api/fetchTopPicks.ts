@@ -146,6 +146,9 @@ const normalizeRiskFreeRate = (value: unknown): number | undefined =>
     ? value
     : undefined;
 
+const normalizeCacheStatus = (value: unknown) =>
+  value === "hit" || value === "miss" ? value : undefined;
+
 const normalizeMetadata = (value: unknown): TopPicksMetadata => {
   if (!isRecord(value)) return {};
   const assumptions = isRecord(value.assumptions) ? value.assumptions : {};
@@ -166,6 +169,8 @@ const normalizeMetadata = (value: unknown): TopPicksMetadata => {
     normalizeCount(assumptions.universeLimit);
   const universeCount = normalizeCount(value.universeCount);
   const availableCount = normalizeCount(value.availableCount);
+  const cacheStatus = normalizeCacheStatus(value.cacheStatus);
+  const cacheTtlSeconds = normalizeCount(value.cacheTtlSeconds);
   const minimumTrailingReturnObservations = normalizeCount(
     value.minimumTrailingReturnObservations,
   );
@@ -184,6 +189,8 @@ const normalizeMetadata = (value: unknown): TopPicksMetadata => {
     ...(universeLimit === undefined ? {} : { universeLimit }),
     ...(universeCount === undefined ? {} : { universeCount }),
     ...(availableCount === undefined ? {} : { availableCount }),
+    ...(cacheStatus === undefined ? {} : { cacheStatus }),
+    ...(cacheTtlSeconds === undefined ? {} : { cacheTtlSeconds }),
     ...(minimumTrailingReturnObservations === undefined
       ? {}
       : { minimumTrailingReturnObservations }),
