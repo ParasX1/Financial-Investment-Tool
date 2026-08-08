@@ -6,8 +6,8 @@ standard index sources rather than developer-curated symbols.
 
 Supported markets:
 
-- `US` with source `SP500`
-- `AU` with source `ASX200`
+- `US` with source `SP500`  `90s refresh`
+- `AU` with source `ASX200` `60s refresh`
 - `HK` with source `HSI`
 
 S&P 500 can be synced from the built-in preset:
