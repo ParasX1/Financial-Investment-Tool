@@ -68,4 +68,17 @@ describe("Top Picks database contract", () => {
       "upper(btrim(existing.symbol)) = universe.symbol",
     );
   });
+
+  it("creates the standard multi-market Top Picks universe", () => {
+    const migration = readMigration("_create_top_picks_universe.sql");
+
+    expect(migration).toContain(
+      "create table if not exists public.top_picks_universe",
+    );
+    expect(migration).toContain("market in ('US', 'AU', 'HK')");
+    expect(migration).toContain(
+      "source in ('SP500', 'ASX200', 'HSI', 'LEGACY', 'MANUAL')",
+    );
+    expect(migration).toContain("from public.tickers");
+  });
 });

@@ -3,14 +3,16 @@ import { useRouter } from "next/router";
 import { fetchTopPicks } from "../api/fetchTopPicks";
 
 let topPicksPrewarmStarted = false;
-const PREWARM_DELAY_MS = 5000;
+const PREWARM_DELAY_MS = 30000;
+const PREWARM_EXCLUDED_ROUTES = new Set(["/Portfolio", "/dashboardView"]);
 
 export function TopPicksPrewarm() {
   const router = useRouter();
   const isTopPicksRoute = router.pathname === "/TopPicks";
+  const isExcludedRoute = PREWARM_EXCLUDED_ROUTES.has(router.pathname);
 
   React.useEffect(() => {
-    if (isTopPicksRoute || topPicksPrewarmStarted) return;
+    if (isTopPicksRoute || isExcludedRoute || topPicksPrewarmStarted) return;
     if (process.env.NEXT_PUBLIC_TOP_PICKS_PREWARM === "false") return;
     topPicksPrewarmStarted = true;
 
@@ -26,7 +28,7 @@ export function TopPicksPrewarm() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [isTopPicksRoute]);
+  }, [isExcludedRoute, isTopPicksRoute]);
 
   return null;
 }

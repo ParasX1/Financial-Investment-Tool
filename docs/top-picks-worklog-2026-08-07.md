@@ -96,8 +96,9 @@ Differences are mostly in usage:
 
 ## Redis-Style TopPicks Snapshot Cache
 
-Added an in-memory Redis-style TTL cache around the full TopPicks ranking
-snapshot.
+Added a Redis-style TTL cache around the full TopPicks ranking snapshot. In
+local development, the last complete snapshot is also persisted to
+`server/.cache/top-picks-snapshot-cache.json` by default.
 
 Behavior:
 
@@ -106,6 +107,8 @@ Behavior:
 - Pagination and sorting are applied from cached rows.
 - Repeated page/sort changes no longer recalculate the full universe.
 - Default TTL is `600` seconds.
+- After a dev-server restart, a still-valid stale snapshot can be shown
+  immediately while a fresh snapshot rebuilds in the background.
 - `TOP_PICKS_CACHE_TTL_SECONDS=0` disables the cache.
 
 Cache key includes:
@@ -218,6 +221,33 @@ Files changed:
 
 - `package.json`
 - `scripts/dev-all.mjs`
+
+## Build Fixes
+
+During a Market News build check, the failing build was confirmed to be caused
+by app-wide compilation blockers rather than Market News itself.
+
+Fixes made:
+
+- Updated Community markdown rendering to import from the package main entry:
+  - from `markdown-to-jsx/react`
+  - to `markdown-to-jsx`
+- Reinstalled the missing `markdown-to-jsx` client dependency from the existing
+  lockfile/package declaration.
+- Fixed `PortfolioObservation` so observer-mode metric cards receive the
+  required `draftSymbolCount` and `hasPendingDraft` props.
+
+Files changed:
+
+- `client/features/community/components/MarkdownBody.tsx`
+- `client/features/portfolio/components/PortfolioObservation.tsx`
+- `client/features/portfolio/screens/PortfolioScreen.tsx`
+
+Result:
+
+- `npm.cmd run build` completed successfully.
+- `/MarketNews` and the other pages were generated in the build output.
+- Windows still reported non-blocking `.next/cache` `EPERM` warnings.
 
 ## Local Environment Finding
 
@@ -333,7 +363,7 @@ Possible next steps:
 - backend startup prewarm
 - scheduled daily TopPicks snapshot
 - storing snapshots in Supabase
-- later replacing the in-memory cache with Redis or another shared cache
+- later replacing the local snapshot cache with Redis or another shared cache
 
 ### Full TypeScript check
 

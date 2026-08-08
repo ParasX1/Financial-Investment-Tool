@@ -82,8 +82,9 @@ export type TopPicksMetadata = Readonly<{
   availableCount?: number;
   minimumTrailingReturnObservations?: number;
   window?: "trailing_one_year";
-  cacheStatus?: "hit" | "miss";
+  cacheStatus?: "hit" | "miss" | "stale";
   cacheTtlSeconds?: number;
+  snapshotRefreshing?: boolean;
 }>;
 
 export type TopPicksResponse = {

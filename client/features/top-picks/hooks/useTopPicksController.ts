@@ -16,6 +16,7 @@ const errorMessage = (reason: unknown): string =>
   reason instanceof Error && reason.message.trim()
     ? reason.message
     : "Unable to load Top Picks.";
+const STALE_REFRESH_POLL_MS = 20_000;
 
 export function useTopPicksController() {
   const { user, loading: authLoading } = useAuth();
@@ -52,21 +53,34 @@ export function useTopPicksController() {
     setWarnings([]);
     setMetadata({});
 
-    fetchTopPicks({
-      page,
-      pageSize,
-      sortKey: sort.key,
-      sortDirection: sort.dir,
-      signal: abortController.signal,
-    })
-      .then((response) => {
+    const applyResponse = (
+      response: Awaited<ReturnType<typeof fetchTopPicks>>,
+    ) => {
+      setRows(response.rows);
+      setTotal(response.total);
+      setWarnings(response.warnings);
+      setMetadata(response.metadata);
+      const lastPage = Math.max(1, Math.ceil(response.total / pageSize));
+      if (page > lastPage) setPage(lastPage);
+    };
+
+    const load = async () => {
+      const response = await fetchTopPicks({
+        page,
+        pageSize,
+        sortKey: sort.key,
+        sortDirection: sort.dir,
+        signal: abortController.signal,
+      });
+      if (active) {
+        applyResponse(response);
+      }
+    };
+
+    load()
+      .then(() => {
         if (!active) return;
-        setRows(response.rows);
-        setTotal(response.total);
-        setWarnings(response.warnings);
-        setMetadata(response.metadata);
-        const lastPage = Math.max(1, Math.ceil(response.total / pageSize));
-        if (page > lastPage) setPage(lastPage);
+        setError(null);
       })
       .catch((reason: unknown) => {
         if (!active || isAbortError(reason)) return;
@@ -94,6 +108,16 @@ export function useTopPicksController() {
     sort.dir,
     sort.key,
   ]);
+
+  useEffect(() => {
+    if (!metadata.snapshotRefreshing) return;
+
+    const timeout = window.setTimeout(() => {
+      setRetryToken((current) => current + 1);
+    }, STALE_REFRESH_POLL_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [metadata.snapshotRefreshing, retryToken]);
 
   const controllerScopeReady = preferenceScopeReady && columnsScopeReady;
   const exposedRows = controllerScopeReady ? rows : [];

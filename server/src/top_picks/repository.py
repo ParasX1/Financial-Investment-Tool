@@ -2,7 +2,9 @@ from ..market_primitives import TICKER_PATTERN
 from .contracts import Ticker
 
 
-MAX_TICKER_UNIVERSE = 100
+MAX_TICKER_UNIVERSE = 1000
+TOP_PICKS_UNIVERSE_TABLE = "top_picks_universe"
+LEGACY_TICKERS_TABLE = "tickers"
 
 
 class TopPicksDataSourceError(RuntimeError):
@@ -21,25 +23,33 @@ class SupabaseTickerRepository:
         ):
             raise ValueError("Ticker universe limit is invalid.")
 
-        try:
-            response = (
-                self._supabase_client.table("tickers")
-                .select("symbol,name,industry")
-                .order("symbol")
-                .limit(MAX_TICKER_UNIVERSE)
-                .execute()
-            )
-        except Exception as error:
-            raise TopPicksDataSourceError(
-                "Unable to load the ticker universe."
-            ) from error
+        rows = self._load_rows(TOP_PICKS_UNIVERSE_TABLE, active_only=True)
+        if rows is None:
+            rows = self._load_rows(LEGACY_TICKERS_TABLE, active_only=False)
+        if rows is None:
+            raise TopPicksDataSourceError("Unable to load the ticker universe.")
 
-        rows = getattr(response, "data", None)
         if not isinstance(rows, list):
             raise TopPicksDataSourceError(
                 "Ticker universe response was invalid."
             )
         return self._normalize_rows(rows, limit)
+
+    def _load_rows(self, table_name, active_only):
+        try:
+            query = (
+                self._supabase_client.table(table_name)
+                .select("symbol,name,industry")
+                .order("symbol")
+                .limit(MAX_TICKER_UNIVERSE)
+            )
+            if active_only and hasattr(query, "eq"):
+                query = query.eq("active", True)
+            response = query.execute()
+        except Exception:
+            return None
+
+        return getattr(response, "data", None)
 
     @staticmethod
     def _normalize_rows(rows, limit):

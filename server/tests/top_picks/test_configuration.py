@@ -40,17 +40,17 @@ def test_service_defaults_are_product_consistent_and_explicit_in_metadata():
 
     assert DEFAULT_BENCHMARK_TICKER == "^AXJO"
     assert DEFAULT_RISK_FREE_RATE == 0.0435
-    assert DEFAULT_UNIVERSE_LIMIT == 50
+    assert DEFAULT_UNIVERSE_LIMIT == 1000
     assert DEFAULT_CACHE_TTL_SECONDS == 600
-    assert repository.limit == 50
+    assert repository.limit == 1000
     assert response["metadata"]["benchmark"] == "^AXJO"
     assert response["metadata"]["riskFreeRate"] == 0.0435
-    assert response["metadata"]["universeLimit"] == 50
+    assert response["metadata"]["universeLimit"] == 1000
     assert response["metadata"]["cacheTtlSeconds"] == 600
     assert response["metadata"]["assumptions"] == {
         "benchmark": "^AXJO",
         "riskFreeRateAnnual": 0.0435,
-        "universeLimit": 50,
+        "universeLimit": 1000,
         "window": "trailing_one_year",
     }
 
@@ -89,7 +89,7 @@ def test_service_accepts_bounded_injected_assumptions():
         {"risk_free_rate": True},
         {"risk_free_rate": 2},
         {"universe_limit": 0},
-        {"universe_limit": 101},
+        {"universe_limit": 1001},
         {"cache_ttl_seconds": True},
         {"cache_ttl_seconds": -1},
         {"cache_ttl_seconds": 86_401},

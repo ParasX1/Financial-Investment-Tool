@@ -62,6 +62,19 @@ def test_fetch_stock_data_reuses_cached_downloads():
     assert download.call_count == 1
 
 
+def test_fetch_stock_data_does_not_hold_cache_lock_during_download():
+    data = adjusted_close_frame({"AAPL": rising_prices(100)})
+
+    def fake_download(*args, **kwargs):
+        assert metrics._stock_data_lock.acquire(blocking=False)
+        metrics._stock_data_lock.release()
+        return data
+
+    metrics.clear_stock_data_cache()
+    with patch("src.metrics.yf.download", side_effect=fake_download):
+        metrics.fetch_stock_data(["AAPL"], "2023-01-01", "2024-01-01")
+
+
 def test_beta_skips_missing_market_ticker_without_keyerror():
     data = adjusted_close_frame({"AAPL": rising_prices(100)})
 

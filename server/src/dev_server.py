@@ -24,4 +24,5 @@ def run_development_server(app_factory):
         debug=True,
         host=os.getenv("FLASK_RUN_HOST", "127.0.0.1"),
         port=int(os.getenv("FLASK_RUN_PORT", "8080")),
+        threaded=True,
     )

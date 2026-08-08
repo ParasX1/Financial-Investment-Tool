@@ -84,7 +84,8 @@ export const PortfolioMetricCard = ({
   const compact = !isFocus;
   const custom = Object.keys(card.overrides).length > 0;
   const showHeaderSettings = variant === "hero";
-  const showCardSettings = variant === "focus" || variant === "observer";
+  const showCardSettings =
+    variant === "focus" || variant === "observer" || custom;
   const missingSymbols = data?.metadata?.missingSymbols ?? [];
   const responseWarnings = data?.warnings ?? [];
   const missingHistoryMessage = missingSymbols.length
@@ -211,10 +212,10 @@ export const PortfolioMetricCard = ({
     }
     if (status === "loading" && !data) {
       return (
-        <div className={styles.cardSkeleton} aria-busy="true">
-          <span />
-          <span />
-          <span />
+        <div className={styles.cardState} aria-busy="true" role="status">
+          <span aria-hidden="true">...</span>
+          <strong>Running analysis</strong>
+          <p>Loading {metric.label} with the applied symbols and assumptions.</p>
         </div>
       );
     }

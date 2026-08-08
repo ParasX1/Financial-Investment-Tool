@@ -108,8 +108,9 @@ calculator。
 
 ## Redis 风格的 TopPicks Snapshot Cache
 
-后端新增了一个 in-memory、Redis-style 的 TTL cache，用来缓存完整的
-TopPicks ranking snapshot。
+后端新增了一个 Redis-style 的 TTL cache，用来缓存完整的 TopPicks ranking
+snapshot。开发环境默认还会把最后一次完整 snapshot 写入本地
+`server/.cache/top-picks-snapshot-cache.json`。
 
 行为：
 
@@ -117,6 +118,8 @@ TopPicks ranking snapshot。
 - 相同假设条件下的后续请求会返回 `cacheStatus: "hit"`。
 - 翻页和排序会基于 cached rows 处理，不再重新计算整个 universe。
 - 默认 TTL 是 `600` 秒，也就是 10 分钟。
+- dev server 重启后，如果本地 snapshot 仍在 stale 窗口内，会先展示旧结果，
+  同时后台刷新。
 - 设置 `TOP_PICKS_CACHE_TTL_SECONDS=0` 可以关闭缓存。
 
 cache key 包含：
@@ -250,6 +253,32 @@ Client: http://localhost:3000
 - `package.json`
 - `scripts/dev-all.mjs`
 
+## Build 修复
+
+检查 Market News build 时，确认失败原因并不是 Market News 页面本身，而是
+Next build 会编译整个 app，因此被其他模块的 build blocker 挡住了。
+
+本次修复：
+
+- 将 Community markdown 渲染的 import 改为 package 主入口：
+  - 从 `markdown-to-jsx/react`
+  - 改为 `markdown-to-jsx`
+- 根据已有 package/lockfile 声明，补装缺失的 `markdown-to-jsx` client 依赖。
+- 修复 `PortfolioObservation`，让 observation mode 中的 metric card 也收到
+  必需的 `draftSymbolCount` 和 `hasPendingDraft` props。
+
+相关文件：
+
+- `client/features/community/components/MarkdownBody.tsx`
+- `client/features/portfolio/components/PortfolioObservation.tsx`
+- `client/features/portfolio/screens/PortfolioScreen.tsx`
+
+结果：
+
+- `npm.cmd run build` 已成功完成。
+- `/MarketNews` 和其他页面都出现在 build output 中。
+- Windows 仍然报告了非阻塞的 `.next/cache` `EPERM` warning。
+
 ## 本地 Python 环境问题
 
 用户交互终端中 Python 是正常的：
@@ -370,7 +399,7 @@ calculator_calls=7
 - 后端启动时 prewarm
 - 定时任务生成 daily TopPicks snapshot
 - 把 snapshot 写入 Supabase
-- 未来把 in-memory cache 替换成 Redis 或其他共享 cache
+- 未来把本地 snapshot cache 替换成 Redis 或其他共享 cache
 
 ### 全量 TypeScript 检查
 

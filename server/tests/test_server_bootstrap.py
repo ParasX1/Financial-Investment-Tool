@@ -52,5 +52,13 @@ def test_development_server_loads_environment_before_creating_app(
     assert calls == [
         "load_environment",
         "create_app",
-        ("run", {"debug": True, "port": 8080}),
+        (
+            "run",
+            {
+                "debug": True,
+                "host": "127.0.0.1",
+                "port": 8080,
+                "threaded": True,
+            },
+        ),
     ]

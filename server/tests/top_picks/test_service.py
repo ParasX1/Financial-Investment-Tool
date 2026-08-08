@@ -3,7 +3,11 @@ from datetime import date
 import pandas as pd
 
 from src.top_picks.contracts import Ticker, TopPicksRequest
-from src.top_picks.service import TopPicksService, sort_top_pick_rows
+from src.top_picks.service import (
+    TopPicksService,
+    TopPicksSnapshotCache,
+    sort_top_pick_rows,
+)
 
 
 class FakeTickerRepository:
@@ -189,6 +193,92 @@ def test_service_reuses_cached_snapshot_across_sort_and_page_requests():
     assert second["metadata"]["cacheStatus"] == "hit"
     assert second["metadata"]["sortKey"] == "ret1y"
     assert second["metadata"]["page"] == 2
+
+
+def test_snapshot_cache_keeps_stale_values_for_revalidation():
+    now = [100.0]
+    cache = TopPicksSnapshotCache(clock=lambda: now[0])
+
+    cache.set(
+        ("top-picks",),
+        {"rows": [{"symbol": "AAA"}]},
+        ttl_seconds=10,
+        stale_ttl_seconds=100,
+    )
+
+    now[0] = 115.0
+    stale_value, stale_status = cache.get(("top-picks",))
+
+    assert stale_status == "stale"
+    assert stale_value == {"rows": [{"symbol": "AAA"}]}
+
+    now[0] = 205.0
+    expired_value, expired_status = cache.get(("top-picks",))
+
+    assert expired_status == "miss"
+    assert expired_value is None
+
+
+def test_snapshot_cache_persists_complete_values_as_stale_after_restart(
+    tmp_path,
+    monkeypatch,
+):
+    now = [100.0]
+    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    cache_path = tmp_path / "top-picks-cache.json"
+    first_cache = TopPicksSnapshotCache(
+        clock=lambda: 100.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=600,
+    )
+
+    first_cache.set(
+        ("top-picks", "full"),
+        {"rows": [{"symbol": "AAA"}]},
+        ttl_seconds=600,
+    )
+    now[0] = 200.0
+    restarted_cache = TopPicksSnapshotCache(
+        clock=lambda: 200.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=600,
+    )
+
+    value, status = restarted_cache.get(("top-picks", "full"))
+
+    assert status == "stale"
+    assert value == {"rows": [{"symbol": "AAA"}]}
+
+
+def test_snapshot_cache_ignores_expired_persisted_values(
+    tmp_path,
+    monkeypatch,
+):
+    now = [100.0]
+    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    cache_path = tmp_path / "top-picks-cache.json"
+    first_cache = TopPicksSnapshotCache(
+        clock=lambda: 100.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=10,
+    )
+
+    first_cache.set(
+        ("top-picks", "full"),
+        {"rows": [{"symbol": "AAA"}]},
+        ttl_seconds=1,
+    )
+    now[0] = 111.0
+    restarted_cache = TopPicksSnapshotCache(
+        clock=lambda: 200.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=10,
+    )
+
+    value, status = restarted_cache.get(("top-picks", "full"))
+
+    assert status == "miss"
+    assert value is None
 
 
 def test_service_can_disable_snapshot_cache_with_zero_ttl():
