@@ -12,9 +12,12 @@ from .composition.top_picks import (
     configure_top_picks,
     create_top_picks_service_provider,
 )
+from .quant_analysis.composition import create_quant_analysis_service
+from .quant_analysis.rate_limit import FixedWindowRateLimiter
 from .routes.legacy_stocks import create_legacy_stocks_blueprint
 from .routes.market_data import create_market_data_blueprint
 from .routes.metrics import create_metrics_blueprint
+from .routes.quant_analysis import create_quant_analysis_blueprint
 from .routes.top_picks import create_top_picks_blueprint
 
 
@@ -27,6 +30,10 @@ def create_app(
     top_picks_service=None,
     calculator_provider=None,
     top_picks_service_factory=None,
+    quant_analysis_service=None,
+    quant_market_adapter=None,
+    quant_analysis_provider=None,
+    quant_rate_limiter=None,
 ):
     app = Flask(__name__)
     app.config.from_mapping(
@@ -42,6 +49,22 @@ def create_app(
         app.extensions["supabase"] = supabase_client
     if top_picks_service is not None:
         app.extensions["top_picks_service"] = top_picks_service
+    resolved_quant_analysis_service = (
+        quant_analysis_service
+        if quant_analysis_service is not None
+        else create_quant_analysis_service(
+            market_adapter=quant_market_adapter,
+            provider=quant_analysis_provider,
+        )
+    )
+    resolved_quant_rate_limiter = (
+        quant_rate_limiter
+        if quant_rate_limiter is not None
+        else FixedWindowRateLimiter()
+    )
+    app.extensions["quant_analysis_service"] = (
+        resolved_quant_analysis_service
+    )
 
     resolved_calculator_provider = (
         get_calculator
@@ -53,7 +76,7 @@ def create_app(
         service_factory=top_picks_service_factory,
     )
 
-    CORS(app)
+    CORS(app, expose_headers=["X-Trace-ID"])
     app.register_blueprint(
         create_metrics_blueprint(resolved_calculator_provider)
     )
@@ -66,6 +89,12 @@ def create_app(
     app.register_blueprint(
         create_top_picks_blueprint(top_picks_service_provider)
     )
+    app.register_blueprint(create_quant_analysis_blueprint(
+        lambda current_app: current_app.extensions[
+            "quant_analysis_service"
+        ],
+        resolved_quant_rate_limiter,
+    ))
     return app
 
 

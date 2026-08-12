@@ -6,6 +6,7 @@ import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
+import ScienceRoundedIcon from "@mui/icons-material/ScienceRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 
@@ -30,6 +31,12 @@ export const SIDEBAR_MAIN_NAV_ITEMS: readonly SidebarNavItem[] = [
     href: "/TopPicks",
     label: "Top Picks",
     icon: TrendingUpRoundedIcon,
+    gated: true,
+  },
+  {
+    href: "/QuantAnalysis",
+    label: "Quant Studio",
+    icon: ScienceRoundedIcon,
     gated: true,
   },
   {
@@ -79,9 +86,6 @@ export const SIDEBAR_HOME_NAV_ITEM: SidebarNavItem = {
   icon: HomeRoundedIcon,
 };
 
-export function isSidebarNavItemActive(
-  item: SidebarNavItem,
-  pathname: string,
-) {
+export function isSidebarNavItemActive(item: SidebarNavItem, pathname: string) {
   return item.match ? item.match(pathname) : pathname === item.href;
 }

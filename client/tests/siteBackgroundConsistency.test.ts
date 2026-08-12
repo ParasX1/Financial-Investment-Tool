@@ -13,6 +13,7 @@ const userPageEntrypoints = [
   "MarketNews.tsx",
   "Portfolio.tsx",
   "Profile.tsx",
+  "QuantAnalysis.tsx",
   "TopPicks.tsx",
   "Watchlist.tsx",
   "dashboardView.tsx",
