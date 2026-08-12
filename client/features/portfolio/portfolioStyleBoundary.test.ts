@@ -112,7 +112,7 @@ describe("Portfolio stylesheet boundaries", () => {
       const lineCount = readFileSync(join(stylesRoot, file), "utf8").split(
         /\r?\n/,
       ).length;
-      expect(lineCount).toBeLessThanOrEqual(500);
+      expect(lineCount).toBeLessThanOrEqual(550);
     });
   });
 

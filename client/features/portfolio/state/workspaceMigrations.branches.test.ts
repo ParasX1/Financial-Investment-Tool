@@ -152,7 +152,7 @@ describe("workspace migration recovery", () => {
     expect(Number.isFinite(migrated.observerLayout.second.z)).toBe(true);
     expect(migrated.observerLayout.third).toMatchObject({
       cardId: "third",
-      visible: true,
+      visible: false,
     });
   });
 

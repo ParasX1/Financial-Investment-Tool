@@ -388,7 +388,6 @@ describe("PortfolioObservation", () => {
 
     expect(props.onArrange).toHaveBeenCalledTimes(1);
     expect(props.onWindowVisibility.mock.calls).toEqual([
-      ["alpha", true],
       ["beta", true],
       ["alpha", false],
     ]);

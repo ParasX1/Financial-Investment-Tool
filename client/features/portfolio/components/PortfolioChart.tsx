@@ -66,7 +66,7 @@ export const PortfolioChart = ({
     () => ({
       width: dimensions.width,
       height: compact
-        ? Math.max(120, Math.floor(dimensions.height * 0.78))
+        ? Math.max(180, Math.floor(dimensions.height * 0.78))
         : Math.max(260, Math.floor(dimensions.height * 0.84)),
     }),
     [compact, dimensions.height, dimensions.width],
