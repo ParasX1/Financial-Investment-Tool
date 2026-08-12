@@ -8,21 +8,12 @@ import { Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, Tun
 import { useTheme, useMediaQuery } from '@mui/material';
 import {
   fetchGeneralNews, fetchRegionalNews, fetchIndustryNews,
-  fetchCommodityNews, fetchTickerNews, fetchSearchNews
-} from '@/lib/news/marketNewsClient';
-import type { Article } from '@/lib/news/contracts';
+  fetchCommodityNews, fetchTickerNews, Article
+} from '@/services/news';
 
 const regionalOptions  = [ 'au','cn','jp','us','gb' ];
 const industryOptions  = [ 'technology','health','finance','internet','pharmaceutical' ];
 const commodityOptions = [ 'gold','oil','wheat','copper','silver' ];
-
-function getArticleDomain(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return 'Unknown website';
-  }
-}
 
 export interface NewsCardComponentProps {
   index: number;
@@ -33,16 +24,11 @@ export interface NewsCardComponentProps {
   limit?: number;
   dark?: boolean;
   fullscreenOffsetTop?: number;
-  refreshKey?: number;
-  searchQuery?: string;
-  searchContext?: string;
-  categoryDescription?: string;
 }
 
 const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
   index, height = 300, title, filterTicker, paramOverride, limit,
-  dark = false, fullscreenOffsetTop = 0, refreshKey = 0, searchQuery = '',
-  searchContext, categoryDescription
+  dark = false, fullscreenOffsetTop = 0
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -58,6 +44,7 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
   const isXs   = useMediaQuery(theme.breakpoints.down('sm'));
 
   const usedLimit     = limit ?? (isXs ? 6 : 12);
+  const imgHeight     = isXs ? 120 : 140;
   const isControlled  = typeof paramOverride !== 'undefined';
   const effectiveParam = isControlled ? paramOverride : param;
 
@@ -71,23 +58,18 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
     let canceled = false;
     setLoading(true); setError(null);
 
-    const cleanedSearch = searchQuery.trim();
-    if (index === 1 && !filterTicker && !cleanedSearch) {
+    if (index === 1 && !filterTicker) {
       setArticles([]); setLoading(false); return;
     }
 
     let p: Promise<Article[]>;
-    if (cleanedSearch) {
-      p = fetchSearchNews(cleanedSearch, usedLimit, searchContext);
-    } else {
-      switch (index) {
-        case 0: p = fetchGeneralNews(usedLimit); break;
-        case 1: p = fetchTickerNews(filterTicker!, usedLimit); break;
-        case 2: p = fetchRegionalNews(effectiveParam || 'au', usedLimit); break;
-        case 3: p = fetchIndustryNews(effectiveParam || 'technology', usedLimit); break;
-        case 4: p = fetchCommodityNews(effectiveParam || 'gold', usedLimit); break;
-        default: p = Promise.resolve([]);
-      }
+    switch (index) {
+      case 0: p = fetchGeneralNews(usedLimit); break;
+      case 1: p = fetchTickerNews(filterTicker!, usedLimit); break;
+      case 2: p = fetchRegionalNews(effectiveParam || 'au', usedLimit); break;
+      case 3: p = fetchIndustryNews(effectiveParam || 'technology', usedLimit); break;
+      case 4: p = fetchCommodityNews(effectiveParam || 'gold', usedLimit); break;
+      default: p = Promise.resolve([]);
     }
 
     p.then(a => { if (!canceled) setArticles(a); })
@@ -95,7 +77,7 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
      .finally(() => { if (!canceled) setLoading(false); });
 
     return () => { canceled = true; };
-  }, [index, effectiveParam, filterTicker, usedLimit, refreshKey, searchQuery, searchContext]);
+  }, [index, effectiveParam, filterTicker, usedLimit]);
 
   const onSaveSettings = () => {
     const key = ['general','watchlist','regional','industry','commodity'][index];
@@ -140,17 +122,16 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
           flexDirection: 'column',
         }}
       >
-        <Box sx={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap: 2, pb: 2 }}>
-          <Box>
-            <Typography sx={{ color: titleCol, fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
-              {searchQuery.trim() ? `Search results for "${searchQuery.trim()}"` : title}
-            </Typography>
-            {categoryDescription && (
-              <Typography sx={{ color: textCol, mt: 0.5, maxWidth: 820 }}>
-                {categoryDescription}
-              </Typography>
-            )}
-          </Box>
+        <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', pb: 1 }}>
+          <Chip
+            label={title}
+            size="small"
+            sx={{
+              color: dark ? '#fff' : 'inherit',
+              borderColor: line
+            }}
+            variant="outlined"
+          />
           <Box sx={{ display:'flex', gap: 0.5 }}>
             <IconButton size="small" onClick={() => setIsFullscreen(f => !f)} aria-label="toggle fullscreen" sx={{ color: dark ? '#fff' : 'inherit' }}>
               {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
@@ -179,86 +160,53 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
           {!loading && !error && (
             <Grid container spacing={2}>
               {articles.map(a => (
-                <Grid item xs={12} key={a.id}>
+                <Grid item xs={12} sm={6} md={4} key={a.id}>
                   <Card
                     component="a"
                     href={a.url}
                     target="_blank"
                     rel="noreferrer"
                     sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
-                      minHeight: { xs: 'auto', sm: 178 },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
                       textDecoration: 'none',
                       boxShadow: 'none',
                       border: '1px solid',
                       borderColor: line,
                       bgcolor: cardBg,
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      transition: 'border-color .15s ease, background-color .15s ease',
-                      '&:hover': {
-                        borderColor: dark ? 'rgba(74,144,255,0.65)' : 'primary.main',
-                        bgcolor: dark ? '#111319' : 'background.paper'
-                      }
+                      borderRadius: 2,
+                      transition: 'transform .15s ease, box-shadow .15s ease',
+                      '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 }
                     }}
                   >
-                    {(() => {
-                      const articleDomain = getArticleDomain(a.url);
-
-                      return (
-                        <>
                     <CardMedia
                       component="img"
-                      image={a.image ?? '/assets/gridBackground1.png'}
+                      height={isXs ? 120 : 140}
+                      image={a.image ?? '/placeholder.jpg'}
                       alt={a.title}
                       loading="lazy"
-                      sx={{
-                        height: { xs: 168, sm: '100%' },
-                        minHeight: { sm: 178 },
-                        objectFit: 'cover',
-                        bgcolor: '#161616'
-                      }}
+                      sx={{ borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                     />
-                    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, minWidth: 0, p: { xs: 2, sm: 3 } }}>
+                    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
                       <Typography
+                        variant="subtitle1"
                         sx={{
-                          fontSize: { xs: 18, md: 24 },
-                          fontWeight: 700,
-                          lineHeight: 1.2,
+                          fontWeight: 600, lineHeight: 1.25,
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          color: titleCol
+                          overflow: 'hidden', color: titleCol
                         }}
                       >
                         {a.title}
                       </Typography>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: textCol, flexWrap: 'wrap' }}>
-                        <Typography variant="body2" sx={{ color: textCol }}>
-                          {a.source}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: textCol }}>
-                          {articleDomain}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: textCol }}>
-                          {new Date(a.publishedAt).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
-                        </Typography>
-                      </Box>
-
                       {a.summary && (
                         <Typography
+                          variant="body2"
                           sx={{
-                            fontSize: { xs: 14, md: 16 },
-                            lineHeight: 1.55,
                             color: textCol,
                             display: '-webkit-box',
-                            WebkitLineClamp: 2,
+                            WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden'
                           }}
@@ -267,35 +215,18 @@ const NewsCardComponent: React.FC<NewsCardComponentProps> = ({
                         </Typography>
                       )}
 
-                      <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                        <Chip
-                          label={searchQuery.trim() ? 'Search' : title.replace(' News', '')}
-                          size="small"
-                          sx={{
-                            color: '#4a90ff',
-                            bgcolor: 'rgba(74,144,255,0.12)',
-                            border: '1px solid rgba(74,144,255,0.35)',
-                            borderRadius: '6px'
-                          }}
-                        />
-                        <Typography variant="caption" sx={{ color: '#4a90ff', whiteSpace: 'nowrap' }}>
-                          Open story
+                      <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" sx={{ color: textCol }}>
+                          {new Date(a.publishedAt).toLocaleDateString()}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: textCol, ml: 1, whiteSpace: 'nowrap' }}>
+                          {a.source}
                         </Typography>
                       </Box>
                     </CardContent>
-                        </>
-                      );
-                    })()}
                   </Card>
                 </Grid>
               ))}
-              {!articles.length && (
-                <Grid item xs={12}>
-                  <Box sx={{ border: `1px solid ${line}`, borderRadius: '8px', p: 3, color: textCol }}>
-                    No news matched this view. Try another search term, region, or category.
-                  </Box>
-                </Grid>
-              )}
             </Grid>
           )}
         </Box>

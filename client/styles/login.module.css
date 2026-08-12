@@ -1,0 +1,87 @@
+.loginModal {
+    background-color: rgb(69, 69, 69);
+    min-height: 50vh;
+    width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    border-radius: 0.5rem;
+}
+
+.loginHeader {
+    font-size: 7rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: left;
+    color: white;
+}
+
+.loginSubheader {
+    color: white;
+    text-align: left;
+}
+
+.inputRow {
+    margin-bottom: 1rem;
+}
+
+.inputFull {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(173, 173, 173);
+    background-color: rgb(173, 173, 173);
+}
+
+.inputFull::placeholder {
+    color: black;
+    font-weight: 500;
+}
+
+.buttonRow {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.buttonSubmit {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    width: 100%;
+    border: none;
+    font-weight: 500;
+    flex: 1;
+}
+
+.buttonOutline {
+    background-color: white;
+    color: black;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    flex: 1;
+}
+
+.loginLink {
+    text-align: center;
+    margin: 1rem 0;
+    color: rgb(46, 46, 250);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.buttonRowTwo {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.inputTwo {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    gap: 1rem;
+}

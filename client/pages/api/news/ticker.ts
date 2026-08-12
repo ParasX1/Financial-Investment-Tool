@@ -1,32 +1,57 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import {
-  firstQueryValue,
-  handleMarketNewsRoute,
-  readNewsPageSize,
-} from "@/lib/news/newsApiRoute";
-import type { ServerNewsResponse } from "@/lib/news/types";
+import type { NextApiRequest, NextApiResponse } from 'next'
+import type { Article } from '@/services/news'
+
+const NAME_BY_SYMBOL: Record<string, string> = {
+  AAPL: 'Apple Inc.',
+  MSFT: 'Microsoft',
+  AMZN: 'Amazon',
+  GOOGL: 'Alphabet',
+  GOOG: 'Alphabet',
+  NVDA: 'NVIDIA',
+  META: 'Meta Platforms',
+  TSLA: 'Tesla',
+}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ServerNewsResponse | { error: string }>,
+  res: NextApiResponse<{ articles?: Article[]; error?: string }>
 ) {
-  return handleMarketNewsRoute(req, res, {
-    buildRequest: (req) => {
-      const ticker = firstQueryValue(req.query.ticker)?.trim() || "";
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_NEWSAPI_KEY!
+    const ticker = Array.isArray(req.query.ticker) ? req.query.ticker[0] : (req.query.ticker || '')
+    const pageSize = Array.isArray(req.query.pageSize) ? req.query.pageSize[0] : (req.query.pageSize || '10')
 
-      return {
-        context:
-          firstQueryValue(req.query.context)?.trim() ||
-          `${ticker} company stock market news`,
-        kind: "ticker",
-        marketScopeId: firstQueryValue(req.query.marketScopeId),
-        pageSize: readNewsPageSize(req),
-        ticker,
-        topicId: firstQueryValue(req.query.topicId),
-      };
-    },
-    errorLogLabel: "Market news ticker error",
-    validate: (request) =>
-      request.ticker?.trim() ? null : "ticker is required",
-  });
+    if (!ticker) return res.status(400).json({ error: 'ticker is required' })
+
+    const sym = String(ticker).toUpperCase()
+    const name = NAME_BY_SYMBOL[sym]
+    const q = name ? `${sym} OR "${name}"` : sym
+
+    const url = new URL('https://newsapi.org/v2/everything')
+    url.searchParams.set('q', q)
+    url.searchParams.set('language', 'en')
+    url.searchParams.set('sortBy', 'publishedAt')
+    url.searchParams.set('pageSize', String(pageSize))
+
+    const r = await fetch(url.toString(), {
+      headers: { 'X-Api-Key': apiKey },
+    })
+    if (!r.ok) throw new Error(`NewsAPI ${r.status}`)
+
+    const data = await r.json()
+    const articles: Article[] = (data.articles || []).map((a: any) => ({
+      id: a.url,
+      title: a.title,
+      summary: a.description || '',
+      url: a.url,
+      image: a.urlToImage || null,
+      publishedAt: a.publishedAt,
+      source: a.source?.name || 'Unknown',
+    }))
+
+    res.status(200).json({ articles })
+  } catch (e: any) {
+    console.error(e)
+    res.status(500).json({ error: e.message || 'Internal error' })
+  }
 }
