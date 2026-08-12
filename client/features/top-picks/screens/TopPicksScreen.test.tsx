@@ -198,7 +198,9 @@ describe("TopPicksScreen", () => {
     );
     toolbar?.props.onExport?.();
 
-    expect(blobParts[0][0]).toContain('"Rank","Symbol","Company","1Y Return"');
+    expect(blobParts[0][0]).toContain(
+      '"Rank","Symbol","Company","Cumulative return"',
+    );
     expect(blobParts[0][0]).toContain('"26","AAA","ACME ""Alpha""","+12.3%"');
     expect(anchor).toMatchObject({
       href: "blob:top-picks",

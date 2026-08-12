@@ -145,7 +145,9 @@ export const PortfolioScreen = () => {
         <PortfolioObservation
           cards={workspace.cards}
           symbols={workspace.symbols}
+          draftSymbolCount={draftSymbols.length}
           globalInputs={workspace.globalInputs}
+          hasPendingDraft={pending}
           layout={workspace.observerLayout}
           today={today}
           onDone={actions.showBoard}

@@ -31,6 +31,19 @@ export function TopPicksToolbar({
   onRetry,
 }: TopPicksToolbarProps) {
   const assumptionSummary = formatTopPicksAssumptions(metadata);
+  const showingStaleSnapshot =
+    metadata.cacheStatus === "stale" || metadata.snapshotRefreshing === true;
+  const statusText = loading
+    ? showingStaleSnapshot && total > 0
+      ? `${total} results - using previous results`
+      : "Loading..."
+    : error
+      ? `Error: ${error}`
+      : total === 0
+        ? "No results"
+        : showingStaleSnapshot
+          ? `${total} results - using previous results`
+          : `${total} results - Showing page ${page} of ${totalPages}`;
 
   return (
     <>
@@ -70,13 +83,7 @@ export function TopPicksToolbar({
           role={error ? "alert" : "status"}
           sx={{ color: "var(--fit-color-text-muted, #8f98aa)" }}
         >
-          {loading
-            ? "Loading…"
-            : error
-              ? `Error: ${error}`
-              : total === 0
-                ? "No results"
-                : `${total} results • Showing page ${page} of ${totalPages}`}
+          {statusText}
         </Typography>
         {assumptionSummary ? (
           <Typography

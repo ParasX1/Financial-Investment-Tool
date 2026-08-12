@@ -43,7 +43,9 @@ describe("TopPicksColumnsDialog", () => {
     const labels = elements.filter(
       (element) => element.type === FormControlLabel,
     );
-    const returnLabel = labels.find((element) => element.props.label === "1Y Return");
+    const returnLabel = labels.find(
+      (element) => element.props.label === "Cumulative return",
+    );
     const companyLabel = labels.find((element) => element.props.label === "Company");
     const returnCheckbox = collectElements(returnLabel?.props.control).find(
       (element) => element.type === Checkbox,

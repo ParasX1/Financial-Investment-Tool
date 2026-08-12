@@ -62,7 +62,9 @@ describe("watchlist Supabase migration contract", () => {
 
   it("reconciles normalized duplicates and position gaps before constraints", () => {
     const cleanupIndex = migration.indexOf("delete from public.user_watchlist");
-    const normalizeIndex = migration.indexOf("set\n  symbol = upper(btrim(symbol))");
+    const normalizeIndex = migration.search(
+      /set\s+symbol = upper\(btrim\(symbol\)\)/,
+    );
     const constraintIndex = migration.indexOf("user_watchlist_symbol_check");
 
     expect(migration).toContain("row_number() over");

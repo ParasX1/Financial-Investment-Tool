@@ -35,22 +35,30 @@ describe("topPicksColumns", () => {
     );
 
     expect(byKey.ret1y).toMatchObject({
+      label: "Cumulative return",
       unit: "percent",
       description:
-        "1Y cumulative return; unavailable when the full sample is not available.",
+        "Trailing 1Y cumulative return used for Top Picks ranking; unavailable when the full sample is not available.",
     });
+    expect(byKey.sharpe.label).toBe("Sharpe ratio");
     expect(byKey.sharpe.description).toContain("configured risk-free rate");
+    expect(byKey.sortino.label).toBe("Sortino ratio");
     expect(byKey.sortino.description).toContain("downside deviation");
     expect(byKey.volatility).toMatchObject({
+      label: "Annualised volatility",
       unit: "percent",
       description: "Annualized volatility.",
     });
+    expect(byKey.maxDD.label).toBe("Max drawdown");
     expect(byKey.maxDD.description).toContain("Peak-to-trough");
+    expect(byKey.beta.label).toBe("Beta exposure");
     expect(byKey.beta.description).toContain("configured benchmark");
     expect(byKey.alpha).toMatchObject({
+      label: "Alpha vs benchmark",
       unit: "percent",
       description: "Annualized alpha versus the configured benchmark.",
     });
+    expect(byKey.infoRatio.label).toBe("Information ratio");
     expect(byKey.infoRatio.description).toBe(
       "Information Ratio = annualized active return / tracking error.",
     );

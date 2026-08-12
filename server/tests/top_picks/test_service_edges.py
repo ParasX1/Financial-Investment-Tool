@@ -25,7 +25,7 @@ def test_empty_universe_returns_safe_empty_page_without_market_calls():
 
     response = service.get_page(TopPicksRequest(1, 25, "sharpe", "desc"))
 
-    repository.list_tickers.assert_called_once_with(50)
+    repository.list_tickers.assert_called_once_with(1000)
     calculator_provider.assert_not_called()
     market_data_provider.assert_not_called()
     assert response["data"] == {"rows": [], "total": 0}
@@ -76,6 +76,12 @@ def test_injected_benchmark_and_rate_reach_market_calculations():
     ]
     assert information_calls[0][2] == "SPY"
     calls_by_name = {name: args for name, args, _ in calls}
+    assert calls_by_name["calculate_cumulative_return"][0] == [
+        "BHP.AX",
+        "SPY",
+    ]
+    assert calls_by_name["calculate_drawdown"][0] == ["BHP.AX", "SPY"]
+    assert calls_by_name["calculate_volatility"][0] == ["BHP.AX", "SPY"]
     assert calls_by_name["calculate_beta"][1] == "SPY"
     assert calls_by_name["calculate_alpha"][1] == "SPY"
     assert calls_by_name["calculate_alpha"][-1] == 0.025

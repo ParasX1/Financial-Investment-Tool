@@ -41,6 +41,7 @@ client/test-results/
 client/.idea
 
 server/.env
+server/.cache/
 
 # macOS
 .DS_Store

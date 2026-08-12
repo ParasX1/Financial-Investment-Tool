@@ -44,6 +44,9 @@ describe("fetchTopPicks", () => {
             riskFreeRateAsOf: "2026-06-17",
             universeCount: 50,
             availableCount: 47,
+            cacheStatus: "stale",
+            cacheTtlSeconds: 600,
+            snapshotRefreshing: true,
             assumptions: {
               window: "trailing_one_year",
               ignored: "not retained",
@@ -95,6 +98,9 @@ describe("fetchTopPicks", () => {
       riskFreeRateAsOf: "2026-06-17",
       universeCount: 50,
       availableCount: 47,
+      cacheStatus: "stale",
+      cacheTtlSeconds: 600,
+      snapshotRefreshing: true,
       window: "trailing_one_year",
     });
     expect(response.warnings).toEqual(["Sortino unavailable for AAPL."]);

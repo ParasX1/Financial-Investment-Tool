@@ -32,7 +32,9 @@ const hasEqualGeometry = (
 export const PortfolioObservation = ({
   cards,
   symbols,
+  draftSymbolCount,
   globalInputs,
+  hasPendingDraft,
   layout,
   today,
   onDone,
@@ -49,7 +51,9 @@ export const PortfolioObservation = ({
 }: {
   cards: PortfolioMetricCard[];
   symbols: string[];
+  draftSymbolCount: number;
   globalInputs: PortfolioAnalysisInputs;
+  hasPendingDraft: boolean;
   layout: PortfolioObserverLayout;
   today: string;
   onDone: () => void;
@@ -269,7 +273,9 @@ export const PortfolioObservation = ({
                 <MetricCard
                   card={card}
                   symbols={symbols}
+                  draftSymbolCount={draftSymbolCount}
                   globalInputs={globalInputs}
+                  hasPendingDraft={hasPendingDraft}
                   today={today}
                   variant="observer"
                   cardCount={cards.length}

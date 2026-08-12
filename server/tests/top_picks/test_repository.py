@@ -11,9 +11,14 @@ class FakeTickerQuery:
         self.selected = None
         self.ordered_by = None
         self.limit_value = None
+        self.filters = []
 
     def select(self, columns):
         self.selected = columns
+        return self
+
+    def eq(self, column, value):
+        self.filters.append((column, value))
         return self
 
     def order(self, column):
@@ -29,16 +34,22 @@ class FakeTickerQuery:
 
 
 class FakeSupabaseClient:
-    def __init__(self, rows):
-        self.query = FakeTickerQuery(rows)
+    def __init__(self, rows, missing_tables=()):
+        self.rows = rows
+        self.missing_tables = set(missing_tables)
+        self.queries = {}
         self.table_name = None
 
     def table(self, name):
         self.table_name = name
-        return self.query
+        if name in self.missing_tables:
+            raise RuntimeError("missing table")
+        query = FakeTickerQuery(self.rows)
+        self.queries[name] = query
+        return query
 
 
-def test_repository_reads_a_capped_normalized_ticker_universe():
+def test_repository_reads_the_standard_top_picks_universe():
     client = FakeSupabaseClient([
         {"symbol": " aapl ", "name": "Apple", "industry": "Tech"},
         {"symbol": "AAPL", "name": "Duplicate", "industry": "Tech"},
@@ -49,13 +60,29 @@ def test_repository_reads_a_capped_normalized_ticker_universe():
 
     tickers = SupabaseTickerRepository(client).list_tickers()
 
-    assert client.table_name == "tickers"
-    assert client.query.selected == "symbol,name,industry"
-    assert client.query.ordered_by == "symbol"
-    assert client.query.limit_value == MAX_TICKER_UNIVERSE
+    query = client.queries["top_picks_universe"]
+    assert client.table_name == "top_picks_universe"
+    assert query.selected == "symbol,name,industry"
+    assert query.ordered_by == "symbol"
+    assert query.limit_value == MAX_TICKER_UNIVERSE
+    assert query.filters == [("active", True)]
     assert tickers == (
         Ticker(symbol="AAPL", name="Apple", industry="Tech"),
         Ticker(symbol="MSFT", name="MSFT", industry="Unknown"),
+    )
+
+
+def test_repository_falls_back_to_legacy_tickers_before_migration():
+    client = FakeSupabaseClient(
+        [{"symbol": "BHP.AX", "name": "BHP", "industry": "Materials"}],
+        missing_tables=("top_picks_universe",),
+    )
+
+    tickers = SupabaseTickerRepository(client).list_tickers()
+
+    assert client.table_name == "tickers"
+    assert tickers == (
+        Ticker(symbol="BHP.AX", name="BHP", industry="Materials"),
     )
 
 

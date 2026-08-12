@@ -26,8 +26,8 @@ describe("Supabase schema health protections", () => {
     ).toLowerCase();
 
     expect(migration.match(/\(select auth\.uid\(\)\) = id/g)).toHaveLength(3);
-    expect(migration).toContain("for insert\n  to authenticated");
-    expect(migration).toContain("for update\n  to authenticated");
+    expect(migration).toMatch(/for insert\s+to authenticated/);
+    expect(migration).toMatch(/for update\s+to authenticated/);
   });
 
   it("indexes Community foreign keys used by joins and cascading deletes", () => {

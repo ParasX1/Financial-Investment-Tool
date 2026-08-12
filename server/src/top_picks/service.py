@@ -1,5 +1,12 @@
+from copy import deepcopy
 from datetime import date, datetime, timezone
+import json
+import logging
 import math
+import os
+import time
+from threading import RLock, Thread
+from time import monotonic
 
 from ..market_primitives import TICKER_PATTERN
 from .analytics import (
@@ -14,7 +21,9 @@ DEFAULT_BENCHMARK_TICKER = "^AXJO"
 DEFAULT_RISK_FREE_RATE = 0.0435
 DEFAULT_RISK_FREE_RATE_SOURCE = "RBA cash rate target"
 DEFAULT_RISK_FREE_RATE_AS_OF = "2026-06-17"
-DEFAULT_UNIVERSE_LIMIT = 50
+DEFAULT_UNIVERSE_LIMIT = 1000
+DEFAULT_CACHE_TTL_SECONDS = 600
+DEFAULT_STALE_CACHE_TTL_SECONDS = 86_400
 MIN_TRAILING_RETURN_OBSERVATIONS = 200
 METRIC_KEYS = (
     "ret1y",
@@ -36,10 +45,152 @@ METRIC_UNITS = {
     "alpha": "decimal_annualized",
     "infoRatio": "ratio",
 }
+LOGGER = logging.getLogger(__name__)
 
 
 class TopPicksConfigurationError(ValueError):
     pass
+
+
+class TopPicksSnapshotCache:
+    def __init__(
+        self,
+        clock=monotonic,
+        persistence_path=None,
+        stale_ttl_seconds=DEFAULT_STALE_CACHE_TTL_SECONDS,
+    ):
+        self._clock = clock
+        self._entries = {}
+        self._lock = RLock()
+        self._persistence_path = persistence_path
+        self._stale_ttl_seconds = stale_ttl_seconds
+        self._load_persisted_entries()
+
+    def get(self, key):
+        now = self._clock()
+        with self._lock:
+            entry = self._entries.get(key)
+            if entry is None:
+                return None, "miss"
+            if entry["stale_expires_at"] <= now:
+                self._entries.pop(key, None)
+                return None, "miss"
+            if entry["expires_at"] <= now:
+                return deepcopy(entry["value"]), "stale"
+            return deepcopy(entry["value"]), "hit"
+
+    def set(
+        self,
+        key,
+        value,
+        ttl_seconds,
+        stale_ttl_seconds=None,
+    ):
+        if ttl_seconds <= 0:
+            return
+        now = self._clock()
+        resolved_stale_ttl = (
+            self._stale_ttl_seconds
+            if stale_ttl_seconds is None
+            else stale_ttl_seconds
+        )
+        stale_ttl = max(ttl_seconds, resolved_stale_ttl)
+        with self._lock:
+            self._entries[key] = {
+                "expires_at": now + ttl_seconds,
+                "stale_expires_at": now + stale_ttl,
+                "stale_expires_at_wall_time": time.time() + stale_ttl,
+                "value": deepcopy(value),
+            }
+            self._persist_entries()
+
+    def clear(self):
+        with self._lock:
+            self._entries.clear()
+            self._persist_entries()
+
+    @staticmethod
+    def _serialize_key(key):
+        return json.dumps(list(key), separators=(",", ":"))
+
+    @staticmethod
+    def _deserialize_key(value):
+        decoded = json.loads(value)
+        return tuple(decoded) if isinstance(decoded, list) else None
+
+    def _load_persisted_entries(self):
+        if not self._persistence_path or not os.path.exists(
+            self._persistence_path
+        ):
+            return
+
+        try:
+            with open(self._persistence_path, encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except (OSError, ValueError, TypeError):
+            return
+
+        persisted_entries = payload.get("entries")
+        if not isinstance(persisted_entries, dict):
+            return
+
+        now = self._clock()
+        wall_time_now = time.time()
+        with self._lock:
+            for raw_key, entry in persisted_entries.items():
+                if not isinstance(entry, dict) or "value" not in entry:
+                    continue
+                stale_expires_at_wall_time = entry.get(
+                    "stale_expires_at_wall_time"
+                )
+                if not isinstance(stale_expires_at_wall_time, (int, float)):
+                    stale_expires_at_wall_time = (
+                        wall_time_now + self._stale_ttl_seconds
+                    )
+                remaining_stale_seconds = (
+                    stale_expires_at_wall_time - wall_time_now
+                )
+                if remaining_stale_seconds <= 0:
+                    continue
+                try:
+                    key = self._deserialize_key(raw_key)
+                except (TypeError, ValueError):
+                    continue
+                if key is None:
+                    continue
+                # Persisted snapshots are intentionally loaded as stale so the
+                # user sees the last complete ranking immediately while a fresh
+                # build starts in the background.
+                self._entries[key] = {
+                    "expires_at": now - 1,
+                    "stale_expires_at": now + remaining_stale_seconds,
+                    "stale_expires_at_wall_time": stale_expires_at_wall_time,
+                    "value": entry["value"],
+                }
+
+    def _persist_entries(self):
+        if not self._persistence_path:
+            return
+
+        directory = os.path.dirname(self._persistence_path)
+        try:
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            payload = {
+                "entries": {
+                    self._serialize_key(key): {
+                        "stale_expires_at_wall_time": entry.get(
+                            "stale_expires_at_wall_time"
+                        ),
+                        "value": entry["value"],
+                    }
+                    for key, entry in self._entries.items()
+                }
+            }
+            with open(self._persistence_path, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle, separators=(",", ":"))
+        except OSError:
+            return
 
 
 def _finite_float(value):
@@ -158,6 +309,20 @@ def _normalize_universe_limit(value):
     return value
 
 
+def _normalize_cache_ttl(value):
+    if isinstance(value, str) and value.strip().isdecimal():
+        value = int(value.strip())
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= 86_400
+    ):
+        raise TopPicksConfigurationError(
+            "Top Picks cache TTL is invalid."
+        )
+    return value
+
+
 def _normalize_source(value):
     if not isinstance(value, str) or not value.strip():
         raise TopPicksConfigurationError(
@@ -209,6 +374,8 @@ class TopPicksService:
         risk_free_rate_source=DEFAULT_RISK_FREE_RATE_SOURCE,
         risk_free_rate_as_of=DEFAULT_RISK_FREE_RATE_AS_OF,
         universe_limit=DEFAULT_UNIVERSE_LIMIT,
+        cache_ttl_seconds=DEFAULT_CACHE_TTL_SECONDS,
+        snapshot_cache=None,
         today_provider=date.today,
     ):
         self._ticker_repository = ticker_repository
@@ -228,15 +395,118 @@ class TopPicksService:
         self._risk_free_rate_source = normalized_source
         self._risk_free_rate_as_of = normalized_as_of
         self._universe_limit = _normalize_universe_limit(universe_limit)
+        self._cache_ttl_seconds = _normalize_cache_ttl(cache_ttl_seconds)
+        self._snapshot_cache = (
+            TopPicksSnapshotCache()
+            if snapshot_cache is None
+            else snapshot_cache
+        )
         self._today_provider = today_provider
+        self._refreshing_cache_keys = set()
+        self._refresh_lock = RLock()
 
     def get_page(self, top_picks_request):
-        tickers = self._ticker_repository.list_tickers(
-            self._universe_limit
+        snapshot, cache_status, refreshing = self._get_snapshot()
+        ordered_rows = sort_top_pick_rows(
+            snapshot["rows"],
+            top_picks_request.sort_key,
+            top_picks_request.sort_dir,
         )
+        offset = (
+            top_picks_request.page - 1
+        ) * top_picks_request.page_size
+        paginated_rows = ordered_rows[
+            offset:offset + top_picks_request.page_size
+        ]
+        metadata = {
+            **snapshot["metadata"],
+            "cacheStatus": cache_status,
+            "cacheTtlSeconds": self._cache_ttl_seconds,
+            "page": top_picks_request.page,
+            "pageSize": top_picks_request.page_size,
+            "sortKey": top_picks_request.sort_key,
+            "sortDir": top_picks_request.sort_dir,
+            "snapshotRefreshing": refreshing,
+        }
+        return {
+            "data": {
+                "rows": paginated_rows,
+                "total": len(ordered_rows),
+            },
+            "metadata": metadata,
+            "warnings": snapshot["warnings"],
+        }
+
+    def _get_snapshot(self):
         today = self._today_provider()
         start_date = _one_year_before(today).isoformat()
         end_date = today.isoformat()
+        cache_key = self._snapshot_cache_key(
+            start_date,
+            end_date,
+        )
+        cached, cache_status = self._snapshot_cache.get(cache_key)
+        if cached is not None:
+            refreshing = cache_status == "stale"
+            if refreshing:
+                self._refresh_snapshot_in_background(
+                    cache_key,
+                    start_date,
+                    end_date,
+                )
+            return cached, cache_status, refreshing
+
+        snapshot = self._build_snapshot(start_date, end_date)
+        self._snapshot_cache.set(
+            cache_key,
+            snapshot,
+            self._cache_ttl_seconds,
+        )
+        return deepcopy(snapshot), "miss", False
+
+    def _refresh_snapshot_in_background(self, cache_key, start_date, end_date):
+        with self._refresh_lock:
+            if cache_key in self._refreshing_cache_keys:
+                return
+            self._refreshing_cache_keys.add(cache_key)
+
+        def refresh():
+            try:
+                snapshot = self._build_snapshot(start_date, end_date)
+                self._snapshot_cache.set(
+                    cache_key,
+                    snapshot,
+                    self._cache_ttl_seconds,
+                )
+            except Exception:
+                LOGGER.warning(
+                    "Top Picks background snapshot refresh failed.",
+                    exc_info=True,
+                )
+            finally:
+                with self._refresh_lock:
+                    self._refreshing_cache_keys.discard(cache_key)
+
+        Thread(target=refresh, daemon=True).start()
+
+    def _snapshot_cache_key(
+        self,
+        start_date,
+        end_date,
+    ):
+        return (
+            "top-picks-snapshot",
+            self._benchmark_ticker,
+            self._risk_free_rate,
+            self._universe_limit,
+            start_date,
+            end_date,
+        )
+
+    def _build_snapshot(self, start_date, end_date):
+        tickers = self._ticker_repository.list_tickers(
+            self._universe_limit
+        )
 
         if tickers:
             try:
@@ -269,24 +539,9 @@ class TopPicksService:
             )
             for ticker in tickers
         ]
-        ordered_rows = sort_top_pick_rows(
-            rows,
-            top_picks_request.sort_key,
-            top_picks_request.sort_dir,
-        )
-        offset = (
-            top_picks_request.page - 1
-        ) * top_picks_request.page_size
-        paginated_rows = ordered_rows[
-            offset:offset + top_picks_request.page_size
-        ]
         return {
-            "data": {
-                "rows": paginated_rows,
-                "total": len(ordered_rows),
-            },
-            "metadata": self._build_metadata(
-                top_picks_request,
+            "rows": rows,
+            "metadata": self._build_snapshot_metadata(
                 start_date,
                 end_date,
                 rows,
@@ -299,6 +554,9 @@ class TopPicksService:
         requested_market_symbols = list(symbols)
         if self._benchmark_ticker not in requested_market_symbols:
             requested_market_symbols.append(self._benchmark_ticker)
+        # Use one universe for Top Picks calculations so the expensive market
+        # data fetch can be reused by the underlying stock-data cache.
+        metric_symbols = requested_market_symbols
         market_data = self._market_data_provider(
             requested_market_symbols,
             start_date,
@@ -311,14 +569,14 @@ class TopPicksService:
 
         cumulative = self._calculator_provider(
             "calculate_cumulative_return"
-        )(symbols, start_date, end_date)
+        )(metric_symbols, start_date, end_date)
         drawdown = self._calculator_provider("calculate_drawdown")(
-            symbols,
+            metric_symbols,
             start_date,
             end_date,
         )
         sortino = self._calculator_provider("calculate_sortino_ratio")(
-            symbols,
+            metric_symbols,
             start_date,
             end_date,
             self._risk_free_rate,
@@ -335,14 +593,14 @@ class TopPicksService:
             },
             "sharpe": self._calculator_provider(
                 "calculate_sharpe_ratio"
-            )(symbols, start_date, end_date, self._risk_free_rate),
+            )(metric_symbols, start_date, end_date, self._risk_free_rate),
             "sortino": {
                 symbol: _sortino_value(value)
                 for symbol, value in sortino.items()
             },
             "volatility": self._calculator_provider(
                 "calculate_volatility"
-            )(symbols, start_date, end_date),
+            )(metric_symbols, start_date, end_date),
             "maxDD": {
                 symbol: _minimum_value(series)
                 for symbol, series in drawdown.items()
@@ -438,9 +696,8 @@ class TopPicksService:
             warnings.append("No ticker universe is available.")
         return warnings
 
-    def _build_metadata(
+    def _build_snapshot_metadata(
         self,
-        request,
         start_date,
         end_date,
         rows,
@@ -470,10 +727,6 @@ class TopPicksService:
                 row["symbol"]: int(observations.get(row["symbol"], 0))
                 for row in rows
             },
-            "page": request.page,
-            "pageSize": request.page_size,
-            "sortKey": request.sort_key,
-            "sortDir": request.sort_dir,
             "units": dict(METRIC_UNITS),
             "assumptions": {
                 "benchmark": self._benchmark_ticker,

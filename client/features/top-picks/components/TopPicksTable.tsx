@@ -59,7 +59,7 @@ export function TopPicksTable({
   const visibleColumns = TOP_PICKS_COLUMNS.filter((column) =>
     visibleKeys.includes(column.key),
   );
-  const stateMessage = loading
+  const stateMessage = loading && rows.length === 0
     ? "Loading Top Picks…"
     : error
       ? "Top Picks could not be loaded."

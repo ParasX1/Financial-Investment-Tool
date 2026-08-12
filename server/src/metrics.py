@@ -103,24 +103,25 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
         if cached and now - cached["created_at"] < STOCK_DATA_CACHE_TTL_SECONDS:
             return cached["data"].copy(deep=True)
 
-        stock_data = download_stock_data(stock_tickers, start_date, end_date)
-        missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
-        retry_frames = []
+    stock_data = download_stock_data(stock_tickers, start_date, end_date)
+    missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
+    retry_frames = []
 
-        for ticker in missing_tickers:
-            retry_frame = download_stock_data([ticker], start_date, end_date)
-            if not retry_frame.empty:
-                retry_frames.append(retry_frame)
+    for ticker in missing_tickers:
+        retry_frame = download_stock_data([ticker], start_date, end_date)
+        if not retry_frame.empty:
+            retry_frames.append(retry_frame)
 
-        if retry_frames:
-            stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+    if retry_frames:
+        stock_data = merge_stock_data_frames([stock_data, *retry_frames])
 
+    with _stock_data_lock:
         _stock_data_cache[cache_key] = {
             "created_at": monotonic(),
             "data": stock_data.copy(deep=True),
         }
 
-        return stock_data
+    return stock_data
 
 
 def select_available_prices(adj_close, requested_tickers):

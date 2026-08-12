@@ -110,9 +110,12 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
   });
 
   it("associates Portfolio inputs and exposes the accessible data alternative", () => {
-    const controls = readClientSource(
+    const controls = [
       "features/portfolio/components/PortfolioCommandBar.tsx",
-    );
+      "features/portfolio/components/PortfolioSymbolInput.tsx",
+    ]
+      .map(readClientSource)
+      .join("\n");
     const table = readClientSource(
       "features/portfolio/components/PortfolioDataTable.tsx",
     );

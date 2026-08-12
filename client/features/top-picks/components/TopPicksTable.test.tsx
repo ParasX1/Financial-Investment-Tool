@@ -38,7 +38,7 @@ describe("TopPicksTable", () => {
     expect(markup).toContain("BOUNDLESS");
     expect(markup).toContain("Unbounded");
     expect(markup).toContain(
-      'aria-label="Sortino: Sortino ratio using downside deviation; Unbounded means no downside deviation."',
+      'aria-label="Sortino ratio: Sortino ratio using downside deviation; Unbounded means no downside deviation."',
     );
   });
 });

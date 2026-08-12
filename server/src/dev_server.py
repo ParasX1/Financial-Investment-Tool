@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from dotenv import load_dotenv
 
@@ -19,4 +20,9 @@ def load_local_environment(dotenv_path=None):
 def run_development_server(app_factory):
     load_local_environment()
     app = app_factory()
-    app.run(debug=True, port=8080)
+    app.run(
+        debug=True,
+        host=os.getenv("FLASK_RUN_HOST", "127.0.0.1"),
+        port=int(os.getenv("FLASK_RUN_PORT", "8080")),
+        threaded=True,
+    )
