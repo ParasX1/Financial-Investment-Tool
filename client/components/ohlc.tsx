@@ -1,31 +1,5 @@
 import * as d3 from "d3";
 import React, { useRef, useEffect } from 'react';
-import { getChartSeriesColor } from './chartColors';
-
-const GRID_COLOR = 'rgba(255,255,255,0.12)';
-const AXIS_COLOR = 'rgba(255,255,255,0.5)';
-const TEXT_COLOR = 'rgba(255,255,255,0.65)';
-const CHART_ANIMATION_MS = 500;
-
-const positionTooltip = (
-  event: MouseEvent,
-  tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>,
-  itemCount: number
-) => {
-  const tooltipWidth = 190;
-  const tooltipHeight = 46 + itemCount * 72;
-  const gap = 12;
-  const left = event.clientX + tooltipWidth + gap > window.innerWidth
-    ? event.clientX - tooltipWidth - gap
-    : event.clientX + gap;
-  const top = event.clientY + tooltipHeight + gap > window.innerHeight
-    ? event.clientY - tooltipHeight - gap
-    : event.clientY + gap;
-
-  tooltip
-    .style("left", `${left}px`)
-    .style("top", `${top}px`);
-};
 
 export interface OHLCData {
     date: string;
@@ -38,7 +12,7 @@ export interface OHLCData {
 interface OHLCChartProps {
   multiData: {
     ticker: string;
-    color?: string;
+    color: string;
     data: OHLCData[];
   }[];
   width?: number;
@@ -64,11 +38,11 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
     const parseDate = d3.timeParse("%Y-%m-%d");
     
     // Format data for each ticker and flatten
-    const formattedData = multiData.flatMap((d, index) => d.data.map(e => ({
+    const formattedData = multiData.flatMap(d => d.data.map(e => ({
       ...e,
       parsedDate: parseDate(e.date) as Date,
       ticker: d.ticker,
-      color: d.color || getChartSeriesColor(index)
+      color: d.color
     })));
 
     // Get unique dates and sort them
@@ -109,12 +83,11 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
     // Tooltip
     const tooltip = d3.select("body").append("div")
       .attr("class", "ohlc-tooltip")
-      .style("position", "fixed")
-      .style("padding", "10px")
-      .style("background", "#1b1b20")
+      .style("position", "absolute")
+      .style("padding", "8px")
+      .style("background", "#333")
       .style("color", "#fff")
-      .style("border", "1px solid rgba(255,255,255,0.14)")
-      .style("border-radius", "8px")
+      .style("border-radius", "4px")
       .style("font-size", "12px")
       .style("pointer-events", "none")
       .style("opacity", 0)
@@ -126,8 +99,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr("class", "grid")
         .call(d3.axisLeft(yScale).tickSize(-graphWidth).tickFormat(() => ''))
         .selectAll("line")
-        .attr("stroke", GRID_COLOR)
-        .attr("stroke-dasharray", "3 4");
+        .attr("stroke", "#444");
 
       g.append('g')
         .attr("class", "grid")
@@ -137,8 +109,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
           .tickSize(-graphHeight)
           .tickFormat(() => ''))
         .selectAll("line")
-        .attr("stroke", GRID_COLOR)
-        .attr("stroke-dasharray", "3 4");
+        .attr("stroke", "#444");
     }
 
     // Calculate bandwidth for each ticker when multiple tickers share the same date
@@ -146,7 +117,6 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
 
     // Draw OHLC for each ticker
     multiData.forEach(({ ticker, color, data }, tickerIndex) => {
-      const seriesColor = color || getChartSeriesColor(tickerIndex);
       const tickerFormattedData = data.map(d => ({
         ...d,
         parsedDate: parseDate(d.date) as Date,
@@ -163,16 +133,12 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .enter()
         .append("line")
         .attr("class", `ohlc-${tickerIndex}`)
-        .attr("stroke", seriesColor)
+        .attr("stroke", color)
         .attr("stroke-width", 2)
         .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("y1", d => yScale(d.low))
-        .attr("y2", d => yScale(d.high))
-        .attr("opacity", 0)
-        .transition()
-        .duration(CHART_ANIMATION_MS)
-        .attr("opacity", 1);
+        .attr("y2", d => yScale(d.high));
 
       // Open ticks
       tickerGroup.selectAll(`.open-${tickerIndex}`)
@@ -180,16 +146,12 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .enter()
         .append("line")
         .attr("class", `open-${tickerIndex}`)
-        .attr("stroke", seriesColor)
+        .attr("stroke", color)
         .attr("stroke-width", 2)
         .attr("x1", d => (xScale(d.date) || 0) + xOffset)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("y1", d => yScale(d.open))
-        .attr("y2", d => yScale(d.open))
-        .attr("opacity", 0)
-        .transition()
-        .duration(CHART_ANIMATION_MS)
-        .attr("opacity", 1);
+        .attr("y2", d => yScale(d.open));
 
       // Close ticks
       tickerGroup.selectAll(`.close-${tickerIndex}`)
@@ -197,16 +159,12 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .enter()
         .append("line")
         .attr("class", `close-${tickerIndex}`)
-        .attr("stroke", seriesColor)
+        .attr("stroke", color)
         .attr("stroke-width", 2)
         .attr("x1", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth / 2)
         .attr("x2", d => (xScale(d.date) || 0) + xOffset + tickerBandwidth)
         .attr("y1", d => yScale(d.close))
-        .attr("y2", d => yScale(d.close))
-        .attr("opacity", 0)
-        .transition()
-        .duration(CHART_ANIMATION_MS)
-        .attr("opacity", 1);
+        .attr("y2", d => yScale(d.close));
     });
 
     // Invisible bars for tooltip (cover full width for all tickers on that date)
@@ -222,9 +180,9 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .attr("fill", "transparent")
       .on("mouseover", function (event, date) {
         // Find data for this date across all tickers
-        const dateData = multiData.map(({ ticker, color, data }, index) => {
+        const dateData = multiData.map(({ ticker, color, data }) => {
           const dayData = data.find(d => d.date === date);
-          return dayData ? { ...dayData, ticker, color: color || getChartSeriesColor(index) } : null;
+          return dayData ? { ...dayData, ticker, color } : null;
         }).filter(Boolean);
 
         if (dateData.length === 0) return;
@@ -242,15 +200,13 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
 
         tooltip
           .html(tooltipContent)
-        positionTooltip(event, tooltip, dateData.length);
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 28) + "px");
       })
       .on("mousemove", function (event) {
-        const date = d3.select(this).datum() as string;
-        const dateData = multiData.map(({ ticker, color, data }, index) => {
-          const dayData = data.find(d => d.date === date);
-          return dayData ? { ...dayData, ticker, color: color || getChartSeriesColor(index) } : null;
-        }).filter(Boolean);
-        positionTooltip(event, tooltip, dateData.length);
+        tooltip
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 28) + "px");
       })
       .on("mouseout", function () {
         tooltip.transition().duration(500).style("opacity", 0);
@@ -263,10 +219,7 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
         .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
 
       legend.selectAll('.legend-item')
-        .data(multiData.map((series, index) => ({
-          ...series,
-          color: series.color || getChartSeriesColor(index),
-        })))
+        .data(multiData)
         .enter()
         .append('g')
         .attr('class', 'legend-item')
@@ -303,18 +256,17 @@ const OHLCChart: React.FC<OHLCChartProps> = ({
       .attr("dx", "-0.8em")
       .attr("dy", "0.15em")
       .attr("transform", "rotate(-45)")
-      .style("fill", TEXT_COLOR);
+      .style("fill", "white");
 
     // Y Axis (Left)
     g.append('g')
       .call(d3.axisLeft(yScale).ticks(6))
       .selectAll("text")
-      .style("fill", TEXT_COLOR);
+      .style("fill", "white");
 
     // Style axis lines/ticks
     g.selectAll('.domain, .tick line')
-      .style("stroke", AXIS_COLOR)
-      .style("stroke-dasharray", "3 4");
+      .style("stroke", "white");
 
     return () => {
       tooltip.remove(); // cleanup on unmount

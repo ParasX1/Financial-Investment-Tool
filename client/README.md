@@ -1,60 +1,40 @@
-# Frontend workspace
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-This directory contains the Next.js Pages Router application.
+## Getting Started
 
-For the full architecture, change-location matrix and contribution workflow, read the [English contributor guide](../CONTRIBUTING.md) or [中文贡献指南](../CONTRIBUTING.zh-CN.md).
-
-## Start
+First, run the development server:
 
 ```bash
-npm ci
-cp .env.example .env.local
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-On PowerShell use `Copy-Item .env.example .env.local`. The app opens at `http://127.0.0.1:3000`.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Portfolio metrics and Top Picks expect Flask at `http://127.0.0.1:8080` by default. Use `NEXT_PUBLIC_API_BASE` only when the backend runs elsewhere.
+You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
 
-## Source map
+[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
 
-| Path          | Purpose                                                       |
-| ------------- | ------------------------------------------------------------- |
-| `pages/`      | thin page entrypoints and server-side Next API handlers       |
-| `features/`   | product behavior grouped by business capability               |
-| `components/` | application-shell and cross-feature UI                        |
-| `lib/`        | neutral clients, providers, route builders and infrastructure |
-| `assets/`     | source-imported images                                        |
-| `public/`     | public-URL files                                              |
-| `styles/`     | global style and theme configuration                          |
-| `tests/`      | cross-feature contracts and Playwright journeys               |
-| `scripts/`    | maintenance scripts                                           |
+The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-Page files should import a feature's public `index.ts`. Product logic belongs in the owning feature, not in `pages/`.
+This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-## Checks
+## Learn More
 
-```bash
-npm test -- --runInBand
-npm run test:portfolio-top-picks:coverage
-npm run test:watchlist:coverage
-npx tsc --noEmit --pretty false
-npm run lint -- --no-cache
-npm run build
-npm run test:e2e
-```
+To learn more about Next.js, take a look at the following resources:
 
-Check formatting only for files changed by the current work:
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-```bash
-npx prettier --check <changed-file-1> <changed-file-2>
-```
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
-Use `npm run clean` to remove generated build, coverage and Playwright artifacts. It intentionally preserves `node_modules/`.
+## Deploy on Vercel
 
-## Environment safety
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- Any `NEXT_PUBLIC_` value is delivered to the browser.
-- Use only a Supabase publishable key in browser configuration.
-- Never expose a secret or service-role key.
-- News provider settings in `.env.example` are read by server-side Next API routes.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.

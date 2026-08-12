@@ -1,143 +1,89 @@
-import React, { useState, useRef, useEffect } from "react";
-import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
-// import BoltIcon from "@mui/icons-material/Bolt";
-import { useAuth } from "@/features/auth";
-import { AuthDialog, useAuthDialog } from "@/features/auth";
-import { FitLogo } from "@/components/shared/FitLogo";
-import { useRouter } from "next/navigation";
+import {
+	Button,
+	Link,
+	NavbarContent,
+	NavbarItem,
+	Navbar as Nb,
+	Spacer
+} from "@nextui-org/react"
+
+import React, { useEffect, useState, Fragment } from "react";
+import ModalLogin from "@/components/Modal/ModalLogin";
+import ModalSignUp from "@/components/Modal/ModalSignUp";
+import {useAuth} from "@/components/authContext";
 
 export interface NavbarElem {
     id: number
     label: string
-    href: string
+    href: string 
 }
 
 interface NavbarProps {
     items: NavbarElem[]
 }
 
-export function Navbar({ items }: NavbarProps) {
+  
+export function Navbar({ items } : NavbarProps) {
     const { user, loading, signOut } = useAuth()
-    const authDialog = useAuthDialog()
-    const router = useRouter()
+    const [showSignUp, setSignUp] = useState(false)
+    const [showLogIn, setShowLogIn] = useState(false)
 
-    const [visible, setVisible] = useState(true)
-    const lastScrollY = useRef(0)
+    const handleLoginShow = () => setShowLogIn(true)
+    const handleLoginClose = () => setShowLogIn(false)
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY
-            setVisible(currentScrollY < lastScrollY.current || currentScrollY < 64)
-            lastScrollY.current = currentScrollY
-        }
+    const handleSignUpShow = () => setSignUp(true)
+    const handleSignUpClose = () => setSignUp(false)
+    
+        return (
+        <Nb maxWidth="full" shouldHideOnScroll>
+        <NavbarContent className="hidden sm:flex gap-4" justify="center">
+            {items.map((child, idx) => {
+            return (
+                <React.Fragment key={child.href + idx}>
 
-        window.addEventListener('scroll', handleScroll, { passive: true })
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
+                <NavbarItem>
+                    <Link color="foreground" href={child.href}>
+                        {child.label}
+                    </Link>
+                </NavbarItem>
+                <Spacer x={6} />
+                </React.Fragment>
+            )
+            })}
+        </NavbarContent>
 
-    const handleNavClick = (href: string) => {
-        if (href.startsWith('#')) {
-            const el = document.getElementById(href.slice(1))
-            if (!el) return
 
-            const navbarHeight = 64
-            const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight
+        <NavbarContent justify="end">
+            {user ? (
+            <NavbarItem>
+                <Button className="bg-black text-white" variant="flat" onClick={() => signOut()}>
+                Log Out
 
-            window.scrollTo({ top, behavior: 'smooth' })
-        } else {
-            router.push(href)
-        }
-    }
-
-    return (
-        <>
-            <AppBar position="sticky" sx={{
-                background: 'rgba(18, 18, 18, 0.7)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-                transition: 'transform 0.3s ease',
-            }}>
-                <Toolbar sx={{ gap: 2 }}>
-                    <Box
-                        component="button"
-                        type="button"
-                        aria-label="Go to FIT home"
-                        sx={{
-                            alignItems: 'center',
-                            background: 'transparent',
-                            border: 0,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            p: 0,
-                        }}
-                        onClick={() => router.push('/')}
-                    >
-                        <FitLogo decorative size="medium" />
-                    </Box>
-
-                    {/* Nav links */}
-                    {items.map((item) => (
-                        <Typography
-                            key={item.id}
-                            sx={{ cursor: 'pointer' }}
-                            onClick={() => handleNavClick(item.href)}
-                        >
-                            {item.label}
-                        </Typography>
-                    ))}
-
-                    {/* Auth buttons */}
-                    <Box sx={{ marginLeft: 'auto', display: 'flex', gap: 2, alignItems: 'center' }}>
-                        {user ? (
-                            <>
-                                <Button
-                                    color="inherit"
-                                    // startIcon={<BoltIcon />}
-                                    sx={{ fontWeight: 'bold' }}
-                                    onClick={() => router.push('/Portfolio')}
-                                >
-                                    Dashboard
-                                </Button>
-                                <Button
-                                    color="inherit"
-                                    disabled={loading}
-                                    onClick={() => signOut()}
-                                >
-                                    Log Out
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button
-                                    color="inherit"
-                                    disabled={loading}
-                                    onClick={() => authDialog.openSignIn()}
-                                >
-                                    Sign In
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    disabled={loading}
-                                    onClick={() => authDialog.openSignUp()}
-                                    sx={{
-                                        background: 'var(--fit-color-brand-gradient)',
-                                        color: 'white',
-                                        fontWeight: 'bold',
-                                        '&:hover': { background: 'var(--fit-color-brand-gradient-hover)' },
-                                    }}
-                                >
-                                    Get FIT
-                                </Button>
-                            </>
-                        )}
-                    </Box>
-                </Toolbar>
-            </AppBar>
-
-            <AuthDialog {...authDialog.dialogProps} onHide={authDialog.close} />
-        </>
+                </Button>
+            </NavbarItem>
+            ) : (
+            <>
+                <NavbarItem>
+                <Button
+                    className="bg-white text-black border-1 border-black"
+                    variant="flat"
+                    onClick={handleLoginShow}
+                    isDisabled={loading}
+                >
+                    Log In
+                </Button>
+                <ModalLogin show={showLogIn} onHide={handleLoginClose} />
+                </NavbarItem>
+                <NavbarItem>
+                <Button className="bg-black text-white" variant="flat" onClick={handleSignUpShow} isDisabled={loading}>
+                    Sign Up
+                </Button>
+                <ModalSignUp show={showSignUp} onHide={handleSignUpClose} setLogin={setShowLogIn} />
+                </NavbarItem>
+            </>
+            )}
+        </NavbarContent>
+        </Nb>
     )
 }
 

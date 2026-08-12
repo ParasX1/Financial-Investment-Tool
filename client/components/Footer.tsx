@@ -2,11 +2,11 @@
 import React from 'react'
 import styles from "../styles/footer.module.css";
 
+import FITLogo from '../assets/SidebarIcons/F.png';
 import InstagramIcon from '../assets/footer/Instagram.png';
 import LinkedInIcon from '../assets/footer/LinkedIn.png';
 import TwitterIcon from '../assets/footer/Twitter.png';
 import YouTubeIcon from '../assets/footer/YouTube.png'
-import { FitLogo } from '@/components/shared/FitLogo';
 import Image from "next/image"
 
 function Footer(){
@@ -14,8 +14,15 @@ function Footer(){
         <div className={styles.main} >
             <div className={styles.column}>
                 <ul>
+                    {/* 2. Replace the "FIT" text with an <img> tag */}
                     <li>
-                        <FitLogo className={styles.fitLogo} size="medium" />
+                        <Image 
+                            src={FITLogo.src} 
+                            alt="FIT Logo" 
+                            className={styles.fitLogo}
+                            width={20}
+                            height={20}
+                        />
                     </li>
                     <li className={styles.socialRow}>
                         <a href="https://x.com" target="_blank" rel="noopener noreferrer">

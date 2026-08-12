@@ -1,82 +1,19 @@
 # Python virtual environment
 venv/
 server/venv/
-.venv/
-server/.venv/
-
-# Python cache / test output
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
 
 # Node.js dependencies
 /client/node_modules/
 node_modules/
 
-# IDE, editor, and local AI tooling
+# IDE and editor settings
 /client/.idea/
 /.idea/
-/.claude/
-/.agents/
-/.codex/
-/.mcp.json
 
 # Next.js build output
 /client/.next/
-/client/.swc/
-.next/
-out/
-.vercel/
-.turbo/
-coverage/
-client/playwright-report/
-client/test-results/
-/client/next-env.d.ts
-*.tsbuildinfo
 
 client/.idea
 
 server/.env
-server/.cache/
-
-# macOS
-.DS_Store
-**/.DS_Store
-client/assets/.DS_Store
-client/pages/.DS_Store
-# Local environment files
-client/.env.local
-client/.env.*.local
-.env.local
-.env.*.local
-
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-*.err
-*.out
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-client/.next-dev*.log
-client/current-dev*.log
-
-# Local generated backups
-supabase/migrations/backup.sql
-COMMUNITY_CHAT*_BACKUP_*.md
-what changed.md
-/TL26S1-Sprint*.pdf
-/docs/TL26S1-Sprint*.pdf
-/docs/codebase-structure-guide.zh-CN.md
-supabase/schema_snapshot_2026_05_08_new.sql
-supabase/.temp/
 
