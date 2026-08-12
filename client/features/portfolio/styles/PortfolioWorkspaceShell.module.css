@@ -250,6 +250,7 @@
   .boardSlot_4,
   .boardSlot_0 {
     grid-column: 1 / -1;
+    grid-row: auto; /*Unbind row for desktop layout*/
     min-height: 430px;
   }
 
@@ -284,6 +285,11 @@
   .boardSlot_0 {
     min-height: 330px;
     grid-column: auto;
+  }
+  .boardSlot_4{
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 330px;
   }
 
   .focusFilmstrip {

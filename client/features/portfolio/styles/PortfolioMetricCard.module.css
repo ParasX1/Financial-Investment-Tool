@@ -524,6 +524,27 @@
   .cardSettingsGrid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .cardHeader{
+    flex-wrap:wrap;
+  }
+
+  .cardHeaderSettings{
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    padding-left: 0;
+  }
+
+  .cardHeaderSettingsLabel{
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .cardHeaderSettings label{
+    flex: 1 1 130px;
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
