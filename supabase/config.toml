@@ -25,7 +25,7 @@ port = 54322
 shadow_port = 54320
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 15
+major_version = 17
 
 [db.pooler]
 enabled = false
@@ -85,8 +85,13 @@ enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
 site_url = "http://127.0.0.1:3000"
-# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# Local-only wildcard redirects let every app route return to its original page after auth.
+# Use exact production URLs in the hosted Supabase dashboard.
+additional_redirect_urls = [
+  "http://localhost:3000/**",
+  "http://127.0.0.1:3000/**",
+  "https://127.0.0.1:3000/**",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
