@@ -1,6 +1,10 @@
 import React from "react";
 import { Autocomplete, Chip, Popper, TextField } from "@mui/material";
 import type { PopperProps } from "@mui/material/Popper";
+import {
+  usePortfolioSymbolSearch,
+  type PortfolioSymbolSearchResult,
+} from "../hooks/usePortfolioSymbolSearch";
 import styles from "../styles/PortfolioCommandBar.module.css";
 
 const TICKER_PATTERN = /^[A-Z0-9^][A-Z0-9.^=-]{0,14}$/;
@@ -39,6 +43,11 @@ const SymbolOptionsPopper = (props: PopperProps) => (
   />
 );
 
+type SymbolOption = string | PortfolioSymbolSearchResult;
+
+const getOptionSymbol = (option: SymbolOption) =>
+  typeof option === "string" ? option : option.symbol;
+
 export const PortfolioSymbolInput = ({
   symbols,
   symbolOptions,
@@ -50,12 +59,18 @@ export const PortfolioSymbolInput = ({
 }) => {
   const [symbolInput, setSymbolInput] = React.useState("");
   const [symbolPickerOpen, setSymbolPickerOpen] = React.useState(false);
+  const symbolSearch = usePortfolioSymbolSearch(symbolInput);
+  const searchActive = Boolean(symbolInput.trim());
+  const options: SymbolOption[] = searchActive
+    ? symbolSearch.results
+    : symbolOptions;
 
-  const updateSymbols = (values: string[]) => {
-    if (hasInvalidPortfolioSymbols(values)) {
+  const updateSymbols = (values: SymbolOption[]) => {
+    const nextValues = values.map(getOptionSymbol);
+    if (hasInvalidPortfolioSymbols(nextValues)) {
       showTickerFormatWarning();
     }
-    onSymbolsChange(normalisePortfolioSymbols(values));
+    onSymbolsChange(normalisePortfolioSymbols(nextValues));
     setSymbolInput("");
     setSymbolPickerOpen(false);
   };
@@ -76,6 +91,16 @@ export const PortfolioSymbolInput = ({
     setSymbolPickerOpen(false);
   };
 
+  const commitExactSearchResult = (value: string) => {
+    const normalizedValue = value.trim().toUpperCase();
+    const exactResult = symbolSearch.results.find(
+      (result) => result.symbol === normalizedValue,
+    );
+    if (!exactResult) return false;
+    commitSymbolInput(exactResult.symbol, false);
+    return true;
+  };
+
   return (
     <div className={styles.symbolField}>
       <div className={styles.controlLabelRow}>
@@ -91,12 +116,25 @@ export const PortfolioSymbolInput = ({
         openOnFocus={false}
         filterSelectedOptions
         PopperComponent={SymbolOptionsPopper}
-        options={symbolOptions}
+        options={options}
+        filterOptions={(nextOptions) => nextOptions}
+        getOptionLabel={(option) => getOptionSymbol(option)}
+        isOptionEqualToValue={(option, value) =>
+          getOptionSymbol(option) === getOptionSymbol(value)
+        }
+        loading={symbolSearch.loading}
+        loadingText="Searching..."
+        noOptionsText={
+          symbolSearch.error ??
+          (symbolSearch.hasSearched
+            ? "No matching market symbol found"
+            : "Type to search")
+        }
         open={symbolPickerOpen}
         value={symbols}
         inputValue={symbolInput}
         onClose={() => setSymbolPickerOpen(false)}
-        onChange={(_, next) => updateSymbols(next.map(String))}
+        onChange={(_, next) => updateSymbols(next as SymbolOption[])}
         onInputChange={(_, next, reason) => {
           if (reason === "reset") return;
           const value = next.toUpperCase();
@@ -134,26 +172,56 @@ export const PortfolioSymbolInput = ({
           },
         }}
         renderTags={(value, getTagProps) =>
-          value.map((symbol, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={symbol}
-              label={symbol}
-              size="small"
-              className={styles.symbolChip}
-            />
-          ))
+          value.map((option, index) => {
+            const symbol = getOptionSymbol(option);
+            return (
+              <Chip
+                {...getTagProps({ index })}
+                key={symbol}
+                label={symbol}
+                size="small"
+                className={styles.symbolChip}
+              />
+            );
+          })
         }
+        renderOption={(props, option) => {
+          const symbol = getOptionSymbol(option);
+          const detail =
+            typeof option === "string"
+              ? null
+              : `${option.exchange ?? option.quoteType} - ${option.name}`;
+          return (
+            <li {...props} key={symbol}>
+              <span style={{ display: "flex", flexDirection: "column" }}>
+                <strong>{symbol}</strong>
+                {detail ? <small>{detail}</small> : null}
+              </span>
+            </li>
+          );
+        }}
         renderInput={(params) => (
           <TextField
             {...params}
             inputProps={{
               ...params.inputProps,
               onBlur: (event: React.FocusEvent<HTMLInputElement>) => {
+                if (symbolSearch.results.length > 0) {
+                  if (commitExactSearchResult(event.currentTarget.value)) {
+                    event.currentTarget.value = "";
+                  }
+                  return;
+                }
                 commitSymbolInput(event.currentTarget.value);
                 event.currentTarget.value = "";
               },
               onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+                if (
+                  event.key === "Enter" &&
+                  symbolSearch.results.length > 0
+                ) {
+                  return;
+                }
                 if (event.key !== "Enter" && event.key !== "Tab") return;
                 const value = event.currentTarget.value;
                 if (!value.trim()) return;
@@ -166,7 +234,7 @@ export const PortfolioSymbolInput = ({
               },
             }}
             placeholder={
-              symbols.length >= 5 ? "Five-symbol limit" : "Add AAPL..."
+              symbols.length >= 5 ? "Five-symbol limit" : "Add ticker..."
             }
           />
         )}

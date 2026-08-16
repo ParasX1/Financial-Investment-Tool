@@ -273,9 +273,9 @@ describe("useTopPicksController", () => {
         latest!.setVisibleKeys(["symbol"]);
         await flushEffects();
       });
-      expect(browserStorage.values.get("topPicks.visibleCols:signed-out")).toBe(
-        '["symbol"]',
-      );
+      expect(
+        browserStorage.values.get("topPicks.visibleCols:signed-out:1Y"),
+      ).toBe('["symbol"]');
 
       mockAuthState = { user: { id: "account-a" }, loading: false };
       await act(async () => {
@@ -291,7 +291,7 @@ describe("useTopPicksController", () => {
         await flushEffects();
       });
       expect(
-        browserStorage.values.get("topPicks.visibleCols:user:account-a"),
+        browserStorage.values.get("topPicks.visibleCols:user:account-a:1Y"),
       ).toBe('["name"]');
 
       mockAuthState = { user: { id: "account-b" }, loading: false };
@@ -310,7 +310,7 @@ describe("useTopPicksController", () => {
         await flushEffects();
       });
       expect(
-        browserStorage.values.get("topPicks.visibleCols:user:account-b"),
+        browserStorage.values.get("topPicks.visibleCols:user:account-b:1Y"),
       ).toBe('["rank"]');
 
       mockAuthState = { user: null, loading: false };
@@ -325,6 +325,54 @@ describe("useTopPicksController", () => {
       browserStorage.restore();
     }
   });
+
+  it("keeps visible column choices separate for each Top Picks window", async () => {
+    const browserStorage = installMemoryStorage();
+    mockFetchTopPicks.mockResolvedValue(emptyResponse);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+
+      await act(async () => {
+        latest!.setWindow("1D");
+        await flushEffects();
+      });
+      expect(latest!.visibleKeys).toEqual(["rank", "symbol", "name", "ret1y"]);
+
+      await act(async () => {
+        latest!.setVisibleKeys(["symbol"]);
+        await flushEffects();
+      });
+      expect(
+        browserStorage.values.get("topPicks.visibleCols:signed-out:1D"),
+      ).toBe('["symbol"]');
+
+      await act(async () => {
+        latest!.setWindow("1Y");
+        await flushEffects();
+      });
+
+      expect(latest!.visibleKeys).toContain("sharpe");
+      expect(latest!.visibleKeys).toContain("infoRatio");
+      expect(
+        browserStorage.values.get("topPicks.visibleCols:signed-out:1Y"),
+      ).toContain("sharpe");
+    } finally {
+      renderer?.unmount();
+      browserStorage.restore();
+    }
+  });
+
   it("saves only explicit preference changes after a failed read", async () => {
     const consoleError = jest
       .spyOn(console, "error")

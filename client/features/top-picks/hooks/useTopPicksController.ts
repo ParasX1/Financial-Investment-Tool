@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { fetchTopPicks } from "../api/fetchTopPicks";
 import {
   getDefaultVisibleTopPicksColumns,
+  getDefaultVisibleTopPicksColumnsForWindow,
+  getTopPicksWindowMetricKeys,
+  isTopPicksMetricAvailableForWindow,
   TOP_PICKS_COLUMNS,
 } from "../lib/topPicksColumns";
-import type { TopPicksMetadata, TopPicksRow } from "../types";
+import type { TopPicksMetadata, TopPicksRow, TopPicksWindow } from "../types";
 import { useTopPicksPreferences } from "./useTopPicksPreferences";
 import { useTopPicksVisibleColumns } from "./useTopPicksVisibleColumns";
 
@@ -31,8 +34,9 @@ export function useTopPicksController() {
     sort,
     toggleSort,
   } = useTopPicksPreferences({ authLoading, userId });
+  const [selectedWindow, setWindowState] = useState<TopPicksWindow>("1Y");
   const { columnsScopeReady, setVisibleKeys, visibleKeys } =
-    useTopPicksVisibleColumns(preferenceScopeKey);
+    useTopPicksVisibleColumns(preferenceScopeKey, selectedWindow);
   const [rows, setRows] = useState<TopPicksRow[]>([]);
   const [total, setTotal] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -41,6 +45,11 @@ export function useTopPicksController() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [columnsOpen, setColumnsOpen] = useState(false);
+
+  const windowMetricKeys = getTopPicksWindowMetricKeys(selectedWindow);
+  const effectiveSort = windowMetricKeys.includes(sort.key)
+    ? sort
+    : { key: "ret1y" as const, dir: "desc" as const };
 
   useEffect(() => {
     if (!preferenceScopeReady || preferenceScopeKey === null) return;
@@ -68,8 +77,9 @@ export function useTopPicksController() {
       const response = await fetchTopPicks({
         page,
         pageSize,
-        sortKey: sort.key,
-        sortDirection: sort.dir,
+        sortKey: effectiveSort.key,
+        sortDirection: effectiveSort.dir,
+        window: selectedWindow,
         signal: abortController.signal,
       });
       if (active) {
@@ -105,8 +115,9 @@ export function useTopPicksController() {
     preferenceScopeReady,
     retryToken,
     setPage,
-    sort.dir,
-    sort.key,
+    effectiveSort.dir,
+    effectiveSort.key,
+    selectedWindow,
   ]);
 
   useEffect(() => {
@@ -124,15 +135,22 @@ export function useTopPicksController() {
   const exposedTotal = controllerScopeReady ? total : 0;
   const exposedPageSize = controllerScopeReady ? pageSize : 25;
   const exposedSort = controllerScopeReady
-    ? sort
+    ? effectiveSort
     : { key: "sharpe" as const, dir: "desc" as const };
-  const exposedVisibleKeys = columnsScopeReady
-    ? visibleKeys
-    : getDefaultVisibleTopPicksColumns();
+  const exposedVisibleKeys = (
+    columnsScopeReady
+      ? visibleKeys
+      : getDefaultVisibleTopPicksColumns()
+  ).filter((key) =>
+    isTopPicksMetricAvailableForWindow(key, selectedWindow)
+  );
+  const safeVisibleKeys = exposedVisibleKeys.length
+    ? exposedVisibleKeys
+    : getDefaultVisibleTopPicksColumnsForWindow(selectedWindow);
   const totalPages = Math.max(1, Math.ceil(exposedTotal / exposedPageSize));
   const safePage = controllerScopeReady ? Math.min(page, totalPages) : 1;
   const visibleColumns = TOP_PICKS_COLUMNS.filter((column) =>
-    exposedVisibleKeys.includes(column.key),
+    safeVisibleKeys.includes(column.key),
   );
 
   return {
@@ -146,11 +164,16 @@ export function useTopPicksController() {
     page: safePage,
     pageSize: exposedPageSize,
     sort: exposedSort,
-    visibleKeys: exposedVisibleKeys,
+    window: selectedWindow,
+    visibleKeys: safeVisibleKeys,
     visibleColumns,
     columnsOpen,
     setColumnsOpen,
     setVisibleKeys,
+    setWindow: (nextWindow: TopPicksWindow) => {
+      setWindowState(nextWindow);
+      setPage(1);
+    },
     setPage,
     retry: () => {
       if (controllerScopeReady) {

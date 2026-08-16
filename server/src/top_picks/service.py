@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 import logging
 import math
@@ -8,7 +8,7 @@ import time
 from threading import RLock, Thread
 from time import monotonic
 
-from ..market_primitives import TICKER_PATTERN
+from ..market_primitives import TICKER_PATTERN, get_adjusted_close_prices
 from .analytics import (
     ANNUALISATION_DAYS,
     calculate_information_ratios,
@@ -25,6 +25,24 @@ DEFAULT_UNIVERSE_LIMIT = 1000
 DEFAULT_CACHE_TTL_SECONDS = 600
 DEFAULT_STALE_CACHE_TTL_SECONDS = 86_400
 MIN_TRAILING_RETURN_OBSERVATIONS = 200
+WINDOW_METHODS = {
+    "1D": "trailing_day",
+    "1W": "trailing_week",
+    "1M": "trailing_month",
+    "1Y": "trailing_one_year",
+}
+TOP_PICKS_WINDOWS = ("1D", "1W", "1M", "1Y")
+WINDOW_MIN_OBSERVATIONS = {
+    "1D": {"ret1y": 2},
+    "1W": {"ret1y": 2, "volatility": 3, "maxDD": 2},
+    "1M": {"ret1y": 2, "volatility": 10, "maxDD": 2},
+    "1Y": {},
+}
+WINDOW_PRICE_OBSERVATIONS = {
+    "1D": 2,
+    "1W": 6,
+    "1M": 22,
+}
 METRIC_KEYS = (
     "ret1y",
     "sharpe",
@@ -45,6 +63,12 @@ METRIC_UNITS = {
     "alpha": "decimal_annualized",
     "infoRatio": "ratio",
 }
+WINDOW_METRIC_KEYS = {
+    "1D": ("ret1y",),
+    "1W": ("ret1y", "volatility", "maxDD"),
+    "1M": ("ret1y", "volatility", "maxDD"),
+    "1Y": METRIC_KEYS,
+}
 LOGGER = logging.getLogger(__name__)
 
 
@@ -61,6 +85,8 @@ class TopPicksSnapshotCache:
     ):
         self._clock = clock
         self._entries = {}
+        self._latest_key = None
+        self._latest_keys = {}
         self._lock = RLock()
         self._persistence_path = persistence_path
         self._stale_ttl_seconds = stale_ttl_seconds
@@ -78,6 +104,20 @@ class TopPicksSnapshotCache:
             if entry["expires_at"] <= now:
                 return deepcopy(entry["value"]), "stale"
             return deepcopy(entry["value"]), "hit"
+
+    def get_latest_stale(self, excluded_key=None, prefix=None):
+        with self._lock:
+            latest_key = (
+                self._latest_keys.get(prefix)
+                if prefix is not None
+                else self._latest_key
+            )
+            if latest_key is None or latest_key == excluded_key:
+                return None, "miss"
+            entry = self._entries.get(latest_key)
+            if entry is None:
+                return None, "miss"
+            return deepcopy(entry["value"]), "stale"
 
     def set(
         self,
@@ -102,11 +142,15 @@ class TopPicksSnapshotCache:
                 "stale_expires_at_wall_time": time.time() + stale_ttl,
                 "value": deepcopy(value),
             }
+            self._latest_key = key
+            self._latest_keys[self._key_prefix(key)] = key
             self._persist_entries()
 
     def clear(self):
         with self._lock:
             self._entries.clear()
+            self._latest_key = None
+            self._latest_keys.clear()
             self._persist_entries()
 
     @staticmethod
@@ -117,6 +161,10 @@ class TopPicksSnapshotCache:
     def _deserialize_key(value):
         decoded = json.loads(value)
         return tuple(decoded) if isinstance(decoded, list) else None
+
+    @staticmethod
+    def _key_prefix(key):
+        return tuple(key[:2]) if len(key) >= 2 else tuple(key[:1])
 
     def _load_persisted_entries(self):
         if not self._persistence_path or not os.path.exists(
@@ -133,24 +181,19 @@ class TopPicksSnapshotCache:
         persisted_entries = payload.get("entries")
         if not isinstance(persisted_entries, dict):
             return
+        persisted_latest_key = None
+        try:
+            persisted_latest_key = self._deserialize_key(
+                payload.get("latest_key")
+            )
+        except (TypeError, ValueError):
+            persisted_latest_key = None
 
         now = self._clock()
-        wall_time_now = time.time()
         with self._lock:
+            loaded_keys = []
             for raw_key, entry in persisted_entries.items():
                 if not isinstance(entry, dict) or "value" not in entry:
-                    continue
-                stale_expires_at_wall_time = entry.get(
-                    "stale_expires_at_wall_time"
-                )
-                if not isinstance(stale_expires_at_wall_time, (int, float)):
-                    stale_expires_at_wall_time = (
-                        wall_time_now + self._stale_ttl_seconds
-                    )
-                remaining_stale_seconds = (
-                    stale_expires_at_wall_time - wall_time_now
-                )
-                if remaining_stale_seconds <= 0:
                     continue
                 try:
                     key = self._deserialize_key(raw_key)
@@ -160,13 +203,26 @@ class TopPicksSnapshotCache:
                     continue
                 # Persisted snapshots are intentionally loaded as stale so the
                 # user sees the last complete ranking immediately while a fresh
-                # build starts in the background.
+                # build starts in the background. They do not expire on disk:
+                # the latest successful calculation is the startup fallback
+                # even after the old stale window has passed or the date-based
+                # cache key has moved on.
                 self._entries[key] = {
                     "expires_at": now - 1,
-                    "stale_expires_at": now + remaining_stale_seconds,
-                    "stale_expires_at_wall_time": stale_expires_at_wall_time,
+                    "stale_expires_at": math.inf,
+                    "stale_expires_at_wall_time": entry.get(
+                        "stale_expires_at_wall_time"
+                    ),
                     "value": entry["value"],
                 }
+                loaded_keys.append(key)
+            if persisted_latest_key in self._entries:
+                self._latest_key = persisted_latest_key
+            elif loaded_keys:
+                self._latest_key = loaded_keys[-1]
+            self._latest_keys = {
+                self._key_prefix(key): key for key in loaded_keys
+            }
 
     def _persist_entries(self):
         if not self._persistence_path:
@@ -176,7 +232,17 @@ class TopPicksSnapshotCache:
         try:
             if directory:
                 os.makedirs(directory, exist_ok=True)
+            persisted_keys = []
+            for key in [self._latest_key, *self._latest_keys.values()]:
+                if key is not None and key in self._entries:
+                    persisted_keys.append(key)
+            persisted_keys = list(dict.fromkeys(persisted_keys))
             payload = {
+                "latest_key": (
+                    self._serialize_key(self._latest_key)
+                    if self._latest_key is not None
+                    else None
+                ),
                 "entries": {
                     self._serialize_key(key): {
                         "stale_expires_at_wall_time": entry.get(
@@ -184,7 +250,8 @@ class TopPicksSnapshotCache:
                         ),
                         "value": entry["value"],
                     }
-                    for key, entry in self._entries.items()
+                    for key in persisted_keys
+                    for entry in [self._entries[key]]
                 }
             }
             with open(self._persistence_path, "w", encoding="utf-8") as handle:
@@ -402,11 +469,13 @@ class TopPicksService:
             else snapshot_cache
         )
         self._today_provider = today_provider
-        self._refreshing_cache_keys = set()
+        self._refreshing_all_windows = False
         self._refresh_lock = RLock()
 
     def get_page(self, top_picks_request):
-        snapshot, cache_status, refreshing = self._get_snapshot()
+        snapshot, cache_status, refreshing = self._get_snapshot(
+            top_picks_request.window
+        )
         ordered_rows = sort_top_pick_rows(
             snapshot["rows"],
             top_picks_request.sort_key,
@@ -437,11 +506,15 @@ class TopPicksService:
             "warnings": snapshot["warnings"],
         }
 
-    def _get_snapshot(self):
+    def _get_snapshot(self, window):
         today = self._today_provider()
-        start_date = _one_year_before(today).isoformat()
+        start_date = self._start_date_for_window(
+            today,
+            window,
+        )
         end_date = today.isoformat()
         cache_key = self._snapshot_cache_key(
+            window,
             start_date,
             end_date,
         )
@@ -449,53 +522,107 @@ class TopPicksService:
         if cached is not None:
             refreshing = cache_status == "stale"
             if refreshing:
-                self._refresh_snapshot_in_background(
-                    cache_key,
-                    start_date,
-                    end_date,
-                )
+                self._refresh_windows_in_background(window)
             return cached, cache_status, refreshing
 
-        snapshot = self._build_snapshot(start_date, end_date)
+        latest, latest_status = self._snapshot_cache.get_latest_stale(
+            excluded_key=cache_key,
+            prefix=self._snapshot_cache_prefix(window),
+        )
+        if latest is None and window == "1Y":
+            latest, latest_status = self._snapshot_cache.get_latest_stale(
+                excluded_key=cache_key,
+            )
+        if latest is not None:
+            self._refresh_windows_in_background(window)
+            return latest, latest_status, True
+
+        snapshot = self._build_snapshot(start_date, end_date, window)
         self._snapshot_cache.set(
             cache_key,
             snapshot,
             self._cache_ttl_seconds,
         )
+        self._refresh_windows_in_background(window)
         return deepcopy(snapshot), "miss", False
 
-    def _refresh_snapshot_in_background(self, cache_key, start_date, end_date):
-        with self._refresh_lock:
-            if cache_key in self._refreshing_cache_keys:
-                return
-            self._refreshing_cache_keys.add(cache_key)
+    def _refresh_windows_in_background(self, priority_window):
+        if self._cache_ttl_seconds <= 0:
+            return
 
-        def refresh():
+        with self._refresh_lock:
+            if self._refreshing_all_windows:
+                return
+            self._refreshing_all_windows = True
+
+        def refresh_all():
             try:
-                snapshot = self._build_snapshot(start_date, end_date)
-                self._snapshot_cache.set(
-                    cache_key,
-                    snapshot,
-                    self._cache_ttl_seconds,
+                today = self._today_provider()
+                ordered_windows = (
+                    priority_window,
+                    *[
+                        window for window in TOP_PICKS_WINDOWS
+                        if window != priority_window
+                    ],
                 )
-            except Exception:
-                LOGGER.warning(
-                    "Top Picks background snapshot refresh failed.",
-                    exc_info=True,
-                )
+                for window in ordered_windows:
+                    start_date = self._start_date_for_window(today, window)
+                    end_date = today.isoformat()
+                    cache_key = self._snapshot_cache_key(
+                        window,
+                        start_date,
+                        end_date,
+                    )
+                    try:
+                        cached, cache_status = self._snapshot_cache.get(
+                            cache_key
+                        )
+                        if cached is not None and cache_status == "hit":
+                            continue
+                        snapshot = self._build_snapshot(
+                            start_date,
+                            end_date,
+                            window,
+                        )
+                        self._snapshot_cache.set(
+                            cache_key,
+                            snapshot,
+                            self._cache_ttl_seconds,
+                        )
+                    except Exception:
+                        LOGGER.warning(
+                            "Top Picks background window refresh failed.",
+                            exc_info=True,
+                        )
             finally:
                 with self._refresh_lock:
-                    self._refreshing_cache_keys.discard(cache_key)
+                    self._refreshing_all_windows = False
 
-        Thread(target=refresh, daemon=True).start()
+        Thread(target=refresh_all, daemon=True).start()
+
+    @staticmethod
+    def _start_date_for_window(today, window):
+        if window == "1D":
+            return (today - timedelta(days=5)).isoformat()
+        if window == "1W":
+            return (today - timedelta(days=10)).isoformat()
+        if window == "1M":
+            return (today - timedelta(days=45)).isoformat()
+        return _one_year_before(today).isoformat()
+
+    @staticmethod
+    def _snapshot_cache_prefix(window):
+        return ("top-picks-snapshot", window)
 
     def _snapshot_cache_key(
         self,
+        window,
         start_date,
         end_date,
     ):
         return (
             "top-picks-snapshot",
+            window,
             self._benchmark_ticker,
             self._risk_free_rate,
             self._universe_limit,
@@ -503,7 +630,7 @@ class TopPicksService:
             end_date,
         )
 
-    def _build_snapshot(self, start_date, end_date):
+    def _build_snapshot(self, start_date, end_date, window="1Y"):
         tickers = self._ticker_repository.list_tickers(
             self._universe_limit
         )
@@ -518,6 +645,7 @@ class TopPicksService:
                     [ticker.symbol for ticker in tickers],
                     start_date,
                     end_date,
+                    window,
                 )
             except TopPicksDataSourceError:
                 raise
@@ -536,6 +664,7 @@ class TopPicksService:
                 metric_maps,
                 metric_statuses,
                 observations,
+                window,
             )
             for ticker in tickers
         ]
@@ -544,13 +673,14 @@ class TopPicksService:
             "metadata": self._build_snapshot_metadata(
                 start_date,
                 end_date,
+                window,
                 rows,
                 observations,
             ),
-            "warnings": self._build_warnings(rows, observations),
+            "warnings": self._build_warnings(rows, observations, window),
         }
 
-    def _calculate_metric_maps(self, symbols, start_date, end_date):
+    def _calculate_metric_maps(self, symbols, start_date, end_date, window):
         requested_market_symbols = list(symbols)
         if self._benchmark_ticker not in requested_market_symbols:
             requested_market_symbols.append(self._benchmark_ticker)
@@ -567,109 +697,234 @@ class TopPicksService:
             symbols,
         )
 
-        cumulative = self._calculator_provider(
-            "calculate_cumulative_return"
-        )(metric_symbols, start_date, end_date)
-        drawdown = self._calculator_provider("calculate_drawdown")(
-            metric_symbols,
-            start_date,
-            end_date,
-        )
-        sortino = self._calculator_provider("calculate_sortino_ratio")(
-            metric_symbols,
-            start_date,
-            end_date,
-            self._risk_free_rate,
-        )
-        information_ratio = self._information_ratio_provider(
-            market_data,
-            symbols,
-            self._benchmark_ticker,
-        )
         metric_maps = {
-            "ret1y": {
+            key: {} for key in METRIC_KEYS
+        }
+
+        if window in {"1D", "1W", "1M"}:
+            metric_maps.update(self._calculate_short_window_metric_maps(
+                market_data,
+                symbols,
+                window,
+            ))
+        elif window == "1Y":
+            cumulative = self._calculator_provider(
+                "calculate_cumulative_return"
+            )(metric_symbols, start_date, end_date)
+            metric_maps["ret1y"] = {
                 symbol: _last_value(series)
                 for symbol, series in cumulative.items()
-            },
-            "sharpe": self._calculator_provider(
-                "calculate_sharpe_ratio"
-            )(metric_symbols, start_date, end_date, self._risk_free_rate),
-            "sortino": {
-                symbol: _sortino_value(value)
-                for symbol, value in sortino.items()
-            },
-            "volatility": self._calculator_provider(
-                "calculate_volatility"
-            )(metric_symbols, start_date, end_date),
-            "maxDD": {
-                symbol: _minimum_value(series)
-                for symbol, series in drawdown.items()
-            },
-            "beta": self._calculator_provider("calculate_beta")(
-                symbols,
-                self._benchmark_ticker,
+            }
+            drawdown = self._calculator_provider("calculate_drawdown")(
+                metric_symbols,
                 start_date,
                 end_date,
-            ),
-            "alpha": self._calculator_provider("calculate_alpha")(
-                symbols,
-                self._benchmark_ticker,
+            )
+            metric_maps["volatility"] = self._calculator_provider(
+                "calculate_volatility"
+            )(metric_symbols, start_date, end_date)
+            metric_maps["maxDD"] = {
+                symbol: _minimum_value(series)
+                for symbol, series in drawdown.items()
+            }
+
+        metric_statuses = {"sortino": {}}
+        if window == "1Y":
+            sortino = self._calculator_provider("calculate_sortino_ratio")(
+                metric_symbols,
                 start_date,
                 end_date,
                 self._risk_free_rate,
-            ),
-            "infoRatio": information_ratio,
-        }
-        metric_statuses = {
-            "sortino": {
+            )
+            metric_maps.update({
+                "sharpe": self._calculator_provider(
+                    "calculate_sharpe_ratio"
+                )(
+                    metric_symbols,
+                    start_date,
+                    end_date,
+                    self._risk_free_rate,
+                ),
+                "sortino": {
+                    symbol: _sortino_value(value)
+                    for symbol, value in sortino.items()
+                },
+                "beta": self._calculator_provider("calculate_beta")(
+                    symbols,
+                    self._benchmark_ticker,
+                    start_date,
+                    end_date,
+                ),
+                "alpha": self._calculator_provider("calculate_alpha")(
+                    symbols,
+                    self._benchmark_ticker,
+                    start_date,
+                    end_date,
+                    self._risk_free_rate,
+                ),
+                "infoRatio": self._information_ratio_provider(
+                    market_data,
+                    symbols,
+                    self._benchmark_ticker,
+                ),
+            })
+            metric_statuses["sortino"] = {
                 symbol: _sortino_status(value)
                 for symbol, value in sortino.items()
             }
-        }
+
         return metric_maps, metric_statuses, observations
 
     @staticmethod
-    def _build_row(ticker, metric_maps, metric_statuses, observations):
-        observation_count = int(observations.get(ticker.symbol, 0))
-        has_full_window = (
-            observation_count >= MIN_TRAILING_RETURN_OBSERVATIONS
-        )
-        sortino_status = metric_statuses["sortino"].get(
-            ticker.symbol,
-            "unavailable",
-        )
-        if not has_full_window:
-            sortino_status = (
-                "limited_data" if observation_count else "unavailable"
+    def _calculate_short_window_metric_maps(market_data, symbols, window):
+        price_observations = WINDOW_PRICE_OBSERVATIONS[window]
+        adj_close = get_adjusted_close_prices(market_data, symbols)
+        metric_maps = {
+            "ret1y": {},
+            "volatility": {},
+            "maxDD": {},
+        }
+
+        for symbol in symbols:
+            if symbol not in adj_close.columns:
+                continue
+            prices = adj_close[symbol].dropna().tail(price_observations)
+            if prices.shape[0] < 2:
+                continue
+
+            metric_maps["ret1y"][symbol] = _finite_float(
+                prices.iloc[-1] / prices.iloc[0] - 1
             )
+            running_peak = prices.cummax()
+            drawdown = (prices / running_peak - 1).clip(upper=0)
+            metric_maps["maxDD"][symbol] = _finite_float(drawdown.min())
+
+            returns = prices.pct_change(fill_method=None).dropna()
+            if returns.shape[0] >= 2:
+                metric_maps["volatility"][symbol] = _finite_float(
+                    returns.std() * math.sqrt(ANNUALISATION_DAYS)
+                )
+
+        if window == "1D":
+            metric_maps["volatility"] = {}
+            metric_maps["maxDD"] = {}
+        return metric_maps
+
+    @staticmethod
+    def _build_row(
+        ticker,
+        metric_maps,
+        metric_statuses,
+        observations,
+        window,
+    ):
+        observation_count = int(observations.get(ticker.symbol, 0))
+        if window == "1Y":
+            has_full_window = (
+                observation_count >= MIN_TRAILING_RETURN_OBSERVATIONS
+            )
+            sortino_status = metric_statuses["sortino"].get(
+                ticker.symbol,
+                "unavailable",
+            )
+            if not has_full_window:
+                sortino_status = (
+                    "limited_data" if observation_count else "unavailable"
+                )
+            return {
+                "symbol": ticker.symbol,
+                "name": ticker.name,
+                "industry": ticker.industry,
+                **{
+                    key: (
+                        _finite_float(metric_maps[key].get(ticker.symbol))
+                        if has_full_window
+                        else None
+                    )
+                    for key in METRIC_KEYS
+                },
+                "metricStatus": {"sortino": sortino_status},
+            }
+
+        window_minimums = WINDOW_MIN_OBSERVATIONS.get(window, {})
+        enabled_metrics = WINDOW_METRIC_KEYS.get(window, METRIC_KEYS)
+
+        def metric_value(key):
+            if key not in enabled_metrics:
+                return None
+            minimum_observations = window_minimums.get(
+                key,
+                MIN_TRAILING_RETURN_OBSERVATIONS,
+            )
+            if observation_count < minimum_observations:
+                return None
+            return _finite_float(metric_maps[key].get(ticker.symbol))
+
         return {
             "symbol": ticker.symbol,
             "name": ticker.name,
             "industry": ticker.industry,
-            **{
-                key: (
-                    _finite_float(metric_maps[key].get(ticker.symbol))
-                    if has_full_window
-                    else None
-                )
-                for key in METRIC_KEYS
-            },
-            "metricStatus": {"sortino": sortino_status},
+            **{key: metric_value(key) for key in METRIC_KEYS},
+            "metricStatus": {"sortino": "unavailable"},
         }
 
     @staticmethod
-    def _build_warnings(rows, observations):
+    def _build_warnings(rows, observations, window="1Y"):
+        if window == "1Y":
+            partial_symbols = []
+            missing_symbols = []
+            limited_symbols = []
+            for row in rows:
+                symbol = row["symbol"]
+                observation_count = int(observations.get(symbol, 0))
+                if 0 < observation_count < MIN_TRAILING_RETURN_OBSERVATIONS:
+                    limited_symbols.append(symbol)
+                    continue
+                availability = [
+                    _metric_is_available(row, key) for key in METRIC_KEYS
+                ]
+                if not any(availability):
+                    missing_symbols.append(symbol)
+                elif not all(availability):
+                    partial_symbols.append(symbol)
+
+            warnings = []
+            if limited_symbols:
+                warnings.append(_symbol_summary(
+                    "Insufficient trailing history",
+                    limited_symbols,
+                ))
+            if partial_symbols:
+                warnings.append(_symbol_summary(
+                    "Some metrics are unavailable",
+                    partial_symbols,
+                ))
+            if missing_symbols:
+                warnings.append(_symbol_summary(
+                    "No usable market data",
+                    missing_symbols,
+                ))
+            if not rows:
+                warnings.append("No ticker universe is available.")
+            return warnings
+
+        enabled_metrics = WINDOW_METRIC_KEYS.get(window, METRIC_KEYS)
+        window_minimums = WINDOW_MIN_OBSERVATIONS.get(window, {})
+        minimum_observations = min(
+            window_minimums.values(),
+            default=MIN_TRAILING_RETURN_OBSERVATIONS,
+        )
         partial_symbols = []
         missing_symbols = []
         limited_symbols = []
         for row in rows:
             symbol = row["symbol"]
             observation_count = int(observations.get(symbol, 0))
-            if 0 < observation_count < MIN_TRAILING_RETURN_OBSERVATIONS:
+            if 0 < observation_count < minimum_observations:
                 limited_symbols.append(symbol)
                 continue
             availability = [
-                _metric_is_available(row, key) for key in METRIC_KEYS
+                _metric_is_available(row, key) for key in enabled_metrics
             ]
             if not any(availability):
                 missing_symbols.append(symbol)
@@ -700,11 +955,15 @@ class TopPicksService:
         self,
         start_date,
         end_date,
+        window,
         rows,
         observations,
     ):
         available_count = sum(
-            any(_metric_is_available(row, key) for key in METRIC_KEYS)
+            any(
+                _metric_is_available(row, key)
+                for key in WINDOW_METRIC_KEYS.get(window, METRIC_KEYS)
+            )
             for row in rows
         )
         return {
@@ -728,11 +987,17 @@ class TopPicksService:
                 for row in rows
             },
             "units": dict(METRIC_UNITS),
+            "window": WINDOW_METHODS.get(window, "trailing_one_year"),
+            "windowCode": window,
+            "availableMetrics": list(WINDOW_METRIC_KEYS.get(
+                window,
+                METRIC_KEYS,
+            )),
             "assumptions": {
                 "benchmark": self._benchmark_ticker,
                 "riskFreeRateAnnual": self._risk_free_rate,
                 "universeLimit": self._universe_limit,
-                "window": "trailing_one_year",
+                "window": WINDOW_METHODS.get(window, "trailing_one_year"),
             },
             "methods": {
                 "infoRatio": (

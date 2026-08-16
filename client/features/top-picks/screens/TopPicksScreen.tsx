@@ -4,7 +4,10 @@ import { Box } from "@mui/material";
 import { buildTopPicksCsv } from "../lib/topPicksCsv";
 import { TopPicksColumnsDialog } from "../components/TopPicksColumnsDialog";
 import { TopPicksTable } from "../components/TopPicksTable";
-import { TopPicksToolbar } from "../components/TopPicksToolbar";
+import {
+  TopPicksStatus,
+  TopPicksToolbar,
+} from "../components/TopPicksToolbar";
 import { useTopPicksController } from "../hooks/useTopPicksController";
 
 export function TopPicksScreen() {
@@ -66,8 +69,10 @@ export function TopPicksScreen() {
           total={controller.total}
           page={controller.page}
           totalPages={controller.totalPages}
+          selectedWindow={controller.window}
           onExport={exportCsv}
           onEditColumns={() => controller.setColumnsOpen(true)}
+          onWindowChange={controller.setWindow}
           onRetry={controller.retry}
         />
 
@@ -85,9 +90,21 @@ export function TopPicksScreen() {
           onPageSizeChange={controller.setPageSize}
         />
 
+        <TopPicksStatus
+          loading={controller.loading}
+          error={controller.error}
+          warnings={controller.warnings}
+          metadata={controller.metadata}
+          total={controller.total}
+          page={controller.page}
+          totalPages={controller.totalPages}
+          onRetry={controller.retry}
+        />
+
         <TopPicksColumnsDialog
           open={controller.columnsOpen}
           visibleKeys={controller.visibleKeys}
+          window={controller.window}
           onClose={() => controller.setColumnsOpen(false)}
           onVisibleKeysChange={controller.setVisibleKeys}
         />

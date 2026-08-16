@@ -11,15 +11,23 @@ export const formatTopPicksAssumptions = (
       ? null
       : `Ranked universe: ${metadata.universeCount} stocks`;
   const requestedWindow =
-    metadata.window === "trailing_one_year"
-      ? "requested window: trailing one year"
-      : null;
+    metadata.window === "trailing_day"
+      ? "requested window: day"
+      : metadata.window === "trailing_week"
+        ? "requested window: week"
+        : metadata.window === "trailing_month"
+          ? "requested window: month"
+          : metadata.window === "trailing_one_year"
+            ? "requested window: trailing one year"
+            : null;
   const benchmark = metadata.benchmark
     ? `benchmark ${metadata.benchmark}`
     : null;
   const rateDetails = [
     metadata.riskFreeRateSource ?? null,
-    metadata.riskFreeRateAsOf ? `as of ${metadata.riskFreeRateAsOf}` : null,
+    metadata.riskFreeRateAsOf
+      ? `effective ${metadata.riskFreeRateAsOf}`
+      : null,
   ].filter((detail): detail is string => detail !== null);
   const riskFreeRate =
     metadata.riskFreeRate === undefined

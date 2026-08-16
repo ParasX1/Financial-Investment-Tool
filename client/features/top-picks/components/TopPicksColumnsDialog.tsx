@@ -8,13 +8,17 @@ import {
   FormControlLabel,
   Stack,
 } from "@mui/material";
-import { TOP_PICKS_COLUMNS } from "../lib/topPicksColumns";
-import type { TopPicksColumnKey } from "../types";
+import {
+  isTopPicksMetricAvailableForWindow,
+  TOP_PICKS_COLUMNS,
+} from "../lib/topPicksColumns";
+import type { TopPicksColumnKey, TopPicksWindow } from "../types";
 import { dialogPaperSx, secondaryActionSx } from "./topPicksSx";
 
 type TopPicksColumnsDialogProps = {
   open: boolean;
   visibleKeys: TopPicksColumnKey[];
+  window: TopPicksWindow;
   onClose: () => void;
   onVisibleKeysChange: (value: TopPicksColumnKey[]) => void;
 };
@@ -22,9 +26,14 @@ type TopPicksColumnsDialogProps = {
 export function TopPicksColumnsDialog({
   open,
   visibleKeys,
+  window,
   onClose,
   onVisibleKeysChange,
 }: TopPicksColumnsDialogProps) {
+  const availableColumns = TOP_PICKS_COLUMNS.filter((column) =>
+    isTopPicksMetricAvailableForWindow(column.key, window),
+  );
+
   return (
     <Dialog
       open={open}
@@ -53,7 +62,7 @@ export function TopPicksColumnsDialog({
         }}
       >
         <Stack>
-          {TOP_PICKS_COLUMNS.map((column) => (
+          {availableColumns.map((column) => (
             <FormControlLabel
               key={column.key}
               control={

@@ -23,7 +23,7 @@ describe("buildTopPicksCsv", () => {
       TOP_PICKS_COLUMNS.slice(0, 4),
     );
 
-    expect(csv).toContain('"Rank","Symbol","Company","Cumulative return"');
+    expect(csv).toContain('"Rank","Symbol","Company","Price return"');
     expect(csv).toContain('"1","AAA","ACME ""Alpha""","+12.3%"');
   });
 

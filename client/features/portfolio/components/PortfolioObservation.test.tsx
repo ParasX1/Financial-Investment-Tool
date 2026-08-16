@@ -53,7 +53,9 @@ const globalInputs = {
 const createProps = (overrides: Record<string, unknown> = {}) => ({
   cards,
   symbols: ["AAPL", "MSFT"],
+  draftSymbolCount: 2,
   globalInputs,
+  hasPendingDraft: false,
   layout: {
     alpha: { cardId: "alpha", x: 10, y: 20, width: 420, height: 300, z: 10, visible: true },
     beta: { cardId: "beta", x: 80, y: 70, width: 420, height: 300, z: 12, visible: false },

@@ -37,7 +37,7 @@ describe("Top Picks feature boundary", () => {
 
     expect(controllerSource).toContain("new AbortController()");
     expect(controllerSource).toContain("pageSize,");
-    expect(controllerSource).toContain("sortKey: sort.key");
+    expect(controllerSource).toContain("sortKey: effectiveSort.key");
     expect(controllerSource).not.toContain("sortTopPicksRows");
     expect(controllerSource).not.toMatch(/rows\.slice\(/);
     expect(controllerSource).not.toMatch(/rows\.sort\(/);

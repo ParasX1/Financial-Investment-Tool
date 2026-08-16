@@ -1,5 +1,9 @@
 export type TopPicksMetric = number | null;
 
+export const TOP_PICKS_WINDOWS = ["1D", "1W", "1M", "1Y"] as const;
+
+export type TopPicksWindow = (typeof TOP_PICKS_WINDOWS)[number];
+
 export const TOP_PICKS_METRIC_KEYS = [
   "ret1y",
   "sharpe",
@@ -81,7 +85,9 @@ export type TopPicksMetadata = Readonly<{
   universeCount?: number;
   availableCount?: number;
   minimumTrailingReturnObservations?: number;
-  window?: "trailing_one_year";
+  window?: "trailing_day" | "trailing_week" | "trailing_month" | "trailing_one_year";
+  windowCode?: TopPicksWindow;
+  availableMetrics?: TopPicksSortKey[];
   cacheStatus?: "hit" | "miss" | "stale";
   cacheTtlSeconds?: number;
   snapshotRefreshing?: boolean;

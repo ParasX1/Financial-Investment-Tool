@@ -80,6 +80,7 @@ describe("fetchTopPicks", () => {
       page_size: 25,
       sort_key: "sharpe",
       sort_dir: "desc",
+      window: "1Y",
     });
     expect(response.rows[0]?.sortino).toBeNull();
     expect(response.rows[0]?.alpha).toBeNull();
