@@ -1,0 +1,50 @@
+.dataSection {
+  margin-top: 18px;
+  border: 1px solid var(--portfolio-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(7, 10, 17, 0.72);
+}
+
+.dataSection summary {
+  padding: 14px 18px;
+  color: var(--portfolio-body);
+  font-size: 0.82rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.tableScroller {
+  overflow-x: auto;
+  border-top: 1px solid var(--portfolio-border);
+}
+
+.dataTable {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--portfolio-border);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.dataTable th {
+  color: var(--portfolio-muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dataTable td {
+  color: var(--portfolio-body);
+}
+
+.dataTable tr:last-child td {
+  border-bottom: 0;
+}

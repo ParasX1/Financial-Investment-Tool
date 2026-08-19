@@ -1,15 +1,43 @@
+// File purpose: Renders the create-post form, markdown toolbar, tag suggestions, and draft image controls.
 import * as React from "react";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import communityStyles from "@/styles/community.module.css";
-import { COMMUNITY_IMAGE_TYPES } from "../constants";
-import { FOCUS_VISIBLE, cn, communityUi } from "../design";
-import { getSmartTagSuggestions, mergeSelectedTagSuggestions } from "../smartTags";
-import type { DiscussionDraft, DiscussionDraftField } from "../types";
-import { validateCommunityImage } from "../utils";
+import communityStyles from "../styles/community.module.css";
+import { MAX_COMMUNITY_POST_TITLE_CHARS } from "../constants";
+import { FOCUS_VISIBLE, cn, communityUi, fitText, fitType } from "../design";
+import {
+  getCommunityPostTypeLabel,
+  getCommunityTimeFrameLabel,
+} from "../lib/communityPostMetadata";
+import {
+  detectTickerTags,
+  getSmartTagSuggestions,
+  mergeSelectedTagSuggestions,
+} from "../lib/smartTags";
+import type {
+  CommunityPostType,
+  CommunityTimeFrame,
+  DiscussionDraft,
+  DiscussionDraftField,
+  DiscussionDraftMetadataField,
+} from "../types";
+import { validateCommunityPostContent } from "../lib/communityValidation";
+import { CommunityMarkdownEditor } from "./CommunityMarkdownEditor";
 import { SmartTagSuggestions } from "./SmartTagSuggestions";
-import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
+import { CommunityTickerField } from "./CommunityTickerField";
+
+const COMMUNITY_POST_TYPE_OPTIONS: CommunityPostType[] = [
+  "question",
+  "analysis",
+  "news",
+  "portfolio",
+  "discussion",
+];
+
+const COMMUNITY_TIME_FRAME_OPTIONS: CommunityTimeFrame[] = [
+  "short",
+  "medium",
+  "long",
+];
 
 export function CommunityComposer({
   className,
@@ -17,6 +45,8 @@ export function CommunityComposer({
   creating,
   canAttachImage,
   onDraftChange,
+  onDraftMetadataChange,
+  onDraftTickersChange,
   onClearTags,
   onDraftImageChange,
   onToggleTag,
@@ -27,56 +57,32 @@ export function CommunityComposer({
   creating: boolean;
   canAttachImage: boolean;
   onDraftChange: (field: DiscussionDraftField, value: string) => void;
+  onDraftMetadataChange: (
+    field: DiscussionDraftMetadataField,
+    value: string,
+  ) => void;
+  onDraftTickersChange: (tickers: string[]) => void;
   onClearTags: () => void;
   onDraftImageChange: (file: File | null) => void;
   onToggleTag: (tag: string) => void;
   onSubmit: () => void;
 }) {
-  const fileInput = React.useRef<HTMLInputElement | null>(null);
-  const bodyInput = useAutoResizeTextarea(draft.body);
-  const [attachmentError, setAttachmentError] = React.useState<string | null>(null);
-  const canSubmit = Boolean(draft.title.trim() && draft.body.trim());
-  const attachImageLabel = canAttachImage
-    ? "Attach image"
-    : "Sign in to attach images";
-  const smartTags = React.useMemo(
-    () => getSmartTagSuggestions(draft),
-    [draft]
+  const canSubmit = Boolean(
+    draft.postType && !validateCommunityPostContent(draft),
+  );
+  const smartTags = React.useMemo(() => getSmartTagSuggestions(draft), [draft]);
+  const suggestedTickers = React.useMemo(
+    () => detectTickerTags(draft).map((ticker) => ticker.replace(/^\$/, "")),
+    [draft],
   );
   const visibleTags = React.useMemo(
-    () => mergeSelectedTagSuggestions(draft.tags, smartTags),
-    [draft.tags, smartTags]
+    () =>
+      mergeSelectedTagSuggestions(
+        draft.tags,
+        smartTags.filter((tag) => tag.kind !== "ticker"),
+      ),
+    [draft.tags, smartTags],
   );
-
-  React.useEffect(() => {
-    if (!draft.imageFile && fileInput.current) fileInput.current.value = "";
-  }, [draft.imageFile]);
-
-  function handleImageFile(nextFile?: File | null) {
-    if (!nextFile) {
-      setAttachmentError(null);
-      onDraftImageChange(null);
-      if (fileInput.current) fileInput.current.value = "";
-      return;
-    }
-
-    if (!canAttachImage) {
-      setAttachmentError("Sign in before attaching an image.");
-      if (fileInput.current) fileInput.current.value = "";
-      return;
-    }
-
-    const validationError = validateCommunityImage(nextFile);
-    if (validationError) {
-      setAttachmentError(validationError);
-      onDraftImageChange(null);
-      if (fileInput.current) fileInput.current.value = "";
-      return;
-    }
-
-    setAttachmentError(null);
-    onDraftImageChange(nextFile);
-  }
 
   return (
     <form
@@ -94,7 +100,13 @@ export function CommunityComposer({
       }}
     >
       <div className="flex flex-col gap-[14px] sm:flex-row sm:items-start">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#4f63ff] to-[#7c3aed] text-sm font-extrabold text-white">
+        <div
+          className={cn(
+            communityUi.avatar,
+            "h-10 w-10 bg-gradient-to-br from-[#4f63ff] to-[#7c3aed]",
+            fitType.avatarMd,
+          )}
+        >
           YU
         </div>
 
@@ -108,55 +120,121 @@ export function CommunityComposer({
             type="text"
             autoComplete="off"
             disabled={creating}
+            maxLength={MAX_COMMUNITY_POST_TITLE_CHARS}
             value={draft.title}
             onChange={(event) => onDraftChange("title", event.target.value)}
             placeholder="Title"
             className={cn(
-              "h-11 w-full px-[16px] text-[15px] font-semibold leading-6",
+              "h-11 w-full px-[16px]",
               communityUi.field,
               communityStyles.inputBorder,
-              "disabled:cursor-not-allowed disabled:opacity-60"
+              "disabled:cursor-not-allowed disabled:opacity-60",
             )}
           />
-
-          <label htmlFor="community-draft-body" className="sr-only">
-            Discussion body
-          </label>
-          <textarea
-            ref={bodyInput}
-            id="community-draft-body"
-            name="community-draft-body"
-            autoComplete="off"
-            disabled={creating}
-            value={draft.body}
-            onChange={(event) => onDraftChange("body", event.target.value)}
-            placeholder="Write the discussion…"
-            rows={4}
+          <span
             className={cn(
-              "min-h-[112px] w-full resize-none overflow-hidden px-[16px] py-[14px] text-[15px] leading-6 sm:min-h-[98px]",
-              communityUi.field,
-              communityStyles.inputBorder,
-              "disabled:cursor-not-allowed disabled:opacity-60"
+              "-mt-1 block text-right text-[#7f899c]",
+              fitType.caption,
             )}
-          />
+            aria-label="Post title character count"
+          >
+            {draft.title.length}/{MAX_COMMUNITY_POST_TITLE_CHARS}
+          </span>
 
-          {draft.imagePreviewUrl ? (
-            <div
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,14rem)_minmax(0,12rem)_minmax(18rem,1fr)_minmax(0,1fr)]">
+            <label className={cn(fitType.eyebrow, fitText.label)}>
+              Post type
+              <select
+                value={draft.postType}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("postType", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                <option value="">Choose a type</option>
+                {COMMUNITY_POST_TYPE_OPTIONS.map((postType) => (
+                  <option key={postType} value={postType}>
+                    {getCommunityPostTypeLabel(postType)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={cn(fitType.eyebrow, fitText.label)}>
+              Time frame (optional)
+              <select
+                value={draft.timeFrame}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("timeFrame", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                <option value="">Not specified</option>
+                {COMMUNITY_TIME_FRAME_OPTIONS.map((timeFrame) => (
+                  <option key={timeFrame} value={timeFrame}>
+                    {getCommunityTimeFrameLabel(timeFrame)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <CommunityTickerField
+              disabled={creating}
+              input={draft.tickerInput}
+              suggestedTickers={suggestedTickers}
+              tickers={draft.tickers}
+              onInputChange={(value) =>
+                onDraftMetadataChange("tickerInput", value)
+              }
+              onTickersChange={onDraftTickersChange}
+            />
+
+            <label
               className={cn(
-                "overflow-hidden rounded-lg bg-black/30",
-                communityStyles.softBorder
+                fitType.eyebrow,
+                fitText.label,
+                "md:col-span-2 xl:col-span-1",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={draft.imagePreviewUrl}
-                alt="Selected discussion attachment"
-                width={960}
-                height={540}
-                className="max-h-72 w-full object-contain"
+              Source URL
+              <input
+                value={draft.sourceUrl}
+                disabled={creating}
+                onChange={(event) =>
+                  onDraftMetadataChange("sourceUrl", event.target.value)
+                }
+                className={cn(
+                  "mt-1 h-10 w-full px-3 normal-case",
+                  communityUi.field,
+                  communityStyles.inputBorder,
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+                placeholder="https://example.com/research"
               />
-            </div>
-          ) : null}
+            </label>
+          </div>
+
+          <CommunityMarkdownEditor
+            canAttachImage={canAttachImage}
+            disabled={creating}
+            imageFile={draft.imageFile}
+            imagePreviewUrl={draft.imagePreviewUrl}
+            value={draft.body}
+            onChange={(value) => onDraftChange("body", value)}
+            onImageChange={onDraftImageChange}
+          />
 
           <SmartTagSuggestions
             items={visibleTags}
@@ -167,58 +245,16 @@ export function CommunityComposer({
         </div>
       </div>
 
-      <div className="mt-[12px] flex flex-wrap items-center justify-between gap-[12px] pl-0 sm:pl-14">
-        <input
-          ref={fileInput}
-          type="file"
-          accept={COMMUNITY_IMAGE_TYPES.join(",")}
-          className="hidden"
-          disabled={creating || !canAttachImage}
-          onChange={(event) => handleImageFile(event.currentTarget.files?.[0] ?? null)}
-        />
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={creating || !canAttachImage}
-          className={cn(
-            communityUi.iconButton,
-            "h-10 w-10 text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#e2e7f2]",
-            communityUi.disabled,
-            FOCUS_VISIBLE
-          )}
-          title={attachImageLabel}
-          aria-label={attachImageLabel}
-        >
-          <ImageOutlinedIcon aria-hidden="true" />
-        </button>
-
-        {draft.imageFile ? (
-          <button
-            type="button"
-            onClick={() => handleImageFile(null)}
-            disabled={creating}
-            className={cn(
-              "mr-auto inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
-              communityUi.disabled,
-              communityStyles.softBorder,
-              FOCUS_VISIBLE
-            )}
-            title="Remove attachment"
-            aria-label={`Remove attachment ${draft.imageFile.name}`}
-          >
-            <span className="max-w-[14rem] truncate">{draft.imageFile.name}</span>
-            <CloseRoundedIcon sx={{ fontSize: 15 }} aria-hidden="true" />
-          </button>
-        ) : null}
-
+      <div className="mt-[12px] flex justify-end pl-0 sm:pl-14">
         <button
           type="submit"
           disabled={creating || !canSubmit}
           className={cn(
-            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[16px] text-sm font-bold text-white transition-colors",
+            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[16px] text-white transition-colors",
+            fitType.control,
             "hover:bg-[#7079ff]",
             communityUi.disabled,
-            FOCUS_VISIBLE
+            FOCUS_VISIBLE,
           )}
         >
           <SendRoundedIcon sx={{ fontSize: 17 }} aria-hidden="true" />
@@ -226,15 +262,10 @@ export function CommunityComposer({
         </button>
       </div>
 
-      {attachmentError ? (
-        <p
-          className={cn(
-            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-sm text-[#ffd9e2]",
-            communityStyles.wrapAnywhere
-          )}
-          role="alert"
-        >
-          {attachmentError}
+      {!draft.postType ? (
+        <p className={cn("mt-[12px] text-[#8d95a6]", fitType.bodySm)}>
+          Choose a post type so readers know whether this is a question, news
+          discussion, portfolio review, or analysis.
         </p>
       ) : null}
     </form>

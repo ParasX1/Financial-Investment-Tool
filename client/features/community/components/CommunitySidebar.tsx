@@ -1,6 +1,13 @@
+// File purpose: Renders the Community feed, time-range, and resources navigation sidebar.
 import * as React from "react";
 import AccessibilityNewRoundedIcon from "@mui/icons-material/AccessibilityNewRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import AllInclusiveRoundedIcon from "@mui/icons-material/AllInclusiveRounded";
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
@@ -9,19 +16,28 @@ import ModeCommentOutlinedIcon from "@mui/icons-material/ModeCommentOutlined";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import PrivacyTipOutlinedIcon from "@mui/icons-material/PrivacyTipOutlined";
+import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
+import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import communityStyles from "@/styles/community.module.css";
+import { fitNav } from "@/components/shared/fitStyles";
+import communityStyles from "../styles/community.module.css";
 import {
   COMMUNITY_FEED_NAV_ITEMS,
   COMMUNITY_RESOURCE_LINKS,
+  COMMUNITY_TOP_TIME_RANGE_ITEMS,
 } from "../constants";
-import { FOCUS_VISIBLE, cn } from "../design";
-import type { CommunityFeedCounts, CommunityFeedView } from "../types";
+import { FOCUS_VISIBLE, cn, fitType } from "../design";
+import type {
+  CommunityFeedCounts,
+  CommunityFeedView,
+  CommunityTopTimeRange,
+} from "../types";
 
 const navIcons: Record<CommunityFeedView, typeof TrendingUpRoundedIcon> = {
   top: TrendingUpRoundedIcon,
   new: NewReleasesOutlinedIcon,
   "my-posts": PersonOutlineRoundedIcon,
+  saved: BookmarkBorderRoundedIcon,
   liked: FavoriteBorderRoundedIcon,
   commented: ModeCommentOutlinedIcon,
 };
@@ -33,25 +49,46 @@ const resourceIcons = [
   AccessibilityNewRoundedIcon,
 ];
 
+const timeRangeIcons: Record<
+  CommunityTopTimeRange,
+  typeof AccessTimeRoundedIcon
+> = {
+  "all-time": AllInclusiveRoundedIcon,
+  "past-year": EventRoundedIcon,
+  "past-month": CalendarMonthRoundedIcon,
+  "past-week": DateRangeRoundedIcon,
+  today: TodayRoundedIcon,
+  "past-hour": ScheduleRoundedIcon,
+};
+
 export function CommunitySidebar({
   activeView,
+  activeTimeRange,
   collapsed,
   compact,
   counts,
   onCollapsedChange,
+  onTimeRangeChange,
   onViewChange,
 }: {
   activeView: CommunityFeedView;
+  activeTimeRange: CommunityTopTimeRange;
   collapsed: boolean;
   compact: boolean;
-  counts: CommunityFeedCounts;
+  counts?: CommunityFeedCounts;
   onCollapsedChange: (collapsed: boolean) => void;
+  onTimeRangeChange: (range: CommunityTopTimeRange) => void;
   onViewChange: (view: CommunityFeedView) => void;
 }) {
   const activeItem = COMMUNITY_FEED_NAV_ITEMS.find(
     (item) => item.id === activeView,
   );
   const ActiveIcon = navIcons[activeView];
+  const activeTimeItem = COMMUNITY_TOP_TIME_RANGE_ITEMS.find(
+    (item) => item.id === activeTimeRange,
+  );
+  const ActiveTimeIcon = timeRangeIcons[activeTimeRange];
+  const showTimeRange = activeView === "top";
   const drawerOpen = compact && !collapsed;
   const drawerRef = React.useRef<HTMLElement | null>(null);
   const toggleButtonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -101,7 +138,6 @@ export function CommunitySidebar({
 
   function handleViewChange(view: CommunityFeedView) {
     onViewChange(view);
-    if (compact) onCollapsedChange(true);
   }
 
   return (
@@ -115,7 +151,7 @@ export function CommunitySidebar({
             )
           : compact && collapsed
             ? cn("fixed z-[900]", communityStyles.sidebarCompactToggle)
-          : "min-w-0",
+            : "min-w-0",
         drawerOpen ? communityStyles.drawerIn : "",
         communityStyles.sidebarShell,
       )}
@@ -132,7 +168,8 @@ export function CommunitySidebar({
         aria-expanded={!collapsed}
         aria-controls="community-feed-navigation"
         className={cn(
-          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[#101014] text-sm font-bold text-[#dce4ff] transition-colors hover:bg-[#171b4a]",
+          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[#101014] text-[#dce4ff] transition-colors hover:bg-[#171b4a]",
+          fitType.control,
           communityStyles.sidebarToggle,
           compact && collapsed
             ? cn(communityStyles.toolbarControl, "px-0")
@@ -156,19 +193,44 @@ export function CommunitySidebar({
       </button>
 
       {collapsed ? (
-        <div
-          className="hidden w-12 rounded-lg bg-[#171b4a] py-2 text-center text-white lg:block"
-          aria-label={activeItem ? `Current view: ${activeItem.label}` : undefined}
-        >
-          <ActiveIcon sx={{ fontSize: 19 }} aria-hidden="true" />
-          <span className="sr-only">{activeItem?.label}</span>
+        <div className="hidden w-12 space-y-2 lg:block">
+          <div
+            className={cn(
+              "rounded-lg py-2 text-center",
+              fitNav.itemActiveCompactQuiet,
+            )}
+            aria-label={
+              activeItem ? `Current view: ${activeItem.label}` : undefined
+            }
+          >
+            <ActiveIcon sx={{ fontSize: 19 }} aria-hidden="true" />
+            <span className="sr-only">{activeItem?.label}</span>
+          </div>
+          {showTimeRange ? (
+            <div
+              className={cn(
+                "rounded-lg py-2 text-center",
+                fitNav.itemActiveCompactQuiet,
+              )}
+              aria-label={
+                activeTimeItem
+                  ? `Current top time range: ${activeTimeItem.label}`
+                  : undefined
+              }
+              title={activeTimeItem?.label}
+            >
+              <ActiveTimeIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+              <span className="sr-only">{activeTimeItem?.label}</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       <nav className="min-w-0" aria-label="Community feeds">
         <p
           className={cn(
-            "mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#687184]",
+            "mb-2 px-2",
+            fitNav.sectionLabel,
             collapsed ? "hidden" : "",
           )}
         >
@@ -193,44 +255,96 @@ export function CommunitySidebar({
                 key={item.id}
                 type="button"
                 onClick={() => handleViewChange(item.id)}
-                aria-current={active ? "page" : undefined}
+                aria-pressed={active}
                 aria-label={`${item.label}: ${item.description}`}
                 className={cn(
-                  "group relative flex min-h-[44px] min-w-[142px] touch-manipulation items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors lg:min-w-0",
+                  fitNav.itemBase,
+                  "relative min-w-[142px] lg:min-w-0",
                   drawerOpen ? "min-w-0" : "",
-                  active
-                    ? "bg-[#171b4a] text-white shadow-[inset_3px_0_0_#7b8cff]"
-                    : "text-[#a5adbf] hover:bg-white/[0.04] hover:text-[#f4f7ff]",
+                  active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
                   FOCUS_VISIBLE,
                 )}
               >
                 <span
                   className={cn(
                     "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors",
-                    active
-                      ? "bg-[#5367ff] text-white"
-                      : "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
+                    active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
                   )}
                   aria-hidden="true"
                 >
                   <Icon sx={{ fontSize: 18 }} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold leading-tight">
+                  <span className={cn("block", fitType.navLabel)}>
                     {item.label}
                   </span>
                 </span>
-                <span className="rounded-md bg-black/30 px-2 py-[2px] text-xs font-bold tabular-nums text-[#c6cee0]">
-                  {counts[item.id].toLocaleString()}
-                </span>
+                {counts ? (
+                  <span className={fitNav.countPill}>
+                    {counts[item.id].toLocaleString()}
+                  </span>
+                ) : null}
               </button>
             );
           })}
         </div>
       </nav>
 
+      {showTimeRange ? (
+        <section
+          className={cn("mt-4 min-w-0", collapsed ? "hidden" : "")}
+          aria-label="Top feed time range"
+        >
+          <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>Time</p>
+          <div
+            className={cn(
+              drawerOpen
+                ? "grid grid-cols-2 gap-2"
+                : "flex gap-2 overflow-x-hidden pb-1 lg:flex-col lg:overflow-visible lg:pb-0",
+            )}
+            role="list"
+          >
+            {COMMUNITY_TOP_TIME_RANGE_ITEMS.map((item) => {
+              const active = activeTimeRange === item.id;
+              const Icon = timeRangeIcons[item.id];
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onTimeRangeChange(item.id)}
+                  aria-pressed={active}
+                  className={cn(
+                    "group flex min-h-[38px] min-w-[132px] touch-manipulation items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors lg:min-w-0",
+                    fitType.control,
+                    drawerOpen ? "min-w-0" : "",
+                    active ? fitNav.itemActiveQuiet : fitNav.itemIdle,
+                    FOCUS_VISIBLE,
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors",
+                      active ? fitNav.iconActiveQuiet : fitNav.iconIdle,
+                    )}
+                    aria-hidden="true"
+                  >
+                    <Icon sx={{ fontSize: 16 }} />
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <div
-        className={cn("my-4", communityStyles.dividerTop, collapsed ? "hidden" : "")}
+        className={cn(
+          "my-4",
+          communityStyles.dividerTop,
+          collapsed ? "hidden" : "",
+        )}
         aria-hidden="true"
       />
 
@@ -238,12 +352,12 @@ export function CommunitySidebar({
         className={cn("min-w-0", collapsed ? "hidden" : "")}
         aria-label="Community resources"
       >
-        <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#687184]">
-          Resources
-        </p>
+        <p className={cn("mb-2 px-2", fitNav.sectionLabel)}>Resources</p>
         <div
           className={cn(
-            drawerOpen ? "space-y-1" : "grid grid-cols-2 gap-2 lg:block lg:space-y-1",
+            drawerOpen
+              ? "space-y-1"
+              : "grid grid-cols-2 gap-2 lg:block lg:space-y-1",
           )}
         >
           {COMMUNITY_RESOURCE_LINKS.map((label, index) => {
@@ -254,8 +368,11 @@ export function CommunitySidebar({
                 key={label}
                 aria-label={`${label} coming soon`}
                 className={cn(
-                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-[#697185]",
-                  drawerOpen ? "bg-transparent" : "bg-white/[0.02] lg:bg-transparent",
+                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-[#697185]",
+                  fitType.control,
+                  drawerOpen
+                    ? "bg-transparent"
+                    : "bg-white/[0.02] lg:bg-transparent",
                 )}
               >
                 <Icon sx={{ fontSize: 17 }} aria-hidden="true" />
