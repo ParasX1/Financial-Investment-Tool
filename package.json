@@ -3,6 +3,7 @@
     "dev": "node scripts/dev-all.mjs",
     "dev:all": "node scripts/dev-all.mjs",
     "dev:env": "powershell -ExecutionPolicy Bypass -File scripts/dev-with-external-env.ps1",
+    "dev:env:mac": "bash scripts/dev-with-external-env.sh",
     "dev:docker": "docker compose up --build"
   },
   "dependencies": {
