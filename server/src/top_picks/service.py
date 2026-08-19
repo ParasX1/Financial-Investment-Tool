@@ -547,9 +547,6 @@ class TopPicksService:
         return deepcopy(snapshot), "miss", False
 
     def _refresh_windows_in_background(self, priority_window):
-        if self._cache_ttl_seconds <= 0:
-            return
-
         with self._refresh_lock:
             if self._refreshing_all_windows:
                 return
