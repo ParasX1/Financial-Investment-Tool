@@ -30,6 +30,7 @@ const renderDialog = (
   const props = {
     open: true,
     visibleKeys: [...visibleKeys],
+    window: "1Y" as const,
     onClose: jest.fn(),
     onVisibleKeysChange: jest.fn(),
   };
@@ -44,7 +45,7 @@ describe("TopPicksColumnsDialog", () => {
       (element) => element.type === FormControlLabel,
     );
     const returnLabel = labels.find(
-      (element) => element.props.label === "Cumulative return",
+      (element) => element.props.label === "Price return",
     );
     const companyLabel = labels.find((element) => element.props.label === "Company");
     const returnCheckbox = collectElements(returnLabel?.props.control).find(

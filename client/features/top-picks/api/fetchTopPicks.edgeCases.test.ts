@@ -67,6 +67,7 @@ describe("fetchTopPicks response boundaries", () => {
       page_size: 1,
       sort_key: "sharpe",
       sort_dir: "desc",
+      window: "1Y",
     });
     expect(response.rows[0]).toMatchObject({
       symbol: "SAFE",

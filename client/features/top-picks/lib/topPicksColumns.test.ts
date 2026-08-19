@@ -35,10 +35,9 @@ describe("topPicksColumns", () => {
     );
 
     expect(byKey.ret1y).toMatchObject({
-      label: "Cumulative return",
+      label: "Price return",
       unit: "percent",
-      description:
-        "Trailing 1Y cumulative return used for Top Picks ranking; unavailable when the full sample is not available.",
+      description: "Price return for the selected Top Picks window.",
     });
     expect(byKey.sharpe.label).toBe("Sharpe ratio");
     expect(byKey.sharpe.description).toContain("configured risk-free rate");

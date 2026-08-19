@@ -1,7 +1,9 @@
 from datetime import date
+import json
 
 import pandas as pd
 
+from src.top_picks import service as service_module
 from src.top_picks.contracts import Ticker, TopPicksRequest
 from src.top_picks.service import (
     TopPicksService,
@@ -250,7 +252,7 @@ def test_snapshot_cache_persists_complete_values_as_stale_after_restart(
     assert value == {"rows": [{"symbol": "AAA"}]}
 
 
-def test_snapshot_cache_ignores_expired_persisted_values(
+def test_snapshot_cache_keeps_expired_persisted_values_as_startup_fallback(
     tmp_path,
     monkeypatch,
 ):
@@ -277,8 +279,132 @@ def test_snapshot_cache_ignores_expired_persisted_values(
 
     value, status = restarted_cache.get(("top-picks", "full"))
 
-    assert status == "miss"
-    assert value is None
+    assert status == "stale"
+    assert value == {"rows": [{"symbol": "AAA"}]}
+
+
+def test_snapshot_cache_returns_latest_persisted_snapshot_for_new_key(
+    tmp_path,
+    monkeypatch,
+):
+    now = [100.0]
+    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    cache_path = tmp_path / "top-picks-cache.json"
+    first_cache = TopPicksSnapshotCache(
+        clock=lambda: 100.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=10,
+    )
+
+    first_cache.set(
+        ("top-picks", "2026-07-31"),
+        {"rows": [{"symbol": "AAA"}]},
+        ttl_seconds=1,
+    )
+    now[0] = 200_000.0
+    restarted_cache = TopPicksSnapshotCache(
+        clock=lambda: 200_000.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=10,
+    )
+
+    exact_value, exact_status = restarted_cache.get(
+        ("top-picks", "2026-08-01")
+    )
+    latest_value, latest_status = restarted_cache.get_latest_stale(
+        excluded_key=("top-picks", "2026-08-01")
+    )
+
+    assert exact_status == "miss"
+    assert exact_value is None
+    assert latest_status == "stale"
+    assert latest_value == {"rows": [{"symbol": "AAA"}]}
+
+
+def test_snapshot_cache_persists_only_latest_fallbacks_by_prefix(
+    tmp_path,
+):
+    cache_path = tmp_path / "top-picks-cache.json"
+    cache = TopPicksSnapshotCache(
+        clock=lambda: 100.0,
+        persistence_path=str(cache_path),
+        stale_ttl_seconds=10,
+    )
+
+    cache.set(
+        ("top-picks-snapshot", "1Y", "2026-07-31"),
+        {"rows": [{"symbol": "OLD"}]},
+        ttl_seconds=10,
+    )
+    cache.set(
+        ("top-picks-snapshot", "1Y", "2026-08-01"),
+        {"rows": [{"symbol": "NEW"}]},
+        ttl_seconds=10,
+    )
+    cache.set(
+        ("top-picks-snapshot", "1D", "2026-08-01"),
+        {"rows": [{"symbol": "DAY"}]},
+        ttl_seconds=10,
+    )
+
+    payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    persisted_values = [
+        entry["value"]["rows"][0]["symbol"]
+        for entry in payload["entries"].values()
+    ]
+
+    assert sorted(persisted_values) == ["DAY", "NEW"]
+
+
+def test_service_refreshes_other_windows_after_cache_miss(monkeypatch):
+    class ImmediateThread:
+        def __init__(self, target, daemon):
+            self._target = target
+            self.daemon = daemon
+
+        def start(self):
+            self._target()
+
+    class RecordingService(TopPicksService):
+        def __init__(self):
+            super().__init__(
+                ticker_repository=FakeTickerRepository(),
+                calculator_provider=calculator_provider,
+                market_data_provider=lambda *args: pd.DataFrame(),
+                today_provider=lambda: date(2026, 7, 31),
+            )
+            self.built_windows = []
+
+        def _build_snapshot(self, start_date, end_date, window="1Y"):
+            self.built_windows.append(window)
+            return {
+                "rows": [{
+                    "symbol": "AAA",
+                    "name": "Alpha Ltd",
+                    "industry": "Technology",
+                    "ret1y": 0.1,
+                    "sharpe": None,
+                    "sortino": None,
+                    "volatility": None,
+                    "maxDD": None,
+                    "beta": None,
+                    "alpha": None,
+                    "infoRatio": None,
+                    "metricStatus": {"sortino": "unavailable"},
+                }],
+                "metadata": {
+                    "window": service_module.WINDOW_METHODS[window],
+                    "windowCode": window,
+                },
+                "warnings": [],
+            }
+
+    monkeypatch.setattr(service_module, "Thread", ImmediateThread)
+    service = RecordingService()
+
+    service.get_page(TopPicksRequest(1, 25, "ret1y", "desc", "1D"))
+
+    assert service.built_windows == ["1D", "1W", "1M", "1Y"]
 
 
 def test_service_can_disable_snapshot_cache_with_zero_ttl():

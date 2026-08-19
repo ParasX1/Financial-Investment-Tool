@@ -1,7 +1,10 @@
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { TopPicksColumnsDialog } from "../components/TopPicksColumnsDialog";
 import { TopPicksTable } from "../components/TopPicksTable";
-import { TopPicksToolbar } from "../components/TopPicksToolbar";
+import {
+  TopPicksStatus,
+  TopPicksToolbar,
+} from "../components/TopPicksToolbar";
 import { useTopPicksController } from "../hooks/useTopPicksController";
 import { TOP_PICKS_COLUMNS } from "../lib/topPicksColumns";
 import { TopPicksScreen } from "./TopPicksScreen";
@@ -17,6 +20,9 @@ jest.mock("@/components/shared/FitPageHeader", () => ({
 }));
 
 jest.mock("../components/TopPicksToolbar", () => ({
+  TopPicksStatus: function MockTopPicksStatus() {
+    return null;
+  },
   TopPicksToolbar: function MockTopPicksToolbar() {
     return null;
   },
@@ -95,6 +101,7 @@ const createController = () => ({
   page: 2,
   pageSize: 25,
   totalPages: 3,
+  window: "1Y",
   visibleKeys: ["symbol", "name", "ret1y"],
   visibleColumns: TOP_PICKS_COLUMNS.filter((column) =>
     ["rank", "symbol", "name", "ret1y"].includes(column.key),
@@ -103,6 +110,7 @@ const createController = () => ({
   columnsOpen: true,
   retry: jest.fn(),
   setColumnsOpen: jest.fn(),
+  setWindow: jest.fn(),
   setVisibleKeys: jest.fn(),
   toggleSort: jest.fn(),
   setPage: jest.fn(),
@@ -124,6 +132,7 @@ describe("TopPicksScreen", () => {
     const controller = createController();
     (useTopPicksController as jest.Mock).mockReturnValue(controller);
     const elements = collectElements(TopPicksScreen());
+    const status = elements.find((element) => element.type === TopPicksStatus);
     const toolbar = elements.find((element) => element.type === TopPicksToolbar);
     const table = elements.find((element) => element.type === TopPicksTable);
     const dialog = elements.find(
@@ -131,6 +140,15 @@ describe("TopPicksScreen", () => {
     );
 
     expect(toolbar?.props).toMatchObject({
+      loading: false,
+      error: null,
+      total: 51,
+      selectedWindow: "1Y",
+      onExport: expect.any(Function),
+      onEditColumns: expect.any(Function),
+      onWindowChange: controller.setWindow,
+    });
+    expect(status?.props).toMatchObject({
       loading: false,
       error: null,
       warnings: ["One symbol was excluded"],
@@ -151,6 +169,7 @@ describe("TopPicksScreen", () => {
     expect(dialog?.props).toMatchObject({
       open: true,
       visibleKeys: ["symbol", "name", "ret1y"],
+      window: "1Y",
       onVisibleKeysChange: controller.setVisibleKeys,
     });
 
@@ -199,7 +218,7 @@ describe("TopPicksScreen", () => {
     toolbar?.props.onExport?.();
 
     expect(blobParts[0][0]).toContain(
-      '"Rank","Symbol","Company","Cumulative return"',
+      '"Rank","Symbol","Company","Price return"',
     );
     expect(blobParts[0][0]).toContain('"26","AAA","ACME ""Alpha""","+12.3%"');
     expect(anchor).toMatchObject({

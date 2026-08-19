@@ -13,7 +13,7 @@ describe("formatTopPicksAssumptions", () => {
         riskFreeRateAsOf: "2026-06-17",
       }),
     ).toBe(
-      "Ranked universe: 50 stocks • requested window: trailing one year • benchmark ^AXJO • risk-free rate 4.35% (RBA cash rate target, as of 2026-06-17)",
+      "Ranked universe: 50 stocks • requested window: trailing one year • benchmark ^AXJO • risk-free rate 4.35% (RBA cash rate target, effective 2026-06-17)",
     );
   });
 

@@ -3,6 +3,8 @@ import type {
   TopPicksColumnKey,
   TopPicksMetric,
   TopPicksMetricStatus,
+  TopPicksSortKey,
+  TopPicksWindow,
 } from "../types";
 
 const formatMetric = (
@@ -43,10 +45,9 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
   },
   {
     key: "ret1y",
-    label: "Cumulative return",
+    label: "Price return",
     align: "right",
-    description:
-      "Trailing 1Y cumulative return used for Top Picks ranking; unavailable when the full sample is not available.",
+    description: "Price return for the selected Top Picks window.",
     unit: "percent",
     defaultVisible: true,
     format: (value, status) =>
@@ -59,8 +60,7 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
     key: "sharpe",
     label: "Sharpe ratio",
     align: "right",
-    description:
-      "Annualized Sharpe ratio versus the configured risk-free rate.",
+    description: "Annualized Sharpe ratio versus the configured risk-free rate.",
     unit: "ratio",
     defaultVisible: true,
     format: (value, status) => formatMetric(value, status),
@@ -119,18 +119,53 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
     key: "infoRatio",
     label: "Information ratio",
     align: "right",
-    description:
-      "Information Ratio = annualized active return / tracking error.",
+    description: "Information Ratio = annualized active return / tracking error.",
     unit: "ratio",
     defaultVisible: true,
     format: (value, status) => formatMetric(value, status),
   },
 ];
 
+const WINDOW_METRIC_KEYS: Record<TopPicksWindow, readonly TopPicksSortKey[]> = {
+  "1D": ["ret1y"],
+  "1W": ["ret1y", "volatility", "maxDD"],
+  "1M": ["ret1y", "volatility", "maxDD"],
+  "1Y": [
+    "ret1y",
+    "sharpe",
+    "sortino",
+    "volatility",
+    "maxDD",
+    "beta",
+    "alpha",
+    "infoRatio",
+  ],
+};
+
+export const getTopPicksWindowMetricKeys = (
+  window: TopPicksWindow,
+): readonly TopPicksSortKey[] => WINDOW_METRIC_KEYS[window];
+
+export const isTopPicksMetricAvailableForWindow = (
+  key: TopPicksColumnKey,
+  window: TopPicksWindow,
+): boolean =>
+  key === "rank" ||
+  key === "symbol" ||
+  key === "name" ||
+  WINDOW_METRIC_KEYS[window].includes(key as TopPicksSortKey);
+
+export const getDefaultVisibleTopPicksColumnsForWindow = (
+  window: TopPicksWindow,
+): TopPicksColumnKey[] =>
+  TOP_PICKS_COLUMNS.filter(
+    (column) =>
+      column.defaultVisible &&
+      isTopPicksMetricAvailableForWindow(column.key, window),
+  ).map((column) => column.key);
+
 export const getDefaultVisibleTopPicksColumns = (): TopPicksColumnKey[] =>
-  TOP_PICKS_COLUMNS.filter((column) => column.defaultVisible).map(
-    (column) => column.key,
-  );
+  getDefaultVisibleTopPicksColumnsForWindow("1Y");
 
 export const valueColor = (
   key: TopPicksColumnDef["key"],

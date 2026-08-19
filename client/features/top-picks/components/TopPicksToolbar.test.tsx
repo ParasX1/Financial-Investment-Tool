@@ -5,7 +5,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { TopPicksToolbar } from "./TopPicksToolbar";
+import { TopPicksStatus } from "./TopPicksToolbar";
 
 type InteractiveElement = ReactElement<{
   "aria-label"?: string;
@@ -45,15 +45,17 @@ const baseProps = {
   total: 50,
   page: 1,
   totalPages: 2,
+  selectedWindow: "1Y" as const,
   onExport: () => undefined,
   onEditColumns: () => undefined,
+  onWindowChange: () => undefined,
   onRetry: () => undefined,
 };
 
-describe("TopPicksToolbar", () => {
+describe("TopPicksStatus", () => {
   it("offers an accessible retry interaction after a load failure", () => {
     const onRetry = jest.fn();
-    const toolbar = TopPicksToolbar({
+    const status = TopPicksStatus({
       ...baseProps,
       error: "Top Picks are temporarily unavailable.",
       total: 0,
@@ -61,7 +63,7 @@ describe("TopPicksToolbar", () => {
       onRetry,
     });
 
-    const retryButton = findByAriaLabel(toolbar, "Retry loading Top Picks");
+    const retryButton = findByAriaLabel(status, "Retry loading Top Picks");
     expect(retryButton).toBeDefined();
 
     retryButton?.props.onClick?.();
@@ -70,7 +72,7 @@ describe("TopPicksToolbar", () => {
   });
 
   it("surfaces safe ranking assumptions with neutral universe wording", () => {
-    const toolbar = TopPicksToolbar({
+    const status = TopPicksStatus({
       ...baseProps,
       metadata: {
         benchmark: "^AXJO",
@@ -80,7 +82,7 @@ describe("TopPicksToolbar", () => {
       },
     });
 
-    expect(collectText(toolbar)).toContain(
+    expect(collectText(status)).toContain(
       "Ranked universe: 50 stocks • requested window: trailing one year • benchmark ^AXJO • risk-free rate 4.35%",
     );
   });

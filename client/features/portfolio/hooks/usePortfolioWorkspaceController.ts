@@ -26,30 +26,6 @@ import type {
   PortfolioWorkspaceState,
 } from "../types";
 
-const SYMBOL_OPTIONS = [
-  "AAPL",
-  "MSFT",
-  "NVDA",
-  "GOOGL",
-  "AMZN",
-  "META",
-  "TSLA",
-  "JPM",
-  "V",
-  "BAC",
-  "WMT",
-  "KO",
-  "DIS",
-  "PFE",
-  "INTC",
-  "ORCL",
-  "CRM",
-  "ADBE",
-  "CSCO",
-  "CBA.AX",
-  "BHP.AX",
-] as const;
-
 const getBrowserStorage = (): PortfolioWorkspaceStorage | null => {
   if (typeof window === "undefined") return null;
   try {
@@ -206,7 +182,7 @@ export const usePortfolioWorkspaceController = ({
   }, [dispatch, focusedCard, workspace.view.mode]);
 
   const symbolOptions = useMemo(
-    () => mergePortfolioSymbolOptions(draftSymbols, SYMBOL_OPTIONS),
+    () => mergePortfolioSymbolOptions(draftSymbols, []),
     [draftSymbols],
   );
   const pending = hasPendingWorkspaceDraft(

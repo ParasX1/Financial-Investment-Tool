@@ -8,6 +8,7 @@ import {
   type TopPicksResponse,
   type TopPicksRow,
   type TopPicksSortKey,
+  type TopPicksWindow,
 } from "../types";
 
 export type FetchTopPicksOptions = {
@@ -15,6 +16,7 @@ export type FetchTopPicksOptions = {
   pageSize: number;
   sortKey: TopPicksSortKey;
   sortDirection: "asc" | "desc";
+  window?: TopPicksWindow;
   signal?: AbortSignal;
 };
 
@@ -181,7 +183,20 @@ const normalizeMetadata = (value: unknown): TopPicksMetadata => {
     value.minimumTrailingReturnObservations,
   );
   const windowValue = value.window ?? assumptions.window;
-  const window = windowValue === "trailing_one_year" ? windowValue : undefined;
+  const window =
+    windowValue === "trailing_day" ||
+    windowValue === "trailing_week" ||
+    windowValue === "trailing_month" ||
+    windowValue === "trailing_one_year"
+      ? windowValue
+      : undefined;
+  const windowCode =
+    value.windowCode === "1D" ||
+    value.windowCode === "1W" ||
+    value.windowCode === "1M" ||
+    value.windowCode === "1Y"
+      ? value.windowCode
+      : undefined;
 
   return {
     ...(benchmark === undefined ? {} : { benchmark }),
@@ -202,6 +217,7 @@ const normalizeMetadata = (value: unknown): TopPicksMetadata => {
       ? {}
       : { minimumTrailingReturnObservations }),
     ...(window === undefined ? {} : { window }),
+    ...(windowCode === undefined ? {} : { windowCode }),
   };
 };
 
@@ -259,6 +275,7 @@ export async function fetchTopPicks({
   pageSize,
   sortKey,
   sortDirection,
+  window = "1Y",
   signal,
 }: FetchTopPicksOptions): Promise<TopPicksResponse> {
   const response = await fetch(`${API_BASE}/api/top-picks`, {
@@ -269,6 +286,7 @@ export async function fetchTopPicks({
       page_size: Math.max(1, Math.trunc(pageSize)),
       sort_key: sortKey,
       sort_dir: sortDirection,
+      window,
     }),
     signal,
   });

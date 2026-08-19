@@ -59,13 +59,14 @@ export function TopPicksTable({
   const visibleColumns = TOP_PICKS_COLUMNS.filter((column) =>
     visibleKeys.includes(column.key),
   );
-  const stateMessage = loading && rows.length === 0
-    ? "Loading Top Picks…"
-    : error
-      ? "Top Picks could not be loaded."
-      : rows.length === 0
-        ? "No Top Picks are available."
-        : null;
+  const stateMessage =
+    loading && rows.length === 0
+      ? "Loading Top Picks..."
+      : error
+        ? "Top Picks could not be loaded."
+        : rows.length === 0
+          ? "No Top Picks are available."
+          : null;
 
   return (
     <Box sx={{ px: { xs: 2, sm: 3 }, pb: 3, pt: 1 }}>
@@ -207,56 +208,88 @@ export function TopPicksTable({
         </Table>
       </Box>
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mt: 1 }}
-      >
-        <Stack direction="row" gap={1} alignItems="center">
-          <Typography
-            variant="body2"
-            sx={{ color: "var(--fit-color-text-muted, #8f98aa)" }}
-          >
-            Rows per page:
-          </Typography>
-          <Select
-            size="small"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            MenuProps={darkMenuProps}
-            sx={{ ...darkControlSx, width: 88 }}
-          >
-            {[10, 25, 50, 100].map((value) => (
-              <MenuItem key={value} value={value}>
-                {value}
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
-        <Pagination
-          count={totalPages}
-          page={page}
-          disabled={loading || Boolean(error)}
-          onChange={(_, nextPage) => onPageChange(nextPage)}
-          sx={{
-            "& .MuiPaginationItem-root": {
-              color: "var(--fit-color-text-body, #b9c1d0)",
-              borderRadius: "0.5rem",
-            },
-            "& .MuiPaginationItem-root.Mui-selected": {
-              bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))",
-              color: "#fff",
-            },
-            "& .MuiPaginationItem-root:focus-visible": {
-              outline:
-                "2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))",
-              outlineOffset: 2,
-            },
-          }}
-        />
-      </Stack>
+      <TopPicksPaginationControls
+        page={page}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        loading={loading}
+        error={error}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </Box>
+  );
+}
+
+function TopPicksPaginationControls({
+  page,
+  pageSize,
+  totalPages,
+  loading,
+  error,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  loading: boolean;
+  error: string | null;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}) {
+  return (
+    <Stack
+      direction={{ xs: "column", sm: "row" }}
+      alignItems={{ xs: "stretch", sm: "center" }}
+      justifyContent="space-between"
+      gap={1.5}
+      sx={{ mt: 1 }}
+    >
+      <Stack direction="row" gap={1} alignItems="center">
+        <Typography
+          variant="body2"
+          sx={{ color: "var(--fit-color-text-muted, #8f98aa)" }}
+        >
+          Rows per page:
+        </Typography>
+        <Select
+          size="small"
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          MenuProps={darkMenuProps}
+          sx={{ ...darkControlSx, width: 88 }}
+        >
+          {[10, 25, 50, 100].map((value) => (
+            <MenuItem key={value} value={value}>
+              {value}
+            </MenuItem>
+          ))}
+        </Select>
+      </Stack>
+      <Pagination
+        count={totalPages}
+        page={page}
+        disabled={loading || Boolean(error)}
+        onChange={(_, nextPage) => onPageChange(nextPage)}
+        sx={{
+          alignSelf: { xs: "center", sm: "auto" },
+          "& .MuiPaginationItem-root": {
+            color: "var(--fit-color-text-body, #b9c1d0)",
+            borderRadius: "0.5rem",
+          },
+          "& .MuiPaginationItem-root.Mui-selected": {
+            bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))",
+            color: "#fff",
+          },
+          "& .MuiPaginationItem-root:focus-visible": {
+            outline:
+              "2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))",
+            outlineOffset: 2,
+          },
+        }}
+      />
+    </Stack>
   );
 }
 
