@@ -43,6 +43,8 @@ export function MarketNewsRightRail({
   onQuoteReferenceChange: (symbol: string) => void;
   onTickerNewsRequest: (symbol: string) => void;
 }) {
+  const normalizedLookupDraft = lookupDraft.trim();
+
   return (
     <aside
       className={styles.rightRailPanel}
@@ -53,7 +55,9 @@ export function MarketNewsRightRail({
           role="search"
           onSubmit={(event) => {
             event.preventDefault();
-            onQuoteReferenceChange(lookupDraft);
+            if (normalizedLookupDraft) {
+              onQuoteReferenceChange(normalizedLookupDraft);
+            }
           }}
         >
           <label htmlFor="market-news-quote" className="sr-only">
@@ -81,6 +85,7 @@ export function MarketNewsRightRail({
             <button
               type="submit"
               aria-label="Look up quote"
+              disabled={!normalizedLookupDraft}
               className={cn(
                 "grid h-11 w-11 place-items-center rounded-lg text-white",
                 fitButton.primary,
