@@ -15,6 +15,7 @@ from .composition.top_picks import (
 from .routes.legacy_stocks import create_legacy_stocks_blueprint
 from .routes.market_data import create_market_data_blueprint
 from .routes.metrics import create_metrics_blueprint
+from .routes.etf import create_etf_blueprint
 from .routes.top_picks import create_top_picks_blueprint
 
 
@@ -62,6 +63,7 @@ def create_app(
         resolved_calculator_provider,
     )
     app.register_blueprint(create_market_data_blueprint())
+    app.register_blueprint(create_etf_blueprint())
     app.register_blueprint(create_legacy_stocks_blueprint())
     app.register_blueprint(
         create_top_picks_blueprint(top_picks_service_provider)

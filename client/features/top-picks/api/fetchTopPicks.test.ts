@@ -136,6 +136,27 @@ describe("fetchTopPicks", () => {
     expect(response.warnings).toEqual([]);
   });
 
+  it("sends force_refresh only for explicit refreshes", async () => {
+    const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: { rows: [], total: 0 }, metadata: {}, warnings: [] }),
+        { status: 200 },
+      ),
+    );
+
+    await fetchTopPicks({
+      page: 1,
+      pageSize: 25,
+      sortKey: "sharpe",
+      sortDirection: "desc",
+      forceRefresh: true,
+    });
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({
+      force_refresh: true,
+    });
+  });
+
   it("surfaces a safe server error message", async () => {
     jest.spyOn(global, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ error: "Top Picks are unavailable." }), {

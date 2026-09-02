@@ -17,6 +17,8 @@ type TopPicksToolbarProps = {
   error: string | null;
   warnings: string[];
   metadata?: TopPicksMetadata;
+  lastUpdatedAt?: Date | null;
+  syncing?: boolean;
   total: number;
   page: number;
   totalPages: number;
@@ -42,12 +44,22 @@ type TopPicksStatusProps = Pick<
 export function TopPicksToolbar({
   loading,
   error,
+  lastUpdatedAt = null,
+  syncing = false,
   total,
   selectedWindow,
   onExport,
   onEditColumns,
   onWindowChange,
 }: TopPicksToolbarProps) {
+  const updatedAtLabel = lastUpdatedAt
+    ? lastUpdatedAt.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : null;
+
   return (
     <Box
       sx={{
@@ -60,37 +72,64 @@ export function TopPicksToolbar({
         flexWrap: "wrap",
       }}
     >
-      <ToggleButtonGroup
-        exclusive
-        size="small"
-        value={selectedWindow}
-        onChange={(_, nextWindow) => {
-          if (nextWindow) onWindowChange(nextWindow as TopPicksWindow);
-        }}
-        aria-label="Top Picks time window"
-        sx={{
-          bgcolor: "var(--fit-color-surface, #09090b)",
-          border:
-            "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
-          borderRadius: "0.75rem",
-          overflow: "hidden",
-          "& .MuiToggleButton-root": {
-            color: "var(--fit-color-text-body, #b9c1d0)",
-            border: 0,
-            px: 1.75,
-            textTransform: "none",
-          },
-          "& .MuiToggleButton-root.Mui-selected": {
-            bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.16))",
-            color: "#fff",
-          },
-        }}
+      <Stack
+        direction="row"
+        gap={1.25}
+        alignItems="center"
+        flexWrap="wrap"
       >
-        <ToggleButton value="1D">Day</ToggleButton>
-        <ToggleButton value="1W">Week</ToggleButton>
-        <ToggleButton value="1M">Month</ToggleButton>
-        <ToggleButton value="1Y">Year</ToggleButton>
-      </ToggleButtonGroup>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={selectedWindow}
+          onChange={(_, nextWindow) => {
+            if (nextWindow) onWindowChange(nextWindow as TopPicksWindow);
+          }}
+          aria-label="Top Picks time window"
+          sx={{
+            bgcolor: "var(--fit-color-surface, #09090b)",
+            border:
+              "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+            borderRadius: "0.75rem",
+            overflow: "hidden",
+            "& .MuiToggleButton-root": {
+              color: "var(--fit-color-text-body, #b9c1d0)",
+              border: 0,
+              px: 1.75,
+              textTransform: "none",
+            },
+            "& .MuiToggleButton-root.Mui-selected": {
+              bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.16))",
+              color: "#fff",
+            },
+          }}
+        >
+          <ToggleButton value="1D">Day</ToggleButton>
+          <ToggleButton value="1W">Week</ToggleButton>
+          <ToggleButton value="1M">Month</ToggleButton>
+          <ToggleButton value="1Y">Year</ToggleButton>
+        </ToggleButtonGroup>
+        <Typography
+          variant="caption"
+          role="status"
+          sx={{
+            color: syncing
+              ? "var(--fit-color-info, #93c5fd)"
+              : "var(--fit-color-text-muted, #8f98aa)",
+            fontWeight: 700,
+            lineHeight: 1.4,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {syncing
+            ? updatedAtLabel
+              ? `Syncing - Updated ${updatedAtLabel}`
+              : "Syncing latest"
+            : updatedAtLabel
+              ? `Updated ${updatedAtLabel}`
+              : "Waiting for sync"}
+        </Typography>
+      </Stack>
       <Stack direction="row" gap={1.25} alignItems="center">
         <Button
           variant="contained"
@@ -125,19 +164,15 @@ export function TopPicksStatus({
   onRetry,
 }: TopPicksStatusProps) {
   const assumptionSummary = formatTopPicksAssumptions(metadata);
-  const showingStaleSnapshot =
-    metadata.cacheStatus === "stale" || metadata.snapshotRefreshing === true;
   const statusText = loading
-    ? showingStaleSnapshot && total > 0
-      ? `${total} results - using previous results`
+    ? total > 0
+      ? `${total} results - Showing page ${page} of ${totalPages}`
       : "Loading..."
     : error
       ? `Error: ${error}`
       : total === 0
         ? "No results"
-        : showingStaleSnapshot
-          ? `${total} results - using previous results`
-          : `${total} results - Showing page ${page} of ${totalPages}`;
+        : `${total} results - Showing page ${page} of ${totalPages}`;
 
   return (
     <Stack sx={{ px: { xs: 2, sm: 3 }, pb: 3 }} spacing={0.5}>

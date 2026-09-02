@@ -5,7 +5,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { TopPicksStatus } from "./TopPicksToolbar";
+import { TopPicksStatus, TopPicksToolbar } from "./TopPicksToolbar";
 
 type InteractiveElement = ReactElement<{
   "aria-label"?: string;
@@ -85,5 +85,30 @@ describe("TopPicksStatus", () => {
     expect(collectText(status)).toContain(
       "Ranked universe: 50 stocks • requested window: trailing one year • benchmark ^AXJO • risk-free rate 4.35%",
     );
+  });
+  it("keeps the result count neutral while a snapshot refresh is active", () => {
+    const status = TopPicksStatus({
+      ...baseProps,
+      metadata: {
+        cacheStatus: "stale",
+        snapshotRefreshing: true,
+      },
+    });
+
+    const text = collectText(status);
+    expect(text).toContain("50 results - Showing page 1 of 2");
+    expect(text).not.toContain("using previous results");
+  });
+});
+
+describe("TopPicksToolbar", () => {
+  it("shows the latest local sync time beside the window controls", () => {
+    const toolbar = TopPicksToolbar({
+      ...baseProps,
+      lastUpdatedAt: new Date("2026-08-25T03:45:12Z"),
+      syncing: true,
+    });
+
+    expect(collectText(toolbar)).toContain("Syncing - Updated");
   });
 });

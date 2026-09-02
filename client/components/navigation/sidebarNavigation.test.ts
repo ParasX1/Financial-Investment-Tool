@@ -25,4 +25,13 @@ describe("Sidebar navigation metadata", () => {
     expect(community).toBeDefined();
     expect(isSidebarNavItemActive(community!, "/Community/Create")).toBe(true);
   });
+
+  it("includes the ETF preview page as its own workspace", () => {
+    const etf = SIDEBAR_MAIN_NAV_ITEMS.find((item) => item.label === "ETF");
+
+    expect(etf).toBeDefined();
+    expect(etf?.href).toBe("/ETF");
+    expect(isSidebarNavItemActive(etf!, "/ETF")).toBe(true);
+    expect(isSidebarNavItemActive(etf!, "/TopPicks")).toBe(false);
+  });
 });

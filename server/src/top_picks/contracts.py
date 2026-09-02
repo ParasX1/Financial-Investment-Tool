@@ -39,6 +39,7 @@ class TopPicksRequest:
     sort_key: str
     sort_dir: str
     window: str = DEFAULT_WINDOW
+    force_refresh: bool = False
 
 
 @dataclass(frozen=True)
@@ -104,10 +105,17 @@ def validate_top_picks_request(payload):
             "sort_dir must be either asc or desc."
         )
 
+    force_refresh = payload.get("force_refresh", False)
+    if not isinstance(force_refresh, bool):
+        raise TopPicksRequestValidationError(
+            "force_refresh must be a boolean."
+        )
+
     return TopPicksRequest(
         page=page,
         page_size=page_size,
         sort_key=sort_key,
         sort_dir=sort_dir,
         window=window,
+        force_refresh=force_refresh,
     )

@@ -21,6 +21,15 @@ class FakeTickerRepository:
         )[:limit]
 
 
+class DeferredThread:
+    def __init__(self, target, daemon):
+        self.target = target
+        self.daemon = daemon
+
+    def start(self):
+        pass
+
+
 def calculator_provider(name):
     results = {
         "calculate_cumulative_return": {
@@ -155,7 +164,11 @@ def test_service_paginates_after_sorting_the_whole_universe():
     assert response["data"]["total"] == 3
 
 
-def test_service_reuses_cached_snapshot_across_sort_and_page_requests():
+def test_service_reuses_cached_snapshot_across_sort_and_page_requests(
+    monkeypatch,
+):
+    monkeypatch.setattr(service_module, "Thread", DeferredThread)
+
     class CountingTickerRepository:
         def __init__(self):
             self.calls = 0
@@ -407,7 +420,165 @@ def test_service_refreshes_other_windows_after_cache_miss(monkeypatch):
     assert service.built_windows == ["1D", "1W", "1M", "1Y"]
 
 
-def test_service_can_disable_snapshot_cache_with_zero_ttl():
+def test_service_force_refresh_rebuilds_snapshot_and_clears_market_cache(
+    monkeypatch,
+):
+    monkeypatch.setattr(service_module, "Thread", DeferredThread)
+
+    class CountingTickerRepository:
+        def __init__(self):
+            self.calls = 0
+
+        def list_tickers(self, limit):
+            self.calls += 1
+            return FakeTickerRepository().list_tickers(limit)
+
+    repository = CountingTickerRepository()
+    clear_calls = []
+    service = TopPicksService(
+        ticker_repository=repository,
+        calculator_provider=calculator_provider,
+        market_data_provider=lambda *args: pd.DataFrame(),
+        market_cache_clearer=lambda: clear_calls.append(True),
+        information_ratio_provider=lambda *args: {
+            "AAA": 0.65,
+            "BBB": 0.30,
+        },
+        observation_count_provider=lambda *args: {
+            "AAA": 252,
+            "BBB": 252,
+        },
+        today_provider=lambda: date(2026, 7, 31),
+    )
+
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+    cached = service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+    refreshed = service.get_page(
+        TopPicksRequest(1, 2, "sharpe", "desc", force_refresh=True)
+    )
+
+    assert repository.calls == 1
+    assert cached["metadata"]["cacheStatus"] == "hit"
+    assert refreshed["metadata"]["cacheStatus"] == "hit"
+    assert refreshed["metadata"]["snapshotRefreshing"] is True
+    assert clear_calls == []
+
+
+def test_service_force_refresh_rebuilds_cached_snapshot_in_background(
+    monkeypatch,
+):
+    class ImmediateThread:
+        def __init__(self, target, daemon):
+            self._target = target
+            self.daemon = daemon
+
+        def start(self):
+            self._target()
+
+    class RecordingService(TopPicksService):
+        def __init__(self):
+            self.built_windows = []
+            super().__init__(
+                ticker_repository=FakeTickerRepository(),
+                calculator_provider=calculator_provider,
+                market_data_provider=lambda *args: pd.DataFrame(),
+                market_cache_clearer=lambda: clear_calls.append(True),
+                information_ratio_provider=lambda *args: {
+                    "AAA": 0.65,
+                    "BBB": 0.30,
+                },
+                observation_count_provider=lambda *args: {
+                    "AAA": 252,
+                    "BBB": 252,
+                },
+                today_provider=lambda: date(2026, 7, 31),
+            )
+
+        def _build_snapshot(self, start_date, end_date, window="1Y"):
+            self.built_windows.append(window)
+            return super()._build_snapshot(start_date, end_date, window)
+
+    clear_calls = []
+    monkeypatch.setattr(service_module, "Thread", ImmediateThread)
+    service = RecordingService()
+
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
+    service.built_windows.clear()
+    refreshed = service.get_page(
+        TopPicksRequest(1, 2, "sharpe", "desc", force_refresh=True)
+    )
+
+    assert refreshed["metadata"]["cacheStatus"] == "hit"
+    assert refreshed["metadata"]["snapshotRefreshing"] is True
+    assert clear_calls == [True]
+    assert service.built_windows == ["1Y", "1D", "1W", "1M"]
+
+
+def test_service_queues_force_refresh_when_window_refresh_is_running(
+    monkeypatch,
+):
+    captured_targets = []
+
+    class CapturingThread:
+        def __init__(self, target, daemon):
+            captured_targets.append(target)
+            self.daemon = daemon
+
+        def start(self):
+            pass
+
+    class RecordingService(TopPicksService):
+        def __init__(self):
+            self.built_windows = []
+            super().__init__(
+                ticker_repository=FakeTickerRepository(),
+                calculator_provider=calculator_provider,
+                market_data_provider=lambda *args: pd.DataFrame(),
+                market_cache_clearer=lambda: clear_calls.append(True),
+                information_ratio_provider=lambda *args: {
+                    "AAA": 0.65,
+                    "BBB": 0.30,
+                },
+                observation_count_provider=lambda *args: {
+                    "AAA": 252,
+                    "BBB": 252,
+                },
+                today_provider=lambda: date(2026, 7, 31),
+            )
+
+        def _build_snapshot(self, start_date, end_date, window="1Y"):
+            self.built_windows.append(window)
+            return super()._build_snapshot(start_date, end_date, window)
+
+    clear_calls = []
+    monkeypatch.setattr(service_module, "Thread", CapturingThread)
+    service = RecordingService()
+
+    service.get_page(TopPicksRequest(1, 2, "ret1y", "desc", "1D"))
+    service.get_page(
+        TopPicksRequest(1, 2, "sharpe", "desc", "1Y", force_refresh=True)
+    )
+
+    assert len(captured_targets) == 1
+
+    service.built_windows.clear()
+    captured_targets[0]()
+
+    assert clear_calls == [True]
+    assert service.built_windows == [
+        "1W",
+        "1M",
+        "1Y",
+        "1Y",
+        "1D",
+        "1W",
+        "1M",
+    ]
+
+
+def test_service_can_disable_snapshot_cache_with_zero_ttl(monkeypatch):
+    monkeypatch.setattr(service_module, "Thread", DeferredThread)
+
     class CountingTickerRepository:
         def __init__(self):
             self.calls = 0

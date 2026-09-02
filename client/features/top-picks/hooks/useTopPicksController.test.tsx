@@ -63,6 +63,11 @@ const deferred = <T,>() => {
   return { promise, reject, resolve };
 };
 
+const foregroundRequests = () =>
+  mockFetchTopPicks.mock.calls
+    .map(([options]) => options)
+    .filter((options) => options.pageSize !== 1);
+
 const installMemoryStorage = () => {
   const values = new Map<string, string>();
   const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -825,8 +830,9 @@ describe("useTopPicksController", () => {
       await flushEffects();
     });
 
-    const secondRequest = mockFetchTopPicks.mock.calls[1]?.[0];
-    expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+    const foreground = foregroundRequests();
+    const secondRequest = foreground[1];
+    expect(foreground).toHaveLength(2);
     expect(secondRequest).toMatchObject({
       page: firstRequest?.page,
       pageSize: firstRequest?.pageSize,
@@ -837,6 +843,254 @@ describe("useTopPicksController", () => {
     expect(latest!.error).toBeNull();
 
     renderer!.unmount();
+  });
+
+  it("force-refreshes missing Top Picks data without clearing visible rows", async () => {
+    jest.useFakeTimers();
+    const refreshResponse = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: {},
+        warnings: [
+          "No usable market data for 6 symbols: BBB, CCC, DDD, EEE, FFF, GGG.",
+        ],
+      })
+      .mockReturnValueOnce(refreshResponse.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+      await act(async () => {
+        await flushEffects();
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(20_000);
+        await flushEffects();
+      });
+
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+      expect(mockFetchTopPicks.mock.calls[1]?.[0]).toMatchObject({
+        forceRefresh: true,
+      });
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+      await act(async () => {
+        refreshResponse.resolve({
+          rows: [rowFor("AAA"), rowFor("BBB")],
+          total: 2,
+          metadata: {},
+          warnings: [],
+        });
+        await flushEffects();
+      });
+
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA", "BBB"]);
+      renderer!.unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("keeps force-refreshing live data after a complete response", async () => {
+    jest.useFakeTimers();
+    const refreshResponse = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: {},
+        warnings: [],
+      })
+      .mockReturnValueOnce(refreshResponse.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+      await act(async () => {
+        jest.advanceTimersByTime(20_000);
+        await flushEffects();
+      });
+
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+      expect(mockFetchTopPicks.mock.calls[1]?.[0]).toMatchObject({
+        forceRefresh: true,
+      });
+      expect(latest!.syncing).toBe(true);
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+      await act(async () => {
+        refreshResponse.resolve({
+          rows: [rowFor("AAA"), rowFor("BBB")],
+          total: 2,
+          metadata: {},
+          warnings: [],
+        });
+        await flushEffects();
+      });
+
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA", "BBB"]);
+      expect(latest!.syncing).toBe(false);
+      renderer!.unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("updates the local sync time when a different window snapshot is shown", async () => {
+    jest.useFakeTimers();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        warnings: [],
+      })
+      .mockResolvedValueOnce({
+        rows: [rowFor("BBB")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:01:00Z" },
+        warnings: [],
+      })
+      .mockResolvedValueOnce({
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        warnings: [],
+      });
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      jest.setSystemTime(new Date("2026-08-25T04:00:00Z"));
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+      const firstAppliedAt = latest!.lastUpdatedAt;
+
+      jest.setSystemTime(new Date("2026-08-25T04:05:00Z"));
+      await act(async () => {
+        latest!.setWindow("1M");
+        await flushEffects();
+      });
+
+      expect(latest!.lastUpdatedAt).not.toBe(firstAppliedAt);
+
+      jest.setSystemTime(new Date("2026-08-25T04:10:00Z"));
+      await act(async () => {
+        latest!.setWindow("1Y");
+        await flushEffects();
+      });
+
+      expect(latest!.lastUpdatedAt).not.toBe(firstAppliedAt);
+      expect(latest!.lastUpdatedAt?.toISOString()).toBe(
+        "2026-08-25T03:00:00.000Z",
+      );
+      renderer!.unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("updates the local sync time only when live refresh returns a new snapshot", async () => {
+    jest.useFakeTimers();
+    const foregroundResponses: TopPicksResponse[] = [
+      {
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        warnings: [],
+      },
+      {
+        rows: [rowFor("AAA")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        warnings: [],
+      },
+      {
+        rows: [rowFor("BBB")],
+        total: 1,
+        metadata: { generatedAt: "2026-08-25T03:01:00Z" },
+        warnings: [],
+      },
+    ];
+    mockFetchTopPicks.mockImplementation(async (options) => {
+      if (options.pageSize === 1) return emptyResponse;
+      return foregroundResponses.shift() ?? emptyResponse;
+    });
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      jest.setSystemTime(new Date("2026-08-25T04:00:00Z"));
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+      const firstAppliedAt = latest!.lastUpdatedAt;
+
+      jest.setSystemTime(new Date("2026-08-25T04:05:00Z"));
+      await act(async () => {
+        jest.advanceTimersByTime(20_000);
+        await flushEffects();
+      });
+
+      expect(foregroundRequests()).toHaveLength(2);
+      expect(latest!.lastUpdatedAt).toBe(firstAppliedAt);
+
+      jest.setSystemTime(new Date("2026-08-25T04:10:00Z"));
+      await act(async () => {
+        jest.advanceTimersByTime(20_000);
+        await flushEffects();
+      });
+
+      expect(foregroundRequests()).toHaveLength(3);
+      expect(latest!.lastUpdatedAt).not.toBe(firstAppliedAt);
+      expect(latest!.lastUpdatedAt?.toISOString()).toBe(
+        "2026-08-25T03:01:00.000Z",
+      );
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["BBB"]);
+      renderer!.unmount();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("retains safe response metadata for the assumptions UI", async () => {

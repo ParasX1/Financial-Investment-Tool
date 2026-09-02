@@ -3,11 +3,25 @@ from unittest.mock import Mock
 
 import pandas as pd
 
+from src.top_picks import service as service_module
 from src.top_picks.contracts import Ticker, TopPicksRequest
 from src.top_picks.service import TopPicksService
 
 
-def test_empty_universe_returns_safe_empty_page_without_market_calls():
+class DeferredThread:
+    def __init__(self, target, daemon):
+        self.target = target
+        self.daemon = daemon
+
+    def start(self):
+        pass
+
+
+def test_empty_universe_returns_safe_empty_page_without_market_calls(
+    monkeypatch,
+):
+    monkeypatch.setattr(service_module, "Thread", DeferredThread)
+
     repository = Mock()
     repository.list_tickers.return_value = ()
     calculator_provider = Mock(
@@ -32,7 +46,9 @@ def test_empty_universe_returns_safe_empty_page_without_market_calls():
     assert response["warnings"] == ["No ticker universe is available."]
 
 
-def test_injected_benchmark_and_rate_reach_market_calculations():
+def test_injected_benchmark_and_rate_reach_market_calculations(monkeypatch):
+    monkeypatch.setattr(service_module, "Thread", DeferredThread)
+
     repository = Mock()
     repository.list_tickers.return_value = (
         Ticker("BHP.AX", "BHP", "Materials"),

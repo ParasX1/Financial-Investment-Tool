@@ -66,6 +66,8 @@ export function TopPicksScreen() {
           error={controller.error}
           warnings={controller.warnings}
           metadata={controller.metadata}
+          lastUpdatedAt={controller.lastUpdatedAt}
+          syncing={controller.syncing}
           total={controller.total}
           page={controller.page}
           totalPages={controller.totalPages}

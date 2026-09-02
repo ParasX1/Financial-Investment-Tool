@@ -62,6 +62,22 @@ def test_fetch_stock_data_reuses_cached_downloads():
     assert download.call_count == 1
 
 
+def test_fetch_stock_data_force_refresh_bypasses_cached_downloads():
+    data = adjusted_close_frame({"AAPL": rising_prices(100)})
+
+    metrics.clear_stock_data_cache()
+    with patch("src.metrics.yf.download", return_value=data) as download:
+        metrics.fetch_stock_data(["AAPL"], "2023-01-01", "2024-01-01")
+        metrics.fetch_stock_data(
+            ["AAPL"],
+            "2023-01-01",
+            "2024-01-01",
+            force_refresh=True,
+        )
+
+    assert download.call_count == 2
+
+
 def test_fetch_stock_data_does_not_hold_cache_lock_during_download():
     data = adjusted_close_frame({"AAPL": rising_prices(100)})
 

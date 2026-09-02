@@ -79,7 +79,7 @@ def download_stock_data(stock_tickers, start_date, end_date):
 
     return ensure_multiindex_stock_data(stock_data, stock_tickers)
 # Function to fetch full stock data
-def fetch_stock_data(stock_tickers, start_date, end_date):
+def fetch_stock_data(stock_tickers, start_date, end_date, force_refresh=False):
     """
     Fetches full stock data (Open, High, Low, Close, Adj Close, Volume) for the provided stock tickers over a given date range.
 
@@ -100,7 +100,11 @@ def fetch_stock_data(stock_tickers, start_date, end_date):
 
     with _stock_data_lock:
         cached = _stock_data_cache.get(cache_key)
-        if cached and now - cached["created_at"] < STOCK_DATA_CACHE_TTL_SECONDS:
+        if (
+            not force_refresh
+            and cached
+            and now - cached["created_at"] < STOCK_DATA_CACHE_TTL_SECONDS
+        ):
             return cached["data"].copy(deep=True)
 
     stock_data = download_stock_data(stock_tickers, start_date, end_date)
