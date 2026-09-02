@@ -17,6 +17,7 @@ export type FetchTopPicksOptions = {
   sortKey: TopPicksSortKey;
   sortDirection: "asc" | "desc";
   window?: TopPicksWindow;
+  forceRefresh?: boolean;
   signal?: AbortSignal;
 };
 
@@ -276,6 +277,7 @@ export async function fetchTopPicks({
   sortKey,
   sortDirection,
   window = "1Y",
+  forceRefresh = false,
   signal,
 }: FetchTopPicksOptions): Promise<TopPicksResponse> {
   const response = await fetch(`${API_BASE}/api/top-picks`, {
@@ -287,6 +289,7 @@ export async function fetchTopPicks({
       sort_key: sortKey,
       sort_dir: sortDirection,
       window,
+      ...(forceRefresh ? { force_refresh: true } : {}),
     }),
     signal,
   });

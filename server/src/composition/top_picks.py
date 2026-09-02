@@ -1,6 +1,6 @@
 import os
 
-from ..metrics import fetch_stock_data
+from ..metrics import clear_stock_data_cache, fetch_stock_data
 from ..supabase_client import get_supabase_client
 from ..top_picks.repository import SupabaseTickerRepository
 from ..top_picks.service import (
@@ -66,6 +66,7 @@ def create_top_picks_service_provider(
     ticker_repository_factory=None,
     supabase_client_provider=None,
     market_data_provider=None,
+    market_cache_clearer=None,
 ):
     resolved_service_factory = (
         TopPicksService if service_factory is None else service_factory
@@ -85,6 +86,11 @@ def create_top_picks_service_provider(
         if market_data_provider is None
         else market_data_provider
     )
+    resolved_market_cache_clearer = (
+        clear_stock_data_cache
+        if market_cache_clearer is None
+        else market_cache_clearer
+    )
 
     def get_service(app):
         existing_service = app.extensions.get("top_picks_service")
@@ -97,6 +103,7 @@ def create_top_picks_service_provider(
             ),
             calculator_provider=calculator_provider,
             market_data_provider=resolved_market_data_provider,
+            market_cache_clearer=resolved_market_cache_clearer,
             benchmark_ticker=app.config["TOP_PICKS_BENCHMARK"],
             risk_free_rate=app.config["TOP_PICKS_RISK_FREE_RATE"],
             risk_free_rate_source=app.config[

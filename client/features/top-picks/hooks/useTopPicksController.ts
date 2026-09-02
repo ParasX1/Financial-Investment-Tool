@@ -1,5 +1,5 @@
 import { useAuth } from "@/features/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchTopPicks } from "../api/fetchTopPicks";
 import {
   getDefaultVisibleTopPicksColumns,
@@ -19,7 +19,7 @@ const errorMessage = (reason: unknown): string =>
   reason instanceof Error && reason.message.trim()
     ? reason.message
     : "Unable to load Top Picks.";
-const STALE_REFRESH_POLL_MS = 20_000;
+const LIVE_REFRESH_POLL_MS = 20_000;
 
 export function useTopPicksController() {
   const { user, loading: authLoading } = useAuth();
@@ -41,10 +41,17 @@ export function useTopPicksController() {
   const [total, setTotal] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [metadata, setMetadata] = useState<TopPicksMetadata>({});
-  const [retryToken, setRetryToken] = useState(0);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [refreshRequest, setRefreshRequest] = useState({
+    token: 0,
+    forceRefresh: false,
+  });
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const requestInFlightRef = useRef(false);
+  const lastSnapshotGeneratedAtRef = useRef<string | null>(null);
 
   const windowMetricKeys = getTopPicksWindowMetricKeys(selectedWindow);
   const effectiveSort = windowMetricKeys.includes(sort.key)
@@ -55,12 +62,17 @@ export function useTopPicksController() {
     if (!preferenceScopeReady || preferenceScopeKey === null) return;
 
     const abortController = new AbortController();
+    const refreshingExistingRows = rows.length > 0;
     let active = true;
-    setLoading(true);
+    requestInFlightRef.current = true;
+    setLoading(!refreshingExistingRows);
+    setSyncing(refreshingExistingRows);
     setError(null);
-    setRows([]);
-    setWarnings([]);
-    setMetadata({});
+    if (!refreshingExistingRows) {
+      setRows([]);
+      setWarnings([]);
+      setMetadata({});
+    }
 
     const applyResponse = (
       response: Awaited<ReturnType<typeof fetchTopPicks>>,
@@ -69,6 +81,17 @@ export function useTopPicksController() {
       setTotal(response.total);
       setWarnings(response.warnings);
       setMetadata(response.metadata);
+      const generatedAt = response.metadata.generatedAt ?? null;
+      if (
+        generatedAt !== null
+        && generatedAt !== lastSnapshotGeneratedAtRef.current
+      ) {
+        lastSnapshotGeneratedAtRef.current = generatedAt;
+        const generatedAtDate = new Date(generatedAt);
+        if (Number.isFinite(generatedAtDate.getTime())) {
+          setLastUpdatedAt(generatedAtDate);
+        }
+      }
       const lastPage = Math.max(1, Math.ceil(response.total / pageSize));
       if (page > lastPage) setPage(lastPage);
     };
@@ -80,6 +103,7 @@ export function useTopPicksController() {
         sortKey: effectiveSort.key,
         sortDirection: effectiveSort.dir,
         window: selectedWindow,
+        forceRefresh: refreshRequest.forceRefresh,
         signal: abortController.signal,
       });
       if (active) {
@@ -94,18 +118,25 @@ export function useTopPicksController() {
       })
       .catch((reason: unknown) => {
         if (!active || isAbortError(reason)) return;
-        setRows([]);
-        setTotal(0);
-        setWarnings([]);
-        setMetadata({});
+        if (!refreshingExistingRows) {
+          setRows([]);
+          setTotal(0);
+          setWarnings([]);
+          setMetadata({});
+        }
         setError(errorMessage(reason));
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          requestInFlightRef.current = false;
+          setLoading(false);
+          setSyncing(false);
+        }
       });
 
     return () => {
       active = false;
+      requestInFlightRef.current = false;
       abortController.abort();
     };
   }, [
@@ -113,24 +144,29 @@ export function useTopPicksController() {
     pageSize,
     preferenceScopeKey,
     preferenceScopeReady,
-    retryToken,
+    refreshRequest,
     setPage,
     effectiveSort.dir,
     effectiveSort.key,
     selectedWindow,
   ]);
 
-  useEffect(() => {
-    if (!metadata.snapshotRefreshing) return;
-
-    const timeout = window.setTimeout(() => {
-      setRetryToken((current) => current + 1);
-    }, STALE_REFRESH_POLL_MS);
-
-    return () => window.clearTimeout(timeout);
-  }, [metadata.snapshotRefreshing, retryToken]);
-
   const controllerScopeReady = preferenceScopeReady && columnsScopeReady;
+
+  useEffect(() => {
+    if (!controllerScopeReady) return;
+
+    const interval = globalThis.setInterval(() => {
+      if (requestInFlightRef.current) return;
+      setRefreshRequest(({ token }) => ({
+        token: token + 1,
+        forceRefresh: true,
+      }));
+    }, LIVE_REFRESH_POLL_MS);
+
+    return () => globalThis.clearInterval(interval);
+  }, [controllerScopeReady]);
+
   const exposedRows = controllerScopeReady ? rows : [];
   const exposedTotal = controllerScopeReady ? total : 0;
   const exposedPageSize = controllerScopeReady ? pageSize : 25;
@@ -158,6 +194,8 @@ export function useTopPicksController() {
     error: controllerScopeReady ? error : null,
     warnings: controllerScopeReady ? warnings : [],
     metadata: controllerScopeReady ? metadata : {},
+    lastUpdatedAt: controllerScopeReady ? lastUpdatedAt : null,
+    syncing: controllerScopeReady && syncing,
     rows: exposedRows,
     total: exposedTotal,
     totalPages,
@@ -177,7 +215,10 @@ export function useTopPicksController() {
     setPage,
     retry: () => {
       if (controllerScopeReady) {
-        setRetryToken((current) => current + 1);
+        setRefreshRequest(({ token }) => ({
+          token: token + 1,
+          forceRefresh: true,
+        }));
       }
     },
     setPageSize,

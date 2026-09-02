@@ -1,4 +1,5 @@
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
+import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
@@ -30,6 +31,12 @@ export const SIDEBAR_MAIN_NAV_ITEMS: readonly SidebarNavItem[] = [
     href: "/TopPicks",
     label: "Top Picks",
     icon: TrendingUpRoundedIcon,
+    gated: true,
+  },
+  {
+    href: "/ETF",
+    label: "ETF",
+    icon: AutoGraphRoundedIcon,
     gated: true,
   },
   {

@@ -443,6 +443,7 @@ class TopPicksService:
         universe_limit=DEFAULT_UNIVERSE_LIMIT,
         cache_ttl_seconds=DEFAULT_CACHE_TTL_SECONDS,
         snapshot_cache=None,
+        market_cache_clearer=None,
         today_provider=date.today,
     ):
         self._ticker_repository = ticker_repository
@@ -468,13 +469,20 @@ class TopPicksService:
             if snapshot_cache is None
             else snapshot_cache
         )
+        self._market_cache_clearer = (
+            (lambda: None)
+            if market_cache_clearer is None
+            else market_cache_clearer
+        )
         self._today_provider = today_provider
         self._refreshing_all_windows = False
+        self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
 
     def get_page(self, top_picks_request):
         snapshot, cache_status, refreshing = self._get_snapshot(
-            top_picks_request.window
+            top_picks_request.window,
+            force_refresh=top_picks_request.force_refresh,
         )
         ordered_rows = sort_top_pick_rows(
             snapshot["rows"],
@@ -506,7 +514,7 @@ class TopPicksService:
             "warnings": snapshot["warnings"],
         }
 
-    def _get_snapshot(self, window):
+    def _get_snapshot(self, window, force_refresh=False):
         today = self._today_provider()
         start_date = self._start_date_for_window(
             today,
@@ -518,24 +526,51 @@ class TopPicksService:
             start_date,
             end_date,
         )
-        cached, cache_status = self._snapshot_cache.get(cache_key)
-        if cached is not None:
-            refreshing = cache_status == "stale"
-            if refreshing:
-                self._refresh_windows_in_background(window)
-            return cached, cache_status, refreshing
+        if force_refresh:
+            cached, cache_status = self._snapshot_cache.get(cache_key)
+            if cached is not None:
+                self._refresh_windows_in_background(
+                    window,
+                    force_refresh=True,
+                )
+                return cached, cache_status, True
 
-        latest, latest_status = self._snapshot_cache.get_latest_stale(
-            excluded_key=cache_key,
-            prefix=self._snapshot_cache_prefix(window),
-        )
-        if latest is None and window == "1Y":
             latest, latest_status = self._snapshot_cache.get_latest_stale(
                 excluded_key=cache_key,
+                prefix=self._snapshot_cache_prefix(window),
             )
-        if latest is not None:
-            self._refresh_windows_in_background(window)
-            return latest, latest_status, True
+            if latest is None and window == "1Y":
+                latest, latest_status = self._snapshot_cache.get_latest_stale(
+                    excluded_key=cache_key,
+                )
+            if latest is not None:
+                self._refresh_windows_in_background(
+                    window,
+                    force_refresh=True,
+                )
+                return latest, latest_status, True
+
+            self._market_cache_clearer()
+
+        if not force_refresh:
+            cached, cache_status = self._snapshot_cache.get(cache_key)
+            if cached is not None:
+                refreshing = cache_status == "stale"
+                if refreshing:
+                    self._refresh_windows_in_background(window)
+                return cached, cache_status, refreshing
+
+            latest, latest_status = self._snapshot_cache.get_latest_stale(
+                excluded_key=cache_key,
+                prefix=self._snapshot_cache_prefix(window),
+            )
+            if latest is None and window == "1Y":
+                latest, latest_status = self._snapshot_cache.get_latest_stale(
+                    excluded_key=cache_key,
+                )
+            if latest is not None:
+                self._refresh_windows_in_background(window)
+                return latest, latest_status, True
 
         snapshot = self._build_snapshot(start_date, end_date, window)
         self._snapshot_cache.set(
@@ -546,54 +581,76 @@ class TopPicksService:
         self._refresh_windows_in_background(window)
         return deepcopy(snapshot), "miss", False
 
-    def _refresh_windows_in_background(self, priority_window):
+    def _refresh_windows_in_background(
+        self,
+        priority_window,
+        force_refresh=False,
+    ):
         with self._refresh_lock:
             if self._refreshing_all_windows:
+                if force_refresh:
+                    self._pending_force_refresh_window = priority_window
                 return
             self._refreshing_all_windows = True
 
         def refresh_all():
-            try:
-                today = self._today_provider()
-                ordered_windows = (
-                    priority_window,
-                    *[
-                        window for window in TOP_PICKS_WINDOWS
-                        if window != priority_window
-                    ],
-                )
-                for window in ordered_windows:
-                    start_date = self._start_date_for_window(today, window)
-                    end_date = today.isoformat()
-                    cache_key = self._snapshot_cache_key(
-                        window,
-                        start_date,
-                        end_date,
+            current_priority_window = priority_window
+            current_force_refresh = force_refresh
+
+            while True:
+                try:
+                    today = self._today_provider()
+                    if current_force_refresh:
+                        self._market_cache_clearer()
+                    ordered_windows = (
+                        current_priority_window,
+                        *[
+                            window for window in TOP_PICKS_WINDOWS
+                            if window != current_priority_window
+                        ],
                     )
-                    try:
-                        cached, cache_status = self._snapshot_cache.get(
-                            cache_key
-                        )
-                        if cached is not None and cache_status == "hit":
-                            continue
-                        snapshot = self._build_snapshot(
+                    for window in ordered_windows:
+                        start_date = self._start_date_for_window(today, window)
+                        end_date = today.isoformat()
+                        cache_key = self._snapshot_cache_key(
+                            window,
                             start_date,
                             end_date,
-                            window,
                         )
-                        self._snapshot_cache.set(
-                            cache_key,
-                            snapshot,
-                            self._cache_ttl_seconds,
-                        )
-                    except Exception:
-                        LOGGER.warning(
-                            "Top Picks background window refresh failed.",
-                            exc_info=True,
-                        )
-            finally:
-                with self._refresh_lock:
-                    self._refreshing_all_windows = False
+                        try:
+                            cached, cache_status = self._snapshot_cache.get(
+                                cache_key
+                            )
+                            if (
+                                not current_force_refresh
+                                and cached is not None
+                                and cache_status == "hit"
+                            ):
+                                continue
+                            snapshot = self._build_snapshot(
+                                start_date,
+                                end_date,
+                                window,
+                            )
+                            self._snapshot_cache.set(
+                                cache_key,
+                                snapshot,
+                                self._cache_ttl_seconds,
+                            )
+                        except Exception:
+                            LOGGER.warning(
+                                "Top Picks background window refresh failed.",
+                                exc_info=True,
+                            )
+                finally:
+                    with self._refresh_lock:
+                        pending_window = self._pending_force_refresh_window
+                        self._pending_force_refresh_window = None
+                        if pending_window is None:
+                            self._refreshing_all_windows = False
+                            break
+                        current_priority_window = pending_window
+                        current_force_refresh = True
 
         Thread(target=refresh_all, daemon=True).start()
 
