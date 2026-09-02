@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import Image, { type ImageLoader } from "next/image";
 import type { Article } from "@/lib/news/contracts";
 import { cn, fitText, fitType } from "@/components/shared/uiPrimitives";
 import {
@@ -7,6 +8,8 @@ import {
   getSafeArticleHref,
 } from "../lib/marketNewsArticles";
 import styles from "../styles/marketNews.module.css";
+
+const passthroughImageLoader: ImageLoader = ({ src }) => src;
 
 function ArticleChip({
   children,
@@ -68,27 +71,61 @@ function articleLinkProps(article: Article) {
 }
 
 function ArticleVisual({
-  article,
   className,
+  image,
+  onImageError,
 }: {
-  article: Article;
   className?: string;
+  image: string;
+  onImageError: () => void;
 }) {
-  const image = getArticleImage(article);
+  return (
+    <Image
+      src={image}
+      alt=""
+      className={className}
+      width={320}
+      height={180}
+      loader={passthroughImageLoader}
+      loading="lazy"
+      unoptimized
+      onError={onImageError}
+    />
+  );
+}
 
-  if (image) {
-    return (
-      <img
-        src={image}
-        alt=""
-        className={className}
-        width={320}
-        height={180}
-        loading="lazy"
-      />
-    );
-  }
-  return null;
+function TopicArticleRow({ article }: { article: Article }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const image = imageFailed ? null : getArticleImage(article);
+
+  return (
+    <article className={styles.topicArticleRow}>
+      <a
+        {...articleLinkProps(article)}
+        className={cn(
+          styles.topicArticleLink,
+          image ? "" : styles.topicArticleLinkTextOnly,
+        )}
+      >
+        {image ? (
+          <ArticleVisual
+            className={styles.topicArticleImage}
+            image={image}
+            onImageError={() => setImageFailed(true)}
+          />
+        ) : null}
+        <div className={styles.topicArticleBody}>
+          <h3 className={styles.topicArticleTitle}>{article.title}</h3>
+          {article.summary ? (
+            <p className={cn(styles.topicArticleSummary, fitText.body)}>
+              {article.summary}
+            </p>
+          ) : null}
+          <ArticleMeta article={article} />
+        </div>
+      </a>
+    </article>
+  );
 }
 
 export type TopicFeedPagination = {
@@ -160,31 +197,7 @@ export function TopicArticleFeed({
 
       <div className={styles.topicFeedList}>
         {articles.map((article) => (
-          <article key={article.id} className={styles.topicArticleRow}>
-            <a
-              {...articleLinkProps(article)}
-              className={cn(
-                styles.topicArticleLink,
-                getArticleImage(article) ? "" : styles.topicArticleLinkTextOnly,
-              )}
-            >
-              {getArticleImage(article) ? (
-                <ArticleVisual
-                  article={article}
-                  className={styles.topicArticleImage}
-                />
-              ) : null}
-              <div className={styles.topicArticleBody}>
-                <h3 className={styles.topicArticleTitle}>{article.title}</h3>
-                {article.summary ? (
-                  <p className={cn(styles.topicArticleSummary, fitText.body)}>
-                    {article.summary}
-                  </p>
-                ) : null}
-                <ArticleMeta article={article} />
-              </div>
-            </a>
-          </article>
+          <TopicArticleRow key={article.id} article={article} />
         ))}
       </div>
 
