@@ -355,13 +355,17 @@ From `client/`:
 npm test -- --runInBand
 npm run test:portfolio-top-picks:coverage
 npm run test:watchlist:coverage
-npx tsc --noEmit --pretty false
+npm run typecheck
 npm run lint -- --no-cache
 npm run build
 npm run test:e2e
 ```
 
-Portfolio/Top Picks configured surfaces require at least 80% statements, branches, functions and lines.
+Portfolio/Top Picks and Watchlist configured surfaces require at least 80% statements, branches, functions and lines. Coverage belongs to those configured surfaces; it is not a claim of 80% coverage across the entire application. Jest discovers `.test.*` unit/contract files; Playwright owns `.spec.*` browser journeys.
+
+Frontend CI runs typecheck, lint, unit/contract tests, both coverage gates and the production build on pushes and PRs into `DevBranch` and `main`. The separate `Mocked browser journeys` job runs Chromium with public dummy Supabase values and mocked critical flows; it needs no production secrets and uploads its HTML report, screenshots, videos and traces even when tests fail. These browser checks verify UI behavior against fixtures, not live Supabase policies or market-provider availability.
+
+`npm run typecheck` first runs `next typegen` so a clean checkout has Next.js route and static-image declarations before TypeScript checks it. Keep the generated `next-env.d.ts` and `.next/` artifacts ignored.
 
 Check only changed files for formatting:
 
@@ -379,6 +383,7 @@ From `server/`:
 python -m pytest -q
 python -m compileall -q src tests
 python -m flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
+python -m flake8 src tests --count --max-complexity=10 --max-line-length=250 --statistics --ignore=E302,W292,W293,W503,E303,E305,E306,E275,E231,C901
 ```
 
 ### Database
@@ -403,15 +408,22 @@ Every public table used through `supabase-js` needs minimum explicit grants, RLS
 
 ## Contribution workflow
 
-1. Search existing issues and PRs.
-2. Branch from the intended base with a descriptive `feature/`, `fix/`, `refactor/` or `docs/` name.
-3. Write a failing behavior or boundary test.
-4. Implement the smallest coherent change.
-5. Refactor while focused tests stay green.
-6. Run affected full-stack checks.
-7. Review `git diff` for secrets, artifacts and unrelated formatting.
-8. Commit coherent units as `<type>: <description>`.
-9. Open a PR explaining why, user impact, tests and deployment/migration needs.
+1. Search existing issues and PRs. Create or adopt an issue with the problem, reproducible evidence, scope and acceptance criteria before substantive work.
+2. Fetch and branch from `origin/DevBranch`. Use `<type>/<issue-number>-<description>`, for example `fix/250-devbranch-checks`. Supported types are `feature`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`, `ci` and `hotfix`. A cohesive change can use multiple numbers, such as `chore/250-251-quality-gates`.
+3. Reproduce the defect with a failing behavior or boundary test. For docs/configuration use the native validator instead of artificial application tests.
+4. Implement the smallest coherent change; refactor while focused tests stay green.
+5. Run the affected full-stack checks and obtain an independent review. Inspect the final diff for secrets, artifacts and unrelated formatting.
+6. Commit coherent units as `<type>: <description>` and open a PR targeting `DevBranch`. Fill `Related issue` with every branch issue number and explain user impact, tests and deployment/migration needs.
+7. Address review findings and check the actual GitHub runs. Merge into the development branch only when an authorized maintainer approves the merge. Creating or pushing a PR does not authorize merging it.
+8. Release through a separate PR from `DevBranch` to `main`, with release notes, linked issues and explicit release approval. The authorized release maintainer owns the main merge, deployment and any remote Supabase migration.
+
+GitHub closing keywords such as `Closes #250` only take effect when a PR targets and merges into the repository's default branch (`main`). A DevBranch PR should still list the issue and its acceptance criteria, but the issue stays open until the fix is merged and the required validation is complete. Do not close an issue simply because a PR exists. For a work item complete before release, an authorized maintainer can close it manually with links to the merged PR and verification evidence.
+
+Emergency production fixes still require an issue, a `hotfix/<issue-number>-<description>` branch, tests and a reviewed PR. An exceptional PR directly to `main` must add `## Emergency exception` with the reason and named release owner; that owner must explicitly approve the exception and arrange a follow-up PR into DevBranch so the fix is preserved. The metadata audit checks syntax, not whether a person has approved it.
+
+The `Issue and branch policy` check reads the PR JSON event file and checks the Related issue references, branch name and target. It uses a read-only `pull_request` workflow, does not interpolate PR text into shell code, and does not post comments or mutate issues. It verifies link syntax; reviewers must confirm that the linked issue exists and matches the change. To test the audit locally, run `node --test scripts/check-pr-policy.test.mjs` from the repository root.
+
+Workflow files emit `Frontend quality`, `Mocked browser journeys`, `Backend quality` and `Issue and branch policy` checks. They do not configure branch protection. A repository administrator must separately configure required checks and review rules for DevBranch and main, then verify them with a real PR. Contributors with write access cannot assume they have permission to change repository settings.
 
 For UI changes include screenshots. For financial semantics state assumptions. For schema changes identify the migration and target environment.
 
