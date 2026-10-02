@@ -314,11 +314,6 @@
     min-height: 330px;
     grid-column: auto;
   }
-  .boardSlot_4 {
-    grid-column: auto;
-    grid-row: auto;
-    min-height: 330px;
-  }
 
   .focusFilmstrip {
     display: flex;
