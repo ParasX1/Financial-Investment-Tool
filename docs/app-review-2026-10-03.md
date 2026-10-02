@@ -70,6 +70,10 @@ Grants and RLS are distinct: granting table access does not establish row owners
 
 Fresh lockfile comparison: production audit 6 affected packages changes from 1 critical/4 high/1 low to 0 critical/4 high/1 moderate/1 low. The separate shared installed-tree audit reported 65 propagated package findings and is not comparable to that fresh graph. Remaining sharp/PostCSS and other transitive findings require reachability/version triage. No exploitation, global force-upgrade, or assurance of complete security is implied.
 
+Backend advisory review also identified [Flask GHSA-68rp-wp8r-4726](https://github.com/pallets/flask/security/advisories/GHSA-68rp-wp8r-4726), affecting versions before 3.1.3 under specific session/caching conditions. No Flask session usage or SECRET_KEY configuration was found in the inspected backend source, so an application-specific leak was not demonstrated. Treat upgrading the pin as maintenance follow-up, not a confirmed exploit finding.
+
+The existing Top Picks controller intentionally forces a rebuild every 20 seconds, without a visibility gate. [#276](https://github.com/ParasX1/Financial-Investment-Tool/issues/276) records a separate workload/freshness experiment before changing that policy. It is not silently changed by the context-integrity repair.
+
 ## GitHub lifecycle and old issues
 
 Each repair branches directly from the verified DevBranch base, preserves a focused commit, records regression and review evidence, and opens an unmerged PR. The repository default branch is main: closing keywords only apply on default-branch PRs, as documented by [GitHub](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue). Keep newly fixed issues open until reviewed integration; do not close them merely because a proposal exists.
@@ -82,4 +86,37 @@ An account with push/triage rights cannot configure repository protection. Maint
 
 Baseline backend: 136 tests passed. Baseline Windows frontend: 224 suites and 1106 assertions passed; seven browser suites were miscollected and two structural assertions failed. Those failures were preserved and addressed in the quality-gates change rather than hidden by skipping tests or lowering coverage.
 
-Individual repair logs preserve actual exit codes and failing regressions. Frontend changes were checked with real Chromium under dummy intercepted providers; market calculations used controlled pandas/yfinance fixtures. Production build/type/lint checks are distinct from live provider/auth/database integration. Final combined verification and PR links are recorded after all reviewed changes are assembled in an isolated integration worktree.
+Individual repair logs preserve actual exit codes and failing regressions. Frontend changes were checked with real Chromium under dummy intercepted providers; market calculations used controlled pandas/yfinance fixtures. Production build/type/lint checks are distinct from live provider/auth/database integration.
+
+## Final delivery and combined verification
+
+All seven PRs target DevBranch and remain unmerged. Each substantive change received an independent review, and the parent reconciled source evidence and findings before publishing.
+
+| PR                                                                    | Scope                                              | Issue                                         |
+| --------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| [#266](https://github.com/ParasX1/Financial-Investment-Tool/pull/266) | Recovered market-history observations              | #263                                          |
+| [#270](https://github.com/ParasX1/Financial-Investment-Tool/pull/270) | Watchlist account state and dialogs                | #265                                          |
+| [#271](https://github.com/ParasX1/Financial-Investment-Tool/pull/271) | Ranking query/cache/export integrity               | #262; related #245/#246                       |
+| [#272](https://github.com/ParasX1/Financial-Investment-Tool/pull/272) | Portfolio preference recovery and midnight safety  | #264                                          |
+| [#273](https://github.com/ParasX1/Financial-Investment-Tool/pull/273) | Targeted Next.js 15.5.27 security patch            | #267                                          |
+| [#274](https://github.com/ParasX1/Financial-Investment-Tool/pull/274) | Bounded market-history cache retention             | #269                                          |
+| [#275](https://github.com/ParasX1/Financial-Investment-Tool/pull/275) | Development checks, issue policy and documentation | #250/#251; maintainer settings still required |
+
+The proposals were combined in a disposable local worktree, not merged into any shared branch. A redundant mobile CSS-rule overlap was resolved and aligned in #272. Native git merge-tree verified that the final Portfolio branch merges cleanly and leaves the tested combined tree unchanged.
+
+| Combined check                                             | Actual result                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend types and unit/contracts                          | Passed; 226 suites, 1139 assertions                                                                                             |
+| Portfolio/Top Picks coverage                               | 45 suites, 272 assertions; 92.41% statements, 87.02% branches, 91.86% functions, 93.59% lines; all per-surface 80% gates passed |
+| Watchlist coverage                                         | 20 suites, 102 assertions; 91.96% statements, 83.47% branches, 94.23% functions, 94.57% lines; 80% gates passed                 |
+| Backend regression                                         | 174 assertions passed; two existing Supabase deprecation warnings                                                               |
+| Backend compile and both configured lint gates             | Passed                                                                                                                          |
+| PR metadata audit                                          | 18 assertions passed; 100% lines, 92.11% branches                                                                               |
+| Test-server lifecycle                                      | Four assertions passed; 100% lines, 93.75% branches                                                                             |
+| Real Chromium journeys with intercepted providers/accounts | 28 passed; no retries or manual server termination required                                                                     |
+| Production build                                           | Next 15.5.27; 14 static pages generated successfully                                                                            |
+| Frontend lint                                              | Zero errors; two existing image warnings                                                                                        |
+
+Real GitHub verification on #275 at code/documentation head `3c86608086037190e63e712dd2df789f953dfc02`: [Frontend CI](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143495), [Backend CI](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143592), and [PR Policy](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143562) all completed successfully. Frontend CI includes both the quality and mocked-browser jobs. The parent also fed actual #270 metadata to the policy CLI and confirmed the real DevBranch target passes. This demonstrates working checks, not configured merge protection.
+
+Remaining work is explicitly tracked: authorized Supabase deployment reconciliation (#268), refresh/load benchmarking (#276), capped Community activity (#167), live ETF data (#257), the other unmet old issue criteria above, and remaining dependency reachability/maintenance triage. No production deployment, remote database write, credential change, PR merge, or premature issue closure occurred. The original Quant Analysis Studio checkout and its existing uncommitted lockfile changes were preserved.
