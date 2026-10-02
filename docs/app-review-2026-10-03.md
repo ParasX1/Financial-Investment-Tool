@@ -84,7 +84,7 @@ An account with push/triage rights cannot configure repository protection. Maint
 
 ## Verification record
 
-Baseline backend: 136 tests passed. Baseline Windows frontend: 224 suites and 1106 assertions passed; seven browser suites were miscollected and two structural assertions failed. Those failures were preserved and addressed in the quality-gates change rather than hidden by skipping tests or lowering coverage.
+Baseline backend: 136 tests passed. Baseline Windows frontend: 224 suites and 1106 tests passed; seven browser suites were miscollected and two structural tests failed. Those failures were preserved and addressed in the quality-gates change rather than hidden by skipping tests or lowering coverage.
 
 Individual repair logs preserve actual exit codes and failing regressions. Frontend changes were checked with real Chromium under dummy intercepted providers; market calculations used controlled pandas/yfinance fixtures. Production build/type/lint checks are distinct from live provider/auth/database integration.
 
@@ -106,13 +106,13 @@ The proposals were combined in a disposable local worktree, not merged into any 
 
 | Combined check                                             | Actual result                                                                                                                   |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend types and unit/contracts                          | Passed; 226 suites, 1139 assertions                                                                                             |
-| Portfolio/Top Picks coverage                               | 45 suites, 272 assertions; 92.41% statements, 87.02% branches, 91.86% functions, 93.59% lines; all per-surface 80% gates passed |
-| Watchlist coverage                                         | 20 suites, 102 assertions; 91.96% statements, 83.47% branches, 94.23% functions, 94.57% lines; 80% gates passed                 |
-| Backend regression                                         | 174 assertions passed; two existing Supabase deprecation warnings                                                               |
+| Frontend types and unit/contracts                          | Passed; 226 suites, 1139 tests                                                                                             |
+| Portfolio/Top Picks coverage                               | 45 suites, 272 tests; 92.41% statements, 87.02% branches, 91.86% functions, 93.59% lines; all per-surface 80% gates passed |
+| Watchlist coverage                                         | 20 suites, 102 tests; 91.96% statements, 83.47% branches, 94.23% functions, 94.57% lines; 80% gates passed                 |
+| Backend regression                                         | 174 tests passed; two existing Supabase deprecation warnings                                                               |
 | Backend compile and both configured lint gates             | Passed                                                                                                                          |
-| PR metadata audit                                          | 18 assertions passed; 100% lines, 92.11% branches                                                                               |
-| Test-server lifecycle                                      | Four assertions passed; 100% lines, 93.75% branches                                                                             |
+| PR metadata audit                                          | 18 tests passed; 100% lines, 92.11% branches                                                                               |
+| Test-server lifecycle                                      | Four tests passed; 100% lines, 93.75% branches                                                                             |
 | Real Chromium journeys with intercepted providers/accounts | 28 passed; no retries or manual server termination required                                                                     |
 | Production build                                           | Next 15.5.27; 14 static pages generated successfully                                                                            |
 | Frontend lint                                              | Zero errors; two existing image warnings                                                                                        |
