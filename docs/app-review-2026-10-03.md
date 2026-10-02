@@ -104,18 +104,18 @@ All seven PRs target DevBranch and remain unmerged. Each substantive change rece
 
 The proposals were combined in a disposable local worktree, not merged into any shared branch. A redundant mobile CSS-rule overlap was resolved and aligned in #272. Native git merge-tree verified that the final Portfolio branch merges cleanly and leaves the tested combined tree unchanged.
 
-| Combined check                                             | Actual result                                                                                                                   |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Combined check                                             | Actual result                                                                                                              |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Frontend types and unit/contracts                          | Passed; 226 suites, 1139 tests                                                                                             |
 | Portfolio/Top Picks coverage                               | 45 suites, 272 tests; 92.41% statements, 87.02% branches, 91.86% functions, 93.59% lines; all per-surface 80% gates passed |
 | Watchlist coverage                                         | 20 suites, 102 tests; 91.96% statements, 83.47% branches, 94.23% functions, 94.57% lines; 80% gates passed                 |
 | Backend regression                                         | 174 tests passed; two existing Supabase deprecation warnings                                                               |
-| Backend compile and both configured lint gates             | Passed                                                                                                                          |
+| Backend compile and both configured lint gates             | Passed                                                                                                                     |
 | PR metadata audit                                          | 18 tests passed; 100% lines, 92.11% branches                                                                               |
 | Test-server lifecycle                                      | Four tests passed; 100% lines, 93.75% branches                                                                             |
-| Real Chromium journeys with intercepted providers/accounts | 28 passed; no retries or manual server termination required                                                                     |
-| Production build                                           | Next 15.5.27; 14 static pages generated successfully                                                                            |
-| Frontend lint                                              | Zero errors; two existing image warnings                                                                                        |
+| Real Chromium journeys with intercepted providers/accounts | 28 passed; no retries or manual server termination required                                                                |
+| Production build                                           | Next 15.5.27; 14 static pages generated successfully                                                                       |
+| Frontend lint                                              | Zero errors; two existing image warnings                                                                                   |
 
 Real GitHub verification on #275 at code/documentation head `3c86608086037190e63e712dd2df789f953dfc02`: [Frontend CI](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143495), [Backend CI](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143592), and [PR Policy](https://github.com/ParasX1/Financial-Investment-Tool/actions/runs/37029143562) all completed successfully. Frontend CI includes both the quality and mocked-browser jobs. The parent also fed actual #270 metadata to the policy CLI and confirmed the real DevBranch target passes. This demonstrates working checks, not configured merge protection.
 
