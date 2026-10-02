@@ -8,6 +8,7 @@ const readClientSource = (relativePath: string) =>
 const userPageEntrypoints = [
   "Community.tsx",
   "CommunityCreate.tsx",
+  "ETF.tsx",
   "Guide.tsx",
   "Help.tsx",
   "MarketNews.tsx",
@@ -96,6 +97,7 @@ describe("site-wide page background contract", () => {
 
   it.each([
     ["features/top-picks/screens/TopPicksScreen.tsx", 'component="main"'],
+    ["features/etf/screens/EtfScreen.tsx", 'component="main"'],
   ])("uses the shared background on the visible main in %s", (path, marker) => {
     const source = readClientSource(path);
     const mainTag = openingTagContaining(source, marker);

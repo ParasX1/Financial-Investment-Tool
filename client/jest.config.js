@@ -10,7 +10,8 @@ const config = {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testEnvironment: "node",
-  testPathIgnorePatterns: ["<rootDir>/tests/e2e/"],
+  // Explicit unit filenames keep Playwright .spec files out on every platform.
+  testMatch: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.js", "**/*.test.jsx"],
   verbose: true,
 };
 

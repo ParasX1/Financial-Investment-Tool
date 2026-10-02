@@ -59,6 +59,32 @@ const addSymbol = async (
   await input.press("Enter");
 };
 
+const expectStoredSixCardDeck = async (
+  page: import("@playwright/test").Page,
+) => {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const value = window.localStorage.getItem(
+          "fit.portfolioWorkspace.v3.guest",
+        );
+        return value
+          ? JSON.parse(value).cards.map(
+              (card: { metricType: string }) => card.metricType,
+            )
+          : [];
+      }),
+    )
+    .toEqual([
+      "CumulativeReturnComparison",
+      "MaxDrawdownAnalysis",
+      "VolatilityAnalysis",
+      "SharpeRatioMatrix",
+      "MarketCorrelationAnalysis",
+      "EfficientFrontierVisualization",
+    ]);
+};
+
 const expectInsideObservationCanvas = async (
   observationWindow: import("@playwright/test").Locator,
   observationCanvas: import("@playwright/test").Locator,
@@ -119,16 +145,20 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
       name: "Scan broadly. Investigate deeply.",
     }),
   ).toBeVisible();
-  await expect(page.locator("section[data-card-id]")).toHaveCount(6);
+  // The saved six-card deck intentionally shows five Board cards; volatility is hidden.
+  await expect(page.locator("section[data-card-id]")).toHaveCount(5);
   await expect.poll(() => metricRequests.length).toBe(0);
 
   await addSymbol(page, "AAPL");
   await addSymbol(page, "MSFT");
   await page.getByRole("button", { name: "Run analysis" }).click();
 
-  await expect.poll(() => metricRequests.length).toBe(6);
-  await expect(page.locator("section[data-card-id]")).toHaveCount(6);
-  await expect(page.getByText("6 / 6 active")).toBeVisible();
+  await expect.poll(() => metricRequests.length).toBe(5);
+  await expect(page.locator("section[data-card-id]")).toHaveCount(5);
+  expect(metricRequests.some((url) => url.includes("volatilityanalysis"))).toBe(
+    false,
+  );
+  await expectStoredSixCardDeck(page);
 
   const correlationCard = page.locator(
     'section[data-metric="MarketCorrelationAnalysis"]',
@@ -153,31 +183,34 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   await expect(
     page.getByText("View summary values and accessible data table"),
   ).toBeVisible();
-  await expect.poll(() => metricRequests.length).toBe(6);
+  await expect.poll(() => metricRequests.length).toBe(5);
 
   await page.getByRole("button", { name: "Observation" }).click();
   await expect(
     page.getByRole("dialog", { name: "Portfolio Observation mode" }),
   ).toBeVisible();
-  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(6);
-  await expect.poll(() => metricRequests.length).toBe(6);
+  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
+  await expect.poll(() => metricRequests.length).toBe(5);
 
   await page
     .getByRole("button", { name: "Hide Cumulative return window" })
     .click();
-  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
+  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(4);
   await page.getByRole("button", { name: "Auto arrange" }).click();
   await page.getByRole("button", { name: "Done" }).click();
 
   await expect(
     page.getByRole("region", { name: "Multi-metric Portfolio board" }),
   ).toBeVisible();
-  await expect(page.locator("section[data-card-id]")).toHaveCount(6);
+  await expect(page.locator("section[data-card-id]")).toHaveCount(5);
   await page.waitForTimeout(300);
   await page.reload();
-  await expect(page.locator("section[data-card-id]")).toHaveCount(6);
+  await expect(page.locator("section[data-card-id]")).toHaveCount(5);
+  await expectStoredSixCardDeck(page);
 
   await page.getByRole("button", { name: "Observation" }).click();
+  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(4);
+  await page.getByRole("button", { name: "Restore hidden" }).click();
   await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
 });
 
@@ -263,7 +296,7 @@ test("reflows persisted Observation windows after reopen and desktop canvas shri
   const reopenedWindows = reopenedDialog.locator(
     '[class*="observationWindow"]',
   );
-  await expect(reopenedWindows).toHaveCount(6);
+  await expect(reopenedWindows).toHaveCount(5);
   await expectAllObservationWindowsInsideCanvas(
     reopenedWindows,
     reopenedCanvas,
@@ -294,20 +327,20 @@ test("changes only one card and remains operable without horizontal overflow on 
   await addSymbol(page, "AAPL");
   await addSymbol(page, "MSFT");
   await page.getByRole("button", { name: "Run analysis" }).click();
-  await expect.poll(() => metricRequests.length).toBe(6);
+  await expect.poll(() => metricRequests.length).toBe(5);
 
   const secondCardMetric = page
     .locator("section[data-card-id]")
     .nth(1)
     .getByRole("combobox", { name: "Metric" });
   await secondCardMetric.selectOption("ValueAtRiskAnalysis");
-  await expect.poll(() => metricRequests.length).toBe(7);
+  await expect.poll(() => metricRequests.length).toBe(6);
   expect(
     metricRequests.filter((url) => url.includes("valueatriskanalysis")),
   ).toHaveLength(1);
 
   await page.getByRole("button", { name: "Observation" }).click();
-  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(6);
+  await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
 
   const hasHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1,
