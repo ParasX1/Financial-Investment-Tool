@@ -127,6 +127,47 @@ afterEach(() => {
 });
 
 describe("usePortfolioWorkspaceController", () => {
+  it("keeps trusted local symbols and session edits across local midnight", async () => {
+    jest.setSystemTime(new Date(2026, 9, 3, 23, 59, 59));
+    const local = createDefaultWorkspace("2026-10-03", ["LOCAL"]);
+    installWindow({
+      [getWorkspaceStorageKey("user-a")]: JSON.stringify(local),
+    });
+    loadPortfolioConfigMock.mockResolvedValue({ tags: ["REMOTE"] });
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    const cardId = harness.latest.workspace.cards[0].id;
+    const draftInputs = { ...harness.latest.draftInputs, benchmark: "QQQ" };
+    act(() => {
+      harness.latest.setDraftSymbols(["DRAFT"]);
+      harness.latest.setDraftInputs(draftInputs);
+      harness.latest.actions.updateCardMetric(cardId, "BetaAnalysis");
+      harness.latest.actions.updateObserverWindow(cardId, { x: 77 });
+    });
+    expect(loadPortfolioConfigMock).not.toHaveBeenCalled();
+
+    jest.setSystemTime(new Date(2026, 9, 4, 0, 0, 1));
+    await harness.update({ userId: "user-a", authLoading: false });
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+
+    expect(harness.latest.today).toBe("2026-10-04");
+    expect(harness.latest.workspace.symbols).toEqual(["LOCAL"]);
+    expect(harness.latest.draftSymbols).toEqual(["DRAFT"]);
+    expect(harness.latest.draftInputs).toEqual(draftInputs);
+    expect(harness.latest.workspace.cards[0].metricType).toBe("BetaAnalysis");
+    expect(harness.latest.workspace.observerLayout[cardId].x).toBe(77);
+    expect(loadPortfolioConfigMock).not.toHaveBeenCalled();
+    expect(savePortfolioConfigMock).toHaveBeenLastCalledWith("user-a", {
+      tags: ["LOCAL"],
+    });
+    harness.unmount();
+  });
+
   it("keeps user A data out of user B persistence while B hydration is pending", async () => {
     const userAWorkspace = createDefaultWorkspace(TODAY, ["AAPL"]);
     const userBRemote = createDeferred<{ tags: string[] }>();
@@ -303,9 +344,217 @@ describe("usePortfolioWorkspaceController", () => {
       jest.advanceTimersByTime(500);
       await Promise.resolve();
     });
+    expect(savePortfolioConfigMock).not.toHaveBeenCalled();
+    expect(harness.latest.persistenceStatus?.message).toContain(
+      "Changes stay in this session",
+    );
+    harness.unmount();
+  });
+
+  it("does not persist a failed first load, so remount can recover saved symbols", async () => {
+    const { storage } = installWindow();
+    loadPortfolioConfigMock.mockRejectedValueOnce(new Error("offline"));
+    const failed = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(savePortfolioConfigMock).not.toHaveBeenCalled();
+    failed.unmount();
+
+    loadPortfolioConfigMock.mockResolvedValueOnce({ tags: ["AAPL"] });
+    const recovered = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    expect(loadPortfolioConfigMock).toHaveBeenCalledTimes(2);
+    expect(recovered.latest.workspace.symbols).toEqual(["AAPL"]);
+    recovered.unmount();
+  });
+
+  it("treats a successful empty response as hydrated preferences", async () => {
+    const { storage } = installWindow();
+    loadPortfolioConfigMock.mockResolvedValue({ tags: [] });
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+    expect(storage.setItem).toHaveBeenCalled();
     expect(savePortfolioConfigMock).toHaveBeenCalledWith("user-a", {
       tags: [],
     });
+    expect(harness.latest.persistenceStatus).toBeNull();
+    harness.unmount();
+  });
+
+  it("recovers remote symbols without replacing session inputs, cards, or drafts", async () => {
+    const { storage } = installWindow();
+    loadPortfolioConfigMock.mockRejectedValueOnce(new Error("offline"));
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    const inputs = { ...harness.latest.draftInputs, benchmark: "QQQ" };
+    const cardId = harness.latest.workspace.cards[0].id;
+    act(() => harness.latest.setDraftInputs(inputs));
+    act(() => harness.latest.actions.applyDraft());
+    act(() => {
+      harness.latest.actions.updateCardMetric(cardId, "BetaAnalysis");
+      harness.latest.actions.updateObserverWindow(cardId, { x: 77 });
+      harness.latest.setDraftSymbols(["NVDA"]);
+    });
+    act(() => jest.advanceTimersByTime(1_000));
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(savePortfolioConfigMock).not.toHaveBeenCalled();
+
+    const recovery = createDeferred<{ tags: string[] }>();
+    loadPortfolioConfigMock.mockReturnValueOnce(recovery.promise);
+    act(() => harness.latest.actions.retryPersistence());
+    expect(harness.latest.persistenceStatus?.retrying).toBe(true);
+    await act(async () => {
+      recovery.resolve({ tags: ["AAPL", "MSFT"] });
+      await recovery.promise;
+    });
+
+    expect(harness.latest.workspace.symbols).toEqual(["AAPL", "MSFT"]);
+    expect(harness.latest.draftSymbols).toEqual(["NVDA"]);
+    expect(harness.latest.workspace.globalInputs).toEqual(inputs);
+    expect(harness.latest.workspace.cards[0].metricType).toBe("BetaAnalysis");
+    expect(harness.latest.workspace.observerLayout[cardId].x).toBe(77);
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+    expect(
+      JSON.parse(storage.setItem.mock.calls.at(-1)?.[1] ?? "{}"),
+    ).toMatchObject({
+      symbols: ["AAPL", "MSFT"],
+      globalInputs: inputs,
+    });
+    expect(savePortfolioConfigMock).toHaveBeenCalledWith("user-a", {
+      tags: ["AAPL", "MSFT"],
+    });
+    harness.unmount();
+  });
+
+  it("keeps explicitly applied offline symbols when a retry returns older cloud tags", async () => {
+    installWindow();
+    loadPortfolioConfigMock.mockRejectedValueOnce(new Error("offline"));
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    act(() => harness.latest.setDraftSymbols(["NVDA"]));
+    act(() => harness.latest.actions.applyDraft());
+    act(() => jest.advanceTimersByTime(1_000));
+    expect(savePortfolioConfigMock).not.toHaveBeenCalled();
+
+    const recovery = createDeferred<{ tags: string[] }>();
+    loadPortfolioConfigMock.mockReturnValueOnce(recovery.promise);
+    act(() => harness.latest.actions.retryPersistence());
+    act(() => harness.latest.setDraftSymbols(["GOOGL"]));
+    act(() => harness.latest.actions.applyDraft());
+    await act(async () => {
+      recovery.resolve({ tags: ["AAPL"] });
+      await recovery.promise;
+    });
+    expect(harness.latest.workspace.symbols).toEqual(["GOOGL"]);
+    expect(harness.latest.draftSymbols).toEqual(["GOOGL"]);
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+    expect(savePortfolioConfigMock).toHaveBeenCalledWith("user-a", {
+      tags: ["GOOGL"],
+    });
+    harness.unmount();
+  });
+
+  it("shows failed saving and retries current symbols without rehydrating", async () => {
+    installWindow();
+    loadPortfolioConfigMock.mockResolvedValue({ tags: ["AAPL"] });
+    savePortfolioConfigMock.mockRejectedValueOnce(new Error("offline"));
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(500);
+      await Promise.resolve();
+    });
+    expect(harness.latest.persistenceStatus?.message).toContain(
+      "could not be synced",
+    );
+    expect(harness.latest.persistenceStatus?.canRetry).toBe(true);
+
+    act(() => harness.latest.actions.retryPersistence());
+    await act(async () => {
+      jest.advanceTimersByTime(500);
+      await Promise.resolve();
+    });
+    expect(loadPortfolioConfigMock).toHaveBeenCalledTimes(1);
+    expect(savePortfolioConfigMock).toHaveBeenCalledTimes(2);
+    expect(savePortfolioConfigMock).toHaveBeenLastCalledWith("user-a", {
+      tags: ["AAPL"],
+    });
+    expect(harness.latest.persistenceStatus).toBeNull();
+    harness.unmount();
+  });
+
+  it("reports browser storage failures and retries without losing the workspace", async () => {
+    const { storage } = installWindow();
+    storage.setItem.mockImplementationOnce(() => {
+      throw new Error("quota exceeded");
+    });
+    const harness = await renderController({ authLoading: false });
+    act(() => jest.advanceTimersByTime(220));
+    expect(harness.latest.persistenceStatus?.message).toContain(
+      "could not be saved in this browser",
+    );
+    act(() => harness.latest.actions.retryPersistence());
+    act(() => jest.advanceTimersByTime(220));
+    expect(storage.setItem).toHaveBeenCalledTimes(2);
+    expect(harness.latest.persistenceStatus).toBeNull();
+    harness.unmount();
+  });
+
+  it("ignores recovery after an account change and cancels the previous account's writes", async () => {
+    const { storage } = installWindow();
+    loadPortfolioConfigMock.mockRejectedValueOnce(new Error("offline"));
+    const harness = await renderController({
+      userId: "user-a",
+      authLoading: false,
+    });
+    act(() => harness.latest.setDraftSymbols(["NVDA"]));
+    act(() => harness.latest.actions.applyDraft());
+    const recovery = createDeferred<{ tags: string[] }>();
+    loadPortfolioConfigMock.mockReturnValueOnce(recovery.promise);
+    act(() => harness.latest.actions.retryPersistence());
+    loadPortfolioConfigMock.mockResolvedValueOnce({ tags: ["MSFT"] });
+    await harness.update({ userId: "user-b", authLoading: false });
+    await act(async () => {
+      recovery.resolve({ tags: ["AAPL"] });
+      await recovery.promise;
+      jest.advanceTimersByTime(1_000);
+      await Promise.resolve();
+    });
+    expect(harness.latest.workspace.symbols).toEqual(["MSFT"]);
+    expect(storage.setItem.mock.calls.map(([key]) => key)).toEqual([
+      getWorkspaceStorageKey("user-b"),
+    ]);
+    expect(savePortfolioConfigMock.mock.calls).toEqual([
+      ["user-b", { tags: ["MSFT"] }],
+    ]);
     harness.unmount();
   });
 

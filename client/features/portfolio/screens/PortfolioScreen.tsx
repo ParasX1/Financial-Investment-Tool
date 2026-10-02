@@ -19,6 +19,7 @@ export const PortfolioScreen = () => {
     setDraftInputs,
     today,
     announcement,
+    persistenceStatus,
     symbolOptions,
     pending,
     rangeError,
@@ -41,7 +42,9 @@ export const PortfolioScreen = () => {
         >
           <PortfolioMetricCard
             card={card}
-            variant={index === 0 ? "hero" : index === 1 ? "standard" : "compact"}
+            variant={
+              index === 0 ? "hero" : index === 1 ? "standard" : "compact"
+            }
             {...getCardProps(card.id)}
           />
         </div>
@@ -96,6 +99,17 @@ export const PortfolioScreen = () => {
               onInputsChange={setDraftInputs}
               onApply={actions.applyDraft}
             />
+
+            {persistenceStatus && (
+              <div className={styles.persistenceStatus} role="status">
+                <span>{persistenceStatus.message}</span>
+                {persistenceStatus.canRetry && (
+                  <button type="button" onClick={actions.retryPersistence}>
+                    Retry saving preferences
+                  </button>
+                )}
+              </div>
+            )}
 
             {workspace.view.mode === "board" && renderBoard()}
 
