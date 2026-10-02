@@ -1,0 +1,29 @@
+name: PR Policy
+
+on:
+  pull_request:
+    branches: ["DevBranch", "main"]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: Issue and branch policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test the metadata audit
+        run: node --experimental-test-coverage --test --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 scripts/check-pr-policy.test.mjs
+      # Read the JSON event file. Never interpolate PR text into executable code.
+      - name: Check issue references, branch name and target
+        run: node scripts/check-pr-policy.mjs
