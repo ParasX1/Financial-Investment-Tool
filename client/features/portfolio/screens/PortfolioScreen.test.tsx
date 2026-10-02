@@ -36,6 +36,7 @@ type TestElement = ReactElement<{
   card?: { id: string };
   children?: ReactNode;
   onClick?: () => void;
+  role?: string;
   variant?: string;
 }>;
 
@@ -115,6 +116,7 @@ const actions = {
   promoteCard: jest.fn(),
   duplicateCard: jest.fn(),
   deleteCard: jest.fn(),
+  retryPersistence: jest.fn(),
 };
 
 const mockController = (
@@ -138,6 +140,7 @@ const mockController = (
     setDraftInputs: jest.fn(),
     today: "2026-07-31",
     announcement: "Analysis ready",
+    persistenceStatus: null,
     symbolOptions: ["AAPL", "MSFT", "NVDA"],
     pending: false,
     rangeError: null,
@@ -217,7 +220,8 @@ describe("PortfolioScreen", () => {
     const elements = collectElements(tree);
     const focusCard = elements.find(
       (element) =>
-        element.type === PortfolioMetricCard && element.props.variant === "focus",
+        element.type === PortfolioMetricCard &&
+        element.props.variant === "focus",
     );
     const filmstripButtons = elements.filter(
       (element) => typeof element.props["aria-current"] === "boolean",
@@ -286,7 +290,53 @@ describe("PortfolioScreen", () => {
     expect(
       collectElements(tree).some(
         (element) =>
-          element.type === PortfolioMetricCard && element.props.variant === "focus",
+          element.type === PortfolioMetricCard &&
+          element.props.variant === "focus",
+      ),
+    ).toBe(false);
+  });
+
+  it("announces unsynced preferences and connects an accessible retry action", () => {
+    mockController("board", {
+      persistenceStatus: {
+        message:
+          "Saved symbols could not be loaded. Changes stay in this session until you retry.",
+        canRetry: true,
+        retrying: false,
+      },
+    });
+    const tree = PortfolioScreen();
+    const elements = collectElements(tree);
+    const status = elements.find((element) => element.props.role === "status");
+    expect(collectText(status)).toContain("Changes stay in this session");
+    elements
+      .find(
+        (element) =>
+          element.type === "button" &&
+          collectText(element) === "Retry saving preferences",
+      )
+      ?.props.onClick?.();
+    expect(actions.retryPersistence).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows recovery progress without offering duplicate retries", () => {
+    mockController("board", {
+      persistenceStatus: {
+        message:
+          "Loading saved symbols. Changes stay in this session until preferences load.",
+        canRetry: false,
+        retrying: true,
+      },
+    });
+    const elements = collectElements(PortfolioScreen());
+    expect(
+      elements.find((element) => element.props.role === "status"),
+    ).toBeDefined();
+    expect(
+      elements.some(
+        (element) =>
+          element.type === "button" &&
+          collectText(element) === "Retry saving preferences",
       ),
     ).toBe(false);
   });

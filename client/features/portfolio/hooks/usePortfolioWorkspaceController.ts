@@ -35,6 +35,11 @@ const getBrowserStorage = (): PortfolioWorkspaceStorage | null => {
   }
 };
 
+type PreferenceHydration = {
+  storageKey: string;
+  status: "loading" | "ready" | "failed";
+} | null;
+
 export const usePortfolioWorkspaceController = ({
   userId,
   authLoading,
@@ -46,16 +51,26 @@ export const usePortfolioWorkspaceController = ({
   const [workspace, setWorkspace] = useState<PortfolioWorkspaceState>(() =>
     createDefaultWorkspace(today),
   );
-  const [draftSymbols, setDraftSymbols] = useState<string[]>([]);
+  const [draftSymbols, setDraftSymbolsState] = useState<string[]>([]);
   const [draftInputs, setDraftInputs] = useState<PortfolioAnalysisInputs>(
     workspace.globalInputs,
   );
   const currentStorageKey = getWorkspaceStorageKey(userId);
   const hydratedStorageKeyRef = useRef<string | null>(null);
-  const [hydratedStorageKey, setHydratedStorageKey] = useState<string | null>(
-    null,
-  );
+  const symbolsAppliedRef = useRef(false);
+  const draftSymbolsEditedRef = useRef(false);
+  const [preferenceHydration, setPreferenceHydration] =
+    useState<PreferenceHydration>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [saveAttempt, setSaveAttempt] = useState(0);
+  const [remoteSaveFailed, setRemoteSaveFailed] = useState(false);
+  const [localSaveFailed, setLocalSaveFailed] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+
+  const setDraftSymbols = useCallback((symbols: string[]) => {
+    draftSymbolsEditedRef.current = true;
+    setDraftSymbolsState(symbols);
+  }, []);
 
   const dispatch = useCallback((action: PortfolioWorkspaceAction) => {
     setWorkspace((current) => portfolioWorkspaceReducer(current, action));
@@ -63,91 +78,148 @@ export const usePortfolioWorkspaceController = ({
 
   useEffect(() => {
     let cancelled = false;
-    hydratedStorageKeyRef.current = null;
-    setHydratedStorageKey(null);
 
     if (authLoading) {
+      hydratedStorageKeyRef.current = null;
+      setPreferenceHydration(null);
       return () => {
         cancelled = true;
       };
     }
 
-    const commitHydratedWorkspace = (hydrated: PortfolioWorkspaceState) => {
-      if (cancelled) return;
-      setWorkspace(hydrated);
-      setDraftSymbols(hydrated.symbols);
-      setDraftInputs(hydrated.globalInputs);
-      hydratedStorageKeyRef.current = currentStorageKey;
-      setHydratedStorageKey(currentStorageKey);
-    };
+    const sameScope = hydratedStorageKeyRef.current === currentStorageKey;
+    hydratedStorageKeyRef.current = currentStorageKey;
+    setPreferenceHydration({
+      storageKey: currentStorageKey,
+      status: "loading",
+    });
+
+    if (!sameScope) {
+      symbolsAppliedRef.current = false;
+      draftSymbolsEditedRef.current = false;
+      setRemoteSaveFailed(false);
+      setLocalSaveFailed(false);
+      // Hydration follows account changes or an explicit retry, not date rollover.
+      const hydrationDate = toLocalDate(new Date());
+      const local = readPortfolioWorkspace(
+        getBrowserStorage(),
+        userId,
+        hydrationDate,
+      );
+      const initial = local ?? createDefaultWorkspace(hydrationDate);
+      setWorkspace(initial);
+      setDraftSymbolsState(initial.symbols);
+      setDraftInputs(initial.globalInputs);
+
+      if (!userId || local) {
+        setPreferenceHydration({
+          storageKey: currentStorageKey,
+          status: "ready",
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+    }
 
     const hydrate = async () => {
-      const local = readPortfolioWorkspace(getBrowserStorage(), userId, today);
-      if (local) {
-        commitHydratedWorkspace(local);
-        return;
-      }
-
-      const initial = createDefaultWorkspace(today);
-      let hydrated = initial;
       if (userId) {
         try {
           const remote = await loadPortfolioConfig(userId);
           if (cancelled) return;
-          hydrated = {
-            ...initial,
-            symbols: remote?.tags?.slice(0, 5) ?? [],
-          };
+          const symbols = remote.tags.slice(0, 5);
+          if (!symbolsAppliedRef.current) {
+            setWorkspace((current) => ({ ...current, symbols }));
+          }
+          if (!draftSymbolsEditedRef.current) setDraftSymbolsState(symbols);
         } catch {
-          // The local workspace remains fully usable without remote preferences.
+          if (!cancelled) {
+            setPreferenceHydration({
+              storageKey: currentStorageKey,
+              status: "failed",
+            });
+          }
+          return;
         }
       }
-      commitHydratedWorkspace(hydrated);
-    };
-    hydrate();
-    return () => {
-      cancelled = true;
-      if (hydratedStorageKeyRef.current === currentStorageKey) {
-        hydratedStorageKeyRef.current = null;
+      if (!cancelled) {
+        setPreferenceHydration({
+          storageKey: currentStorageKey,
+          status: "ready",
+        });
       }
     };
-  }, [authLoading, currentStorageKey, today, userId]);
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, currentStorageKey, loadAttempt, userId]);
+
+  const preferencesReady =
+    preferenceHydration?.storageKey === currentStorageKey &&
+    preferenceHydration.status === "ready";
 
   useEffect(() => {
     if (
       authLoading ||
-      hydratedStorageKey !== currentStorageKey ||
+      !preferencesReady ||
       hydratedStorageKeyRef.current !== currentStorageKey ||
       typeof window === "undefined"
     ) {
       return;
     }
     const timer = window.setTimeout(() => {
-      writePortfolioWorkspace(getBrowserStorage(), userId, workspace);
+      try {
+        const storage = getBrowserStorage();
+        if (!storage) {
+          setLocalSaveFailed(true);
+          return;
+        }
+        writePortfolioWorkspace(storage, userId, workspace);
+        setLocalSaveFailed(false);
+      } catch {
+        setLocalSaveFailed(true);
+      }
     }, 220);
     return () => window.clearTimeout(timer);
-  }, [authLoading, currentStorageKey, hydratedStorageKey, userId, workspace]);
+  }, [
+    authLoading,
+    currentStorageKey,
+    preferencesReady,
+    saveAttempt,
+    userId,
+    workspace,
+  ]);
 
   useEffect(() => {
     if (
       authLoading ||
-      hydratedStorageKey !== currentStorageKey ||
+      !preferencesReady ||
       hydratedStorageKeyRef.current !== currentStorageKey ||
       !userId ||
       typeof window === "undefined"
     ) {
       return;
     }
+    let active = true;
     const timer = window.setTimeout(() => {
-      savePortfolioConfig(userId, { tags: workspace.symbols }).catch(
-        () => undefined,
-      );
+      savePortfolioConfig(userId, { tags: workspace.symbols })
+        .then(() => {
+          if (active) setRemoteSaveFailed(false);
+        })
+        .catch(() => {
+          if (active) setRemoteSaveFailed(true);
+        });
     }, 500);
-    return () => window.clearTimeout(timer);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [
     authLoading,
     currentStorageKey,
-    hydratedStorageKey,
+    preferencesReady,
+    saveAttempt,
     userId,
     workspace.symbols,
   ]);
@@ -197,7 +269,22 @@ export const usePortfolioWorkspaceController = ({
   );
 
   const applyDraft = () => {
-    if (rangeError) return;
+    if (
+      rangeError ||
+      authLoading ||
+      hydratedStorageKeyRef.current !== currentStorageKey
+    )
+      return;
+    const nextSymbols = portfolioWorkspaceReducer(workspace, {
+      type: "setSymbols",
+      symbols: draftSymbols,
+    }).symbols;
+    if (
+      nextSymbols.length !== workspace.symbols.length ||
+      nextSymbols.some((symbol, index) => symbol !== workspace.symbols[index])
+    ) {
+      symbolsAppliedRef.current = true;
+    }
     setWorkspace((current) => {
       const withSymbols = portfolioWorkspaceReducer(current, {
         type: "setSymbols",
@@ -217,6 +304,50 @@ export const usePortfolioWorkspaceController = ({
       }`,
     );
   };
+
+  const retryPersistence = () => {
+    if (authLoading || preferenceHydration?.storageKey !== currentStorageKey)
+      return;
+    if (preferenceHydration.status === "failed") {
+      setLoadAttempt((attempt) => attempt + 1);
+    } else if (preferenceHydration.status === "ready") {
+      setSaveAttempt((attempt) => attempt + 1);
+    }
+  };
+
+  const persistenceStatus =
+    authLoading || preferenceHydration?.storageKey !== currentStorageKey
+      ? null
+      : preferenceHydration.status === "loading"
+        ? {
+            message:
+              "Loading saved symbols. Changes stay in this session until preferences load.",
+            canRetry: false,
+            retrying: true,
+          }
+        : preferenceHydration.status === "failed"
+          ? {
+              message:
+                "Saved symbols could not be loaded. Changes stay in this session until you retry.",
+              canRetry: true,
+              retrying: false,
+            }
+          : remoteSaveFailed
+            ? {
+                message: localSaveFailed
+                  ? "Your symbols could not be synced. Changes stay in this session."
+                  : "Your symbols could not be synced. This workspace is saved in this browser.",
+                canRetry: true,
+                retrying: false,
+              }
+            : localSaveFailed
+              ? {
+                  message:
+                    "This workspace could not be saved in this browser. Charts and layout changes stay in this session.",
+                  canRetry: true,
+                  retrying: false,
+                }
+              : null;
 
   const setView = (view: PortfolioView) => dispatch({ type: "setView", view });
   const showBoard = () => setView({ mode: "board" });
@@ -290,6 +421,7 @@ export const usePortfolioWorkspaceController = ({
     setDraftInputs,
     today,
     announcement,
+    persistenceStatus,
     symbolOptions,
     pending,
     rangeError,
@@ -297,6 +429,7 @@ export const usePortfolioWorkspaceController = ({
     getCardProps,
     actions: {
       applyDraft,
+      retryPersistence,
       showBoard,
       showFocus,
       showObservation,
