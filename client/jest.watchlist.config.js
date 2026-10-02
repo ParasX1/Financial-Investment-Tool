@@ -31,8 +31,9 @@ const config = {
   },
   testEnvironment: "node",
   testMatch: [
-    "<rootDir>/features/watchlist/**/*.test.{ts,tsx}",
-    "<rootDir>/lib/server/yahooQuoteProvider.test.ts",
+    "**/features/watchlist/**/*.test.ts",
+    "**/features/watchlist/**/*.test.tsx",
+    "**/lib/server/yahooQuoteProvider.test.ts",
   ],
 };
 
