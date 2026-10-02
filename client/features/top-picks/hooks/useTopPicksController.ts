@@ -8,7 +8,7 @@ import {
   isTopPicksMetricAvailableForWindow,
   TOP_PICKS_COLUMNS,
 } from "../lib/topPicksColumns";
-import type { TopPicksMetadata, TopPicksRow, TopPicksWindow } from "../types";
+import type { TopPicksResponse, TopPicksWindow } from "../types";
 import { useTopPicksPreferences } from "./useTopPicksPreferences";
 import { useTopPicksVisibleColumns } from "./useTopPicksVisibleColumns";
 
@@ -20,6 +20,18 @@ const errorMessage = (reason: unknown): string =>
     ? reason.message
     : "Unable to load Top Picks.";
 const LIVE_REFRESH_POLL_MS = 20_000;
+
+type RankingSnapshot = {
+  queryKey: string;
+  response: TopPicksResponse;
+  lastUpdatedAt: Date | null;
+};
+
+type RankingRequestState = {
+  queryKey: string | null;
+  pending: boolean;
+  error: string | null;
+};
 
 export function useTopPicksController() {
   const { user, loading: authLoading } = useAuth();
@@ -37,61 +49,57 @@ export function useTopPicksController() {
   const [selectedWindow, setWindowState] = useState<TopPicksWindow>("1Y");
   const { columnsScopeReady, setVisibleKeys, visibleKeys } =
     useTopPicksVisibleColumns(preferenceScopeKey, selectedWindow);
-  const [rows, setRows] = useState<TopPicksRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [metadata, setMetadata] = useState<TopPicksMetadata>({});
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [snapshot, setSnapshot] = useState<RankingSnapshot | null>(null);
+  const snapshotRef = useRef<RankingSnapshot | null>(null);
   const [refreshRequest, setRefreshRequest] = useState({
     token: 0,
     forceRefresh: false,
   });
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [requestState, setRequestState] = useState<RankingRequestState>({
+    queryKey: null,
+    pending: false,
+    error: null,
+  });
   const [columnsOpen, setColumnsOpen] = useState(false);
   const requestInFlightRef = useRef(false);
-  const lastSnapshotGeneratedAtRef = useRef<string | null>(null);
 
   const windowMetricKeys = getTopPicksWindowMetricKeys(selectedWindow);
   const effectiveSort = windowMetricKeys.includes(sort.key)
     ? sort
     : { key: "ret1y" as const, dir: "desc" as const };
+  const queryKey = JSON.stringify([
+    preferenceScopeKey,
+    page,
+    pageSize,
+    effectiveSort.key,
+    effectiveSort.dir,
+    selectedWindow,
+  ]);
 
   useEffect(() => {
     if (!preferenceScopeReady || preferenceScopeKey === null) return;
 
     const abortController = new AbortController();
-    const refreshingExistingRows = rows.length > 0;
     let active = true;
     requestInFlightRef.current = true;
-    setLoading(!refreshingExistingRows);
-    setSyncing(refreshingExistingRows);
-    setError(null);
-    if (!refreshingExistingRows) {
-      setRows([]);
-      setWarnings([]);
-      setMetadata({});
-    }
+    setRequestState({ queryKey, pending: true, error: null });
 
     const applyResponse = (
       response: Awaited<ReturnType<typeof fetchTopPicks>>,
     ) => {
-      setRows(response.rows);
-      setTotal(response.total);
-      setWarnings(response.warnings);
-      setMetadata(response.metadata);
-      const generatedAt = response.metadata.generatedAt ?? null;
-      if (
-        generatedAt !== null
-        && generatedAt !== lastSnapshotGeneratedAtRef.current
-      ) {
-        lastSnapshotGeneratedAtRef.current = generatedAt;
-        const generatedAtDate = new Date(generatedAt);
-        if (Number.isFinite(generatedAtDate.getTime())) {
-          setLastUpdatedAt(generatedAtDate);
-        }
-      }
+      const generatedAt = response.metadata.generatedAt;
+      const previous = snapshotRef.current;
+      const generatedAtDate = generatedAt ? new Date(generatedAt) : null;
+      const lastUpdatedAt =
+        previous?.queryKey === queryKey &&
+        previous.response.metadata.generatedAt === generatedAt
+          ? previous.lastUpdatedAt
+          : generatedAtDate && Number.isFinite(generatedAtDate.getTime())
+            ? generatedAtDate
+            : null;
+      const nextSnapshot = { queryKey, response, lastUpdatedAt };
+      snapshotRef.current = nextSnapshot;
+      setSnapshot(nextSnapshot);
       const lastPage = Math.max(1, Math.ceil(response.total / pageSize));
       if (page > lastPage) setPage(lastPage);
     };
@@ -112,25 +120,18 @@ export function useTopPicksController() {
     };
 
     load()
-      .then(() => {
-        if (!active) return;
-        setError(null);
-      })
       .catch((reason: unknown) => {
         if (!active || isAbortError(reason)) return;
-        if (!refreshingExistingRows) {
-          setRows([]);
-          setTotal(0);
-          setWarnings([]);
-          setMetadata({});
-        }
-        setError(errorMessage(reason));
+        setRequestState({
+          queryKey,
+          pending: false,
+          error: errorMessage(reason),
+        });
       })
       .finally(() => {
         if (active) {
           requestInFlightRef.current = false;
-          setLoading(false);
-          setSyncing(false);
+          setRequestState((current) => ({ ...current, pending: false }));
         }
       });
 
@@ -144,6 +145,7 @@ export function useTopPicksController() {
     pageSize,
     preferenceScopeKey,
     preferenceScopeReady,
+    queryKey,
     refreshRequest,
     setPage,
     effectiveSort.dir,
@@ -167,19 +169,25 @@ export function useTopPicksController() {
     return () => globalThis.clearInterval(interval);
   }, [controllerScopeReady]);
 
-  const exposedRows = controllerScopeReady ? rows : [];
-  const exposedTotal = controllerScopeReady ? total : 0;
+  const currentSnapshot =
+    controllerScopeReady && snapshot?.queryKey === queryKey ? snapshot : null;
+  const currentRequest =
+    controllerScopeReady && requestState.queryKey === queryKey
+      ? requestState
+      : null;
+  const exposedRows = currentSnapshot?.response.rows ?? [];
+  const exposedTotal = currentSnapshot?.response.total ?? 0;
+  const loading =
+    !controllerScopeReady ||
+    (!currentSnapshot && !currentRequest?.error) ||
+    (Boolean(currentRequest?.pending) && exposedRows.length === 0);
   const exposedPageSize = controllerScopeReady ? pageSize : 25;
   const exposedSort = controllerScopeReady
     ? effectiveSort
     : { key: "sharpe" as const, dir: "desc" as const };
   const exposedVisibleKeys = (
-    columnsScopeReady
-      ? visibleKeys
-      : getDefaultVisibleTopPicksColumns()
-  ).filter((key) =>
-    isTopPicksMetricAvailableForWindow(key, selectedWindow)
-  );
+    columnsScopeReady ? visibleKeys : getDefaultVisibleTopPicksColumns()
+  ).filter((key) => isTopPicksMetricAvailableForWindow(key, selectedWindow));
   const safeVisibleKeys = exposedVisibleKeys.length
     ? exposedVisibleKeys
     : getDefaultVisibleTopPicksColumnsForWindow(selectedWindow);
@@ -190,12 +198,12 @@ export function useTopPicksController() {
   );
 
   return {
-    loading: !controllerScopeReady || loading,
-    error: controllerScopeReady ? error : null,
-    warnings: controllerScopeReady ? warnings : [],
-    metadata: controllerScopeReady ? metadata : {},
-    lastUpdatedAt: controllerScopeReady ? lastUpdatedAt : null,
-    syncing: controllerScopeReady && syncing,
+    loading,
+    error: currentRequest?.error ?? null,
+    warnings: currentSnapshot?.response.warnings ?? [],
+    metadata: currentSnapshot?.response.metadata ?? {},
+    lastUpdatedAt: currentSnapshot?.lastUpdatedAt ?? null,
+    syncing: Boolean(currentRequest?.pending) && exposedRows.length > 0,
     rows: exposedRows,
     total: exposedTotal,
     totalPages,

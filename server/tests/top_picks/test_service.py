@@ -555,6 +555,7 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
     service = RecordingService()
 
     service.get_page(TopPicksRequest(1, 2, "ret1y", "desc", "1D"))
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc", "1Y"))
     service.get_page(
         TopPicksRequest(1, 2, "sharpe", "desc", "1Y", force_refresh=True)
     )
@@ -568,7 +569,6 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
     assert service.built_windows == [
         "1W",
         "1M",
-        "1Y",
         "1Y",
         "1D",
         "1W",

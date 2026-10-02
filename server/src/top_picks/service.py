@@ -164,6 +164,8 @@ class TopPicksSnapshotCache:
 
     @staticmethod
     def _key_prefix(key):
+        if len(key) >= 7 and key[0] == "top-picks-snapshot":
+            return tuple(key[:-2])
         return tuple(key[:2]) if len(key) >= 2 else tuple(key[:1])
 
     def _load_persisted_entries(self):
@@ -539,10 +541,6 @@ class TopPicksService:
                 excluded_key=cache_key,
                 prefix=self._snapshot_cache_prefix(window),
             )
-            if latest is None and window == "1Y":
-                latest, latest_status = self._snapshot_cache.get_latest_stale(
-                    excluded_key=cache_key,
-                )
             if latest is not None:
                 self._refresh_windows_in_background(
                     window,
@@ -564,10 +562,6 @@ class TopPicksService:
                 excluded_key=cache_key,
                 prefix=self._snapshot_cache_prefix(window),
             )
-            if latest is None and window == "1Y":
-                latest, latest_status = self._snapshot_cache.get_latest_stale(
-                    excluded_key=cache_key,
-                )
             if latest is not None:
                 self._refresh_windows_in_background(window)
                 return latest, latest_status, True
@@ -664,9 +658,14 @@ class TopPicksService:
             return (today - timedelta(days=45)).isoformat()
         return _one_year_before(today).isoformat()
 
-    @staticmethod
-    def _snapshot_cache_prefix(window):
-        return ("top-picks-snapshot", window)
+    def _snapshot_cache_prefix(self, window):
+        return (
+            "top-picks-snapshot",
+            window,
+            self._benchmark_ticker,
+            self._risk_free_rate,
+            self._universe_limit,
+        )
 
     def _snapshot_cache_key(
         self,
@@ -675,11 +674,7 @@ class TopPicksService:
         end_date,
     ):
         return (
-            "top-picks-snapshot",
-            window,
-            self._benchmark_ticker,
-            self._risk_free_rate,
-            self._universe_limit,
+            *self._snapshot_cache_prefix(window),
             start_date,
             end_date,
         )
