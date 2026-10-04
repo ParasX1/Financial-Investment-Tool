@@ -1,6 +1,8 @@
 import traceback
+import json
+from queue import Empty
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, Response, current_app, jsonify, request
 
 from ..supabase_client import SupabaseConfigurationError
 from ..top_picks.contracts import (
@@ -9,10 +11,49 @@ from ..top_picks.contracts import (
 )
 from ..top_picks.repository import TopPicksDataSourceError
 from ..top_picks.service import TopPicksConfigurationError
+from ..top_picks.service import TOP_PICKS_WINDOWS
 
 
 def create_top_picks_blueprint(service_provider):
     blueprint = Blueprint("top_picks", __name__)
+
+    @blueprint.get("/api/top-picks/events")
+    def top_picks_events():
+        window = request.args.get("window", "1Y")
+        if window not in TOP_PICKS_WINDOWS:
+            return jsonify({"error": "Top Picks window is invalid."}), 400
+        try:
+            service = service_provider(current_app)
+            subscription = service.subscribe_updates(window)
+        except (SupabaseConfigurationError, TopPicksConfigurationError):
+            return jsonify({"error": "Top Picks service is not configured."}), 503
+        except Exception:
+            traceback.print_exc()
+            return jsonify({"error": "Unable to subscribe to Top Picks updates."}), 500
+
+        def events():
+            try:
+                ready = {"revision": subscription.revision, "window": window}
+                yield f"event: connected\ndata: {json.dumps(ready)}\n\n"
+                while True:
+                    try:
+                        update = subscription.get(timeout=15)
+                    except Empty:
+                        # Transport heartbeat only; does not fetch market data.
+                        yield ": keep-alive\n\n"
+                        continue
+                    event = update.get("event", "snapshot")
+                    payload = {key: value for key, value in update.items() if key != "event"}
+                    event_id = f"id: {update['revision']}\n" if "revision" in update else ""
+                    yield f"{event_id}event: {event}\ndata: {json.dumps(payload)}\n\n"
+            finally:
+                subscription.close()
+
+        response = Response(events(), mimetype="text/event-stream", headers={
+            "Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+        })
+        response.call_on_close(subscription.close)
+        return response
 
     @blueprint.post("/api/top-picks")
     def get_top_picks():

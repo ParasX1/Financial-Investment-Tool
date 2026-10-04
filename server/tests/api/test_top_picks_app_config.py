@@ -2,9 +2,11 @@ import os
 from unittest.mock import Mock
 
 from src.server import create_app
+from src.top_picks.batch_analytics import calculate_yearly_metrics
+from src.top_picks.history import TopPicksHistoryProvider
 
 
-def test_app_configures_top_picks_service_assumptions():
+def test_app_configures_top_picks_service_assumptions(tmp_path):
     response_payload = {
         "data": {"rows": [], "total": 0},
         "metadata": {},
@@ -22,6 +24,7 @@ def test_app_configures_top_picks_service_assumptions():
             "TOP_PICKS_RISK_FREE_RATE_AS_OF": "2026-07-01",
             "TOP_PICKS_UNIVERSE_LIMIT": 12,
             "TOP_PICKS_CACHE_TTL_SECONDS": 30,
+            "TOP_PICKS_HISTORY_PATH": str(tmp_path / "history.sqlite3"),
         },
         supabase_client=object(),
         top_picks_service_factory=service_factory,
@@ -35,6 +38,8 @@ def test_app_configures_top_picks_service_assumptions():
     assert second_response.status_code == 200
     service_factory.assert_called_once()
     kwargs = service_factory.call_args.kwargs
+    assert kwargs["yearly_metrics_provider"] is calculate_yearly_metrics
+    assert isinstance(kwargs["market_data_provider"], TopPicksHistoryProvider)
     assert kwargs["benchmark_ticker"] == "SPY"
     assert kwargs["risk_free_rate"] == 0.025
     assert kwargs["risk_free_rate_source"] == "Configured source"

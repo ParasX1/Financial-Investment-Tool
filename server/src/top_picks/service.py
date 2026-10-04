@@ -8,12 +8,15 @@ import time
 from threading import RLock, Thread
 from time import monotonic
 
+import pandas as pd
+
 from ..market_primitives import TICKER_PATTERN, get_adjusted_close_prices
 from .analytics import (
     ANNUALISATION_DAYS,
     calculate_information_ratios,
     count_return_observations,
 )
+from .events import SnapshotUpdateHub
 from .repository import MAX_TICKER_UNIVERSE, TopPicksDataSourceError
 
 
@@ -144,6 +147,15 @@ class TopPicksSnapshotCache:
             }
             self._latest_key = key
             self._latest_keys[self._key_prefix(key)] = key
+            retained_keys = {self._latest_key, *self._latest_keys.values()}
+            expired_keys = [
+                old_key for old_key, entry in self._entries.items()
+                if old_key not in retained_keys
+                and (entry["stale_expires_at"] <= now
+                     or math.isinf(entry["stale_expires_at"]))
+            ]
+            for old_key in expired_keys:
+                self._entries.pop(old_key)
             self._persist_entries()
 
     def clear(self):
@@ -445,6 +457,7 @@ class TopPicksService:
         snapshot_cache=None,
         market_cache_clearer=None,
         today_provider=date.today,
+        yearly_metrics_provider=None,
     ):
         self._ticker_repository = ticker_repository
         self._calculator_provider = calculator_provider
@@ -475,9 +488,22 @@ class TopPicksService:
             else market_cache_clearer
         )
         self._today_provider = today_provider
+        self._yearly_metrics_provider = yearly_metrics_provider
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
+        self._updates = SnapshotUpdateHub()
+
+    def subscribe_updates(self, window):
+        subscription = self._updates.subscribe(window)
+        try:
+            self._refresh_windows_in_background(
+                window, force_refresh=True, queue_if_busy=False,
+            )
+        except Exception:
+            subscription.close()
+            raise
+        return subscription
 
     def get_page(self, top_picks_request):
         snapshot, cache_status, refreshing = self._get_snapshot(
@@ -526,51 +552,33 @@ class TopPicksService:
             start_date,
             end_date,
         )
+        cached, cache_status = self._snapshot_cache.get(cache_key)
+        if cached is not None:
+            refreshing = force_refresh or cache_status == "stale"
+            if refreshing:
+                self._refresh_windows_in_background(
+                    window,
+                    force_refresh=force_refresh,
+                )
+            return cached, cache_status, refreshing
+
+        latest, latest_status = self._snapshot_cache.get_latest_stale(
+            excluded_key=cache_key,
+            prefix=self._snapshot_cache_prefix(window),
+        )
+        if latest is None and window == "1Y":
+            latest, latest_status = self._snapshot_cache.get_latest_stale(
+                excluded_key=cache_key,
+            )
+        if latest is not None:
+            self._refresh_windows_in_background(
+                window,
+                force_refresh=force_refresh,
+            )
+            return latest, latest_status, True
+
         if force_refresh:
-            cached, cache_status = self._snapshot_cache.get(cache_key)
-            if cached is not None:
-                self._refresh_windows_in_background(
-                    window,
-                    force_refresh=True,
-                )
-                return cached, cache_status, True
-
-            latest, latest_status = self._snapshot_cache.get_latest_stale(
-                excluded_key=cache_key,
-                prefix=self._snapshot_cache_prefix(window),
-            )
-            if latest is None and window == "1Y":
-                latest, latest_status = self._snapshot_cache.get_latest_stale(
-                    excluded_key=cache_key,
-                )
-            if latest is not None:
-                self._refresh_windows_in_background(
-                    window,
-                    force_refresh=True,
-                )
-                return latest, latest_status, True
-
             self._market_cache_clearer()
-
-        if not force_refresh:
-            cached, cache_status = self._snapshot_cache.get(cache_key)
-            if cached is not None:
-                refreshing = cache_status == "stale"
-                if refreshing:
-                    self._refresh_windows_in_background(window)
-                return cached, cache_status, refreshing
-
-            latest, latest_status = self._snapshot_cache.get_latest_stale(
-                excluded_key=cache_key,
-                prefix=self._snapshot_cache_prefix(window),
-            )
-            if latest is None and window == "1Y":
-                latest, latest_status = self._snapshot_cache.get_latest_stale(
-                    excluded_key=cache_key,
-                )
-            if latest is not None:
-                self._refresh_windows_in_background(window)
-                return latest, latest_status, True
 
         snapshot = self._build_snapshot(start_date, end_date, window)
         self._snapshot_cache.set(
@@ -578,6 +586,7 @@ class TopPicksService:
             snapshot,
             self._cache_ttl_seconds,
         )
+        self._updates.publish(window, snapshot["metadata"]["generatedAt"])
         self._refresh_windows_in_background(window)
         return deepcopy(snapshot), "miss", False
 
@@ -585,10 +594,11 @@ class TopPicksService:
         self,
         priority_window,
         force_refresh=False,
+        queue_if_busy=True,
     ):
         with self._refresh_lock:
             if self._refreshing_all_windows:
-                if force_refresh:
+                if force_refresh and queue_if_busy:
                     self._pending_force_refresh_window = priority_window
                 return
             self._refreshing_all_windows = True
@@ -598,61 +608,102 @@ class TopPicksService:
             current_force_refresh = force_refresh
 
             while True:
+                failed = False
                 try:
                     today = self._today_provider()
                     if current_force_refresh:
                         self._market_cache_clearer()
-                    ordered_windows = (
-                        current_priority_window,
-                        *[
-                            window for window in TOP_PICKS_WINDOWS
-                            if window != current_priority_window
-                        ],
+                    published = self._refresh_window_snapshots(
+                        today, current_priority_window, current_force_refresh,
                     )
-                    for window in ordered_windows:
-                        start_date = self._start_date_for_window(today, window)
-                        end_date = today.isoformat()
-                        cache_key = self._snapshot_cache_key(
-                            window,
-                            start_date,
-                            end_date,
-                        )
-                        try:
-                            cached, cache_status = self._snapshot_cache.get(
-                                cache_key
-                            )
-                            if (
-                                not current_force_refresh
-                                and cached is not None
-                                and cache_status == "hit"
-                            ):
-                                continue
-                            snapshot = self._build_snapshot(
-                                start_date,
-                                end_date,
-                                window,
-                            )
-                            self._snapshot_cache.set(
-                                cache_key,
-                                snapshot,
-                                self._cache_ttl_seconds,
-                            )
-                        except Exception:
-                            LOGGER.warning(
-                                "Top Picks background window refresh failed.",
-                                exc_info=True,
-                            )
+                    failed = published is False
+                except Exception:
+                    failed = True
+                    self._updates.publish_error()
+                    LOGGER.warning(
+                        "Top Picks background batch refresh failed.",
+                        exc_info=True,
+                    )
                 finally:
                     with self._refresh_lock:
                         pending_window = self._pending_force_refresh_window
                         self._pending_force_refresh_window = None
                         if pending_window is None:
+                            if not self._updates.has_subscribers:
+                                self._refreshing_all_windows = False
+                                break
+                            current_priority_window = self._updates.preferred_window()
+                        else:
+                            current_priority_window = pending_window
+                        current_force_refresh = True
+                if failed and pending_window is None:
+                    # Retry after source failures without a busy loop; closing
+                    # the last browser interrupts this wait immediately.
+                    self._updates.wait_for_inactive(5)
+                    with self._refresh_lock:
+                        if (not self._updates.has_subscribers
+                                and self._pending_force_refresh_window is None):
                             self._refreshing_all_windows = False
                             break
-                        current_priority_window = pending_window
-                        current_force_refresh = True
 
         Thread(target=refresh_all, daemon=True).start()
+
+    def _refresh_window_snapshots(self, today, priority_window, force_refresh):
+        """Share one universe and annual download within a background round."""
+        ordered_windows = (
+            priority_window,
+            *(window for window in TOP_PICKS_WINDOWS if window != priority_window),
+        )
+        end_date = today.isoformat()
+        pending = []
+        for window in ordered_windows:
+            start_date = self._start_date_for_window(today, window)
+            key = self._snapshot_cache_key(window, start_date, end_date)
+            cached, status = self._snapshot_cache.get(key)
+            if not force_refresh and cached is not None and status == "hit":
+                continue
+            pending.append((window, start_date, key))
+        if not pending:
+            return True
+
+        tickers = self._ticker_repository.list_tickers(self._universe_limit)
+        self._prune_market_history(tickers, end_date)
+        market_data = pd.DataFrame()
+        if tickers:
+            symbols = list(dict.fromkeys([
+                *(ticker.symbol for ticker in tickers), self._benchmark_ticker,
+            ]))
+            market_data = self._market_data_provider(
+                symbols, self._start_date_for_window(today, "1Y"), end_date,
+            )
+        completed = 0
+        for window, start_date, key in pending:
+            try:
+                snapshot = self._build_snapshot(
+                    start_date, end_date, window, tickers=tickers,
+                    market_data=self._slice_market_data(
+                        market_data, start_date, end_date,
+                    ),
+                )
+                self._snapshot_cache.set(key, snapshot, self._cache_ttl_seconds)
+                self._updates.publish(window, snapshot["metadata"]["generatedAt"])
+                completed += 1
+            except Exception:
+                self._updates.publish_error(window)
+                LOGGER.warning(
+                    "Top Picks background window refresh failed: %s", window,
+                    exc_info=True,
+                )
+        return completed > 0 and bool(tickers)
+
+    @staticmethod
+    def _slice_market_data(market_data, start_date, end_date):
+        if market_data is None or market_data.empty:
+            return pd.DataFrame() if market_data is None else market_data.copy()
+        # Bound before selecting the last N observations: this preserves the
+        # existing short-window sample gates even for sparse/newly listed stocks.
+        dates = pd.to_datetime(market_data.index).strftime("%Y-%m-%d")
+        return market_data.loc[(dates >= start_date) & (dates <= end_date)].copy()
 
     @staticmethod
     def _start_date_for_window(today, window):
@@ -684,10 +735,13 @@ class TopPicksService:
             end_date,
         )
 
-    def _build_snapshot(self, start_date, end_date, window="1Y"):
-        tickers = self._ticker_repository.list_tickers(
-            self._universe_limit
-        )
+    def _build_snapshot(
+        self, start_date, end_date, window="1Y", *, tickers=None, market_data=None,
+    ):
+        if tickers is None:
+            tickers = self._ticker_repository.list_tickers(self._universe_limit)
+        if market_data is None:
+            self._prune_market_history(tickers, end_date)
 
         if tickers:
             try:
@@ -700,6 +754,7 @@ class TopPicksService:
                     start_date,
                     end_date,
                     window,
+                    market_data=market_data,
                 )
             except TopPicksDataSourceError:
                 raise
@@ -734,18 +789,38 @@ class TopPicksService:
             "warnings": self._build_warnings(rows, observations, window),
         }
 
-    def _calculate_metric_maps(self, symbols, start_date, end_date, window):
+    def _prune_market_history(self, tickers, end_date):
+        # Only opt into a provider's explicitly declared retention capability;
+        # dynamic test doubles and ordinary download functions have none.
+        if not callable(getattr(type(self._market_data_provider), "prune", None)):
+            return
+        symbols = list(dict.fromkeys([
+            *(ticker.symbol for ticker in tickers), self._benchmark_ticker,
+        ])) if tickers else []
+        self._market_data_provider.prune(
+            symbols,
+            self._start_date_for_window(date.fromisoformat(end_date), "1Y"),
+            end_date,
+        )
+
+    def _calculate_metric_maps(
+        self, symbols, start_date, end_date, window, *, market_data=None,
+    ):
         requested_market_symbols = list(symbols)
         if self._benchmark_ticker not in requested_market_symbols:
             requested_market_symbols.append(self._benchmark_ticker)
         # Use one universe for Top Picks calculations so the expensive market
         # data fetch can be reused by the underlying stock-data cache.
         metric_symbols = requested_market_symbols
-        market_data = self._market_data_provider(
-            requested_market_symbols,
-            start_date,
-            end_date,
-        )
+        if market_data is None:
+            market_data = self._market_data_provider(
+                requested_market_symbols, start_date, end_date,
+            )
+        if window == "1Y" and self._yearly_metrics_provider is not None:
+            return self._yearly_metrics_provider(
+                market_data, symbols, self._benchmark_ticker,
+                self._risk_free_rate,
+            )
         observations = self._observation_count_provider(
             market_data,
             symbols,
@@ -924,44 +999,6 @@ class TopPicksService:
 
     @staticmethod
     def _build_warnings(rows, observations, window="1Y"):
-        if window == "1Y":
-            partial_symbols = []
-            missing_symbols = []
-            limited_symbols = []
-            for row in rows:
-                symbol = row["symbol"]
-                observation_count = int(observations.get(symbol, 0))
-                if 0 < observation_count < MIN_TRAILING_RETURN_OBSERVATIONS:
-                    limited_symbols.append(symbol)
-                    continue
-                availability = [
-                    _metric_is_available(row, key) for key in METRIC_KEYS
-                ]
-                if not any(availability):
-                    missing_symbols.append(symbol)
-                elif not all(availability):
-                    partial_symbols.append(symbol)
-
-            warnings = []
-            if limited_symbols:
-                warnings.append(_symbol_summary(
-                    "Insufficient trailing history",
-                    limited_symbols,
-                ))
-            if partial_symbols:
-                warnings.append(_symbol_summary(
-                    "Some metrics are unavailable",
-                    partial_symbols,
-                ))
-            if missing_symbols:
-                warnings.append(_symbol_summary(
-                    "No usable market data",
-                    missing_symbols,
-                ))
-            if not rows:
-                warnings.append("No ticker universe is available.")
-            return warnings
-
         enabled_metrics = WINDOW_METRIC_KEYS.get(window, METRIC_KEYS)
         window_minimums = WINDOW_MIN_OBSERVATIONS.get(window, {})
         minimum_observations = min(

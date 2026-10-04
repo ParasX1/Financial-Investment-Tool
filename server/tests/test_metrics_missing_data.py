@@ -46,9 +46,27 @@ def test_fetch_stock_data_retries_missing_tickers_individually():
     adj_close = metrics.get_adjusted_close_prices(data)
 
     assert set(adj_close.columns) == {"AAPL", "MSFT", "SPY"}
-    assert calls[0][1]["threads"] is False
+    assert calls[0][1]["threads"] == 96
+    assert calls[1][1]["threads"] is False
     assert calls[0][1]["progress"] is False
     assert [call[0] for call in calls] == [["AAPL", "MSFT", "SPY"], ["MSFT"]]
+
+
+def test_fetch_stock_data_recovery_fills_existing_empty_columns():
+    first_response = adjusted_close_frame(
+        {"AAPL": rising_prices(100), "MSFT": [float("nan")] * 35}
+    )
+    retry_response = adjusted_close_frame({"MSFT": rising_prices(200)})
+    metrics.clear_stock_data_cache()
+    with patch("src.metrics.yf.download", side_effect=[first_response, retry_response]):
+        data = metrics.fetch_stock_data(
+            ["AAPL", "MSFT"], "2023-01-01", "2024-01-01"
+        )
+
+    prices = metrics.get_adjusted_close_prices(data)
+    assert metrics.get_missing_adjusted_close_tickers(data, ["AAPL", "MSFT"]) == []
+    assert prices["MSFT"].tolist() == rising_prices(200)
+    assert prices["AAPL"].tolist() == rising_prices(100)
 
 
 def test_fetch_stock_data_reuses_cached_downloads():

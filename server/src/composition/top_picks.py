@@ -1,7 +1,10 @@
 import os
+from threading import RLock
 
 from ..metrics import clear_stock_data_cache, fetch_stock_data
 from ..supabase_client import get_supabase_client
+from ..top_picks.batch_analytics import calculate_yearly_metrics
+from ..top_picks.history import TopPicksHistoryProvider
 from ..top_picks.repository import SupabaseTickerRepository
 from ..top_picks.service import (
     DEFAULT_BENCHMARK_TICKER,
@@ -57,6 +60,7 @@ def configure_top_picks(app, environ=None):
             "TOP_PICKS_CACHE_PATH",
             DEFAULT_TOP_PICKS_CACHE_PATH,
         ),
+        TOP_PICKS_HISTORY_PATH=environment.get("TOP_PICKS_HISTORY_PATH"),
     )
 
 
@@ -92,17 +96,29 @@ def create_top_picks_service_provider(
         else market_cache_clearer
     )
 
-    def get_service(app):
+    service_creation_lock = RLock()
+
+    def get_service_locked(app):
         existing_service = app.extensions.get("top_picks_service")
         if existing_service is not None:
             return existing_service
+
+        history_path = app.config.get("TOP_PICKS_HISTORY_PATH")
+        if history_path is None:
+            snapshot_path = app.config["TOP_PICKS_CACHE_PATH"]
+            history_path = f"{snapshot_path}.history.sqlite3" if snapshot_path else None
+        history_provider = (
+            TopPicksHistoryProvider(resolved_market_data_provider, history_path)
+            if market_data_provider is None else resolved_market_data_provider
+        )
 
         service = resolved_service_factory(
             ticker_repository=resolved_repository_factory(
                 resolved_supabase_provider(app)
             ),
             calculator_provider=calculator_provider,
-            market_data_provider=resolved_market_data_provider,
+            yearly_metrics_provider=calculate_yearly_metrics,
+            market_data_provider=history_provider,
             market_cache_clearer=resolved_market_cache_clearer,
             benchmark_ticker=app.config["TOP_PICKS_BENCHMARK"],
             risk_free_rate=app.config["TOP_PICKS_RISK_FREE_RATE"],
@@ -120,5 +136,9 @@ def create_top_picks_service_provider(
         )
         app.extensions["top_picks_service"] = service
         return service
+
+    def get_service(app):
+        with service_creation_lock:
+            return get_service_locked(app)
 
     return get_service
