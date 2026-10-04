@@ -43,7 +43,7 @@ type TopPicksStatusProps = Pick<
 
 export function TopPicksToolbar({
   loading,
-  error,
+  metadata = {},
   lastUpdatedAt = null,
   syncing = false,
   total,
@@ -52,6 +52,8 @@ export function TopPicksToolbar({
   onEditColumns,
   onWindowChange,
 }: TopPicksToolbarProps) {
+  const refreshingSnapshot = syncing || metadata.snapshotRefreshing === true;
+  const showingPreviousResults = metadata.cacheStatus === "stale";
   const updatedAtLabel = lastUpdatedAt
     ? lastUpdatedAt.toLocaleString("sv-SE", {
         year: "numeric",
@@ -117,7 +119,7 @@ export function TopPicksToolbar({
           variant="caption"
           role="status"
           sx={{
-            color: syncing
+            color: refreshingSnapshot
               ? "var(--fit-color-info, #93c5fd)"
               : "var(--fit-color-text-muted, #8f98aa)",
             fontWeight: 700,
@@ -125,7 +127,8 @@ export function TopPicksToolbar({
             whiteSpace: "nowrap",
           }}
         >
-          {syncing
+          {showingPreviousResults ? "Showing previous results - " : ""}
+          {refreshingSnapshot
             ? updatedAtLabel
               ? `Syncing - Updated ${updatedAtLabel}`
               : "Syncing latest"
@@ -139,7 +142,7 @@ export function TopPicksToolbar({
           variant="contained"
           startIcon={<DownloadIcon fontSize="small" />}
           onClick={onExport}
-          disabled={loading || Boolean(error) || total === 0}
+          disabled={loading || total === 0}
           sx={secondaryActionSx}
         >
           Export page CSV

@@ -4,6 +4,7 @@ from threading import RLock
 from ..metrics import clear_stock_data_cache, fetch_stock_data
 from ..supabase_client import get_supabase_client
 from ..top_picks.batch_analytics import calculate_yearly_metrics
+from ..top_picks.bootstrap import bootstrap_top_picks_cache, create_seed_archive
 from ..top_picks.history import TopPicksHistoryProvider
 from ..top_picks.repository import SupabaseTickerRepository
 from ..top_picks.service import (
@@ -15,6 +16,7 @@ from ..top_picks.service import (
     DEFAULT_UNIVERSE_LIMIT,
     TopPicksSnapshotCache,
     TopPicksService,
+    _normalize_cache_ttl,
 )
 
 
@@ -27,6 +29,13 @@ DEFAULT_TOP_PICKS_CACHE_PATH = os.path.join(
     ".cache",
     "top-picks-snapshot-cache.json",
 )
+DEFAULT_TOP_PICKS_SEED_PATH = os.path.join(PROJECT_ROOT, "data", "top-picks-seed.zip")
+
+
+def _is_default_cache_path(path, default):
+    return bool(path) and os.path.normcase(os.path.realpath(path)) == os.path.normcase(
+        os.path.realpath(default)
+    )
 
 
 def configure_top_picks(app, environ=None):
@@ -61,6 +70,8 @@ def configure_top_picks(app, environ=None):
             DEFAULT_TOP_PICKS_CACHE_PATH,
         ),
         TOP_PICKS_HISTORY_PATH=environment.get("TOP_PICKS_HISTORY_PATH"),
+        TOP_PICKS_SEED_PATH=environment.get("TOP_PICKS_SEED_PATH"),
+        TOP_PICKS_SEED_SYNC=environment.get("TOP_PICKS_SEED_SYNC", "true"),
     )
 
 
@@ -103,18 +114,53 @@ def create_top_picks_service_provider(
         if existing_service is not None:
             return existing_service
 
+        snapshot_path = app.config["TOP_PICKS_CACHE_PATH"]
         history_path = app.config.get("TOP_PICKS_HISTORY_PATH")
         if history_path is None:
-            snapshot_path = app.config["TOP_PICKS_CACHE_PATH"]
             history_path = f"{snapshot_path}.history.sqlite3" if snapshot_path else None
+        # Validate the external dependency before writing any initial files.
+        supabase = resolved_supabase_provider(app)
+        configured_seed = app.config.get("TOP_PICKS_SEED_PATH")
+        if configured_seed != "":
+            automatic_seed = configured_seed is None
+            seed_snapshot_path = snapshot_path
+            seed_history_path = history_path if market_data_provider is None else None
+            if automatic_seed:
+                if not _is_default_cache_path(snapshot_path, DEFAULT_TOP_PICKS_CACHE_PATH):
+                    seed_snapshot_path = None
+                if not _is_default_cache_path(
+                    history_path, f"{DEFAULT_TOP_PICKS_CACHE_PATH}.history.sqlite3",
+                ):
+                    seed_history_path = None
+            bootstrap_top_picks_cache(
+                DEFAULT_TOP_PICKS_SEED_PATH if automatic_seed else configured_seed,
+                seed_snapshot_path,
+                seed_history_path,
+                benchmark_ticker=app.config["TOP_PICKS_BENCHMARK"],
+                risk_free_rate=app.config["TOP_PICKS_RISK_FREE_RATE"],
+                universe_limit=app.config["TOP_PICKS_UNIVERSE_LIMIT"],
+                cache_ttl_seconds=app.config["TOP_PICKS_CACHE_TTL_SECONDS"],
+            )
         history_provider = (
             TopPicksHistoryProvider(resolved_market_data_provider, history_path)
             if market_data_provider is None else resolved_market_data_provider
         )
 
+        round_complete_callback = None
+        if (not app.testing and market_data_provider is None
+                and str(app.config["TOP_PICKS_SEED_SYNC"]).strip().lower()
+                in {"true", "1", "yes", "on"}
+                and _is_default_cache_path(snapshot_path, DEFAULT_TOP_PICKS_CACHE_PATH)
+                and _is_default_cache_path(
+                    history_path, f"{DEFAULT_TOP_PICKS_CACHE_PATH}.history.sqlite3",
+                )
+                and _normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
+            def round_complete_callback():
+                create_seed_archive(snapshot_path, history_path, DEFAULT_TOP_PICKS_SEED_PATH)
+
         service = resolved_service_factory(
             ticker_repository=resolved_repository_factory(
-                resolved_supabase_provider(app)
+                supabase
             ),
             calculator_provider=calculator_provider,
             yearly_metrics_provider=calculate_yearly_metrics,
@@ -133,6 +179,7 @@ def create_top_picks_service_provider(
             snapshot_cache=TopPicksSnapshotCache(
                 persistence_path=app.config["TOP_PICKS_CACHE_PATH"],
             ),
+            round_complete_callback=round_complete_callback,
         )
         app.extensions["top_picks_service"] = service
         return service

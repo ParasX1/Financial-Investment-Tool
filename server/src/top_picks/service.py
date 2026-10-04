@@ -6,6 +6,7 @@ import math
 import os
 import time
 from threading import RLock, Thread
+from tempfile import NamedTemporaryFile
 from time import monotonic
 
 import pandas as pd
@@ -241,6 +242,7 @@ class TopPicksSnapshotCache:
             return
 
         directory = os.path.dirname(self._persistence_path)
+        temporary_path = None
         try:
             if directory:
                 os.makedirs(directory, exist_ok=True)
@@ -266,10 +268,21 @@ class TopPicksSnapshotCache:
                     for entry in [self._entries[key]]
                 }
             }
-            with open(self._persistence_path, "w", encoding="utf-8") as handle:
+            with NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=directory or ".",
+                prefix=".top-picks-snapshot-", delete=False,
+            ) as handle:
+                temporary_path = handle.name
                 json.dump(payload, handle, separators=(",", ":"))
+            os.replace(temporary_path, self._persistence_path)
         except OSError:
             return
+        finally:
+            if temporary_path is not None:
+                try:
+                    os.unlink(temporary_path)
+                except OSError:
+                    pass
 
 
 def _finite_float(value):
@@ -458,6 +471,7 @@ class TopPicksService:
         market_cache_clearer=None,
         today_provider=date.today,
         yearly_metrics_provider=None,
+        round_complete_callback=None,
     ):
         self._ticker_repository = ticker_repository
         self._calculator_provider = calculator_provider
@@ -489,6 +503,7 @@ class TopPicksService:
         )
         self._today_provider = today_provider
         self._yearly_metrics_provider = yearly_metrics_provider
+        self._round_complete_callback = round_complete_callback
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
@@ -692,6 +707,17 @@ class TopPicksService:
                 self._updates.publish_error(window)
                 LOGGER.warning(
                     "Top Picks background window refresh failed: %s", window,
+                    exc_info=True,
+                )
+        if (completed == len(pending) and tickers and self._cache_ttl_seconds > 0
+                and self._round_complete_callback is not None):
+            try:
+                # Each window has already been saved and announced to viewers.
+                # Run once in this worker before starting the next download.
+                self._round_complete_callback()
+            except Exception:
+                LOGGER.warning(
+                    "Top Picks initial package update failed; keeping previous package.",
                     exc_info=True,
                 )
         return completed > 0 and bool(tickers)

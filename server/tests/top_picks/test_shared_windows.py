@@ -15,7 +15,10 @@ from src.top_picks.service import TOP_PICKS_WINDOWS, TopPicksService
 TODAY = date(2026, 10, 3)
 
 
-def build_service(monkeypatch, string_dates=False):
+def build_service(
+    monkeypatch, string_dates=False, round_complete_callback=None,
+    cache_ttl_seconds=600,
+):
     dates = pd.date_range("2025-09-01", "2026-10-05", freq="B")
     random = np.random.default_rng(17)
     values = 100 * np.cumprod(1 + random.normal(0.001,
@@ -41,6 +44,8 @@ def build_service(monkeypatch, string_dates=False):
         market_data_provider=Mock(side_effect=download), benchmark_ticker="SPY",
         yearly_metrics_provider=calculate_yearly_metrics,
         today_provider=lambda: TODAY,
+        round_complete_callback=round_complete_callback,
+        cache_ttl_seconds=cache_ttl_seconds,
     )
     jobs = []
 
@@ -123,24 +128,29 @@ def test_force_refresh_downloads_once_and_publishes_priority_first(monkeypatch):
 
 
 def test_shared_download_failure_keeps_snapshot_and_releases_refresh(monkeypatch):
-    service, jobs = build_service(monkeypatch)
+    complete = Mock()
+    service, jobs = build_service(monkeypatch, round_complete_callback=complete)
     old, _, _ = service._get_snapshot("1D")
     jobs.pop(0)()
+    complete.reset_mock()
     service._market_data_provider.side_effect = RuntimeError("offline")
     service._get_snapshot("1D", force_refresh=True)
     jobs.pop(0)()
     assert service._refreshing_all_windows is False
     assert service._get_snapshot("1D")[0] == old
+    complete.assert_not_called()
 
 
 def test_empty_universe_does_not_download_benchmark(monkeypatch):
-    service, jobs = build_service(monkeypatch)
+    complete = Mock()
+    service, jobs = build_service(monkeypatch, round_complete_callback=complete)
     service._ticker_repository.list_tickers.return_value = ()
     service._get_snapshot("1D")
     jobs.pop(0)()
     service._market_data_provider.assert_not_called()
     for window in TOP_PICKS_WINDOWS:
         assert service._get_snapshot(window)[0]["rows"] == []
+    complete.assert_not_called()
 
 
 @pytest.mark.parametrize("initial", TOP_PICKS_WINDOWS)
@@ -218,7 +228,8 @@ def test_leap_year_slice_uses_inclusive_requested_bounds():
 
 
 def test_one_window_failure_does_not_block_remaining_windows(monkeypatch):
-    service, _ = build_service(monkeypatch)
+    complete = Mock()
+    service, _ = build_service(monkeypatch, round_complete_callback=complete)
     original = service._build_snapshot
 
     def fail_one(start, end, window, **kwargs):
@@ -236,3 +247,94 @@ def test_one_window_failure_does_not_block_remaining_windows(monkeypatch):
         )
         assert service._snapshot_cache.get(key)[1] == (
             "miss" if window == "1W" else "hit")
+    complete.assert_not_called()
+
+
+def test_round_callback_waits_for_all_pending_snapshots_and_notifications(monkeypatch):
+    events = []
+    service, _ = build_service(
+        monkeypatch, round_complete_callback=lambda: events.append("export"),
+    )
+
+    def record_publication(window, generated_at):
+        key = service._snapshot_cache_key(
+            window, service._start_date_for_window(TODAY, window), TODAY.isoformat(),
+        )
+        assert service._snapshot_cache.get(key)[1] == "hit"
+        events.append(window)
+
+    monkeypatch.setattr(service._updates, "publish", record_publication)
+
+    assert service._refresh_window_snapshots(TODAY, "1M", True) is True
+    assert events == ["1M", "1D", "1W", "1Y", "export"]
+    service._market_data_provider.assert_called_once()
+
+
+def test_cold_foreground_window_does_not_export_before_background_completes(monkeypatch):
+    complete = Mock()
+    service, jobs = build_service(monkeypatch, round_complete_callback=complete)
+
+    service._get_snapshot("1D")
+    complete.assert_not_called()
+    jobs.pop(0)()
+
+    complete.assert_called_once_with()
+    for window in TOP_PICKS_WINDOWS:
+        key = service._snapshot_cache_key(
+            window, service._start_date_for_window(TODAY, window), TODAY.isoformat(),
+        )
+        assert service._snapshot_cache.get(key)[1] == "hit"
+
+
+def test_round_callback_skips_cache_hits_and_runs_again_for_forced_refresh(monkeypatch):
+    complete = Mock()
+    service, _ = build_service(monkeypatch, round_complete_callback=complete)
+
+    service._refresh_window_snapshots(TODAY, "1D", True)
+    complete.assert_called_once_with()
+    complete.reset_mock()
+    service._market_data_provider.reset_mock()
+
+    service._refresh_window_snapshots(TODAY, "1Y", False)
+    complete.assert_not_called()
+    service._market_data_provider.assert_not_called()
+
+    service._refresh_window_snapshots(TODAY, "1Y", True)
+    complete.assert_called_once_with()
+    service._market_data_provider.assert_called_once()
+
+
+def test_disabled_snapshot_cache_does_not_export_round(monkeypatch):
+    complete = Mock()
+    service, _ = build_service(
+        monkeypatch, round_complete_callback=complete, cache_ttl_seconds=0,
+    )
+
+    service._refresh_window_snapshots(TODAY, "1D", True)
+
+    complete.assert_not_called()
+    service._market_data_provider.assert_called_once()
+
+
+def test_round_callback_failure_preserves_sse_and_allows_next_round(monkeypatch, caplog):
+    complete = Mock(side_effect=OSError("Seed disk is unavailable."))
+    service, jobs = build_service(monkeypatch, round_complete_callback=complete)
+    publish = Mock()
+    error = Mock()
+    monkeypatch.setattr(service._updates, "publish", publish)
+    monkeypatch.setattr(service._updates, "publish_error", error)
+
+    for expected_rounds in (1, 2):
+        service._refresh_windows_in_background("1D", force_refresh=True)
+        jobs.pop(0)()
+        assert service._refreshing_all_windows is False
+        assert complete.call_count == expected_rounds
+        assert publish.call_count == expected_rounds * len(TOP_PICKS_WINDOWS)
+        error.assert_not_called()
+
+    assert "Seed disk is unavailable." in caplog.text
+    for window in TOP_PICKS_WINDOWS:
+        key = service._snapshot_cache_key(
+            window, service._start_date_for_window(TODAY, window), TODAY.isoformat(),
+        )
+        assert service._snapshot_cache.get(key)[1] == "hit"
