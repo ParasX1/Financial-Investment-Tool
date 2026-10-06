@@ -54,15 +54,15 @@ def get_missing_adjusted_close_tickers(stock_data, requested_tickers):
 
 
 def merge_stock_data_frames(stock_data_frames):
+    """Fill missing observations from retries while retaining original values."""
     usable_frames = [frame for frame in stock_data_frames if frame is not None and not frame.empty]
     if not usable_frames:
         return pd.DataFrame()
 
     merged = usable_frames[0].copy()
     for frame in usable_frames[1:]:
-        # Failed batch symbols can already have all-NaN columns. Fill those
-        # columns with recovered prices instead of discarding the retry.
-        merged = merged.combine_first(frame)
+        column_order = merged.columns.union(frame.columns, sort=False)
+        merged = merged.combine_first(frame).reindex(columns=column_order)
     return merged
 
 
