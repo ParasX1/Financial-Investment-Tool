@@ -234,6 +234,65 @@ def test_snapshot_cache_keeps_stale_values_for_revalidation():
     assert expired_value is None
 
 
+def test_snapshot_cache_prunes_expired_older_keys_when_publishing_new_snapshot():
+    now = [100.0]
+    cache = TopPicksSnapshotCache(clock=lambda: now[0], stale_ttl_seconds=100)
+    old_day = ("top-picks", "1D", "old-date")
+    newer_day = ("top-picks", "1D", "newer-date")
+    latest_day = ("top-picks", "1D", "latest-date")
+    latest_year = ("top-picks", "1Y", "old-date")
+    cache.set(old_day, {"value": "old day"}, ttl_seconds=10)
+    cache.set(latest_year, {"value": "year fallback"}, ttl_seconds=10)
+
+    now[0] = 150.0
+    cache.set(newer_day, {"value": "newer day"}, ttl_seconds=10)
+    # Superseded snapshots remain available throughout their stale lifetime.
+    assert cache.get(old_day) == ({"value": "old day"}, "stale")
+
+    now[0] = 200.0
+    cache.set(latest_day, {"value": "latest day"}, ttl_seconds=10)
+    assert old_day not in cache._entries
+    assert cache.get(newer_day) == ({"value": "newer day"}, "stale")
+    # Each window keeps its latest complete result, even beyond stale TTL.
+    assert cache.get_latest_stale(prefix=("top-picks", "1Y")) == (
+        {"value": "year fallback"}, "stale",
+    )
+    assert cache.get_latest_stale() == ({"value": "latest day"}, "stale")
+
+    now[0] = 250.0
+    next_day = ("top-picks", "1D", "next-date")
+    cache.set(next_day, {"value": "next day"}, ttl_seconds=10)
+    assert newer_day not in cache._entries
+    assert set(cache._entries) == {latest_day, next_day, latest_year}
+
+
+def test_snapshot_cache_removes_replaced_startup_fallback_from_memory_and_disk(tmp_path):
+    cache_path = str(tmp_path / "top-picks-cache.json")
+    old_day = ("top-picks", "1D", "old-date")
+    old_year = ("top-picks", "1Y", "old-date")
+    new_day = ("top-picks", "1D", "new-date")
+    first_cache = TopPicksSnapshotCache(clock=lambda: 100.0, persistence_path=cache_path)
+    first_cache.set(old_day, {"value": "old day"}, ttl_seconds=10)
+    first_cache.set(old_year, {"value": "year fallback"}, ttl_seconds=10)
+
+    restarted_cache = TopPicksSnapshotCache(clock=lambda: 1000.0, persistence_path=cache_path)
+    assert restarted_cache.get_latest_stale(prefix=("top-picks", "1D")) == (
+        {"value": "old day"}, "stale",
+    )
+    restarted_cache.set(new_day, {"value": "new day"}, ttl_seconds=10)
+    assert old_day not in restarted_cache._entries
+    assert restarted_cache.get_latest_stale(prefix=("top-picks", "1D")) == (
+        {"value": "new day"}, "stale",
+    )
+    assert restarted_cache.get_latest_stale(prefix=("top-picks", "1Y")) == (
+        {"value": "year fallback"}, "stale",
+    )
+
+    reloaded_cache = TopPicksSnapshotCache(clock=lambda: 2000.0, persistence_path=cache_path)
+    assert set(reloaded_cache._entries) == {new_day, old_year}
+    assert reloaded_cache.get_latest_stale() == ({"value": "new day"}, "stale")
+
+
 def test_snapshot_cache_persists_complete_values_as_stale_after_restart(
     tmp_path,
     monkeypatch,
@@ -388,7 +447,7 @@ def test_service_refreshes_other_windows_after_cache_miss(monkeypatch):
             )
             self.built_windows = []
 
-        def _build_snapshot(self, start_date, end_date, window="1Y"):
+        def _build_snapshot(self, start_date, end_date, window="1Y", **kwargs):
             self.built_windows.append(window)
             return {
                 "rows": [{
@@ -408,6 +467,7 @@ def test_service_refreshes_other_windows_after_cache_miss(monkeypatch):
                 "metadata": {
                     "window": service_module.WINDOW_METHODS[window],
                     "windowCode": window,
+                    "generatedAt": "2026-07-31T00:00:00+00:00",
                 },
                 "warnings": [],
             }
@@ -494,9 +554,9 @@ def test_service_force_refresh_rebuilds_cached_snapshot_in_background(
                 today_provider=lambda: date(2026, 7, 31),
             )
 
-        def _build_snapshot(self, start_date, end_date, window="1Y"):
+        def _build_snapshot(self, start_date, end_date, window="1Y", **kwargs):
             self.built_windows.append(window)
-            return super()._build_snapshot(start_date, end_date, window)
+            return super()._build_snapshot(start_date, end_date, window, **kwargs)
 
     clear_calls = []
     monkeypatch.setattr(service_module, "Thread", ImmediateThread)
@@ -546,15 +606,16 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
                 today_provider=lambda: date(2026, 7, 31),
             )
 
-        def _build_snapshot(self, start_date, end_date, window="1Y"):
+        def _build_snapshot(self, start_date, end_date, window="1Y", **kwargs):
             self.built_windows.append(window)
-            return super()._build_snapshot(start_date, end_date, window)
+            return super()._build_snapshot(start_date, end_date, window, **kwargs)
 
     clear_calls = []
     monkeypatch.setattr(service_module, "Thread", CapturingThread)
     service = RecordingService()
 
     service.get_page(TopPicksRequest(1, 2, "ret1y", "desc", "1D"))
+    service.get_page(TopPicksRequest(1, 2, "sharpe", "desc", "1Y"))
     service.get_page(
         TopPicksRequest(1, 2, "sharpe", "desc", "1Y", force_refresh=True)
     )
@@ -568,7 +629,6 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
     assert service.built_windows == [
         "1W",
         "1M",
-        "1Y",
         "1Y",
         "1D",
         "1W",

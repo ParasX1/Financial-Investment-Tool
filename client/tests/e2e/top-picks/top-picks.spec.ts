@@ -47,17 +47,17 @@ test("uses server ranking for sorting and pagination while preserving metric sem
 
   const cbaRow = dataRows.filter({ hasText: "CBA.AX" });
   await expect(
-    cbaRow.getByRole("cell").nth(await columnIndex(page, "Sortino")),
+    cbaRow.getByRole("cell").nth(await columnIndex(page, "Sortino ratio")),
   ).toHaveText("Unbounded");
   await expect(
-    cbaRow.getByRole("cell").nth(await columnIndex(page, "Alpha")),
+    cbaRow.getByRole("cell").nth(await columnIndex(page, "Alpha vs benchmark")),
   ).toHaveText("—");
   const bhpRow = dataRows.filter({ hasText: "BHP.AX" });
   await expect(
-    bhpRow.getByRole("cell").nth(await columnIndex(page, "1Y Return")),
+    bhpRow.getByRole("cell").nth(await columnIndex(page, "Price return")),
   ).toHaveText("—");
 
-  await page.getByRole("button", { name: /^1Y Return:/ }).click();
+  await page.getByRole("button", { name: /^Price return:/ }).click();
   await expectRequest(backend.requests, {
     page: 1,
     page_size: 25,
@@ -99,7 +99,7 @@ test("uses server ranking for sorting and pagination while preserving metric sem
   expect(downloadPath).not.toBeNull();
   const csv = await readFile(downloadPath!, "utf8");
   expect(csv.trimEnd().split(/\r?\n/)).toHaveLength(11);
-  expect(csv).toContain('"Rank","Symbol","Company","1Y Return"');
+  expect(csv).toContain('"Rank","Symbol","Company","Price return"');
   expect(csv.indexOf('"WES.AX"')).toBeLessThan(csv.indexOf('"CBA.AX"'));
   expect(csv).toContain('"Unbounded"');
   expect(csv).toContain('"—"');
@@ -118,14 +118,14 @@ test("never allows column visibility to reach zero", async ({ page }) => {
   const columnsToHide = [
     "Rank",
     "Company",
-    "1Y Return",
-    "Sharpe",
-    "Sortino",
-    "Volatility",
-    "Max DD",
-    "Beta",
-    "Alpha",
-    "Info Ratio",
+    "Price return",
+    "Sharpe ratio",
+    "Sortino ratio",
+    "Annualised volatility",
+    "Max drawdown",
+    "Beta exposure",
+    "Alpha vs benchmark",
+    "Information ratio",
   ];
   for (const label of columnsToHide) {
     await dialog.getByRole("checkbox", { exact: true, name: label }).uncheck();
@@ -144,5 +144,35 @@ test("never allows column visibility to reach zero", async ({ page }) => {
   await expect(page.getByRole("columnheader")).toHaveText("Symbol");
   await expect(page.locator("tbody tr").first().getByRole("cell")).toHaveText(
     "CBA.AX",
+  );
+});
+
+test("updates the visible snapshot as soon as the server announces completion", async ({
+  page,
+}) => {
+  const backend = await installTopPicksMockBackend(page, {
+    holdEventsUntilRefresh: true,
+  });
+  await page.goto("/TopPicks");
+  await expect(page.locator("tbody tr")).toHaveCount(25);
+  const returnCell = page
+    .locator("tbody tr")
+    .filter({ hasText: "CBA.AX" })
+    .getByRole("cell")
+    .nth(await columnIndex(page, "Price return"));
+  await expect(returnCell).toHaveText("+18.0%");
+  await expect.poll(() => backend.eventRequests().length).toBe(1);
+  const updatedStatus = page
+    .getByRole("status")
+    .filter({ hasText: /^Updated / });
+  const previousUpdatedAt = await updatedStatus.textContent();
+
+  backend.completeRefresh();
+
+  await expect(returnCell).toHaveText("+28.0%", { timeout: 5_000 });
+  await expect(updatedStatus).not.toHaveText(previousUpdatedAt!);
+  expect(backend.requests().length).toBeGreaterThan(1);
+  expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+    true,
   );
 });

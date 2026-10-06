@@ -15,11 +15,9 @@ import {
 import {
   createWatchlistSessionGuard,
   type WatchlistSessionGuard,
+  type WatchlistSessionToken,
 } from "../lib/watchlistSession";
-import type {
-  UpdateWatchlistItemInput,
-  WatchlistItem,
-} from "../types";
+import type { UpdateWatchlistItemInput, WatchlistItem } from "../types";
 
 export type WatchlistFeedback = {
   message: string;
@@ -27,6 +25,8 @@ export type WatchlistFeedback = {
 };
 
 type BusyAction = "add" | "edit" | "move" | "remove" | null;
+
+const EMPTY_ITEMS: WatchlistItem[] = [];
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -45,15 +45,58 @@ export function useWatchlistController() {
   }
   const sessionGuard = sessionGuardRef.current;
   sessionGuard.sync(userId);
+  const sessionGeneration = sessionGuard.capture().generation;
+  const session = React.useMemo(
+    () => ({ generation: sessionGeneration, userId }),
+    [sessionGeneration, userId],
+  );
+  const mounted = React.useRef(true);
   const loadGeneration = React.useRef(0);
-  const [items, setItems] = React.useState<WatchlistItem[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [feedback, setFeedback] = React.useState<WatchlistFeedback | null>(null);
-  const [busyAction, setBusyAction] = React.useState<BusyAction>(null);
+  const [stateSession, setStateSession] =
+    React.useState<WatchlistSessionToken | null>(null);
+  const [savedItems, setItems] = React.useState<WatchlistItem[]>([]);
+  const [savedLoading, setLoading] = React.useState(false);
+  const [savedLoadError, setLoadError] = React.useState<string | null>(null);
+  const [savedFeedback, setFeedback] = React.useState<WatchlistFeedback | null>(
+    null,
+  );
+  const [savedBusyAction, setBusyAction] = React.useState<BusyAction>(null);
+  // Hide private state in the account-change render, before effects reset it.
+  const ownsState =
+    !authLoading &&
+    stateSession !== null &&
+    sessionGuard.isCurrent(stateSession);
+  const items = ownsState ? savedItems : EMPTY_ITEMS;
+  const loading =
+    !authLoading && Boolean(userId) && (!ownsState || savedLoading);
+  const loadError = ownsState ? savedLoadError : null;
+  const feedback = ownsState ? savedFeedback : null;
+  const busyAction = ownsState ? savedBusyAction : null;
+  const isCurrentSession = React.useCallback(
+    () => mounted.current && sessionGuard.isCurrent(session),
+    [session, sessionGuard],
+  );
+
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      loadGeneration.current += 1;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    loadGeneration.current += 1;
+    setStateSession(session);
+    setItems([]);
+    setLoading(Boolean(userId));
+    setLoadError(null);
+    setFeedback(null);
+    setBusyAction(null);
+  }, [session, userId]);
 
   const load = React.useCallback(async () => {
-    if (!userId) return;
+    if (authLoading || !userId || !isCurrentSession()) return;
 
     const generation = ++loadGeneration.current;
     setLoading(true);
@@ -61,10 +104,10 @@ export function useWatchlistController() {
 
     try {
       const nextItems = await repository.list(userId);
-      if (generation !== loadGeneration.current) return;
+      if (!isCurrentSession() || generation !== loadGeneration.current) return;
       setItems(nextItems);
     } catch (error: unknown) {
-      if (generation !== loadGeneration.current) return;
+      if (!isCurrentSession() || generation !== loadGeneration.current) return;
       setLoadError(
         errorMessage(
           error,
@@ -72,22 +115,13 @@ export function useWatchlistController() {
         ),
       );
     } finally {
-      if (generation === loadGeneration.current) setLoading(false);
+      if (isCurrentSession() && generation === loadGeneration.current)
+        setLoading(false);
     }
-  }, [repository, userId]);
+  }, [authLoading, isCurrentSession, repository, userId]);
 
   React.useEffect(() => {
     if (authLoading) return;
-
-    if (!userId) {
-      loadGeneration.current += 1;
-      setItems([]);
-      setLoading(false);
-      setLoadError(null);
-      setFeedback(null);
-      setBusyAction(null);
-      return;
-    }
 
     void load();
   }, [authLoading, load, userId]);
@@ -97,9 +131,7 @@ export function useWatchlistController() {
 
     const expectedFeedback = feedback;
     const timer = globalThis.setTimeout(() => {
-      setFeedback((current) =>
-        current === expectedFeedback ? null : current,
-      );
+      setFeedback((current) => (current === expectedFeedback ? null : current));
     }, WATCHLIST_SUCCESS_FEEDBACK_DURATION_MS);
 
     return () => {
@@ -109,8 +141,8 @@ export function useWatchlistController() {
 
   const addItem = React.useCallback(
     async (rawSymbol: string) => {
-      if (!userId || busyAction) return false;
-      const session = sessionGuard.capture();
+      if (!userId || !ownsState || busyAction || !isCurrentSession())
+        return false;
 
       const symbol = normalizeWatchlistSymbol(rawSymbol);
       const validationError = validateWatchlistSymbol(symbol);
@@ -143,7 +175,7 @@ export function useWatchlistController() {
           targetPrice: null,
           userId,
         });
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setItems((current) =>
           current.some((item) => item.symbol === saved.symbol)
             ? current
@@ -155,7 +187,7 @@ export function useWatchlistController() {
         });
         return true;
       } catch (error: unknown) {
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setFeedback({
           message: errorMessage(
             error,
@@ -165,16 +197,16 @@ export function useWatchlistController() {
         });
         return false;
       } finally {
-        if (sessionGuard.isCurrent(session)) setBusyAction(null);
+        if (isCurrentSession()) setBusyAction(null);
       }
     },
-    [busyAction, items, repository, sessionGuard, userId],
+    [busyAction, isCurrentSession, items, ownsState, repository, userId],
   );
 
   const updateItem = React.useCallback(
     async (symbol: string, input: UpdateWatchlistItemInput) => {
-      if (!userId || busyAction) return false;
-      const session = sessionGuard.capture();
+      if (!userId || !ownsState || busyAction || !isCurrentSession())
+        return false;
 
       const previous = items;
       setBusyAction("edit");
@@ -187,7 +219,7 @@ export function useWatchlistController() {
 
       try {
         const saved = await repository.update(userId, symbol, input);
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setItems((current) =>
           current.map((item) => (item.symbol === symbol ? saved : item)),
         );
@@ -197,7 +229,7 @@ export function useWatchlistController() {
         });
         return true;
       } catch (error: unknown) {
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setItems(previous);
         setFeedback({
           message: errorMessage(
@@ -208,16 +240,16 @@ export function useWatchlistController() {
         });
         return false;
       } finally {
-        if (sessionGuard.isCurrent(session)) setBusyAction(null);
+        if (isCurrentSession()) setBusyAction(null);
       }
     },
-    [busyAction, items, repository, sessionGuard, userId],
+    [busyAction, isCurrentSession, items, ownsState, repository, userId],
   );
 
   const removeItem = React.useCallback(
     async (symbol: string) => {
-      if (!userId || busyAction) return false;
-      const session = sessionGuard.capture();
+      if (!userId || !ownsState || busyAction || !isCurrentSession())
+        return false;
 
       const previous = items;
       setBusyAction("remove");
@@ -226,14 +258,14 @@ export function useWatchlistController() {
 
       try {
         await repository.remove(userId, symbol);
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setFeedback({
           message: `${symbol} was removed from your watchlist.`,
           tone: "success",
         });
         return true;
       } catch (error: unknown) {
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setItems(previous);
         setFeedback({
           message: errorMessage(
@@ -244,16 +276,16 @@ export function useWatchlistController() {
         });
         return false;
       } finally {
-        if (sessionGuard.isCurrent(session)) setBusyAction(null);
+        if (isCurrentSession()) setBusyAction(null);
       }
     },
-    [busyAction, items, repository, sessionGuard, userId],
+    [busyAction, isCurrentSession, items, ownsState, repository, userId],
   );
 
   const moveItem = React.useCallback(
     async (symbol: string, direction: "down" | "up") => {
-      if (!userId || busyAction) return false;
-      const session = sessionGuard.capture();
+      if (!userId || !ownsState || busyAction || !isCurrentSession())
+        return false;
 
       const previous = items;
       const next = moveWatchlistItem(items, symbol, direction);
@@ -270,11 +302,11 @@ export function useWatchlistController() {
           userId,
           next.map((item) => item.symbol),
         );
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setFeedback({ message: "Custom order saved.", tone: "success" });
         return true;
       } catch (error: unknown) {
-        if (!sessionGuard.isCurrent(session)) return false;
+        if (!isCurrentSession()) return false;
         setItems(previous);
         setFeedback({
           message: errorMessage(
@@ -285,10 +317,10 @@ export function useWatchlistController() {
         });
         return false;
       } finally {
-        if (sessionGuard.isCurrent(session)) setBusyAction(null);
+        if (isCurrentSession()) setBusyAction(null);
       }
     },
-    [busyAction, items, repository, sessionGuard, userId],
+    [busyAction, isCurrentSession, items, ownsState, repository, userId],
   );
 
   return {
@@ -296,7 +328,9 @@ export function useWatchlistController() {
     authenticated: Boolean(userId),
     authLoading,
     busyAction,
-    clearFeedback: () => setFeedback(null),
+    clearFeedback: () => {
+      if (isCurrentSession()) setFeedback(null);
+    },
     feedback,
     items,
     loadError,
@@ -304,6 +338,7 @@ export function useWatchlistController() {
     moveItem,
     removeItem,
     retry: load,
+    sessionKey: `${sessionGeneration}:${userId ?? "signed-out"}`,
     updateItem,
   };
 }

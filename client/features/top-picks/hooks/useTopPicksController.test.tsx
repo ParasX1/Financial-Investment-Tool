@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
 import type { FetchTopPicksOptions } from "../api/fetchTopPicks";
+import type { subscribeToTopPicksUpdates } from "../api/subscribeToTopPicksUpdates";
 import type { TopPicksPrefs, TopPicksResponse, TopPicksRow } from "../types";
 
 const DEFAULT_PREFS: TopPicksPrefs = {
@@ -18,6 +19,13 @@ const DEFAULT_PREFS: TopPicksPrefs = {
 
 const mockFetchTopPicks =
   jest.fn<(options: FetchTopPicksOptions) => Promise<TopPicksResponse>>();
+const mockSubscribeToTopPicksUpdates = jest.fn<
+  typeof subscribeToTopPicksUpdates
+>();
+let updateSubscriptions: {
+  options: Parameters<typeof subscribeToTopPicksUpdates>[0];
+  unsubscribe: () => void;
+}[] = [];
 const mockLoadTopPicksPrefs =
   jest.fn<(userId: string) => Promise<TopPicksPrefs>>();
 const mockSaveTopPicksPrefs =
@@ -63,10 +71,7 @@ const deferred = <T,>() => {
   return { promise, reject, resolve };
 };
 
-const foregroundRequests = () =>
-  mockFetchTopPicks.mock.calls
-    .map(([options]) => options)
-    .filter((options) => options.pageSize !== 1);
+const notifySnapshot = () => updateSubscriptions.at(-1)!.options.onUpdate();
 
 const installMemoryStorage = () => {
   const values = new Map<string, string>();
@@ -126,6 +131,9 @@ describe("useTopPicksController", () => {
     jest.doMock("../api/fetchTopPicks", () => ({
       fetchTopPicks: mockFetchTopPicks,
     }));
+    jest.doMock("../api/subscribeToTopPicksUpdates", () => ({
+      subscribeToTopPicksUpdates: mockSubscribeToTopPicksUpdates,
+    }));
     jest.doMock("../data/topPicksPrefsRepository", () => ({
       loadTopPicksPrefs: mockLoadTopPicksPrefs,
       saveTopPicksPrefs: mockSaveTopPicksPrefs,
@@ -137,6 +145,13 @@ describe("useTopPicksController", () => {
   beforeEach(() => {
     mockAuthState = { user: null, loading: false };
     mockFetchTopPicks.mockReset();
+    mockSubscribeToTopPicksUpdates.mockReset();
+    updateSubscriptions = [];
+    mockSubscribeToTopPicksUpdates.mockImplementation((options) => {
+      const unsubscribe = jest.fn<() => void>();
+      updateSubscriptions.push({ options, unsubscribe });
+      return unsubscribe;
+    });
     mockLoadTopPicksPrefs.mockReset();
     mockSaveTopPicksPrefs.mockReset();
     mockLoadTopPicksPrefs.mockResolvedValue(DEFAULT_PREFS);
@@ -160,6 +175,7 @@ describe("useTopPicksController", () => {
     });
 
     expect(mockFetchTopPicks).not.toHaveBeenCalled();
+    expect(mockSubscribeToTopPicksUpdates).not.toHaveBeenCalled();
     expect(latest!.loading).toBe(true);
 
     mockAuthState = { user: null, loading: false };
@@ -830,9 +846,8 @@ describe("useTopPicksController", () => {
       await flushEffects();
     });
 
-    const foreground = foregroundRequests();
-    const secondRequest = foreground[1];
-    expect(foreground).toHaveLength(2);
+    const secondRequest = mockFetchTopPicks.mock.calls[1]?.[0];
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
     expect(secondRequest).toMatchObject({
       page: firstRequest?.page,
       pageSize: firstRequest?.pageSize,
@@ -845,8 +860,111 @@ describe("useTopPicksController", () => {
     renderer!.unmount();
   });
 
-  it("force-refreshes missing Top Picks data without clearing visible rows", async () => {
-    jest.useFakeTimers();
+  it("forces one request per retry while subsequent view changes only read snapshots", async () => {
+    mockFetchTopPicks.mockResolvedValue({
+      ...emptyResponse,
+      rows: [rowFor("AAA")],
+      total: 100,
+    });
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      latest!.retry();
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+    expect(mockFetchTopPicks.mock.calls[1]?.[0].forceRefresh).toBe(true);
+
+    await act(async () => {
+      latest!.setPage(2);
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(3);
+    expect(mockFetchTopPicks.mock.calls[2]?.[0]).toMatchObject({
+      page: 2,
+      forceRefresh: false,
+    });
+
+    await act(async () => {
+      latest!.toggleSort("ret1y");
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(4);
+    expect(mockFetchTopPicks.mock.calls[3]?.[0]).toMatchObject({
+      page: 1,
+      sortKey: "ret1y",
+      forceRefresh: false,
+    });
+
+    await act(async () => {
+      latest!.setWindow("1M");
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(5);
+    expect(mockFetchTopPicks.mock.calls[4]?.[0]).toMatchObject({
+      window: "1M",
+      forceRefresh: false,
+    });
+
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    await act(async () => {
+      renderer!.update(<Probe />);
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(6);
+    expect(mockFetchTopPicks.mock.calls[5]?.[0].forceRefresh).toBe(false);
+
+    await act(async () => {
+      notifySnapshot();
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(7);
+    expect(mockFetchTopPicks.mock.calls[6]?.[0].forceRefresh).toBe(false);
+    renderer!.unmount();
+  });
+
+  it("forces a new explicit retry after an earlier forced request fails", async () => {
+    const response = { ...emptyResponse, rows: [rowFor("AAA")], total: 1 };
+    mockFetchTopPicks
+      .mockResolvedValueOnce(response)
+      .mockRejectedValueOnce(new Error("Refresh failed."))
+      .mockResolvedValueOnce(response);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      latest!.retry();
+      await flushEffects();
+    });
+    expect(latest!.error).toBe("Refresh failed.");
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+    await act(async () => {
+      latest!.retry();
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks.mock.calls.map(([request]) => request.forceRefresh))
+      .toEqual([false, true, true]);
+    expect(latest!.error).toBeNull();
+    renderer!.unmount();
+  });
+
+  it("reads completed snapshots immediately without clearing visible rows", async () => {
     const refreshResponse = deferred<TopPicksResponse>();
     mockFetchTopPicks
       .mockResolvedValueOnce({
@@ -866,47 +984,43 @@ describe("useTopPicksController", () => {
       return null;
     }
 
-    try {
-      await act(async () => {
-        renderer = TestRenderer.create(<Probe />);
-        await flushEffects();
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+    });
+
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+    await act(async () => {
+      await flushEffects();
+    });
+
+    await act(async () => {
+      notifySnapshot();
+      await flushEffects();
+    });
+
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+    expect(mockFetchTopPicks.mock.calls[1]?.[0]).toMatchObject({
+      forceRefresh: false,
+    });
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+    await act(async () => {
+      refreshResponse.resolve({
+        rows: [rowFor("AAA"), rowFor("BBB")],
+        total: 2,
+        metadata: {},
+        warnings: [],
       });
+      await flushEffects();
+    });
 
-      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
-
-      await act(async () => {
-        await flushEffects();
-      });
-
-      await act(async () => {
-        jest.advanceTimersByTime(20_000);
-        await flushEffects();
-      });
-
-      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
-      expect(mockFetchTopPicks.mock.calls[1]?.[0]).toMatchObject({
-        forceRefresh: true,
-      });
-      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
-
-      await act(async () => {
-        refreshResponse.resolve({
-          rows: [rowFor("AAA"), rowFor("BBB")],
-          total: 2,
-          metadata: {},
-          warnings: [],
-        });
-        await flushEffects();
-      });
-
-      expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA", "BBB"]);
-      renderer!.unmount();
-    } finally {
-      jest.useRealTimers();
-    }
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA", "BBB"]);
+    renderer!.unmount();
   });
 
-  it("keeps force-refreshing live data after a complete response", async () => {
+  it("waits for completion notifications instead of polling or forcing downloads", async () => {
     jest.useFakeTimers();
     const refreshResponse = deferred<TopPicksResponse>();
     mockFetchTopPicks
@@ -934,13 +1048,20 @@ describe("useTopPicksController", () => {
       expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
 
       await act(async () => {
-        jest.advanceTimersByTime(20_000);
+        jest.advanceTimersByTime(60_000);
+        await flushEffects();
+      });
+
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        notifySnapshot();
         await flushEffects();
       });
 
       expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
       expect(mockFetchTopPicks.mock.calls[1]?.[0]).toMatchObject({
-        forceRefresh: true,
+        forceRefresh: false,
       });
       expect(latest!.syncing).toBe(true);
       expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
@@ -1024,9 +1145,140 @@ describe("useTopPicksController", () => {
     }
   });
 
+  it("coalesces notifications received during a request into one follow-up read", async () => {
+    const firstRead = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({ ...emptyResponse, rows: [rowFor("AAA")], total: 1 })
+      .mockReturnValueOnce(firstRead.promise)
+      .mockResolvedValueOnce({ ...emptyResponse, rows: [rowFor("BBB")], total: 1 });
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      notifySnapshot();
+      await flushEffects();
+    });
+    const inFlightSignal = mockFetchTopPicks.mock.calls[1]?.[0].signal;
+
+    await act(async () => {
+      notifySnapshot();
+      notifySnapshot();
+      notifySnapshot();
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+    expect(inFlightSignal?.aborted).toBe(false);
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+
+    await act(async () => {
+      firstRead.resolve({ ...emptyResponse, rows: [rowFor("AAA")], total: 1 });
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(3);
+    expect(mockFetchTopPicks.mock.calls.slice(1).every(([request]) =>
+      request.forceRefresh === false,
+    )).toBe(true);
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["BBB"]);
+    renderer!.unmount();
+  });
+
+  it("subscribes after initial loading and closes stale window and account streams", async () => {
+    const initialResponse = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockReturnValueOnce(initialResponse.promise)
+      .mockResolvedValue(emptyResponse);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+    });
+    expect(mockSubscribeToTopPicksUpdates).not.toHaveBeenCalled();
+
+    await act(async () => {
+      initialResponse.resolve(emptyResponse);
+      await flushEffects();
+    });
+    const initialSubscription = updateSubscriptions[0];
+    expect(initialSubscription.options.window).toBe("1Y");
+
+    await act(async () => {
+      latest!.setWindow("1M");
+      await flushEffects();
+    });
+    expect(initialSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(updateSubscriptions.at(-1)!.options.window).toBe("1M");
+    const oldWindowSubscription = updateSubscriptions.at(-1)!;
+
+    mockAuthState = { user: { id: "account-a" }, loading: false };
+    await act(async () => {
+      renderer!.update(<Probe />);
+      await flushEffects();
+    });
+    expect(oldWindowSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+    const activeSubscription = updateSubscriptions.at(-1)!;
+    const requestCount = mockFetchTopPicks.mock.calls.length;
+
+    await act(async () => {
+      initialSubscription.options.onUpdate();
+      oldWindowSubscription.options.onUpdate();
+      await flushEffects();
+    });
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(requestCount);
+
+    await act(async () => {
+      renderer!.unmount();
+      activeSubscription.options.onUpdate();
+      await flushEffects();
+    });
+    expect(activeSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(mockFetchTopPicks).toHaveBeenCalledTimes(requestCount);
+  });
+
+  it("retains rows on a background refresh failure and recovers on completion", async () => {
+    mockFetchTopPicks.mockResolvedValue({
+      ...emptyResponse,
+      rows: [rowFor("AAA")],
+      total: 1,
+    });
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushEffects();
+      updateSubscriptions.at(-1)!.options.onRefreshError();
+      await flushEffects();
+    });
+    expect(latest!.rows.map((row) => row.symbol)).toEqual(["AAA"]);
+    expect(latest!.error).toBe("Unable to refresh Top Picks. Retrying automatically.");
+
+    await act(async () => {
+      notifySnapshot();
+      await flushEffects();
+    });
+    expect(latest!.error).toBeNull();
+    renderer!.unmount();
+  });
+
   it("updates the local sync time only when live refresh returns a new snapshot", async () => {
     jest.useFakeTimers();
-    const foregroundResponses: TopPicksResponse[] = [
+    const responses: TopPicksResponse[] = [
       {
         rows: [rowFor("AAA")],
         total: 1,
@@ -1046,10 +1298,9 @@ describe("useTopPicksController", () => {
         warnings: [],
       },
     ];
-    mockFetchTopPicks.mockImplementation(async (options) => {
-      if (options.pageSize === 1) return emptyResponse;
-      return foregroundResponses.shift() ?? emptyResponse;
-    });
+    mockFetchTopPicks.mockImplementation(async () =>
+      responses.shift() ?? emptyResponse,
+    );
     let latest: ReturnType<typeof useTopPicksController> | null = null;
     let renderer: ReactTestRenderer;
 
@@ -1068,20 +1319,20 @@ describe("useTopPicksController", () => {
 
       jest.setSystemTime(new Date("2026-08-25T04:05:00Z"));
       await act(async () => {
-        jest.advanceTimersByTime(20_000);
+        notifySnapshot();
         await flushEffects();
       });
 
-      expect(foregroundRequests()).toHaveLength(2);
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
       expect(latest!.lastUpdatedAt).toBe(firstAppliedAt);
 
       jest.setSystemTime(new Date("2026-08-25T04:10:00Z"));
       await act(async () => {
-        jest.advanceTimersByTime(20_000);
+        notifySnapshot();
         await flushEffects();
       });
 
-      expect(foregroundRequests()).toHaveLength(3);
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(3);
       expect(latest!.lastUpdatedAt).not.toBe(firstAppliedAt);
       expect(latest!.lastUpdatedAt?.toISOString()).toBe(
         "2026-08-25T03:01:00.000Z",
@@ -1090,6 +1341,215 @@ describe("useTopPicksController", () => {
       renderer!.unmount();
     } finally {
       jest.useRealTimers();
+    }
+  });
+
+  it.each(["page", "page size", "sort", "window"] as const)(
+    "hides the previous query's rows and timestamp while a new %s is loading or fails",
+    async (change) => {
+      const nextResponse = deferred<TopPicksResponse>();
+      mockFetchTopPicks
+        .mockResolvedValueOnce({
+          rows: [rowFor("OLD")],
+          total: 60,
+          metadata: { generatedAt: "2026-08-25T03:00:00Z", benchmark: "^AXJO" },
+          warnings: ["Previous query warning"],
+        })
+        .mockReturnValueOnce(nextResponse.promise);
+      let latest: ReturnType<typeof useTopPicksController> | null = null;
+      let renderer: ReactTestRenderer | undefined;
+
+      function Probe() {
+        latest = useTopPicksController();
+        return null;
+      }
+
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(<Probe />);
+          await flushEffects();
+        });
+        expect(latest!.rows[0]?.symbol).toBe("OLD");
+
+        await act(async () => {
+          if (change === "page") latest!.setPage(2);
+          if (change === "page size") latest!.setPageSize(10);
+          if (change === "sort") latest!.toggleSort("ret1y");
+          if (change === "window") latest!.setWindow("1D");
+          await flushEffects();
+        });
+
+        expect(latest!.rows).toEqual([]);
+        expect(latest!.total).toBe(0);
+        expect(latest!.metadata).toEqual({});
+        expect(latest!.warnings).toEqual([]);
+        expect(latest!.lastUpdatedAt).toBeNull();
+        expect(latest!.loading).toBe(true);
+        expect(latest!.syncing).toBe(false);
+
+        await act(async () => {
+          nextResponse.reject(new Error("New query unavailable"));
+          await flushEffects();
+        });
+
+        expect(latest!.rows).toEqual([]);
+        expect(latest!.total).toBe(0);
+        expect(latest!.lastUpdatedAt).toBeNull();
+        expect(latest!.loading).toBe(false);
+        expect(latest!.error).toBe("New query unavailable");
+      } finally {
+        renderer?.unmount();
+      }
+    },
+  );
+
+  it("keeps a coherent snapshot during a same-query refresh failure", async () => {
+    const refreshResponse = deferred<TopPicksResponse>();
+    const response = {
+      rows: [rowFor("CURRENT")],
+      total: 1,
+      metadata: { generatedAt: "2026-08-25T03:00:00Z", benchmark: "^AXJO" },
+      warnings: ["Limited history"],
+    };
+    mockFetchTopPicks
+      .mockResolvedValueOnce(response)
+      .mockReturnValueOnce(refreshResponse.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+      const generatedAt = latest!.lastUpdatedAt;
+      await act(async () => {
+        latest!.retry();
+        await flushEffects();
+      });
+
+      expect(latest!.rows).toEqual(response.rows);
+      expect(latest!.metadata).toEqual(response.metadata);
+      expect(latest!.lastUpdatedAt).toBe(generatedAt);
+      expect(latest!.loading).toBe(false);
+      expect(latest!.syncing).toBe(true);
+
+      await act(async () => {
+        refreshResponse.reject(new Error("Refresh unavailable"));
+        await flushEffects();
+      });
+
+      expect(latest!.rows).toEqual(response.rows);
+      expect(latest!.metadata).toEqual(response.metadata);
+      expect(latest!.lastUpdatedAt).toBe(generatedAt);
+      expect(latest!.error).toBe("Refresh unavailable");
+      expect(latest!.syncing).toBe(false);
+    } finally {
+      renderer?.unmount();
+    }
+  });
+
+  it.each([undefined, "invalid timestamp"])(
+    "clears the previous timestamp when the next snapshot supplies %s",
+    async (generatedAt) => {
+      mockFetchTopPicks
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("DATED")],
+          total: 1,
+          metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        })
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("UNDATED")],
+          total: 1,
+          metadata: generatedAt === undefined ? {} : { generatedAt },
+        });
+      let latest: ReturnType<typeof useTopPicksController> | null = null;
+      let renderer: ReactTestRenderer | undefined;
+
+      function Probe() {
+        latest = useTopPicksController();
+        return null;
+      }
+
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(<Probe />);
+          await flushEffects();
+        });
+        expect(latest!.lastUpdatedAt).not.toBeNull();
+
+        await act(async () => {
+          latest!.retry();
+          await flushEffects();
+        });
+
+        expect(latest!.rows[0]?.symbol).toBe("UNDATED");
+        expect(latest!.lastUpdatedAt).toBeNull();
+      } finally {
+        renderer?.unmount();
+      }
+    },
+  );
+
+  it.each(["response", "failure"])("ignores an obsolete page %s after the current window resolves", async (outcome) => {
+    const obsoletePage = deferred<TopPicksResponse>();
+    const currentWindow = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({ ...emptyResponse, rows: [rowFor("YEAR")], total: 60 })
+      .mockReturnValueOnce(obsoletePage.promise)
+      .mockReturnValueOnce(currentWindow.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.setPage(2);
+        await flushEffects();
+      });
+      await act(async () => {
+        latest!.setWindow("1D");
+        await flushEffects();
+      });
+      expect(mockFetchTopPicks.mock.calls[1]?.[0].signal?.aborted).toBe(true);
+
+      await act(async () => {
+        currentWindow.resolve({
+          ...emptyResponse,
+          rows: [rowFor("DAY")],
+          total: 1,
+          metadata: { generatedAt: "2026-08-25T03:05:00Z", windowCode: "1D" },
+        });
+        await flushEffects();
+        if (outcome === "response") {
+          obsoletePage.resolve({ ...emptyResponse, rows: [rowFor("OLD-PAGE")], total: 60 });
+        } else {
+          obsoletePage.reject(new Error("Obsolete page unavailable"));
+        }
+        await flushEffects();
+      });
+
+      expect(latest!.rows[0]?.symbol).toBe("DAY");
+      expect(latest!.metadata.windowCode).toBe("1D");
+      expect(latest!.window).toBe("1D");
+      expect(latest!.page).toBe(1);
+      expect(latest!.error).toBeNull();
+      expect(latest!.loading).toBe(false);
+    } finally {
+      renderer?.unmount();
     }
   });
 

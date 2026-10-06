@@ -6,6 +6,7 @@ from threading import RLock
 from time import monotonic
 
 import yfinance as yf   # Used to fetch stock data from Yahoo Finance
+import multitasking
 import numpy as np      # Used for numerical calculations
 import pandas as pd     # Used for data manipulation
 
@@ -21,6 +22,8 @@ STOCK_DATA_CACHE_TTL_SECONDS = 120
 STOCK_DATA_CACHE_MAX_ENTRIES = 128
 _stock_data_cache = OrderedDict()
 _stock_data_lock = RLock()
+# yfinance shares result dictionaries and its worker pool across download calls.
+_stock_download_lock = RLock()
 
 
 def clear_stock_data_cache():
@@ -64,12 +67,16 @@ def get_missing_adjusted_close_tickers(stock_data, requested_tickers):
 
 
 def merge_stock_data_frames(stock_data_frames):
+    """Fill missing observations from retries while retaining original values."""
     usable_frames = [frame for frame in stock_data_frames if frame is not None and not frame.empty]
     if not usable_frames:
         return pd.DataFrame()
 
-    merged = pd.concat(usable_frames, axis=1)
-    return merged.loc[:, ~merged.columns.duplicated()]
+    merged = usable_frames[0].copy()
+    for frame in usable_frames[1:]:
+        column_order = merged.columns.union(frame.columns, sort=False)
+        merged = merged.combine_first(frame).reindex(columns=column_order)
+    return merged
 
 
 def download_stock_data(stock_tickers, start_date, end_date):
@@ -78,15 +85,37 @@ def download_stock_data(stock_tickers, start_date, end_date):
         pd.Timestamp(end_date) + pd.Timedelta(days=1)
     ).strftime("%Y-%m-%d")
     try:
-        stock_data = yf.download(
-            stock_tickers,
-            start=start_date,
-            end=exclusive_end,
-            group_by='ticker',
-            auto_adjust=False,
-            threads=False,
-            progress=False
-        )
+        with _stock_download_lock:
+            threads = False
+            if len(stock_tickers) > 1:
+                # set_max_threads alone does not resize an existing pool in
+                # multitasking 0.0.13; explicitly create the bounded pool.
+                multitasking.createPool(
+                    name="stock-data-download",
+                    threads=STOCK_DATA_DOWNLOAD_THREADS,
+                    engine="thread",
+                )
+                threads = STOCK_DATA_DOWNLOAD_THREADS
+            task_registry = multitasking.get_list_of_tasks()
+            first_task = len(task_registry)
+            try:
+                stock_data = yf.download(
+                    stock_tickers,
+                    start=start_date,
+                    end=exclusive_end,
+                    group_by='ticker',
+                    auto_adjust=False,
+                    threads=threads,
+                    progress=False
+                )
+            finally:
+                # multitasking retains completed Thread objects indefinitely.
+                # Join this batch's workers before reusing Yahoo's shared state
+                # and release their bookkeeping after every download round.
+                for task in list(task_registry[first_task:]):
+                    if task.ident is not None:
+                        task.join()
+                    task_registry.remove(task)
     except Exception as error:
         print(f"yfinance download failed for {stock_tickers}: {error}")
         return pd.DataFrame()
