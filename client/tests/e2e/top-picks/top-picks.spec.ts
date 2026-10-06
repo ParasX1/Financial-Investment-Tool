@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import { installWatchlistMockBackend } from "../watchlist/watchlistMockBackend";
 import {
   installTopPicksMockBackend,
   type TopPicksRequest,
@@ -175,4 +176,68 @@ test("updates the visible snapshot as soon as the server announces completion", 
   expect(backend.requests().every((request) => !request.force_refresh)).toBe(
     true,
   );
+});
+
+test("keeps one shared live stream and refreshes snapshots while visiting another page", async ({
+  page,
+}) => {
+  await installWatchlistMockBackend(page);
+  const backend = await installTopPicksMockBackend(page, {
+    persistentEvents: true,
+  });
+  const eventWindows = () =>
+    backend
+      .eventRequests()
+      .map((url) => new URL(url).searchParams.get("window"));
+  const guideHeading = page.getByRole("heading", { level: 1, name: "Guide" });
+  const returnCell = async () =>
+    page
+      .locator("tbody tr")
+      .filter({ hasText: "CBA.AX" })
+      .getByRole("cell")
+      .nth(await columnIndex(page, "Price return"));
+
+  try {
+    await page.goto("/Guide");
+    await expect(guideHeading).toBeVisible();
+    await expect.poll(eventWindows).toEqual(["1Y"]);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    expect(backend.requests()).toEqual([]);
+
+    const requestsBeforeFirstRefresh = backend.requests().length;
+    backend.completeRefresh();
+    await expect.poll(backend.receivedEventRevisions).toContain(1);
+    expect(backend.requests()).toHaveLength(requestsBeforeFirstRefresh);
+    await expect(guideHeading).toBeVisible();
+
+    await page.getByRole("link", { name: "Top Picks", exact: true }).click();
+    await expect(page).toHaveURL(/\/TopPicks$/);
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect(await returnCell()).toHaveText("+28.0%");
+    expect(eventWindows()).toEqual(["1Y"]);
+    expect(backend.activeEventWindows()).toEqual(["1Y"]);
+
+    await page.getByRole("link", { name: "Guide", exact: true }).click();
+    await expect(page).toHaveURL(/\/Guide$/);
+    await expect(guideHeading).toBeVisible();
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+
+    const requestsBeforeSecondRefresh = backend.requests().length;
+    backend.completeRefresh();
+    await expect.poll(backend.receivedEventRevisions).toContain(2);
+    expect(backend.requests()).toHaveLength(requestsBeforeSecondRefresh);
+    await expect(guideHeading).toBeVisible();
+
+    await page.getByRole("link", { name: "Top Picks", exact: true }).click();
+    await expect(page).toHaveURL(/\/TopPicks$/);
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect(await returnCell()).toHaveText("+38.0%");
+    expect(eventWindows()).toEqual(["1Y"]);
+    expect(backend.activeEventWindows()).toEqual(["1Y"]);
+    expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+      true,
+    );
+  } finally {
+    await backend.dispose();
+  }
 });

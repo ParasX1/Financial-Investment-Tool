@@ -83,6 +83,16 @@ Existing caches are preserved, and runtime files under `server/.cache/` remain
 Git-ignored. Custom cache destinations require an explicit `TOP_PICKS_SEED_PATH`
 pointing to the package; an empty value disables seed loading.
 
+While any app page is open, a shared Top Picks event subscription keeps the
+backend updating all ranking windows continuously, including on Portfolio,
+Dashboard, and Guide. Returning to Top Picks reads the latest saved snapshot.
+The app and table reuse the same connection for the same window, and all
+subscribers in a backend process share one refresh worker. Closing the last app
+connection lets any active or queued refresh finish before that worker stops.
+Set `NEXT_PUBLIC_TOP_PICKS_BACKGROUND_REFRESH=false` to disable app-wide
+background updates; the legacy `NEXT_PUBLIC_TOP_PICKS_PREWARM=false` also opts
+out. The Top Picks page still subscribes while it is open.
+
 After a background refresh calculates all windows, saves the caches, and sends
 the completion notification, the existing refresh thread updates
 `data/top-picks-seed.zip` from those caches. This does not download prices again

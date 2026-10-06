@@ -1,4 +1,5 @@
 import type { Page, Request, Route } from "@playwright/test";
+import { createServer, type ServerResponse } from "node:http";
 
 export type TopPicksRequest = Readonly<{
   page: number;
@@ -178,12 +179,59 @@ const parseRequest = (request: Request): TopPicksRequest | null => {
 
 export async function installTopPicksMockBackend(
   page: Page,
-  { holdEventsUntilRefresh = false }: { holdEventsUntilRefresh?: boolean } = {},
+  {
+    holdEventsUntilRefresh = false,
+    persistentEvents = false,
+  }: { holdEventsUntilRefresh?: boolean; persistentEvents?: boolean } = {},
 ) {
   let requests: readonly TopPicksRequest[] = [];
   let supabaseRequests: readonly string[] = [];
   let eventRequests: readonly string[] = [];
-  let refreshCompleted = false;
+  let refreshRevision = 0;
+  const eventConnections = new Map<ServerResponse, string | null>();
+  const generatedAt = () =>
+    `2026-07-30T06:${String(refreshRevision).padStart(2, "0")}:00Z`;
+  const eventServer = persistentEvents
+    ? createServer((request, response) => {
+        const window = new URL(
+          request.url!,
+          "http://localhost",
+        ).searchParams.get("window");
+        response.writeHead(200, {
+          ...responseHeaders,
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache",
+        });
+        response.write(
+          `event: connected\ndata: ${JSON.stringify({ revision: refreshRevision, window })}\n\n`,
+        );
+        eventConnections.set(response, window);
+        response.once("close", () => eventConnections.delete(response));
+      })
+    : null;
+  if (eventServer) {
+    await page.addInitScript(() => {
+      const observedWindow = window as Window & {
+        topPicksEventRevisions?: number[];
+      };
+      observedWindow.topPicksEventRevisions = [];
+      const NativeEventSource = window.EventSource;
+      window.EventSource = class extends NativeEventSource {
+        constructor(url: string | URL, options?: EventSourceInit) {
+          super(url, options);
+          this.addEventListener("snapshot", (event) => {
+            observedWindow.topPicksEventRevisions!.push(
+              JSON.parse((event as MessageEvent<string>).data).revision,
+            );
+          });
+        }
+      };
+    });
+    await new Promise<void>((resolve, reject) => {
+      eventServer.once("error", reject);
+      eventServer.listen(0, "127.0.0.1", resolve);
+    });
+  }
   let releaseEvents!: () => void;
   const refreshGate = new Promise<void>((resolve) => {
     releaseEvents = resolve;
@@ -192,10 +240,20 @@ export async function installTopPicksMockBackend(
   await page.route("**/api/top-picks/events?*", async (route) => {
     const window = new URL(route.request().url()).searchParams.get("window");
     eventRequests = [...eventRequests, route.request().url()];
+    if (eventServer) {
+      const address = eventServer.address();
+      if (!address || typeof address === "string")
+        throw new Error("The mock event server is not listening.");
+      await route.continue({
+        url: `http://127.0.0.1:${address.port}/events?window=${window}`,
+      });
+      return;
+    }
     if (holdEventsUntilRefresh) await refreshGate;
-    const completion = refreshCompleted
-      ? `event: snapshot\ndata: ${JSON.stringify({ revision: 1, window, generatedAt: "2026-07-30T06:01:00Z" })}\n\n`
-      : "";
+    const completion =
+      refreshRevision > 0
+        ? `event: snapshot\ndata: ${JSON.stringify({ revision: refreshRevision, window, generatedAt: generatedAt() })}\n\n`
+        : "";
     await route.fulfill({
       headers: { ...responseHeaders, "content-type": "text/event-stream" },
       body: `retry: 60000\n\nevent: connected\ndata: ${JSON.stringify({ revision: 0, window })}\n\n${completion}`,
@@ -228,8 +286,8 @@ export async function installTopPicksMockBackend(
     const rows = rankedRows
       .slice(startIndex, startIndex + request.page_size)
       .map((row) =>
-        refreshCompleted && row.symbol === "CBA.AX"
-          ? { ...row, ret1y: 0.28 }
+        refreshRevision > 0 && row.symbol === "CBA.AX"
+          ? { ...row, ret1y: 0.18 + refreshRevision * 0.1 }
           : row,
       );
 
@@ -239,9 +297,7 @@ export async function installTopPicksMockBackend(
         annualisationDays: 252,
         availableCount: rankedRows.length,
         benchmark: "^AXJO",
-        generatedAt: refreshCompleted
-          ? "2026-07-30T06:01:00Z"
-          : "2026-07-30T06:00:00Z",
+        generatedAt: generatedAt(),
         minimumTrailingReturnObservations: 200,
         requestedEnd: "2026-07-30",
         requestedStart: "2025-07-30",
@@ -273,9 +329,31 @@ export async function installTopPicksMockBackend(
       requests.map((request) => ({ ...request })),
     supabaseRequests: (): readonly string[] => [...supabaseRequests],
     eventRequests: (): readonly string[] => [...eventRequests],
+    activeEventWindows: (): readonly (string | null)[] => [
+      ...eventConnections.values(),
+    ],
+    receivedEventRevisions: () =>
+      page.evaluate(
+        () =>
+          (window as Window & { topPicksEventRevisions?: number[] })
+            .topPicksEventRevisions ?? [],
+      ),
     completeRefresh: () => {
-      refreshCompleted = true;
+      refreshRevision += 1;
       releaseEvents();
+      for (const [response, window] of eventConnections) {
+        response.write(
+          `event: snapshot\ndata: ${JSON.stringify({ revision: refreshRevision, window, generatedAt: generatedAt() })}\n\n`,
+        );
+      }
+    },
+    dispose: async () => {
+      if (!eventServer) return;
+      for (const response of eventConnections.keys()) response.end();
+      eventServer.closeAllConnections();
+      await new Promise<void>((resolve, reject) => {
+        eventServer.close((error) => (error ? reject(error) : resolve()));
+      });
     },
   };
 }

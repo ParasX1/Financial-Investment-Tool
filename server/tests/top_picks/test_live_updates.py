@@ -1,13 +1,16 @@
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import date
 from queue import Empty
+from threading import Event
 from unittest.mock import Mock
 
 import pandas as pd
 import pytest
 
 from src.top_picks import service as service_module
-from src.top_picks.contracts import Ticker
+from src.top_picks.contracts import Ticker, TopPicksRequest
 from src.top_picks.events import SnapshotUpdateHub
+from src.top_picks.repository import TopPicksDataSourceError
 from src.top_picks.service import TopPicksService
 
 
@@ -15,7 +18,7 @@ TODAY = date(2026, 10, 4)
 GENERATED_AT = "2026-10-04T02:00:00+00:00"
 
 
-def create_live_service(monkeypatch):
+def create_live_service(monkeypatch, cache_ttl_seconds=600):
     jobs = []
 
     class DeferredThread:
@@ -35,6 +38,7 @@ def create_live_service(monkeypatch):
         calculator_provider=Mock(),
         market_data_provider=download,
         today_provider=lambda: TODAY,
+        cache_ttl_seconds=cache_ttl_seconds,
     )
 
     def build(start, end, window, **kwargs):
@@ -120,6 +124,200 @@ def test_second_viewer_shares_current_download_without_queuing_another_task(
         first.close()
         second.close()
     jobs[0]()
+    assert not service._refreshing_all_windows
+
+
+def test_cold_page_reads_share_stream_download_and_return_on_window_publication(
+    monkeypatch,
+):
+    service, jobs, download = create_live_service(monkeypatch)
+    download_started = Event()
+    finish_download = Event()
+    next_window_started = Event()
+    finish_round = Event()
+
+    def controlled_download(*args):
+        download_started.set()
+        assert finish_download.wait(5)
+        return pd.DataFrame()
+
+    def build(start, end, window, **kwargs):
+        if window == "1D":
+            next_window_started.set()
+            assert finish_round.wait(5)
+        return {
+            "rows": [{"symbol": "LATEST", "ret1y": 0.2}],
+            "metadata": {"windowCode": window, "generatedAt": GENERATED_AT},
+            "warnings": [],
+        }
+
+    download.side_effect = controlled_download
+    snapshot_builder = Mock(side_effect=build)
+    monkeypatch.setattr(service, "_build_snapshot", snapshot_builder)
+    warm_key = service._snapshot_cache_key(
+        "1M", service._start_date_for_window(TODAY, "1M"), TODAY.isoformat(),
+    )
+    service._snapshot_cache.set(warm_key, {
+        "rows": [{"symbol": "WARM", "ret1y": 0.1}],
+        "metadata": {"windowCode": "1M", "generatedAt": "previous"},
+        "warnings": [],
+    }, 600)
+    subscription = service.subscribe_updates("1Y")
+    readers = ThreadPoolExecutor(max_workers=4)
+
+    try:
+        worker = readers.submit(jobs[0])
+        assert download_started.wait(2)
+        cold_reads = [
+            readers.submit(
+                service.get_page, TopPicksRequest(1, 25, "ret1y", "desc", "1Y"),
+            )
+            for _ in range(2)
+        ]
+        for result in cold_reads:
+            with pytest.raises(TimeoutError):
+                result.result(timeout=0.1)
+
+        warm_read = readers.submit(
+            service.get_page, TopPicksRequest(1, 25, "ret1y", "desc", "1M"),
+        ).result(timeout=2)
+        assert warm_read["data"]["rows"][0]["symbol"] == "WARM"
+        download.assert_called_once()
+
+        finish_download.set()
+        assert next_window_started.wait(2)
+        for result in cold_reads:
+            response = result.result(timeout=2)
+            assert response["data"]["rows"][0]["symbol"] == "LATEST"
+            assert response["metadata"]["generatedAt"] == GENERATED_AT
+            assert response["metadata"]["cacheStatus"] == "hit"
+        assert not worker.done()
+        download.assert_called_once()
+    finally:
+        subscription.close()
+        finish_download.set()
+        finish_round.set()
+        readers.shutdown(wait=True)
+
+    assert len(jobs) == 1
+    assert snapshot_builder.call_count == 4
+    assert all(
+        "tickers" in call.kwargs and "market_data" in call.kwargs
+        for call in snapshot_builder.call_args_list
+    )
+    assert not service._refreshing_all_windows
+
+
+@pytest.mark.parametrize("first_failure", [False, True])
+def test_concurrent_cold_reads_share_build_and_failed_build_releases_waiter(
+    monkeypatch, first_failure,
+):
+    service, jobs, _ = create_live_service(monkeypatch)
+    first_build_started = Event()
+    finish_first_build = Event()
+
+    def build(start, end, window, **kwargs):
+        if snapshot_builder.call_count == 1:
+            first_build_started.set()
+            assert finish_first_build.wait(5)
+            if first_failure:
+                raise TopPicksDataSourceError("Cold source failed")
+        return {
+            "rows": [{"symbol": "LATEST", "ret1y": 0.2}],
+            "metadata": {"windowCode": window, "generatedAt": GENERATED_AT},
+            "warnings": [],
+        }
+
+    snapshot_builder = Mock(side_effect=build)
+    monkeypatch.setattr(service, "_build_snapshot", snapshot_builder)
+    readers = ThreadPoolExecutor(max_workers=2)
+    request = TopPicksRequest(1, 25, "ret1y", "desc", "1Y")
+    try:
+        first_read = readers.submit(service.get_page, request)
+        assert first_build_started.wait(2)
+        second_read = readers.submit(service.get_page, request)
+        with pytest.raises(TimeoutError):
+            second_read.result(timeout=0.1)
+        assert snapshot_builder.call_count == 1
+
+        finish_first_build.set()
+        if first_failure:
+            with pytest.raises(TopPicksDataSourceError, match="Cold source failed"):
+                first_read.result(timeout=2)
+        else:
+            assert first_read.result(timeout=2)["data"]["total"] == 1
+        assert second_read.result(timeout=2)["data"]["rows"][0]["symbol"] == "LATEST"
+    finally:
+        finish_first_build.set()
+        readers.shutdown(wait=True)
+
+    assert snapshot_builder.call_count == (2 if first_failure else 1)
+    assert len(jobs) == 1
+
+
+@pytest.mark.parametrize("failure", ["requested window", "disabled cache"])
+def test_cold_reader_makes_progress_between_continuous_background_rounds(
+    monkeypatch, failure,
+):
+    service, jobs, download = create_live_service(
+        monkeypatch, cache_ttl_seconds=0 if failure == "disabled cache" else 600,
+    )
+    download_started = Event()
+    finish_first_download = Event()
+    finish_later_download = Event()
+    foreground_round_counts = []
+
+    def controlled_download(*args):
+        if download.call_count == 1:
+            download_started.set()
+            assert finish_first_download.wait(5)
+        else:
+            assert finish_later_download.wait(5)
+        return pd.DataFrame()
+
+    def build(start, end, window, **kwargs):
+        if not kwargs:
+            foreground_round_counts.append(download.call_count)
+        if window == "1Y" and failure == "requested window":
+            raise TopPicksDataSourceError("Requested window unavailable")
+        return {
+            "rows": [{"symbol": "LATEST", "ret1y": 0.2}],
+            "metadata": {"windowCode": window, "generatedAt": GENERATED_AT},
+            "warnings": [],
+        }
+
+    download.side_effect = controlled_download
+    monkeypatch.setattr(service, "_build_snapshot", build)
+    subscription = service.subscribe_updates("1Y")
+    readers = ThreadPoolExecutor(max_workers=2)
+    try:
+        readers.submit(jobs[0])
+        assert download_started.wait(2)
+        cold_read = readers.submit(
+            service.get_page, TopPicksRequest(1, 25, "ret1y", "desc", "1Y"),
+        )
+        with pytest.raises(TimeoutError):
+            cold_read.result(timeout=0.1)
+
+        finish_first_download.set()
+        if failure == "requested window":
+            with pytest.raises(TopPicksDataSourceError, match="Requested window unavailable"):
+                cold_read.result(timeout=2)
+        else:
+            response = cold_read.result(timeout=2)
+            assert response["data"]["rows"][0]["symbol"] == "LATEST"
+            assert response["metadata"]["cacheStatus"] == "miss"
+        # The page completed while the stream was still active, before its
+        # worker could claim another download ahead of the waiting reader.
+        assert service._updates.has_subscribers
+        assert foreground_round_counts == [1]
+    finally:
+        subscription.close()
+        finish_first_download.set()
+        finish_later_download.set()
+        readers.shutdown(wait=True)
+
+    assert len(jobs) == 1
     assert not service._refreshing_all_windows
 
 

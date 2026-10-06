@@ -4,7 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import type { AppProps } from "next/app";
 import React from "react";
 import { AuthProvider } from "@/features/auth";
-import { TopPicksPrewarm } from "@/features/top-picks/components/TopPicksPrewarm";
+import { TopPicksBackgroundRefresh } from "@/features/top-picks/components/TopPicksBackgroundRefresh";
 import { ToastContainer } from "react-toastify";
 import { theme } from "@/styles/theme";
 
@@ -12,7 +12,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider theme={theme}>
       <AuthProvider>
-        <TopPicksPrewarm />
+        <TopPicksBackgroundRefresh />
         <Component {...pageProps} />
         <ToastContainer
           position="top-right"

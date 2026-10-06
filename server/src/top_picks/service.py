@@ -5,7 +5,7 @@ import logging
 import math
 import os
 import time
-from threading import RLock, Thread
+from threading import Condition, RLock, Thread
 from tempfile import NamedTemporaryFile
 from time import monotonic
 
@@ -509,6 +509,9 @@ class TopPicksService:
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
+        self._snapshot_build_condition = Condition()
+        self._building_snapshots = False
+        self._waiting_snapshot_readers = 0
         self._updates = SnapshotUpdateHub()
 
     def subscribe_updates(self, window):
@@ -590,18 +593,57 @@ class TopPicksService:
             )
             return latest, latest_status, True
 
-        if force_refresh:
-            self._market_cache_clearer()
+        # An app-wide stream may already be calculating the first snapshot.
+        # Wait for its published result instead of downloading the same data.
+        with self._snapshot_build_condition:
+            self._waiting_snapshot_readers += 1
+            try:
+                while True:
+                    cached, cache_status = self._snapshot_cache.get(cache_key)
+                    if cached is not None:
+                        refreshing = force_refresh or cache_status == "stale"
+                        break
+                    cached, cache_status = self._snapshot_cache.get_latest_stale(
+                        excluded_key=cache_key,
+                        prefix=self._snapshot_cache_prefix(window),
+                    )
+                    if cached is not None:
+                        refreshing = True
+                        break
+                    if not self._building_snapshots:
+                        self._building_snapshots = True
+                        break
+                    self._snapshot_build_condition.wait()
+            finally:
+                self._waiting_snapshot_readers -= 1
+                self._snapshot_build_condition.notify_all()
 
-        snapshot = self._build_snapshot(start_date, end_date, window)
-        self._snapshot_cache.set(
-            cache_key,
-            snapshot,
-            self._cache_ttl_seconds,
-        )
-        self._updates.publish(window, snapshot["metadata"]["generatedAt"])
+        if cached is not None:
+            if refreshing:
+                self._refresh_windows_in_background(
+                    window, force_refresh=force_refresh,
+                )
+            return cached, cache_status, refreshing
+
+        try:
+            if force_refresh:
+                self._market_cache_clearer()
+            snapshot = self._build_snapshot(start_date, end_date, window)
+            self._snapshot_cache.set(
+                cache_key,
+                snapshot,
+                self._cache_ttl_seconds,
+            )
+            self._updates.publish(window, snapshot["metadata"]["generatedAt"])
+        finally:
+            self._finish_snapshot_build()
         self._refresh_windows_in_background(window)
         return deepcopy(snapshot), "miss", False
+
+    def _finish_snapshot_build(self):
+        with self._snapshot_build_condition:
+            self._building_snapshots = False
+            self._snapshot_build_condition.notify_all()
 
     def _refresh_windows_in_background(
         self,
@@ -623,12 +665,22 @@ class TopPicksService:
             while True:
                 failed = False
                 try:
-                    today = self._today_provider()
-                    if current_force_refresh:
-                        self._market_cache_clearer()
-                    published = self._refresh_window_snapshots(
-                        today, current_priority_window, current_force_refresh,
-                    )
+                    with self._snapshot_build_condition:
+                        # Give cold readers a build slot if the previous round
+                        # could not cache their window (failure or zero TTL).
+                        while (self._building_snapshots
+                               or self._waiting_snapshot_readers):
+                            self._snapshot_build_condition.wait()
+                        self._building_snapshots = True
+                    try:
+                        today = self._today_provider()
+                        if current_force_refresh:
+                            self._market_cache_clearer()
+                        published = self._refresh_window_snapshots(
+                            today, current_priority_window, current_force_refresh,
+                        )
+                    finally:
+                        self._finish_snapshot_build()
                     failed = published is False
                 except Exception:
                     failed = True
@@ -700,6 +752,8 @@ class TopPicksService:
                 )
                 self._snapshot_cache.set(key, snapshot, self._cache_ttl_seconds)
                 self._updates.publish(window, snapshot["metadata"]["generatedAt"])
+                with self._snapshot_build_condition:
+                    self._snapshot_build_condition.notify_all()
                 completed += 1
             except Exception:
                 self._updates.publish_error(window)
