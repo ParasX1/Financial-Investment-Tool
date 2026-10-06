@@ -65,6 +65,12 @@ export function useTopPicksController() {
     string | null
   >(null);
   const requestInFlightRef = useRef(false);
+  const snapshotReadPendingRef = useRef(false);
+  const lastConsumedForceTokenRef = useRef<number | null>(null);
+  const subscriptionScope = JSON.stringify([
+    preferenceScopeKey,
+    selectedWindow,
+  ]);
 
   const windowMetricKeys = getTopPicksWindowMetricKeys(selectedWindow);
   const effectiveSort = windowMetricKeys.includes(sort.key)
@@ -111,7 +117,8 @@ export function useTopPicksController() {
       const forceRefresh =
         refreshRequest.forceRefresh &&
         lastConsumedForceTokenRef.current !== refreshRequest.token;
-      if (forceRefresh) lastConsumedForceTokenRef.current = refreshRequest.token;
+      if (forceRefresh)
+        lastConsumedForceTokenRef.current = refreshRequest.token;
       const response = await fetchTopPicks({
         page,
         pageSize,
@@ -128,6 +135,10 @@ export function useTopPicksController() {
     };
 
     load()
+      .then(() => {
+        if (!active) return;
+        setRequestState((current) => ({ ...current, error: null }));
+      })
       .catch((reason: unknown) => {
         if (!active || isAbortError(reason)) return;
         setRequestState({
@@ -140,6 +151,13 @@ export function useTopPicksController() {
         if (active) {
           requestInFlightRef.current = false;
           setRequestState((current) => ({ ...current, pending: false }));
+          if (snapshotReadPendingRef.current) {
+            snapshotReadPendingRef.current = false;
+            setRefreshRequest(({ token }) => ({
+              token: token + 1,
+              forceRefresh: false,
+            }));
+          }
         }
       });
 
@@ -189,7 +207,10 @@ export function useTopPicksController() {
       },
       onRefreshError: () => {
         if (active) {
-          setError("Unable to refresh Top Picks. Retrying automatically.");
+          setRequestState((current) => ({
+            ...current,
+            error: "Unable to refresh Top Picks. Retrying automatically.",
+          }));
         }
       },
     });

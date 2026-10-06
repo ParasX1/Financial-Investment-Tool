@@ -17,6 +17,7 @@ from .market_primitives import (
 )
 
 STOCK_DATA_CACHE_TTL_SECONDS = 120
+STOCK_DATA_DOWNLOAD_THREADS = 96
 # Bound per-process reuse of recent requests: arbitrary historical ranges must
 # not retain DataFrames indefinitely, even before the two-minute TTL expires.
 STOCK_DATA_CACHE_MAX_ENTRIES = 128

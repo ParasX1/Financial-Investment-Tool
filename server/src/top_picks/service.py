@@ -583,35 +583,15 @@ class TopPicksService:
             excluded_key=cache_key,
             prefix=self._snapshot_cache_prefix(window),
         )
-        if latest is None and window == "1Y":
-            latest, latest_status = self._snapshot_cache.get_latest_stale(
-                excluded_key=cache_key,
+        if latest is not None:
+            self._refresh_windows_in_background(
+                window,
+                force_refresh=force_refresh,
             )
-            if latest is not None:
-                self._refresh_windows_in_background(
-                    window,
-                    force_refresh=True,
-                )
-                return latest, latest_status, True
+            return latest, latest_status, True
 
         if force_refresh:
             self._market_cache_clearer()
-
-        if not force_refresh:
-            cached, cache_status = self._snapshot_cache.get(cache_key)
-            if cached is not None:
-                refreshing = cache_status == "stale"
-                if refreshing:
-                    self._refresh_windows_in_background(window)
-                return cached, cache_status, refreshing
-
-            latest, latest_status = self._snapshot_cache.get_latest_stale(
-                excluded_key=cache_key,
-                prefix=self._snapshot_cache_prefix(window),
-            )
-            if latest is not None:
-                self._refresh_windows_in_background(window)
-                return latest, latest_status, True
 
         snapshot = self._build_snapshot(start_date, end_date, window)
         self._snapshot_cache.set(

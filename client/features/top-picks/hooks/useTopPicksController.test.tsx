@@ -1232,10 +1232,13 @@ describe("useTopPicksController", () => {
 
     await act(async () => {
       initialSubscription.options.onUpdate();
+      initialSubscription.options.onRefreshError();
       oldWindowSubscription.options.onUpdate();
+      oldWindowSubscription.options.onRefreshError();
       await flushEffects();
     });
     expect(mockFetchTopPicks).toHaveBeenCalledTimes(requestCount);
+    expect(latest!.error).toBeNull();
 
     await act(async () => {
       renderer!.unmount();
@@ -1274,6 +1277,142 @@ describe("useTopPicksController", () => {
     });
     expect(latest!.error).toBeNull();
     renderer!.unmount();
+  });
+
+  it.each(["page", "sort"] as const)(
+    "shows live refresh errors for the current query after a %s change",
+    async (change) => {
+      const refreshResponse = deferred<TopPicksResponse>();
+      mockAuthState = { user: { id: "account-a" }, loading: false };
+      mockFetchTopPicks
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("ORIGINAL")],
+          total: 100,
+        })
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("CURRENT")],
+          total: 100,
+        })
+        .mockReturnValueOnce(refreshResponse.promise);
+      let latest: ReturnType<typeof useTopPicksController> | null = null;
+      let renderer: ReactTestRenderer | undefined;
+
+      function Probe() {
+        latest = useTopPicksController();
+        return null;
+      }
+
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(<Probe />);
+          await flushEffects();
+        });
+        const subscription = updateSubscriptions[0];
+
+        await act(async () => {
+          if (change === "page") latest!.setPage(2);
+          else latest!.toggleSort("alpha");
+          await flushEffects();
+        });
+        expect(latest!.rows.map((row) => row.symbol)).toEqual(["CURRENT"]);
+        expect(mockSubscribeToTopPicksUpdates).toHaveBeenCalledTimes(1);
+        expect(subscription.unsubscribe).not.toHaveBeenCalled();
+
+        await act(async () => {
+          subscription.options.onRefreshError();
+          await flushEffects();
+        });
+        expect(latest!.error).toBe(
+          "Unable to refresh Top Picks. Retrying automatically.",
+        );
+        expect(latest!.rows.map((row) => row.symbol)).toEqual(["CURRENT"]);
+        expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+
+        await act(async () => {
+          notifySnapshot();
+          await flushEffects();
+        });
+        expect(mockFetchTopPicks).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            page: change === "page" ? 2 : 1,
+            sortKey: change === "sort" ? "alpha" : "sharpe",
+            window: "1Y",
+            forceRefresh: false,
+          }),
+        );
+        expect(latest!.rows.map((row) => row.symbol)).toEqual(["CURRENT"]);
+        expect(latest!.syncing).toBe(true);
+
+        await act(async () => {
+          refreshResponse.resolve({
+            ...emptyResponse,
+            rows: [rowFor("UPDATED")],
+            total: 100,
+          });
+          await flushEffects();
+        });
+        expect(latest!.rows.map((row) => row.symbol)).toEqual(["UPDATED"]);
+        expect(latest!.error).toBeNull();
+        expect(latest!.syncing).toBe(false);
+      } finally {
+        renderer?.unmount();
+      }
+    },
+  );
+
+  it("clears a background refresh error when an in-flight snapshot read succeeds", async () => {
+    const refreshResponse = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({
+        ...emptyResponse,
+        rows: [rowFor("CURRENT")],
+        total: 1,
+      })
+      .mockReturnValueOnce(refreshResponse.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        notifySnapshot();
+        await flushEffects();
+      });
+      expect(latest!.syncing).toBe(true);
+
+      await act(async () => {
+        updateSubscriptions.at(-1)!.options.onRefreshError();
+        await flushEffects();
+      });
+      expect(latest!.error).toBe(
+        "Unable to refresh Top Picks. Retrying automatically.",
+      );
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["CURRENT"]);
+      expect(latest!.syncing).toBe(true);
+
+      await act(async () => {
+        refreshResponse.resolve({
+          ...emptyResponse,
+          rows: [rowFor("UPDATED")],
+          total: 1,
+        });
+        await flushEffects();
+      });
+      expect(latest!.rows.map((row) => row.symbol)).toEqual(["UPDATED"]);
+      expect(latest!.error).toBeNull();
+      expect(latest!.syncing).toBe(false);
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+    } finally {
+      renderer?.unmount();
+    }
   });
 
   it("updates the local sync time only when live refresh returns a new snapshot", async () => {
