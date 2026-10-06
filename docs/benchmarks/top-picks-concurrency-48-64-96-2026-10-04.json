@@ -1,0 +1,464 @@
+{
+  "mode": "full_universe_seven_day_download_with_serial_recovery",
+  "stock_count": 699,
+  "symbol_count": 700,
+  "yfinance_version": "0.2.65",
+  "multitasking_version": "0.0.13",
+  "run_order": [
+    48,
+    64,
+    96,
+    96,
+    64,
+    48
+  ],
+  "retry_policy": "Up to two serial retry passes; recovered prices replace missing columns; stop if more than 20 missing.",
+  "limitations": [
+    "Two runs per setting, not a long-term guarantee.",
+    "Downloads and recovery only; excludes calculation, history persistence and browser.",
+    "Separate process and empty temporary Yahoo cache each run; remote caches and network uncontrolled.",
+    "Recovery is test-only; production is unchanged."
+  ],
+  "runs": [
+    {
+      "threads": 48,
+      "measured_peak_concurrency": 48,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 24.82037950004451,
+      "retry_seconds": 3.2834061000030488,
+      "total_seconds": 28.280677000060678,
+      "bulk_missing": [
+        "DXCM",
+        "GDDY",
+        "QUB.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "DXCM",
+          "attempt": 1,
+          "recovered": true
+        },
+        {
+          "symbol": "GDDY",
+          "attempt": 1,
+          "recovered": true
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 24.77971129992511,
+          "error_types": {
+            "DXCM": "OperationalError",
+            "GDDY": "OperationalError",
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.8035952999489382,
+          "error_types": {}
+        },
+        {
+          "symbols": 1,
+          "seconds": 1.346454399987124,
+          "error_types": {}
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.3842230999143794,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.4042373999254778,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 1,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    },
+    {
+      "threads": 64,
+      "measured_peak_concurrency": 64,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 23.263668400002643,
+      "retry_seconds": 2.148088999907486,
+      "total_seconds": 25.749884399934672,
+      "bulk_missing": [
+        "ABNB",
+        "QUB.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "ABNB",
+          "attempt": 1,
+          "recovered": true
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 23.22813890001271,
+          "error_types": {
+            "ABNB": "OperationalError",
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.8214545000810176,
+          "error_types": {}
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.585657799965702,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.616689300048165,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 2,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    },
+    {
+      "threads": 96,
+      "measured_peak_concurrency": 96,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 21.209441400016658,
+      "retry_seconds": 1.5132328000618145,
+      "total_seconds": 23.06042700004764,
+      "bulk_missing": [
+        "QUB.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 21.17909990006592,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.7776343000587076,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6359256999567151,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 3,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    },
+    {
+      "threads": 96,
+      "measured_peak_concurrency": 96,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 24.36428639991209,
+      "retry_seconds": 2.3553026999579743,
+      "total_seconds": 27.234977299929596,
+      "bulk_missing": [
+        "QUB.AX",
+        "RGN.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "RGN.AX",
+          "attempt": 1,
+          "recovered": true
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 24.319860499934293,
+          "error_types": {
+            "RGN.AX": "OperationalError",
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6728965999791399,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.8882069999817759,
+          "error_types": {}
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6477376000257209,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 4,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    },
+    {
+      "threads": 64,
+      "measured_peak_concurrency": 64,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 25.683628499973565,
+      "retry_seconds": 1.3354321999941021,
+      "total_seconds": 27.49571669998113,
+      "bulk_missing": [
+        "QUB.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 25.639998800004832,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6306820999598131,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.5870084000052884,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 5,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    },
+    {
+      "threads": 48,
+      "measured_peak_concurrency": 48,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "bulk_seconds": 22.22716050001327,
+      "retry_seconds": 1.354585099965334,
+      "total_seconds": 23.88232940004673,
+      "bulk_missing": [
+        "QUB.AX"
+      ],
+      "final_missing": [
+        "QUB.AX"
+      ],
+      "available_symbols": 699,
+      "date_rows": 5,
+      "retry_attempts": [
+        {
+          "symbol": "QUB.AX",
+          "attempt": 1,
+          "recovered": false
+        },
+        {
+          "symbol": "QUB.AX",
+          "attempt": 2,
+          "recovered": false
+        }
+      ],
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 22.197818999993615,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6487751000095159,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.6037134000798687,
+          "error_types": {
+            "QUB.AX": "YFPricesMissingError"
+          }
+        }
+      ],
+      "round": 6,
+      "price_differences_from_first_run": [],
+      "missing_relative_to_first_run": [],
+      "available_only_in_this_run": []
+    }
+  ],
+  "summary": [
+    {
+      "threads": 48,
+      "rounds": 2,
+      "mean_total_seconds": 26.081503200053703,
+      "min_total_seconds": 23.88232940004673,
+      "max_total_seconds": 28.280677000060678,
+      "mean_retry_seconds": 2.3189955999841914,
+      "final_missing_each_run": [
+        [
+          "QUB.AX"
+        ],
+        [
+          "QUB.AX"
+        ]
+      ]
+    },
+    {
+      "threads": 64,
+      "rounds": 2,
+      "mean_total_seconds": 26.6228005499579,
+      "min_total_seconds": 25.749884399934672,
+      "max_total_seconds": 27.49571669998113,
+      "mean_retry_seconds": 1.7417605999507941,
+      "final_missing_each_run": [
+        [
+          "QUB.AX"
+        ],
+        [
+          "QUB.AX"
+        ]
+      ]
+    },
+    {
+      "threads": 96,
+      "rounds": 2,
+      "mean_total_seconds": 25.147702149988618,
+      "min_total_seconds": 23.06042700004764,
+      "max_total_seconds": 27.234977299929596,
+      "mean_retry_seconds": 1.9342677500098944,
+      "final_missing_each_run": [
+        [
+          "QUB.AX"
+        ],
+        [
+          "QUB.AX"
+        ]
+      ]
+    }
+  ]
+}

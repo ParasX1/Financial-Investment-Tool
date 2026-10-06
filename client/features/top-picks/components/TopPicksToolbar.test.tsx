@@ -5,6 +5,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { TopPicksStatus, TopPicksToolbar } from "./TopPicksToolbar";
 
 type InteractiveElement = ReactElement<{
@@ -50,6 +51,12 @@ const baseProps = {
   onEditColumns: () => undefined,
   onWindowChange: () => undefined,
   onRetry: () => undefined,
+};
+
+const exportButtonTag = (markup: string) => {
+  const labelIndex = markup.indexOf("Export page CSV");
+  expect(labelIndex).toBeGreaterThan(-1);
+  return markup.slice(markup.lastIndexOf("<button", labelIndex)).split(">", 1)[0];
 };
 
 describe("TopPicksStatus", () => {
@@ -110,5 +117,67 @@ describe("TopPicksToolbar", () => {
     });
 
     expect(collectText(toolbar)).toContain("Syncing - Updated");
+  });
+
+  it("identifies previous results while their snapshot refresh runs in the background", () => {
+    const lastUpdatedAt = new Date("2026-08-25T03:45:12Z");
+    const markup = renderToStaticMarkup(
+      <TopPicksToolbar
+        {...baseProps}
+        metadata={{ cacheStatus: "stale", snapshotRefreshing: true }}
+        lastUpdatedAt={lastUpdatedAt}
+        syncing={false}
+      />,
+    );
+
+    expect(markup).toContain("Showing previous results - Syncing - Updated");
+    expect(markup).toContain(lastUpdatedAt.toLocaleString("sv-SE", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }));
+    expect(exportButtonTag(markup)).not.toContain("disabled");
+  });
+
+  it("clears the previous-results notice when the completed snapshot is displayed", () => {
+    const markup = renderToStaticMarkup(
+      <TopPicksToolbar
+        {...baseProps}
+        metadata={{ cacheStatus: "hit", snapshotRefreshing: false }}
+        lastUpdatedAt={new Date("2026-08-25T03:46:12Z")}
+        syncing={false}
+      />,
+    );
+
+    expect(markup).toContain("Updated ");
+    expect(markup).not.toContain("Showing previous results");
+    expect(markup).not.toContain("Syncing");
+  });
+
+  it("allows exporting existing results after a background refresh failure", () => {
+    const markup = renderToStaticMarkup(
+      <TopPicksToolbar
+        {...baseProps}
+        error="Unable to refresh Top Picks. Retrying automatically."
+      />,
+    );
+
+    expect(exportButtonTag(markup)).not.toContain("disabled");
+  });
+
+  it("keeps exporting disabled when the initial request fails without results", () => {
+    const markup = renderToStaticMarkup(
+      <TopPicksToolbar
+        {...baseProps}
+        total={0}
+        error="Top Picks are temporarily unavailable."
+      />,
+    );
+
+    expect(exportButtonTag(markup)).toContain('disabled=""');
   });
 });
