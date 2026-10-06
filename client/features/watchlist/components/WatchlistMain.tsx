@@ -67,6 +67,12 @@ function formatRefreshTime(value: Date | null) {
 
 export function WatchlistMain() {
   const watchlist = useWatchlistController();
+  return <WatchlistContent key={watchlist.sessionKey} watchlist={watchlist} />;
+}
+
+function WatchlistContent({ watchlist }: {
+  watchlist: ReturnType<typeof useWatchlistController>;
+}) {
   const authDialog = useAuthDialog();
   const [addQuery, setAddQuery] = React.useState("");
   const [activeSuggestion, setActiveSuggestion] = React.useState(-1);
