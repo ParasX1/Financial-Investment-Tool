@@ -353,13 +353,17 @@ supabase db reset
 npm test -- --runInBand
 npm run test:portfolio-top-picks:coverage
 npm run test:watchlist:coverage
-npx tsc --noEmit --pretty false
+npm run typecheck
 npm run lint -- --no-cache
 npm run build
 npm run test:e2e
 ```
 
-Portfolio/Top Picks 的 configured surface 要求 statements、branches、functions、lines 均至少 80%。
+Portfolio/Top Picks 和 Watchlist 的 configured surface 要求 statements、branches、functions、lines 均至少 80%。这是这些指定范围的 coverage gate，不代表整个 application 已达到 80% coverage。Jest 只发现 `.test.*` unit/contract file，Playwright 负责 `.spec.*` browser journey。
+
+Frontend CI 在 push 和 PR 进入 `DevBranch` 或 `main` 时运行 typecheck、lint、unit/contract test、两个 coverage gate 和 production build。独立的 `Mocked browser journeys` job 使用 Chromium、公开的 dummy Supabase value 和 mock critical flow，无需 production secret；test 失败时仍上传 HTML report、screenshot、video 和 trace。这些 browser check 验证 fixture 下的 UI behavior，不能证明 live Supabase policy 或 market provider 可用。
+
+`npm run typecheck` 先执行 `next typegen`，确保 clean checkout 在 TypeScript 检查前已有 Next.js route 和 static-image declaration。生成的 `next-env.d.ts` 和 `.next/` artifact 保持 ignored。
 
 只检查本次 changed file 的 formatting：
 
@@ -377,6 +381,7 @@ npx prettier --check <changed-file-1> <changed-file-2>
 python -m pytest -q
 python -m compileall -q src tests
 python -m flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
+python -m flake8 src tests --count --max-complexity=10 --max-line-length=250 --statistics --ignore=E302,W292,W293,W503,E303,E305,E306,E275,E231,C901
 ```
 
 ### Database
@@ -401,15 +406,22 @@ supabase db push
 
 ## 贡献流程
 
-1. 搜索已有 issue 和 PR。
-2. 从正确 base 创建描述清晰的 `feature/`、`fix/`、`refactor/` 或 `docs/` branch。
-3. 先写一个失败的 behavior 或 boundary test。
-4. 实现最小 coherent change。
-5. 在 focused test 保持 green 的情况下 refactor。
-6. 运行受影响的 full-stack check。
-7. Review `git diff`，检查 secret、artifact 和无关 formatting。
-8. 用 `<type>: <description>` 提交 coherent commit。
-9. PR 中说明 why、user impact、test 和 deployment/migration requirement。
+1. 搜索已有 issue 和 PR。在 substantive work 前创建或采用 issue，写明 problem、可复现 evidence、scope 和 acceptance criteria。
+2. Fetch 后从 `origin/DevBranch` 建 branch。使用 `<type>/<issue-number>-<description>`，例如 `fix/250-devbranch-checks`。支持 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`、`hotfix`；一个 cohesive change 可使用多个 issue number，例如 `chore/250-251-quality-gates`。
+3. 先用失败的 behavior 或 boundary test 复现 defect。Docs/configuration 使用 native validator，不创建 artificial application test。
+4. 实现最小 coherent change，在 focused test 保持 green 时 refactor。
+5. 运行受影响的 full-stack check 并获得 independent review；检查最终 diff 中的 secret、artifact 和无关 formatting。
+6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。`Related issue` 必须写入 branch 中的每个 issue number，同时说明 user impact、test 和 deployment/migration requirement。
+7. 解决 review finding，检查实际 GitHub run。只有获得授权的 maintainer 批准后才 merge 到 development branch。创建或 push PR 不代表获得 merge 授权。
+8. 用独立 PR 从 `DevBranch` 到 `main` release，提供 release note、关联 issue 和明确的 release approval。获得授权的 release maintainer 负责 main merge、deployment 和 remote Supabase migration。
+
+`Closes #250` 等 GitHub closing keyword 只有在 PR 的 target 是 repository default branch（`main`）且 merge 后才生效。DevBranch PR 仍应关联 issue 并写明 acceptance criteria；修复尚未 merge 或必要验证未完成时，issue 保持 open，不能因为已有 PR 就 close。若某个 work item 在 release 前已经完成，获得授权的 maintainer 可在提供 merged PR 和 verification evidence 后手动 close。
+
+紧急 production fix 仍需要 issue、`hotfix/<issue-number>-<description>` branch、test 和 reviewed PR。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner；owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查语法，不判断是否已经获得人工批准。
+
+`Issue and branch policy` check 读取 PR JSON event file，检查 Related issue、branch name 和 target；使用只读 `pull_request` workflow，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只验证 link syntax；reviewer 必须确认 issue 确实存在且对应本次修改。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
+
+Workflow file 会生成 `Frontend quality`、`Mocked browser journeys`、`Backend quality` 和 `Issue and branch policy` check，但不会配置 branch protection。Repository administrator 必须另行配置 DevBranch 和 main 的 required check 与 review rule，并用真实 PR 验证。Contributor 的 write access 不代表有权限修改 repository setting。
 
 UI change 要提供 screenshot；financial semantics 要说明 assumption；schema change 要写明 migration 和 target environment。
 

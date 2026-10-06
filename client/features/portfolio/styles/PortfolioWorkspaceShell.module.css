@@ -275,8 +275,7 @@
   .boardSlot_1,
   .boardSlot_2,
   .boardSlot_3,
-  .boardSlot_4,
-  .boardSlot_0 {
+  .boardSlot_4 {
     grid-column: 1 / -1;
     grid-row: auto; /*Unbind row for desktop layout*/
     min-height: 430px;

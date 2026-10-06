@@ -151,7 +151,8 @@
   background: rgba(116, 92, 209, 0.11);
 }
 
-.linkedBadge {
+.linkedBadge,
+.cardStatus {
   color: var(--portfolio-muted);
 }
 
@@ -178,7 +179,8 @@
 }
 
 .cardActions > button:hover,
-.cardMenu summary:hover {
+.cardMenu summary:hover,
+.cardMenu button:hover {
   border-color: var(--portfolio-border);
   color: #fff;
   background: rgba(101, 160, 253, 0.1);
@@ -218,18 +220,9 @@
   cursor: pointer;
 }
 
-.cardMenu button:hover {
-  color: #fff;
-  background: rgba(101, 160, 253, 0.1);
-}
-
 .cardMenu button:disabled {
   opacity: 0.4;
   cursor: default;
-}
-
-.cardStatus {
-  color: var(--portfolio-muted);
 }
 
 .status_success {
@@ -525,23 +518,23 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .cardHeader{
-    flex-wrap:wrap;
+  .cardHeader {
+    flex-wrap: wrap;
   }
 
-  .cardHeaderSettings{
+  .cardHeaderSettings {
     order: 3;
     flex: 1 1 100%;
     flex-wrap: wrap;
     padding-left: 0;
   }
 
-  .cardHeaderSettingsLabel{
+  .cardHeaderSettingsLabel {
     flex: 1 1 100%;
     max-width: none;
   }
 
-  .cardHeaderSettings label{
+  .cardHeaderSettings label {
     flex: 1 1 130px;
     min-width: 0;
   }

@@ -102,8 +102,10 @@ const config = {
   },
   testEnvironment: "node",
   testMatch: [
-    "<rootDir>/features/portfolio/**/*.test.{ts,tsx}",
-    "<rootDir>/features/top-picks/**/*.test.{ts,tsx}",
+    "**/features/portfolio/**/*.test.ts",
+    "**/features/portfolio/**/*.test.tsx",
+    "**/features/top-picks/**/*.test.ts",
+    "**/features/top-picks/**/*.test.tsx",
   ],
 };
 
