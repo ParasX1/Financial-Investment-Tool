@@ -1,6 +1,7 @@
 # metrics.py
 
 # Import necessary libraries
+from collections import OrderedDict
 from threading import RLock
 from time import monotonic
 
@@ -16,8 +17,10 @@ from .market_primitives import (
 )
 
 STOCK_DATA_CACHE_TTL_SECONDS = 120
-STOCK_DATA_DOWNLOAD_THREADS = 96
-_stock_data_cache = {}
+# Bound per-process reuse of recent requests: arbitrary historical ranges must
+# not retain DataFrames indefinitely, even before the two-minute TTL expires.
+STOCK_DATA_CACHE_MAX_ENTRIES = 128
+_stock_data_cache = OrderedDict()
 _stock_data_lock = RLock()
 # yfinance shares result dictionaries and its worker pool across download calls.
 _stock_download_lock = RLock()
@@ -26,6 +29,16 @@ _stock_download_lock = RLock()
 def clear_stock_data_cache():
     with _stock_data_lock:
         _stock_data_cache.clear()
+
+
+def _prune_expired_stock_data(now):
+    """Remove expired entries while the caller holds _stock_data_lock."""
+    expired_keys = [
+        key for key, entry in _stock_data_cache.items()
+        if now - entry["created_at"] >= STOCK_DATA_CACHE_TTL_SECONDS
+    ]
+    for key in expired_keys:
+        del _stock_data_cache[key]
 
 
 def ensure_multiindex_stock_data(stock_data, stock_tickers):
@@ -126,15 +139,11 @@ def fetch_stock_data(stock_tickers, start_date, end_date, force_refresh=False):
         return pd.DataFrame()
 
     cache_key = (tuple(sorted(stock_tickers)), start_date, end_date)
-    now = monotonic()
-
     with _stock_data_lock:
+        _prune_expired_stock_data(monotonic())
         cached = _stock_data_cache.get(cache_key)
-        if (
-            not force_refresh
-            and cached
-            and now - cached["created_at"] < STOCK_DATA_CACHE_TTL_SECONDS
-        ):
+        if not force_refresh and cached:
+            _stock_data_cache.move_to_end(cache_key)
             return cached["data"].copy(deep=True)
 
     stock_data = download_stock_data(stock_tickers, start_date, end_date)
@@ -150,10 +159,15 @@ def fetch_stock_data(stock_tickers, start_date, end_date, force_refresh=False):
         stock_data = merge_stock_data_frames([stock_data, *retry_frames])
 
     with _stock_data_lock:
+        now = monotonic()
+        _prune_expired_stock_data(now)
         _stock_data_cache[cache_key] = {
-            "created_at": monotonic(),
+            "created_at": now,
             "data": stock_data.copy(deep=True),
         }
+        _stock_data_cache.move_to_end(cache_key)
+        while len(_stock_data_cache) > STOCK_DATA_CACHE_MAX_ENTRIES:
+            _stock_data_cache.popitem(last=False)
 
     return stock_data
 
