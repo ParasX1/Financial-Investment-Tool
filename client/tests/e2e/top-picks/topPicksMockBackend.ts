@@ -13,6 +13,7 @@ export type TopPicksRequest = Readonly<{
     | "alpha"
     | "infoRatio";
   sort_dir: "asc" | "desc";
+  force_refresh?: true;
 }>;
 
 type MockTopPick = Readonly<{
@@ -171,12 +172,35 @@ const parseRequest = (request: Request): TopPicksRequest | null => {
     page_size: Number(candidate.page_size),
     sort_key: candidate.sort_key as TopPicksRequest["sort_key"],
     sort_dir: candidate.sort_dir,
+    ...(candidate.force_refresh === true ? { force_refresh: true } : {}),
   };
 };
 
-export async function installTopPicksMockBackend(page: Page) {
+export async function installTopPicksMockBackend(
+  page: Page,
+  { holdEventsUntilRefresh = false }: { holdEventsUntilRefresh?: boolean } = {},
+) {
   let requests: readonly TopPicksRequest[] = [];
   let supabaseRequests: readonly string[] = [];
+  let eventRequests: readonly string[] = [];
+  let refreshCompleted = false;
+  let releaseEvents!: () => void;
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseEvents = resolve;
+  });
+
+  await page.route("**/api/top-picks/events?*", async (route) => {
+    const window = new URL(route.request().url()).searchParams.get("window");
+    eventRequests = [...eventRequests, route.request().url()];
+    if (holdEventsUntilRefresh) await refreshGate;
+    const completion = refreshCompleted
+      ? `event: snapshot\ndata: ${JSON.stringify({ revision: 1, window, generatedAt: "2026-07-30T06:01:00Z" })}\n\n`
+      : "";
+    await route.fulfill({
+      headers: { ...responseHeaders, "content-type": "text/event-stream" },
+      body: `retry: 60000\n\nevent: connected\ndata: ${JSON.stringify({ revision: 0, window })}\n\n${completion}`,
+    });
+  });
 
   await page.route("**/api/top-picks", async (route) => {
     if (route.request().method() === "OPTIONS") {
@@ -201,7 +225,13 @@ export async function installTopPicksMockBackend(page: Page) {
     const rankedRows =
       request.sort_dir === "desc" ? [...baseRanking] : reverseCopy(baseRanking);
     const startIndex = (request.page - 1) * request.page_size;
-    const rows = rankedRows.slice(startIndex, startIndex + request.page_size);
+    const rows = rankedRows
+      .slice(startIndex, startIndex + request.page_size)
+      .map((row) =>
+        refreshCompleted && row.symbol === "CBA.AX"
+          ? { ...row, ret1y: 0.28 }
+          : row,
+      );
 
     await fulfillJson(route, {
       data: { rows, total: rankedRows.length },
@@ -209,7 +239,9 @@ export async function installTopPicksMockBackend(page: Page) {
         annualisationDays: 252,
         availableCount: rankedRows.length,
         benchmark: "^AXJO",
-        generatedAt: "2026-07-30T06:00:00Z",
+        generatedAt: refreshCompleted
+          ? "2026-07-30T06:01:00Z"
+          : "2026-07-30T06:00:00Z",
         minimumTrailingReturnObservations: 200,
         requestedEnd: "2026-07-30",
         requestedStart: "2025-07-30",
@@ -240,5 +272,10 @@ export async function installTopPicksMockBackend(page: Page) {
     requests: (): readonly TopPicksRequest[] =>
       requests.map((request) => ({ ...request })),
     supabaseRequests: (): readonly string[] => [...supabaseRequests],
+    eventRequests: (): readonly string[] => [...eventRequests],
+    completeRefresh: () => {
+      refreshCompleted = true;
+      releaseEvents();
+    },
   };
 }

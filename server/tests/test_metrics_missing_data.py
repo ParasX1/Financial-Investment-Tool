@@ -46,7 +46,8 @@ def test_fetch_stock_data_retries_missing_tickers_individually():
     adj_close = metrics.get_adjusted_close_prices(data)
 
     assert set(adj_close.columns) == {"AAPL", "MSFT", "SPY"}
-    assert calls[0][1]["threads"] is False
+    assert calls[0][1]["threads"] == 96
+    assert calls[1][1]["threads"] is False
     assert calls[0][1]["progress"] is False
     assert [call[0] for call in calls] == [["AAPL", "MSFT", "SPY"], ["MSFT"]]
 
