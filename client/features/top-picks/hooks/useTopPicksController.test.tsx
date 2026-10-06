@@ -1344,6 +1344,215 @@ describe("useTopPicksController", () => {
     }
   });
 
+  it.each(["page", "page size", "sort", "window"] as const)(
+    "hides the previous query's rows and timestamp while a new %s is loading or fails",
+    async (change) => {
+      const nextResponse = deferred<TopPicksResponse>();
+      mockFetchTopPicks
+        .mockResolvedValueOnce({
+          rows: [rowFor("OLD")],
+          total: 60,
+          metadata: { generatedAt: "2026-08-25T03:00:00Z", benchmark: "^AXJO" },
+          warnings: ["Previous query warning"],
+        })
+        .mockReturnValueOnce(nextResponse.promise);
+      let latest: ReturnType<typeof useTopPicksController> | null = null;
+      let renderer: ReactTestRenderer | undefined;
+
+      function Probe() {
+        latest = useTopPicksController();
+        return null;
+      }
+
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(<Probe />);
+          await flushEffects();
+        });
+        expect(latest!.rows[0]?.symbol).toBe("OLD");
+
+        await act(async () => {
+          if (change === "page") latest!.setPage(2);
+          if (change === "page size") latest!.setPageSize(10);
+          if (change === "sort") latest!.toggleSort("ret1y");
+          if (change === "window") latest!.setWindow("1D");
+          await flushEffects();
+        });
+
+        expect(latest!.rows).toEqual([]);
+        expect(latest!.total).toBe(0);
+        expect(latest!.metadata).toEqual({});
+        expect(latest!.warnings).toEqual([]);
+        expect(latest!.lastUpdatedAt).toBeNull();
+        expect(latest!.loading).toBe(true);
+        expect(latest!.syncing).toBe(false);
+
+        await act(async () => {
+          nextResponse.reject(new Error("New query unavailable"));
+          await flushEffects();
+        });
+
+        expect(latest!.rows).toEqual([]);
+        expect(latest!.total).toBe(0);
+        expect(latest!.lastUpdatedAt).toBeNull();
+        expect(latest!.loading).toBe(false);
+        expect(latest!.error).toBe("New query unavailable");
+      } finally {
+        renderer?.unmount();
+      }
+    },
+  );
+
+  it("keeps a coherent snapshot during a same-query refresh failure", async () => {
+    const refreshResponse = deferred<TopPicksResponse>();
+    const response = {
+      rows: [rowFor("CURRENT")],
+      total: 1,
+      metadata: { generatedAt: "2026-08-25T03:00:00Z", benchmark: "^AXJO" },
+      warnings: ["Limited history"],
+    };
+    mockFetchTopPicks
+      .mockResolvedValueOnce(response)
+      .mockReturnValueOnce(refreshResponse.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+      });
+      const generatedAt = latest!.lastUpdatedAt;
+      await act(async () => {
+        latest!.retry();
+        await flushEffects();
+      });
+
+      expect(latest!.rows).toEqual(response.rows);
+      expect(latest!.metadata).toEqual(response.metadata);
+      expect(latest!.lastUpdatedAt).toBe(generatedAt);
+      expect(latest!.loading).toBe(false);
+      expect(latest!.syncing).toBe(true);
+
+      await act(async () => {
+        refreshResponse.reject(new Error("Refresh unavailable"));
+        await flushEffects();
+      });
+
+      expect(latest!.rows).toEqual(response.rows);
+      expect(latest!.metadata).toEqual(response.metadata);
+      expect(latest!.lastUpdatedAt).toBe(generatedAt);
+      expect(latest!.error).toBe("Refresh unavailable");
+      expect(latest!.syncing).toBe(false);
+    } finally {
+      renderer?.unmount();
+    }
+  });
+
+  it.each([undefined, "invalid timestamp"])(
+    "clears the previous timestamp when the next snapshot supplies %s",
+    async (generatedAt) => {
+      mockFetchTopPicks
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("DATED")],
+          total: 1,
+          metadata: { generatedAt: "2026-08-25T03:00:00Z" },
+        })
+        .mockResolvedValueOnce({
+          ...emptyResponse,
+          rows: [rowFor("UNDATED")],
+          total: 1,
+          metadata: generatedAt === undefined ? {} : { generatedAt },
+        });
+      let latest: ReturnType<typeof useTopPicksController> | null = null;
+      let renderer: ReactTestRenderer | undefined;
+
+      function Probe() {
+        latest = useTopPicksController();
+        return null;
+      }
+
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(<Probe />);
+          await flushEffects();
+        });
+        expect(latest!.lastUpdatedAt).not.toBeNull();
+
+        await act(async () => {
+          latest!.retry();
+          await flushEffects();
+        });
+
+        expect(latest!.rows[0]?.symbol).toBe("UNDATED");
+        expect(latest!.lastUpdatedAt).toBeNull();
+      } finally {
+        renderer?.unmount();
+      }
+    },
+  );
+
+  it.each(["response", "failure"])("ignores an obsolete page %s after the current window resolves", async (outcome) => {
+    const obsoletePage = deferred<TopPicksResponse>();
+    const currentWindow = deferred<TopPicksResponse>();
+    mockFetchTopPicks
+      .mockResolvedValueOnce({ ...emptyResponse, rows: [rowFor("YEAR")], total: 60 })
+      .mockReturnValueOnce(obsoletePage.promise)
+      .mockReturnValueOnce(currentWindow.promise);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+
+    function Probe() {
+      latest = useTopPicksController();
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        renderer = TestRenderer.create(<Probe />);
+        await flushEffects();
+        latest!.setPage(2);
+        await flushEffects();
+      });
+      await act(async () => {
+        latest!.setWindow("1D");
+        await flushEffects();
+      });
+      expect(mockFetchTopPicks.mock.calls[1]?.[0].signal?.aborted).toBe(true);
+
+      await act(async () => {
+        currentWindow.resolve({
+          ...emptyResponse,
+          rows: [rowFor("DAY")],
+          total: 1,
+          metadata: { generatedAt: "2026-08-25T03:05:00Z", windowCode: "1D" },
+        });
+        await flushEffects();
+        if (outcome === "response") {
+          obsoletePage.resolve({ ...emptyResponse, rows: [rowFor("OLD-PAGE")], total: 60 });
+        } else {
+          obsoletePage.reject(new Error("Obsolete page unavailable"));
+        }
+        await flushEffects();
+      });
+
+      expect(latest!.rows[0]?.symbol).toBe("DAY");
+      expect(latest!.metadata.windowCode).toBe("1D");
+      expect(latest!.window).toBe("1D");
+      expect(latest!.page).toBe(1);
+      expect(latest!.error).toBeNull();
+      expect(latest!.loading).toBe(false);
+    } finally {
+      renderer?.unmount();
+    }
+  });
+
   it("retains safe response metadata for the assumptions UI", async () => {
     const metadata = {
       benchmark: "^AXJO",

@@ -177,6 +177,8 @@ class TopPicksSnapshotCache:
 
     @staticmethod
     def _key_prefix(key):
+        if len(key) >= 7 and key[0] == "top-picks-snapshot":
+            return tuple(key[:-2])
         return tuple(key[:2]) if len(key) >= 2 else tuple(key[:1])
 
     def _load_persisted_entries(self):
@@ -585,15 +587,31 @@ class TopPicksService:
             latest, latest_status = self._snapshot_cache.get_latest_stale(
                 excluded_key=cache_key,
             )
-        if latest is not None:
-            self._refresh_windows_in_background(
-                window,
-                force_refresh=force_refresh,
-            )
-            return latest, latest_status, True
+            if latest is not None:
+                self._refresh_windows_in_background(
+                    window,
+                    force_refresh=True,
+                )
+                return latest, latest_status, True
 
         if force_refresh:
             self._market_cache_clearer()
+
+        if not force_refresh:
+            cached, cache_status = self._snapshot_cache.get(cache_key)
+            if cached is not None:
+                refreshing = cache_status == "stale"
+                if refreshing:
+                    self._refresh_windows_in_background(window)
+                return cached, cache_status, refreshing
+
+            latest, latest_status = self._snapshot_cache.get_latest_stale(
+                excluded_key=cache_key,
+                prefix=self._snapshot_cache_prefix(window),
+            )
+            if latest is not None:
+                self._refresh_windows_in_background(window)
+                return latest, latest_status, True
 
         snapshot = self._build_snapshot(start_date, end_date, window)
         self._snapshot_cache.set(
@@ -741,9 +759,14 @@ class TopPicksService:
             return (today - timedelta(days=45)).isoformat()
         return _one_year_before(today).isoformat()
 
-    @staticmethod
-    def _snapshot_cache_prefix(window):
-        return ("top-picks-snapshot", window)
+    def _snapshot_cache_prefix(self, window):
+        return (
+            "top-picks-snapshot",
+            window,
+            self._benchmark_ticker,
+            self._risk_free_rate,
+            self._universe_limit,
+        )
 
     def _snapshot_cache_key(
         self,
@@ -752,11 +775,7 @@ class TopPicksService:
         end_date,
     ):
         return (
-            "top-picks-snapshot",
-            window,
-            self._benchmark_ticker,
-            self._risk_free_rate,
-            self._universe_limit,
+            *self._snapshot_cache_prefix(window),
             start_date,
             end_date,
         )
