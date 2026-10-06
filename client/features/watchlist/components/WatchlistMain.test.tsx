@@ -141,6 +141,7 @@ describe("WatchlistMain interactions", () => {
       moveItem: jest.fn<any>().mockResolvedValue(true),
       removeItem: jest.fn<any>().mockResolvedValue(true),
       retry: jest.fn<any>().mockResolvedValue(undefined),
+      sessionKey: "0:user-a",
       updateItem: jest.fn<any>().mockResolvedValue(true),
     };
     mockQuotes = {
@@ -215,6 +216,45 @@ describe("WatchlistMain interactions", () => {
     expect(renderer!.root.findAllByType("h2").some((heading) =>
       heading.children.includes("Build your research shortlist"),
     )).toBe(true);
+    renderer!.unmount();
+  });
+
+  it.each(["edit", "remove"])("discards the old account's %s dialog and local inputs immediately on account change", async (action) => {
+    mockController.authenticated = true;
+    mockController.items = [item("CBA.AX", 0)];
+    let renderer: ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(<WatchlistMain />);
+      await Promise.resolve();
+    });
+    act(() => {
+      renderer!.root.findByProps({ id: "watchlist-symbol-search" }).props.onChange({ target: { value: "private query" } });
+      renderer!.root.findByProps({ "aria-label": action === "edit" ? "Edit CBA.AX research note" : "Remove CBA.AX from watchlist" }).props.onClick();
+    });
+    if (action === "edit") {
+      act(() => renderer!.root.findByProps({ id: "watchlist-note" }).props.onChange({ target: { value: "Unsaved A private draft" } }));
+    }
+    const previous = mockController;
+    mockController = {
+      ...mockController,
+      items: [],
+      loading: true,
+      sessionKey: "1:user-b",
+    };
+    act(() => renderer!.update(<WatchlistMain />));
+    expect(renderer!.root.findAllByProps({ id: "watchlist-note" })).toHaveLength(0);
+    expect(renderer!.root.findAllByType("button").some((button) => button.children.includes("Remove Item"))).toBe(false);
+    expect(JSON.stringify(renderer!.toJSON())).not.toContain("Unsaved A private draft");
+    expect(JSON.stringify(renderer!.toJSON())).not.toContain("Review the next result");
+
+    mockController.loading = false;
+    mockController.items = [{ ...item("CBA.AX", 0), note: "Account B research", userId: "user-b" }];
+    act(() => renderer!.update(<WatchlistMain />));
+    expect(renderer!.root.findByProps({ id: "watchlist-symbol-search" }).props.value).toBe("");
+    expect(previous.removeItem).not.toHaveBeenCalled();
+    expect(previous.updateItem).not.toHaveBeenCalled();
+    act(() => renderer!.root.findByProps({ "aria-label": "Edit CBA.AX research note" }).props.onClick());
+    expect(renderer!.root.findByProps({ id: "watchlist-note" }).props.value).toBe("Account B research");
     renderer!.unmount();
   });
 

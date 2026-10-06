@@ -1,6 +1,7 @@
 import { useAuth } from "@/features/auth";
 import { useEffect, useRef, useState } from "react";
 import { fetchTopPicks } from "../api/fetchTopPicks";
+import { subscribeToTopPicksUpdates } from "../api/subscribeToTopPicksUpdates";
 import {
   getDefaultVisibleTopPicksColumns,
   getDefaultVisibleTopPicksColumnsForWindow,
@@ -19,7 +20,6 @@ const errorMessage = (reason: unknown): string =>
   reason instanceof Error && reason.message.trim()
     ? reason.message
     : "Unable to load Top Picks.";
-const LIVE_REFRESH_POLL_MS = 20_000;
 
 type RankingSnapshot = {
   queryKey: string;
@@ -61,6 +61,9 @@ export function useTopPicksController() {
     error: null,
   });
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const [loadedSubscriptionScope, setLoadedSubscriptionScope] = useState<
+    string | null
+  >(null);
   const requestInFlightRef = useRef(false);
 
   const windowMetricKeys = getTopPicksWindowMetricKeys(selectedWindow);
@@ -105,17 +108,22 @@ export function useTopPicksController() {
     };
 
     const load = async () => {
+      const forceRefresh =
+        refreshRequest.forceRefresh &&
+        lastConsumedForceTokenRef.current !== refreshRequest.token;
+      if (forceRefresh) lastConsumedForceTokenRef.current = refreshRequest.token;
       const response = await fetchTopPicks({
         page,
         pageSize,
         sortKey: effectiveSort.key,
         sortDirection: effectiveSort.dir,
         window: selectedWindow,
-        forceRefresh: refreshRequest.forceRefresh,
+        forceRefresh,
         signal: abortController.signal,
       });
       if (active) {
         applyResponse(response);
+        setLoadedSubscriptionScope(subscriptionScope);
       }
     };
 
@@ -151,23 +159,52 @@ export function useTopPicksController() {
     effectiveSort.dir,
     effectiveSort.key,
     selectedWindow,
+    subscriptionScope,
   ]);
 
   const controllerScopeReady = preferenceScopeReady && columnsScopeReady;
 
   useEffect(() => {
-    if (!controllerScopeReady) return;
+    if (
+      !controllerScopeReady ||
+      loadedSubscriptionScope !== subscriptionScope
+    ) {
+      return;
+    }
 
-    const interval = globalThis.setInterval(() => {
-      if (requestInFlightRef.current) return;
-      setRefreshRequest(({ token }) => ({
-        token: token + 1,
-        forceRefresh: true,
-      }));
-    }, LIVE_REFRESH_POLL_MS);
+    let active = true;
+    const unsubscribe = subscribeToTopPicksUpdates({
+      window: selectedWindow,
+      onUpdate: () => {
+        if (!active) return;
+        if (requestInFlightRef.current) {
+          snapshotReadPendingRef.current = true;
+          return;
+        }
+        requestInFlightRef.current = true;
+        setRefreshRequest(({ token }) => ({
+          token: token + 1,
+          forceRefresh: false,
+        }));
+      },
+      onRefreshError: () => {
+        if (active) {
+          setError("Unable to refresh Top Picks. Retrying automatically.");
+        }
+      },
+    });
 
-    return () => globalThis.clearInterval(interval);
-  }, [controllerScopeReady]);
+    return () => {
+      active = false;
+      snapshotReadPendingRef.current = false;
+      unsubscribe();
+    };
+  }, [
+    controllerScopeReady,
+    loadedSubscriptionScope,
+    selectedWindow,
+    subscriptionScope,
+  ]);
 
   const currentSnapshot =
     controllerScopeReady && snapshot?.queryKey === queryKey ? snapshot : null;

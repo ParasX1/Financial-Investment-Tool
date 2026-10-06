@@ -62,7 +62,7 @@ export function TopPicksTable({
   const stateMessage =
     loading && rows.length === 0
       ? "Loading Top Picks..."
-      : error
+      : error && rows.length === 0
         ? "Top Picks could not be loaded."
         : rows.length === 0
           ? "No Top Picks are available."
@@ -213,7 +213,7 @@ export function TopPicksTable({
         pageSize={pageSize}
         totalPages={totalPages}
         loading={loading}
-        error={error}
+        error={rows.length === 0 ? error : null}
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
