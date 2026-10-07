@@ -76,32 +76,16 @@ can still start without Supabase configuration, but endpoints that require it
 return a configuration error.
 
 Top Picks includes `data/top-picks-seed.zip` with initial market history and
-calculated snapshots. When the default runtime caches are missing, the backend
-imports this package so existing results can appear while current prices update
-in the background. These initial results retain their original update time.
-Existing caches are preserved, and runtime files under `server/.cache/` remain
-Git-ignored. Custom cache destinations require an explicit `TOP_PICKS_SEED_PATH`
-pointing to the package; an empty value disables seed loading.
+calculated snapshots. Missing default runtime caches are initialized from this
+package, so saved results can appear while current prices update. Existing
+caches are preserved, and runtime files under `server/.cache/` remain Git-ignored.
 
 While any app page is open, a shared Top Picks event subscription keeps the
-backend updating all ranking windows continuously, including on Portfolio,
-Dashboard, and Guide. Returning to Top Picks reads the latest saved snapshot.
-The app and table reuse the same connection for the same window, and all
-subscribers in a backend process share one refresh worker. Closing the last app
-connection lets any active or queued refresh finish before that worker stops.
-Set `NEXT_PUBLIC_TOP_PICKS_BACKGROUND_REFRESH=false` to disable app-wide
-background updates; the legacy `NEXT_PUBLIC_TOP_PICKS_PREWARM=false` also opts
-out. The Top Picks page still subscribes while it is open.
-
-After a background refresh calculates all windows, saves the caches, and sends
-the completion notification, the existing refresh thread updates
-`data/top-picks-seed.zip` from those caches. This does not download prices again
-or delay the completion notification. If exporting fails, the previous package
-is preserved and normal refreshes continue. Automatic export is enabled by
-default; set `TOP_PICKS_SEED_SYNC=false` to disable it. It is disabled
-when `TESTING` is enabled and only runs with the default snapshot and history
-paths and the normal market provider. `TOP_PICKS_SEED_PATH` changes the import
-source only; automatic export always uses the repository package above.
+backend updating all ranking windows continuously. Returning to Top Picks reads
+the latest saved snapshot. See the consolidated
+[Top Picks Sprint Review](docs/top-picks-sprint-review-2026-10-07.md)
+for download and cache behavior, merge repairs, subscription lifecycle, seed
+import/export, configuration switches, performance measurements, and validation.
 
 To export manually, including from custom caches, run from the repository root:
 
@@ -109,13 +93,9 @@ To export manually, including from custom caches, run from the repository root:
 python scripts/export_top_picks_seed.py
 ```
 
-The command also accepts `--snapshot`, `--history`, and `--output`. Without
-`--history`, its path is derived from `--snapshot` by appending
-`.history.sqlite3`. Exporting does not download prices. The package is initial
-data for a Git version. Updating it does not commit or push to GitHub; submit the
-updated package through your normal Git workflow. Ongoing updates without
-visitors require a separate scheduler. See the
-[Top Picks history notes](docs/top-picks-incremental-history-2026-10-03.zh-CN.md).
+The command also accepts `--snapshot`, `--history`, and `--output`. Exporting does
+not download prices or commit the package; submit it through your normal Git
+workflow. Ongoing updates without visitors require a separate scheduler.
 
 ### Supabase
 

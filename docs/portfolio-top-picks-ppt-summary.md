@@ -62,7 +62,7 @@ Top Picks is now a scalable single-stock discovery surface. It ranks individual 
 
 - **Backend-driven ranking** replaces browser-side ranking assembly. The frontend now calls one `/api/top-picks` endpoint instead of combining multiple metric endpoints itself.
 - **Shared metric calculators** keep Top Picks aligned with Portfolio where possible, including cumulative return, Sharpe ratio, Sortino ratio, volatility, drawdown, beta, and alpha.
-- **Trailing one-year ranking window** keeps Top Picks focused on comparable single-stock performance, while Portfolio remains user-date-range driven.
+- **Day, Week, Month, and Year ranking windows** compare stocks over explicit periods, while Portfolio remains user-date-range driven.
 - **Ranking value compression** turns some time-series calculations into sortable table values, while Portfolio keeps richer chart views.
 - **Information ratio** was added as a Top Picks ranking metric for active-return efficiency.
 - **Larger stock universe support** removes dependence on the old 22-symbol seed table.
@@ -71,16 +71,16 @@ Top Picks is now a scalable single-stock discovery surface. It ranks individual 
 ### Added Capabilities
 
 - Backend snapshot cache for complete Top Picks rankings.
-- Persistent local snapshot file at `server/.cache/top-picks-snapshot-cache.json`.
 - Stale snapshot behavior, so previous full results can display immediately while a fresh ranking rebuilds.
-- Frontend polling every 20 seconds during background snapshot refresh.
-- Global Top Picks prewarm, delayed so it warms the backend without duplicating direct page loads.
-- Portfolio route exclusion from prewarm, preventing Top Picks background work from slowing Portfolio analysis.
+- SSE notifications update the open table when a new snapshot is saved.
+- An app-wide subscription keeps all ranking windows refreshing on Portfolio, Dashboard, Guide, and other pages; returning to Top Picks reads the latest saved result.
 - Universe sync script for standard index sources, including S&P 500 and ASX 200 presets.
 - Yahoo Finance ticker normalization for US class shares, Australian `.AX` symbols, and Hong Kong `.HK` symbols.
 - Supabase preference persistence for sorting and page size.
 - Scoped localStorage for visible table columns.
 - Stronger response validation for rows, metric statuses, warnings, and metadata.
+
+The consolidated [Top Picks Sprint Review](top-picks-sprint-review-2026-10-07.md) records delivered improvements, measured outcomes, timing reports, validation and the review walkthrough. Its appendix contains the implementation, configuration switches and raw measurement references.
 
 ## Product Relationship
 
