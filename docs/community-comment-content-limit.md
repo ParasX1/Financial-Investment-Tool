@@ -10,7 +10,7 @@ policies, attachment rules, or existing content.
 | Requirement                     | Decision and evidence                                                                                                                                                                                                                                                                                                          |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Matching character limits       | JavaScript `Array.from(text).length` matches PostgreSQL UTF-8 `char_length(body)`. ASCII, BMP, astral, and combining-mark controls pass at 2,000 and fail at 2,001. Combining marks count separately; the limit does not count grapheme clusters or UTF-8 bytes.                                                               |
-| Accessible feedback before work | The composer shows the count, links its error with `aria-describedby`, sets `aria-invalid`, and disables Reply above the limit. Its submit guard also handles a direct submit event. The feed action validates before uploads or local mutations; the service and repository facade validate before writes or legacy fallback. |
+| Accessible feedback before work | The composer shows the count, links its error with `aria-describedby`, sets `aria-invalid`, and disables Reply above the limit. Its submit guard also handles a direct submit event. The feed action validates before uploads or local mutations; the service validates before either persistence adapter or legacy fallback. |
 | Native textarea limit           | HTML `maxlength` counts UTF-16 code units. The 4,000-unit ceiling accommodates every valid 2,000-code-point string, including 2,000 emoji. The shared validator enforces the semantic 2,000-character limit.                                                                                                                   |
 | Existing content contracts      | Database NULL, empty, whitespace-only, and image-only bodies remain allowed. The service retains its empty/image-only contract. The existing composer still requires non-whitespace text and trims accepted submitted text. Validation counts the raw draft first.                                                             |
 | No automatic rewriting          | The migration adds a validated CHECK without a backfill or truncation. Existing overlong rows make application fail for review; the migration does not silently rewrite them. Accepted service/repository text is stored unchanged.                                                                                            |
@@ -20,6 +20,11 @@ The writer search found one production path:
 insertCommunityCommentRow -> current or legacy adapter`. The adapters have no
 other production callers. The database constraint also protects direct clients.
 UI validation improves feedback; database enforcement remains authoritative.
+The service checks text once before either current/legacy persistence adapter;
+the internal repository trusts that validated immutable value. The hook keeps
+its separate pre-upload check. This removes one repeated internal guard without
+weakening the supported write path or the database CHECK. Accepted legacy text
+and oversized service calls have explicit controls.
 
 ## Verification on 9 October 2026
 

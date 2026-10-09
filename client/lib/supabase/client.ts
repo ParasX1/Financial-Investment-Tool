@@ -10,6 +10,10 @@ const supabaseKey =
   configuredPublishableKey ?? "missing-supabase-publishable-key";
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabaseBrowserConfig = {
+  url: supabaseUrl,
+  publishableKey: supabaseKey,
+};
 
 export function getConfiguredSupabaseClient(): SupabaseClient | null {
   return configuredUrl && configuredPublishableKey ? supabase : null;

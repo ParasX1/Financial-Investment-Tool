@@ -51,6 +51,7 @@ function buildProfile(overrides: Record<string, unknown> = {}) {
       phone: "",
     },
     resendVerification: jest.fn<any>(),
+    retryProfile: jest.fn<any>(),
     saveEmail: jest.fn<any>(),
     saveIdentity: jest.fn<any>(),
     savePhone: jest.fn<any>(),
@@ -190,6 +191,34 @@ describe("ProfileMain account-scoped dialog drafts", () => {
 
   beforeEach(() => {
     mockProfile = buildProfile();
+  });
+
+  it("offers in-place retry only after the initial profile load fails", () => {
+    mockProfile = buildProfile({
+      profileSnapshot: null,
+      message: {
+        tone: "error",
+        text: "Profile details could not be loaded. Please try again.",
+      },
+    });
+    let view!: ReactTestRenderer;
+    act(() => {
+      view = TestRenderer.create(<ProfileMain />);
+    });
+    const retry = view.root
+      .findAllByType("button")
+      .find((button) => button.children.includes("Retry profile"));
+    expect(retry).toBeDefined();
+    act(() => retry!.props.onClick());
+    expect(mockProfile.retryProfile).toHaveBeenCalledTimes(1);
+    mockProfile = { ...mockProfile, profileLoading: true, message: null };
+    act(() => view.update(<ProfileMain />));
+    expect(
+      view.root
+        .findAllByType("button")
+        .some((button) => button.children.includes("Retry profile")),
+    ).toBe(false);
+    act(() => view.unmount());
   });
 
   it("closes dialogs and clears password drafts when the auth account changes", () => {

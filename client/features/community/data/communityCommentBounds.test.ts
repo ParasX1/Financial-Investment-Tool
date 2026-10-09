@@ -1,6 +1,5 @@
 // Bypassing the composer must still validate before any database write/fallback.
 import { createCommunityComment } from "./communityService";
-import { insertCommunityCommentRow } from "./communityRepository";
 
 function createDatabase() {
   const insert = jest.fn();
@@ -27,7 +26,7 @@ function createDatabase() {
     },
     from: jest.fn(() => query),
   } as any;
-  return { db, insert };
+  return { db, insert, query };
 }
 
 describe("Community comment write boundaries", () => {
@@ -50,17 +49,32 @@ describe("Community comment write boundaries", () => {
     },
   );
 
-  it("rejects a direct repository call before current or legacy writes", async () => {
-    const { db } = createDatabase();
-    await expect(
-      insertCommunityCommentRow({
-        db,
-        postId: "post-1",
-        text: "x".repeat(2001),
-        uid: "user-1",
-      }),
-    ).rejects.toThrow("Keep the comment to 2,000 characters or fewer.");
-    expect(db.from).not.toHaveBeenCalled();
+  it("preserves accepted text through the supported legacy adapter", async () => {
+    const text = "界".repeat(2000);
+    const { db, insert, query } = createDatabase();
+    query.single
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: "42703", message: 'column "image_path" does not exist' },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "legacy-comment",
+          body: text,
+          created_at: "2026-10-09T00:00:00Z",
+        },
+        error: null,
+      });
+    await createCommunityComment({
+      authorId: "user-1",
+      db,
+      postId: "post-1",
+      text,
+    });
+    expect(insert).toHaveBeenCalledTimes(2);
+    expect(insert).toHaveBeenLastCalledWith(
+      expect.objectContaining({ body: text }),
+    );
   });
 
   it.each([

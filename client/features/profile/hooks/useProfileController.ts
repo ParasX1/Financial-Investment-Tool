@@ -114,9 +114,15 @@ export function useProfileController(
     null,
   );
   const [profileLoading, setProfileLoading] = React.useState(false);
+  const [loadAttempt, retryProfile] = React.useReducer(
+    (attempt: number) => attempt + 1,
+    0,
+  );
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [message, setMessage] = React.useState<ProfileMessage | null>(null);
-  const [pendingEmailOverride, setPendingEmailOverride] = React.useState("");
+  const [pendingEmailOverride, setPendingEmailOverride] = React.useState<
+    string | null
+  >(null);
 
   const [savingDetails, setSavingDetails] = React.useState(false);
   const [savingContact, setSavingContact] = React.useState(false);
@@ -137,7 +143,7 @@ export function useProfileController(
       setAvatarPreviewUrl(null);
       setProfileSnapshot(null);
       setProfileOwner(null);
-      setPendingEmailOverride("");
+      setPendingEmailOverride(null);
       setErrors({});
       setMessage(null);
       setProfileLoading(false);
@@ -165,7 +171,7 @@ export function useProfileController(
     setAvatarPreviewUrl(null);
     setProfileSnapshot(null);
     setProfileOwner(owner);
-    setPendingEmailOverride("");
+    setPendingEmailOverride(null);
     setErrors({});
     setMessage(null);
     setProfileLoading(true);
@@ -177,7 +183,10 @@ export function useProfileController(
 
     const loadProfile = async () => {
       try {
-        const details = await usersRepository.findByUserId(authUserId);
+        const [details, emailChange] = await Promise.all([
+          usersRepository.findByUserId(authUserId),
+          accountClient.getEmailChangeStatus({ userId: authUserId }),
+        ]);
 
         if (!active || !isSessionCurrent(authUserId, authSession.token)) return;
 
@@ -199,11 +208,12 @@ export function useProfileController(
         setAvatarVersion(Date.now());
         setAvatarPreviewUrl(null);
         setProfileSnapshot(nextProfile);
+        setPendingEmailOverride(emailChange.pendingEmail ?? "");
       } catch {
         if (!active || !isSessionCurrent(authUserId, authSession.token)) return;
         setMessage({
           tone: "error",
-          text: "Profile details could not be loaded. Refresh the page or sign in again.",
+          text: "Profile details could not be loaded. Please try again.",
         });
       } finally {
         if (active && isSessionCurrent(authUserId, authSession.token)) {
@@ -218,17 +228,19 @@ export function useProfileController(
       active = false;
     };
   }, [
+    accountClient,
     authEmail,
     authLoading,
     authSession.token,
     authUserId,
     isSessionCurrent,
+    loadAttempt,
     usersRepository,
   ]);
 
   React.useEffect(() => {
     if (!user?.new_email && !user?.email_change_sent_at) {
-      setPendingEmailOverride("");
+      setPendingEmailOverride(null);
     }
   }, [user?.email_change_sent_at, user?.new_email]);
 
@@ -244,9 +256,9 @@ export function useProfileController(
   );
   const profileVisible = Boolean(
     !authLoading &&
-    user &&
-    profileOwner?.userId === user.id &&
-    profileOwner.sessionToken === authSession.token,
+      user &&
+      profileOwner?.userId === user.id &&
+      profileOwner.sessionToken === authSession.token,
   );
   const profileReady =
     profileVisible && Boolean(profileSnapshot) && !profileLoading;
@@ -305,7 +317,9 @@ export function useProfileController(
   );
   const pendingEmail = sanitizeEmail(
     !authLoading && user
-      ? user.new_email || (profileVisible ? pendingEmailOverride : "")
+      ? profileVisible
+        ? (pendingEmailOverride ?? user.new_email ?? "")
+        : ""
       : "",
   );
   const hasPendingEmailChange = Boolean(
@@ -417,6 +431,7 @@ export function useProfileController(
       let emailChange;
       try {
         emailChange = await accountClient.requestEmailChange({
+          userId: ownerId,
           email: result.values.email,
           redirectTo: `${window.location.origin}/Profile`,
         });
@@ -671,7 +686,10 @@ export function useProfileController(
       setMessage(null);
 
       try {
-        await accountClient.updatePassword(newPassword);
+        await accountClient.updatePassword({
+          userId: ownerId,
+          password: newPassword,
+        });
       } catch (error) {
         if (isSessionCurrent(ownerId, ownerToken)) {
           setUpdatingPassword(false);
@@ -773,6 +791,7 @@ export function useProfileController(
     ),
     profileSnapshot: profileVisible ? profileSnapshot : null,
     resendVerification,
+    retryProfile,
     saveEmail,
     saveIdentity,
     savePhone,

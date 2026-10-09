@@ -37,21 +37,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let receivedAuthEvent = false;
 
     void (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (mounted) setUser(data.session?.user ?? null);
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (mounted && !receivedAuthEvent) setUser(data.session?.user ?? null);
       } catch {
-        console.error("Unable to restore the authentication session.");
-        if (mounted) setUser(null);
+        if (mounted && !receivedAuthEvent) {
+          console.error("Unable to restore the authentication session.");
+          setUser(null);
+        }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted && !receivedAuthEvent) setLoading(false);
       }
     })();
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
+      if (_event === "INITIAL_SESSION" && receivedAuthEvent) return;
+      receivedAuthEvent = true;
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -63,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
   }, []);
 
