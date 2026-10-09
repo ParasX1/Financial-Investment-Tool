@@ -1,6 +1,7 @@
 // Stable Community repository facade. Current-schema Supabase access and
 // legacy migration compatibility remain separate implementation boundaries.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { validateCommunityCommentContent } from "../lib/communityValidation";
 import {
   normalizeCommunityTickers,
   validateCommunityTickers,
@@ -150,6 +151,8 @@ export async function insertCommunityCommentRow({
   db,
   ...input
 }: CommunityCommentInsert & { db: SupabaseClient }) {
+  const contentError = validateCommunityCommentContent(input.text);
+  if (contentError) throw new Error(contentError);
   const currentResult = await insertCurrentCommunityCommentRow(db, input);
 
   if (!currentResult.error && currentResult.data) return currentResult.data;

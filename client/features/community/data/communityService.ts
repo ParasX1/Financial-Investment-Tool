@@ -5,7 +5,10 @@ import {
   validateCommunityCommentImageReference,
   validateCommunityPostImageReference,
 } from "../lib/communityImageUrls";
-import { validateCommunityPostContent } from "../lib/communityValidation";
+import {
+  validateCommunityCommentContent,
+  validateCommunityPostContent,
+} from "../lib/communityValidation";
 import { getErrorMessage } from "../lib/communityErrors";
 import { commentFromRow, postFromRow } from "../lib/communityMappers";
 import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
@@ -270,6 +273,8 @@ export async function createCommunityComment({
   if (activeUserId !== authorId) {
     throw new Error("Your session changed. Please try again.");
   }
+  const contentError = validateCommunityCommentContent(text);
+  if (contentError) throw new Error(contentError);
   const imageError = validateCommunityCommentImageReference({
     imageUrl,
     imagePath,

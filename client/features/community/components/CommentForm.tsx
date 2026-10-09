@@ -4,11 +4,18 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import communityStyles from "../styles/community.module.css";
-import { COMMENT_IMAGE_TYPES } from "../constants";
+import {
+  COMMENT_IMAGE_TYPES,
+  MAX_COMMUNITY_COMMENT_BODY_CHARS,
+} from "../constants";
 import { FOCUS_VISIBLE, cn, communityUi, fitType } from "../design";
 import type { NewComment } from "../types";
 import { getErrorMessage } from "../lib/communityErrors";
-import { validateCommentImage } from "../lib/communityValidation";
+import {
+  countCommunityCommentCharacters,
+  validateCommentImage,
+  validateCommunityCommentContent,
+} from "../lib/communityValidation";
 import { useAutoResizeTextarea } from "./useAutoResizeTextarea";
 
 export function CommentForm({
@@ -27,6 +34,10 @@ export function CommentForm({
   const fileInput = React.useRef<HTMLInputElement | null>(null);
   const commentInput = useAutoResizeTextarea(text);
   const commentInputId = React.useId();
+  const commentLimitId = `${commentInputId}-limit`;
+  const commentErrorId = `${commentInputId}-error`;
+  const contentError = validateCommunityCommentContent(text);
+  const displayedError = contentError ?? errorMessage;
   const attachImageLabel = canAttachImage
     ? "Attach image"
     : "Sign in to attach images";
@@ -74,6 +85,11 @@ export function CommentForm({
     event.preventDefault();
     if (busy || !text.trim()) return;
 
+    if (contentError) {
+      setErrorMessage(contentError);
+      return;
+    }
+
     setErrorMessage(null);
 
     try {
@@ -104,7 +120,15 @@ export function CommentForm({
         autoComplete="off"
         disabled={busy}
         value={text}
-        onChange={(event) => setText(event.target.value)}
+        // Native maxlength counts UTF-16 units: allow two per code point so a
+        // valid 2,000-emoji comment fits. Code-point validation owns the limit.
+        maxLength={MAX_COMMUNITY_COMMENT_BODY_CHARS * 2}
+        aria-invalid={Boolean(contentError)}
+        aria-describedby={`${commentLimitId}${displayedError ? ` ${commentErrorId}` : ""}`}
+        onChange={(event) => {
+          setText(event.target.value);
+          setErrorMessage(null);
+        }}
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
@@ -114,6 +138,14 @@ export function CommentForm({
           "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
         )}
       />
+
+      <p
+        id={commentLimitId}
+        className={cn("mt-2 text-[#8f98aa]", fitType.caption)}
+      >
+        {countCommunityCommentCharacters(text).toLocaleString("en-US")} /{" "}
+        {MAX_COMMUNITY_COMMENT_BODY_CHARS.toLocaleString("en-US")} characters
+      </p>
 
       {previewUrl ? (
         <div
@@ -184,7 +216,7 @@ export function CommentForm({
 
         <button
           type="submit"
-          disabled={busy || !text.trim()}
+          disabled={busy || !text.trim() || Boolean(contentError)}
           className={cn(
             "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[14px] py-[8px] text-white transition-colors",
             fitType.control,
@@ -198,8 +230,9 @@ export function CommentForm({
         </button>
       </div>
 
-      {errorMessage ? (
+      {displayedError ? (
         <p
+          id={commentErrorId}
           className={cn(
             "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-[#ffd9e2]",
             fitType.bodySm,
@@ -207,7 +240,7 @@ export function CommentForm({
           )}
           role="alert"
         >
-          {errorMessage}
+          {displayedError}
         </p>
       ) : null}
     </form>
