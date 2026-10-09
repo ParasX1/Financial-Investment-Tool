@@ -120,6 +120,7 @@ export async function insertCommunityPostRow(
     db,
     postDraft,
     tickers,
+    uid,
   );
 
   if (currentResult) {

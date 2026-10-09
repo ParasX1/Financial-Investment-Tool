@@ -58,5 +58,6 @@ export function useCommunityFeedController(supabase: SupabaseClient | null) {
     savedPostIds: communityData.savedPostIds,
     loadError: communityData.loadError,
     loadingCommunity: communityData.loadingCommunity,
+    retryLoad: communityData.retryLoad,
   };
 }

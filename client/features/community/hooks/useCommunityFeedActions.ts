@@ -326,6 +326,7 @@ export function useCommunityFeedActions(
         supabase,
         postId,
         !wasLiked,
+        currentUserId!,
       );
       if (!isSessionCurrent(startedSessionKey)) return;
 

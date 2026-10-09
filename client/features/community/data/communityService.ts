@@ -329,8 +329,9 @@ export async function setCommunityPostLike(
   db: SupabaseClient,
   postId: string,
   liked: boolean,
+  expectedUserId: string,
 ) {
-  return setCommunityPostLikeValue(db, postId, liked);
+  return setCommunityPostLikeValue(db, postId, liked, expectedUserId);
 }
 
 export async function setCommunityPostSaved(
@@ -381,5 +382,6 @@ export async function reportCommunityPost(
     postId: input.postId,
     reason: input.reason,
     details,
+    expectedUserId: input.expectedUserId,
   });
 }

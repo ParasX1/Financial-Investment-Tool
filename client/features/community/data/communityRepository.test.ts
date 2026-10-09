@@ -267,11 +267,12 @@ describe("Community repository", () => {
     };
 
     await expect(
-      setCommunityPostLikeValue(db as any, "post-1", true),
+      setCommunityPostLikeValue(db as any, "post-1", true, "user-1"),
     ).resolves.toBe(12);
 
     expect(db.rpc).toHaveBeenCalledWith("like_community_post", {
       target_post_id: "post-1",
+      p_expected_user_id: "user-1",
     });
   });
 });

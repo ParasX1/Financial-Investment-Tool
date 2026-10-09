@@ -38,6 +38,7 @@ type CommunityResource = {
 type CommunityResourceState = {
   error: string | null;
   loading: boolean;
+  loadAttempt: number;
   ownerKey: string;
   resource: CommunityResource;
 };
@@ -135,6 +136,7 @@ function createInitialState({
     return {
       error: null,
       loading: false,
+      loadAttempt: 0,
       ownerKey,
       resource: createDemoResource(),
     };
@@ -145,6 +147,7 @@ function createInitialState({
   return {
     error: null,
     loading: !cache,
+    loadAttempt: 0,
     ownerKey,
     resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
   };
@@ -178,6 +181,26 @@ export function useCommunityData(
   );
   const stateIsCurrent = state.ownerKey === ownerKey;
   const resource = stateIsCurrent ? state.resource : EMPTY_RESOURCE;
+  const loadAttempt = state.loadAttempt;
+
+  const retryLoad = React.useCallback(() => {
+    if (!supabase || authLoading) return;
+    setState((current) => {
+      if (
+        current.ownerKey !== ownerKey ||
+        current.loading ||
+        !current.error ||
+        current.resource.posts.length > 0
+      )
+        return current;
+      return {
+        ...current,
+        error: null,
+        loading: true,
+        loadAttempt: current.loadAttempt + 1,
+      };
+    });
+  }, [authLoading, ownerKey, supabase]);
 
   const updateCurrentResource = React.useCallback(
     (update: (current: CommunityResource) => CommunityResource) => {
@@ -260,6 +283,7 @@ export function useCommunityData(
     setState({
       error: null,
       loading: !cache,
+      loadAttempt,
       ownerKey,
       resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
     });
@@ -276,6 +300,7 @@ export function useCommunityData(
             savesError: result.savesError,
           }),
           loading: false,
+          loadAttempt,
           ownerKey,
           resource: createLoadedResource(result),
         });
@@ -297,7 +322,14 @@ export function useCommunityData(
     return () => {
       active = false;
     };
-  }, [authLoading, currentUserId, dependencies, ownerKey, supabase]);
+  }, [
+    authLoading,
+    currentUserId,
+    dependencies,
+    loadAttempt,
+    ownerKey,
+    supabase,
+  ]);
 
   React.useEffect(() => {
     if (!supabase) return;
@@ -372,6 +404,7 @@ export function useCommunityData(
     loadingCommunity:
       !stateIsCurrent || (state.loading && resource.posts.length === 0),
     posts: resource.posts,
+    retryLoad,
     setLikedPostIds,
     setSavedPostIds,
     setPosts,

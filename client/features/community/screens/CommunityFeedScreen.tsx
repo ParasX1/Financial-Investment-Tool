@@ -129,6 +129,7 @@ export function CommunityFeedScreen({
           savingPostIds={community.savingPostIds}
           loadError={community.loadError}
           loading={community.loadingCommunity}
+          onRetry={community.retryLoad}
           onAddComment={community.handleAddComment}
           onDeleteComment={community.requestDeleteComment}
           onDeletePost={community.requestDeletePost}

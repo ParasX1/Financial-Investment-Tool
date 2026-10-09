@@ -333,10 +333,11 @@ describe("Community repository orchestration", () => {
       rpc: jest.fn(async () => ({ data: 4, error: null })),
     };
     await expect(
-      setCommunityPostLikeValue(unlike as any, "post-1", false),
+      setCommunityPostLikeValue(unlike as any, "post-1", false, "user-1"),
     ).resolves.toBe(4);
     expect(unlike.rpc).toHaveBeenCalledWith("unlike_community_post", {
       target_post_id: "post-1",
+      p_expected_user_id: "user-1",
     });
 
     const error = { code: "42501", message: "permission denied" };
@@ -347,6 +348,7 @@ describe("Community repository orchestration", () => {
         } as any,
         "post-1",
         true,
+        "user-1",
       ),
     ).rejects.toBe(error);
   });
@@ -369,6 +371,7 @@ describe("Community repository orchestration", () => {
         postId: "post-1",
         reason: "spam_or_scam",
         details: null,
+        expectedUserId: "user-1",
       }),
     ).rejects.toBe(reportError);
   });
