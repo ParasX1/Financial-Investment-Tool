@@ -40,6 +40,7 @@ function props(posts: PostUI[] = []) {
     savingPostIds: new Set<string>(),
     loadError: null as string | null,
     loading: false,
+    onRetry: jest.fn(),
     onAddComment: jest.fn<any>(),
     onDeleteComment: jest.fn<any>(),
     onDeletePost: jest.fn<any>(),
@@ -83,6 +84,7 @@ describe("CommunityFeed", () => {
       />,
     );
     expect(unavailableHtml).toContain("Community is unavailable");
+    expect(unavailableHtml).toContain("Try again");
     expect(unavailableHtml).not.toContain("No discussions yet.");
     expect(unavailableHtml).not.toContain(
       "Start a discussion to create the first community post.",

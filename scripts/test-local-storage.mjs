@@ -22,6 +22,7 @@ const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ
 const users = [];
 const objects = [];
 const posts = [];
+const probePostTitles = [];
 let checks = 0;
 let primaryFailure;
 const cleanupFailures = [];
@@ -39,6 +40,16 @@ async function request(path, token = local.ANON_KEY, options = {}) {
 function success(result, description) {
   assert.ok(result.status >= 200 && result.status < 300, `${description}: HTTP ${result.status}`);
   checks += 1;
+}
+function rejectedAccountIntent(result, description) {
+  assert.equal(result.status, 403, `${description}: HTTP ${result.status}`);
+  assert.equal(result.data.code, '42501', `${description}: database ownership rejection`);
+  checks += 1;
+}
+function rpc(name, input, user) {
+  return request(`/rest/v1/rpc/${name}`, user.token, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  });
 }
 async function deniedUpload(bucket, name, user) {
   const result = await request(`/storage/v1/object/${bucket}/${name}`, user.token, {
@@ -111,16 +122,74 @@ try {
     await ownerDelete(bucket, name, owner.token);
     objects.pop();
   }
-  // A post deletion cascades comment rows, but does not authorize its author
-  // to remove image objects uploaded by another comment author.
-  const post = await request('/rest/v1/posts', owner.token, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
-    body: JSON.stringify({ title: 'Local deletion cleanup test', author_id: owner.id }),
-  });
-  success(post, 'owner post creation through REST');
-  assert.ok(post.data[0]?.id, 'REST returns the created post');
+  // Real Auth-issued JWTs exercise the expected actor at the Data API boundary.
+  const createInput = {
+    p_expected_author_id: owner.id, p_title: 'Local deletion cleanup test', p_body: null,
+    p_tags: [], p_post_type: 'discussion', p_time_frame: null, p_tickers: [],
+    p_source_url: null, p_image_url: null, p_image_path: null,
+  };
+  const post = await rpc('create_community_post_with_tickers', createInput, owner);
+  success(post, 'owner post creation through expected-account RPC');
+  assert.ok(post.data[0]?.id, 'RPC returns the created post');
   const postId = post.data[0].id;
   posts.push(postId);
+  assert.equal(post.data[0].author_id, owner.id, 'same-owner create retains the expected author');
+  checks += 1;
+  const rejectedTitle = `Switched account draft ${randomUUID()}`;
+  probePostTitles.push(rejectedTitle);
+  const switchedCreate = await rpc('create_community_post_with_tickers', {
+    ...createInput, p_title: rejectedTitle,
+  }, other);
+  if (Array.isArray(switchedCreate.data)) {
+    for (const row of switchedCreate.data) {
+      if (typeof row.id === 'string') posts.push(row.id);
+    }
+  }
+  rejectedAccountIntent(switchedCreate, 'B JWT cannot publish A intent');
+  const rejectedRows = await request(`/rest/v1/posts?title=eq.${encodeURIComponent(rejectedTitle)}&select=id`, owner.token);
+  success(rejectedRows, 'read rejected account draft');
+  assert.deepEqual(rejectedRows.data, [], 'rejected create leaves no post');
+  checks += 1;
+
+  const ownerLikeInput = { target_post_id: postId, p_expected_user_id: owner.id };
+  const ownerLike = await rpc('like_community_post', ownerLikeInput, owner);
+  success(ownerLike, 'same-owner like succeeds');
+  assert.equal(ownerLike.data, 1, 'owner like adds one vote');
+  checks += 1;
+  rejectedAccountIntent(await rpc('like_community_post', ownerLikeInput, other), 'B JWT cannot like for A intent');
+  rejectedAccountIntent(await rpc('unlike_community_post', ownerLikeInput, other), 'B JWT cannot unlike for A intent');
+  const otherLikeInput = { target_post_id: postId, p_expected_user_id: other.id };
+  const otherLike = await rpc('like_community_post', otherLikeInput, other);
+  success(otherLike, 'B JWT with B intent can independently like');
+  assert.equal(otherLike.data, 2, 'each matched account has one like');
+  checks += 1;
+  const otherUnlike = await rpc('unlike_community_post', otherLikeInput, other);
+  success(otherUnlike, 'B JWT with B intent can unlike');
+  assert.equal(otherUnlike.data, 1, 'matched B unlike leaves A like');
+  checks += 1;
+  const ownerUnlike = await rpc('unlike_community_post', ownerLikeInput, owner);
+  success(ownerUnlike, 'same-owner unlike succeeds');
+  assert.equal(ownerUnlike.data, 0, 'matched A unlike restores zero votes');
+  checks += 1;
+
+  const saveInput = { post_id: postId, user_id: owner.id };
+  const reportInput = { post_id: postId, reporter_id: owner.id, reason: 'other' };
+  for (const [table, input] of [['post_saves', saveInput], ['post_reports', reportInput]]) {
+    rejectedAccountIntent(await request(`/rest/v1/${table}`, other.token, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+    }), `B JWT cannot insert A ${table} intent`);
+    success(await request(`/rest/v1/${table}`, owner.token, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+    }), `same-owner ${table} succeeds`);
+    const otherRows = await request(`/rest/v1/${table}?post_id=eq.${postId}&select=post_id`, other.token);
+    success(otherRows, `read B ${table} after mismatch`);
+    assert.deepEqual(otherRows.data, [], `mismatch creates no B ${table} row`);
+    checks += 1;
+  }
+
+  // A post deletion cascades comment rows, but does not authorize its author
+  // to remove image objects uploaded by another comment author. This source
+  // branch still records the orphan boundary; cleanup is a separate candidate.
   const commentImage = `comments/${postId}/${randomUUID()}.png`;
   objects.push({ bucket: 'comment-images', name: commentImage });
   success(await request(`/storage/v1/object/comment-images/${commentImage}`, other.token, {
@@ -171,6 +240,12 @@ try {
     await cleanup(() => request(`/rest/v1/posts?id=eq.${postId}`, local.SERVICE_ROLE_KEY, { method: 'DELETE' }),
       'synthetic post cleanup');
   }
+  // A denied/error response can hide an unexpectedly persisted probe row.
+  // Titles contain this run's random UUID; only those exact fixtures are removed.
+  for (const title of probePostTitles) {
+    await cleanup(() => request(`/rest/v1/posts?title=eq.${encodeURIComponent(title)}`, local.SERVICE_ROLE_KEY, { method: 'DELETE' }),
+      'synthetic account-intent probe cleanup');
+  }
   for (const user of users) {
     await cleanup(() => request(`/auth/v1/admin/users/${user.id}`, local.SERVICE_ROLE_KEY, { method: 'DELETE' }),
       'synthetic account cleanup');
@@ -181,4 +256,4 @@ if (cleanupFailures.length) {
     'Local verification or synthetic resource cleanup failed');
 }
 if (primaryFailure) throw primaryFailure;
-console.log(`Local Auth/Storage API: PASS (${checks} checks including cleanup, two users, two buckets)`);
+console.log(`Local Auth/Community/Storage API: PASS (${checks} checks including cleanup, two users, two buckets)`);

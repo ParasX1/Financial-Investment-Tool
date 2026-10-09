@@ -155,6 +155,12 @@ describe("useCommunityFeedActions", () => {
       void latest!.handleToggleLike("post-1");
     });
     expect(dependencies.setPostLike).toHaveBeenCalledTimes(1);
+    expect(dependencies.setPostLike).toHaveBeenCalledWith(
+      expect.anything(),
+      "post-1",
+      true,
+      "user-a",
+    );
     expect(latest!.posts[0].votes).toBe(3);
     expect(latest!.likedPostIds.has("post-1")).toBe(true);
     expect(latest!.likingPostIds.has("post-1")).toBe(true);

@@ -24,6 +24,7 @@ export function CommunityFeed({
   savingPostIds,
   loadError,
   loading,
+  onRetry,
   onAddComment,
   onDeleteComment,
   onDeletePost,
@@ -45,6 +46,7 @@ export function CommunityFeed({
   savingPostIds: Set<string>;
   loadError: string | null;
   loading: boolean;
+  onRetry: () => void;
   onAddComment: (postId: string, data: NewComment) => Promise<void> | void;
   onDeleteComment: (commentId: string, postId: string) => Promise<void> | void;
   onDeletePost: (postId: string) => Promise<void> | void;
@@ -81,6 +83,13 @@ export function CommunityFeed({
         ) : hardLoadError ? (
           <StatusMessage tone="error" title="Community is unavailable">
             {loadError}
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 block underline underline-offset-4"
+            >
+              Try again
+            </button>
           </StatusMessage>
         ) : posts.length ? (
           posts.map((post) => {
