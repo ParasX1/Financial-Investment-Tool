@@ -75,6 +75,40 @@ used by the frontend. Process environment values take precedence. The backend
 can still start without Supabase configuration, but endpoints that require it
 return a configuration error.
 
+### Start both services and sync explicitly
+
+After installing the client and server dependencies, activate the server's Python
+environment and run `npm run dev` from the repository root. `npm run dev:all` is
+an alias. Both commands start Flask and Next without syncing the Top Picks
+universe. The former `TOP_PICKS_DEV_SYNC_*` flags and delays are no longer used.
+
+Universe sync is a separate action that writes to the configured Supabase project:
+
+```bash
+npm run sync:top-picks -- --preset ASX200
+npm run sync:top-picks -- --preset SP500
+```
+
+Confirm the target project and server credentials before running either command.
+Add `--dry-run` to prepare records without database writes; presets can still
+download public index data. Other arguments supported by
+`scripts/sync_top_picks_universe.py` are forwarded unchanged.
+
+The root runner loads `server/.env` only for Flask and the explicit sync child.
+Inherited process values override those file defaults; the runner sets
+`PYTHONPATH` to `server/`. `FINANCE_DEV_SERVER_PYTHON` selects an executable,
+otherwise the active environment's `python` is used. Next receives the inherited
+environment with server `SUPABASE_*` settings removed and loads its own
+`client/.env.local`. Keep backend secrets in `server/.env`, and never give them a
+`NEXT_PUBLIC_` prefix. The runner does not print environment values and redacts
+configured key/token/password values from forwarded output.
+
+On Ctrl+C or a service failure, the runner stops its direct children, waits for
+their output to close, and sends a force-kill after five seconds if needed.
+Node's child kill does not guarantee termination of descendants created by npm,
+shells, or a Python reloader; check those processes if a port remains occupied.
+Run `npm run test:dev` for the isolated startup/lifecycle regression tests.
+
 Top Picks includes `data/top-picks-seed.zip` with initial market history and
 calculated snapshots. When the default runtime caches are missing, the backend
 imports this package so existing results can appear while current prices update

@@ -1,194 +1,183 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { parseEnv } from "node:util";
 
 const root = process.cwd();
-const serverEnvPath = path.join(root, "server", ".env");
-const defaultCondaPython =
-  "C:\\Users\\Johnny\\miniconda3\\envs\\financeDev-server\\python.exe";
-const python =
-  process.env.FINANCE_DEV_SERVER_PYTHON ||
-  (existsSync(defaultCondaPython) ? defaultCondaPython : "python");
-const asxSyncDelayMs = Number.parseInt(
-  process.env.TOP_PICKS_DEV_SYNC_DELAY_MS || "60000",
-  10,
-);
-const sp500SyncDelayMs = Number.parseInt(
-  process.env.TOP_PICKS_DEV_SYNC_SP500_DELAY_MS || "90000",
-  10,
-);
+const processes = new Set();
+let shuttingDown = false;
+let shutdownTimer;
+let redact = (value) => value;
 
-const processes = [];
-
-const readLocalEnv = (filePath) => {
-  if (!existsSync(filePath)) return {};
-
-  return readFileSync(filePath, "utf8")
-    .split(/\r?\n/)
-    .reduce((env, line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) return env;
-      const match = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(trimmed);
-      if (!match) return env;
-
-      const [, key, rawValue] = match;
-      const value = rawValue
-        .replace(/^(['"])(.*)\1$/, "$2")
-        .trim();
-      return { ...env, [key]: value };
-    }, {});
+// Windows treats environment names case-insensitively. Normalize before merging
+// so the inherited process value wins even when a dotenv key uses another case.
+const mergeEnvironment = (...sources) => {
+  const env = {};
+  for (const source of sources) {
+    for (const [key, value] of Object.entries(source)) {
+      env[process.platform === "win32" ? key.toUpperCase() : key] = value;
+    }
+  }
+  return env;
 };
-
-const localEnv = readLocalEnv(serverEnvPath);
 
 const prefixOutput = (name, stream, output) => {
   let buffer = "";
-  stream.on("data", (chunk) => {
+  const write = (line) => {
+    if (line) output.write(`[${name}] ${redact(line)}\n`);
+  };
+  const flush = () => {
+    write(buffer);
+    buffer = "";
+  };
+  stream?.on("data", (chunk) => {
     buffer += chunk.toString();
     const lines = buffer.split(/\r?\n/);
     buffer = lines.pop() ?? "";
-    lines
-      .filter((line) => line.length > 0)
-      .forEach((line) => output.write(`[${name}] ${line}\n`));
+    lines.forEach(write);
   });
+  stream?.on("end", flush);
+  return flush;
 };
 
-const start = ({ name, command, args, cwd, env = {} }) => {
-  const child = spawn(command, args, {
-    cwd,
-    env: { ...localEnv, ...process.env, ...env },
-    shell: false,
-    stdio: ["inherit", "pipe", "pipe"],
-  });
+const kill = (record, signal) => {
+  if (record.exited || !record.child.pid) return;
+  try {
+    record.child.kill(signal);
+  } catch {
+    // Raw exceptions may contain command arguments or configuration values.
+    console.error(`[dev] Could not stop ${record.name}.`);
+  }
+};
 
-  processes.push(child);
-  prefixOutput(name, child.stdout, process.stdout);
-  prefixOutput(name, child.stderr, process.stderr);
+const stopAll = (code) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  process.exitCode = code;
+  if (!processes.size) return;
+  shutdownTimer = setTimeout(() => {
+    shutdownTimer = undefined;
+    for (const record of processes) kill(record, "SIGKILL");
+  }, 5000);
+  for (const record of processes) kill(record, "SIGTERM");
+};
 
-  child.on("exit", (code, signal) => {
+process.on("SIGINT", () => stopAll(130));
+process.on("SIGTERM", () => stopAll(143));
+
+const start = ({ name, command, args, env, oneShot = false }) => {
+  if (shuttingDown) return;
+  let child;
+  try {
+    child = spawn(command, args, {
+      cwd: root,
+      env,
+      shell: false,
+      windowsHide: true,
+      stdio: [oneShot ? "ignore" : "inherit", "pipe", "pipe"],
+    });
+  } catch {
+    console.error(`[dev] Could not start ${name}. Check the configured executable.`);
+    stopAll(1);
+    return;
+  }
+
+  const record = { name, child, exited: false };
+  processes.add(record);
+  const flushStdout = prefixOutput(name, child.stdout, process.stdout);
+  const flushStderr = prefixOutput(name, child.stderr, process.stderr);
+  child.on("error", () => {
     if (shuttingDown) return;
-    shuttingDown = true;
-    stopAll();
+    console.error(`[dev] ${name} failed to start or encountered a process error.`);
+    stopAll(1);
+  });
+  child.on("exit", (code, signal) => {
+    record.exited = true;
+    if (shuttingDown || oneShot) return;
     const reason = signal ? `signal ${signal}` : `code ${code}`;
     console.error(`[dev] ${name} exited with ${reason}.`);
-    process.exit(code ?? 1);
+    stopAll(code ?? 1);
   });
-
-  return child;
-};
-
-const startOneShot = ({ name, command, args, cwd, env = {} }) => {
-  const child = spawn(command, args, {
-    cwd,
-    env: { ...localEnv, ...process.env, ...env },
-    shell: false,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  prefixOutput(name, child.stdout, process.stdout);
-  prefixOutput(name, child.stderr, process.stderr);
-
-  child.on("exit", (code, signal) => {
-    if (shuttingDown) return;
-    if (code === 0) {
-      console.log(`[${name}] Completed.`);
+  child.on("close", (code, signal) => {
+    flushStdout();
+    flushStderr();
+    processes.delete(record);
+    if (shuttingDown) {
+      if (!processes.size && shutdownTimer) {
+        clearTimeout(shutdownTimer);
+        shutdownTimer = undefined;
+      }
       return;
     }
-    const reason = signal ? `signal ${signal}` : `code ${code}`;
-    console.warn(`[${name}] Skipped or failed with ${reason}.`);
-  });
-
-  return child;
-};
-
-let shuttingDown = false;
-
-const stopAll = () => {
-  processes.forEach((child) => {
-    if (!child.killed) child.kill();
+    if (oneShot) {
+      process.exitCode = code ?? 1;
+      if (code === 0) console.log(`[${name}] Completed.`);
+      else {
+        const reason = signal ? `signal ${signal}` : `code ${code}`;
+        console.error(`[${name}] Failed with ${reason}.`);
+      }
+    }
   });
 };
 
-process.on("SIGINT", () => {
-  shuttingDown = true;
-  stopAll();
-  process.exit(0);
-});
+const main = () => {
+  const [mode, ...syncArgs] = process.argv.slice(2);
+  if (mode && mode !== "--sync-universe") {
+    console.error("Usage: npm run dev | npm run sync:top-picks -- <sync arguments>");
+    process.exitCode = 1;
+    return;
+  }
 
-process.on("SIGTERM", () => {
-  shuttingDown = true;
-  stopAll();
-  process.exit(0);
-});
+  let localEnv;
+  try {
+    const serverEnvPath = path.join(root, "server", ".env");
+    localEnv = existsSync(serverEnvPath)
+      ? parseEnv(readFileSync(serverEnvPath, "utf8"))
+      : {};
+  } catch {
+    console.error("[dev] Could not read server/.env. Check the file and permissions.");
+    process.exitCode = 1;
+    return;
+  }
 
-console.log("");
-console.log("Project link");
-console.log("Client: http://localhost:3000");
-console.log("");
-console.log("[dev] Starting Flask API on http://127.0.0.1:8080");
-console.log("[dev] Starting Next client on http://localhost:3000");
-console.log("[dev] Top Picks universe sync will run in the background.");
-
-start({
-  name: "server",
-  command: python,
-  args: ["-m", "src.server"],
-  cwd: root,
-  env: {
+  const shellEnv = mergeEnvironment(process.env);
+  const backendEnv = mergeEnvironment(localEnv, shellEnv, {
     PYTHONPATH: path.join(root, "server"),
-  },
-});
+  });
+  const privateValues = Object.entries(backendEnv)
+    .filter(([key, value]) => /KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL/i.test(key) && value)
+    .map(([, value]) => value)
+    .sort((left, right) => right.length - left.length);
+  redact = (line) => privateValues.reduce(
+    (text, value) => text.split(value).join("[redacted]"),
+    line,
+  );
+  const python = backendEnv.FINANCE_DEV_SERVER_PYTHON || "python";
+  if (mode === "--sync-universe") {
+    console.log("[dev] Running the explicitly requested Top Picks universe sync.");
+    start({
+      name: "top-picks-sync",
+      command: python,
+      args: [path.join("scripts", "sync_top_picks_universe.py"), ...syncArgs],
+      env: backendEnv,
+      oneShot: true,
+    });
+    return;
+  }
 
-start({
-  name: "client",
-  command: process.platform === "win32" ? "cmd.exe" : "npm",
-  args:
-    process.platform === "win32"
+  console.log("[dev] Starting Flask API on http://127.0.0.1:8080");
+  console.log("[dev] Starting Next client on http://localhost:3000");
+  start({ name: "server", command: python, args: ["-m", "src.server"], env: backendEnv });
+  start({
+    name: "client",
+    command: process.platform === "win32" ? "cmd.exe" : "npm",
+    args: process.platform === "win32"
       ? ["/d", "/s", "/c", "npm", "--prefix", "client", "run", "dev"]
       : ["--prefix", "client", "run", "dev"],
-  cwd: root,
-});
+    // Server dotenv defaults are never merged into Next. Also exclude inherited
+    // server Supabase settings; the client uses its own NEXT_PUBLIC_ settings.
+    env: Object.fromEntries(Object.entries(shellEnv).filter(([key]) => !/^SUPABASE_/i.test(key))),
+  });
+};
 
-if (process.env.TOP_PICKS_DEV_SYNC_ASX200 !== "false") {
-  setTimeout(() => {
-    if (shuttingDown) return;
-    console.log("[dev] Syncing ASX200 universe in the background");
-    startOneShot({
-      name: "top-picks-sync-asx200",
-      command: python,
-      args: [
-        path.join("scripts", "sync_top_picks_universe.py"),
-        "--preset",
-        "ASX200",
-      ],
-      cwd: root,
-      env: {
-        PYTHONPATH: path.join(root, "server"),
-      },
-    });
-  }, Number.isFinite(asxSyncDelayMs) && asxSyncDelayMs >= 0
-    ? asxSyncDelayMs
-    : 60000);
-}
-
-if (process.env.TOP_PICKS_DEV_SYNC_SP500 !== "false") {
-  setTimeout(() => {
-    if (shuttingDown) return;
-    console.log("[dev] Syncing S&P 500 universe in the background");
-    startOneShot({
-      name: "top-picks-sync-sp500",
-      command: python,
-      args: [
-        path.join("scripts", "sync_top_picks_universe.py"),
-        "--preset",
-        "SP500",
-      ],
-      cwd: root,
-      env: {
-        PYTHONPATH: path.join(root, "server"),
-      },
-    });
-  }, Number.isFinite(sp500SyncDelayMs) && sp500SyncDelayMs >= 0
-    ? sp500SyncDelayMs
-    : 90000);
-}
+main();
