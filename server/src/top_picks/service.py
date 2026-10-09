@@ -173,7 +173,74 @@ class TopPicksSnapshotCache:
     @staticmethod
     def _deserialize_key(value):
         decoded = json.loads(value)
-        return tuple(decoded) if isinstance(decoded, list) else None
+        if (not isinstance(decoded, list) or not decoded
+                or any(not isinstance(part, (str, int, float))
+                       or isinstance(part, bool)
+                       or (isinstance(part, float) and not math.isfinite(part))
+                       for part in decoded)):
+            return None
+        return tuple(decoded)
+
+    @staticmethod
+    def _valid_persisted_value(key, value):
+        if not isinstance(value, dict):
+            return False
+        # Other namespaces are used by cache clients with their own values.
+        # Production ranking keys carry the complete calculation context.
+        if len(key) != 7 or key[0] != "top-picks-snapshot":
+            return True
+        _, window, benchmark, rate, limit, start, end = key
+        if (window not in TOP_PICKS_WINDOWS or not isinstance(benchmark, str)
+                or not TICKER_PATTERN.fullmatch(benchmark)
+                or not isinstance(rate, (int, float)) or not -1 <= rate <= 1
+                or not isinstance(limit, int) or not 1 <= limit <= MAX_TICKER_UNIVERSE):
+            return False
+        try:
+            if date.fromisoformat(start).isoformat() != start or date.fromisoformat(end).isoformat() != end or start > end:
+                return False
+        except (TypeError, ValueError):
+            return False
+        rows = value.get("rows")
+        metadata = value.get("metadata")
+        warnings = value.get("warnings")
+        if (not isinstance(rows, list) or not isinstance(metadata, dict)
+                or not isinstance(warnings, list)
+                or any(not isinstance(warning, str) for warning in warnings)):
+            return False
+        context = {
+            "windowCode": window, "benchmark": benchmark,
+            "window": WINDOW_METHODS[window],
+            "riskFreeRate": rate, "universeLimit": limit,
+            "requestedStart": start, "requestedEnd": end,
+        }
+        if any(name in metadata and metadata[name] != expected for name, expected in context.items()):
+            return False
+        assumptions = metadata.get("assumptions", {})
+        if not isinstance(assumptions, dict):
+            return False
+        assumed_context = {
+            "benchmark": benchmark, "riskFreeRateAnnual": rate,
+            "universeLimit": limit, "window": WINDOW_METHODS[window],
+        }
+        if any(name in assumptions and assumptions[name] != expected for name, expected in assumed_context.items()):
+            return False
+        for row in rows:
+            if not isinstance(row, dict) or not isinstance(row.get("symbol"), str) or not row["symbol"]:
+                return False
+            statuses = row.get("metricStatus", {})
+            if not isinstance(statuses, dict) or any(not isinstance(status, str) for status in statuses.values()):
+                return False
+            for metric in METRIC_KEYS:
+                metric_value = row.get(metric)
+                if metric_value is not None:
+                    try:
+                        if (isinstance(metric_value, bool)
+                                or not isinstance(metric_value, (int, float))
+                                or not math.isfinite(metric_value)):
+                            return False
+                    except OverflowError:
+                        return False
+        return True
 
     @staticmethod
     def _key_prefix(key):
@@ -191,30 +258,39 @@ class TopPicksSnapshotCache:
             with open(self._persistence_path, encoding="utf-8") as handle:
                 payload = json.load(handle)
         except (OSError, ValueError, TypeError):
+            LOGGER.warning("Top Picks persisted cache is invalid or unavailable; rebuilding.")
             return
 
+        if not isinstance(payload, dict):
+            LOGGER.warning("Top Picks persisted cache is invalid; rebuilding.")
+            return
         persisted_entries = payload.get("entries")
         if not isinstance(persisted_entries, dict):
+            LOGGER.warning("Top Picks persisted cache is invalid; rebuilding.")
             return
         persisted_latest_key = None
+        invalid_entries = False
         try:
-            persisted_latest_key = self._deserialize_key(
-                payload.get("latest_key")
-            )
+            if payload.get("latest_key") is not None:
+                persisted_latest_key = self._deserialize_key(payload["latest_key"])
+                invalid_entries = persisted_latest_key is None
         except (TypeError, ValueError):
-            persisted_latest_key = None
+            invalid_entries = True
 
         now = self._clock()
         with self._lock:
             loaded_keys = []
             for raw_key, entry in persisted_entries.items():
                 if not isinstance(entry, dict) or "value" not in entry:
+                    invalid_entries = True
                     continue
                 try:
                     key = self._deserialize_key(raw_key)
                 except (TypeError, ValueError):
+                    invalid_entries = True
                     continue
-                if key is None:
+                if key is None or not self._valid_persisted_value(key, entry["value"]):
+                    invalid_entries = True
                     continue
                 # Persisted snapshots are intentionally loaded as stale so the
                 # user sees the last complete ranking immediately while a fresh
@@ -238,6 +314,8 @@ class TopPicksSnapshotCache:
             self._latest_keys = {
                 self._key_prefix(key): key for key in loaded_keys
             }
+        if invalid_entries:
+            LOGGER.warning("Top Picks persisted cache contains invalid entries; retaining valid snapshots and rebuilding missing contexts.")
 
     def _persist_entries(self):
         if not self._persistence_path:
