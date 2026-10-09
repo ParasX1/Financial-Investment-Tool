@@ -407,19 +407,19 @@ supabase db push
 ## 贡献流程
 
 1. 搜索已有 issue 和 PR。在 substantive work 前创建或采用 issue，写明 problem、可复现 evidence、scope 和 acceptance criteria。
-2. Fetch 后从 `origin/DevBranch` 建 branch。使用 `<type>/<issue-number>-<description>`，例如 `fix/250-devbranch-checks`。支持 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`、`hotfix`；一个 cohesive change 可使用多个 issue number，例如 `chore/250-251-quality-gates`。
+2. Fetch 后从 `origin/DevBranch` 建 branch。使用描述清楚的 branch name，例如 `fix/quality-gates`。常见 prefix 包括 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`。可选地加入 issue number，例如 `fix/250-quality-gates` 或 `chore/250-251-quality-gates`；这只是建议，不是 CI requirement。
 3. 先用失败的 behavior 或 boundary test 复现 defect。Docs/configuration 使用 native validator，不创建 artificial application test。
 4. 实现最小 coherent change，在 focused test 保持 green 时 refactor。
 5. 运行受影响的 full-stack check 并获得 independent review；检查最终 diff 中的 secret、artifact 和无关 formatting。
-6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。`Related issue` 必须写入 branch 中的每个 issue number，同时说明 user impact、test 和 deployment/migration requirement。
+6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。说明 user impact、test 和 deployment/migration requirement；如有关联的 local issue，可在 description 任意位置引用。Template 的 `Related issue` heading 是可选的，branch number 不需要与固定 section 匹配。
 7. 解决 review finding，检查实际 GitHub run。只有获得授权的 maintainer 批准后才 merge 到 development branch。创建或 push PR 不代表获得 merge 授权。
 8. 用独立 PR 从 `DevBranch` 到 `main` release，提供 release note、关联 issue 和明确的 release approval。获得授权的 release maintainer 负责 main merge、deployment 和 remote Supabase migration。
 
 `Closes #250` 等 GitHub closing keyword 只有在 PR 的 target 是 repository default branch（`main`）且 merge 后才生效。DevBranch PR 仍应关联 issue 并写明 acceptance criteria；修复尚未 merge 或必要验证未完成时，issue 保持 open，不能因为已有 PR 就 close。若某个 work item 在 release 前已经完成，获得授权的 maintainer 可在提供 merged PR 和 verification evidence 后手动 close。
 
-紧急 production fix 仍需要 issue、`hotfix/<issue-number>-<description>` branch、test 和 reviewed PR。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner；owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查语法，不判断是否已经获得人工批准。
+紧急 production fix 仍需要 issue、`hotfix/<description>` branch、test 和 reviewed PR；branch name 中的 issue number 是可选的。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner，解释中可以使用 nested heading。Owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查是否有解释，不判断是否已经获得人工批准。
 
-`Issue and branch policy` check 读取 PR JSON event file，检查 Related issue、branch name 和 target；使用只读 `pull_request` workflow，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只验证 link syntax；reviewer 必须确认 issue 确实存在且对应本次修改。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
+`Issue and branch policy` check 读取 PR JSON event file。普通 branch name 和 description heading 不会阻止贡献；缺少 local issue link 只会产生不阻塞的提醒。它识别 prose 任意位置的 local `#number`、同一 repository 的 `owner/repo#number` 和 GitHub issue URL，忽略 comment 和 code example。它仍会阻止不支持的 target，以及既不是同一 repository 的 DevBranch promotion、也不是已写明 `hotfix/` emergency exception 的直接到 main 改动。Workflow 使用只读 `pull_request`，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只检查语法；reviewer 必须确认 issue 存在、与改动相关，并核实 release approval。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
 
 Workflow file 会生成 `Frontend quality`、`Mocked browser journeys`、`Backend quality` 和 `Issue and branch policy` check，但不会配置 branch protection。Repository administrator 必须另行配置 DevBranch 和 main 的 required check 与 review rule，并用真实 PR 验证。Contributor 的 write access 不代表有权限修改 repository setting。
 

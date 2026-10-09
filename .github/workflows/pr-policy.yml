@@ -25,5 +25,6 @@ jobs:
       - name: Test the metadata audit
         run: node --experimental-test-coverage --test --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 scripts/check-pr-policy.test.mjs
       # Read the JSON event file. Never interpolate PR text into executable code.
-      - name: Check issue references, branch name and target
+      # Issue-link reminders are advisory; only invalid targets/release exceptions fail.
+      - name: Check release target and issue-link guidance
         run: node scripts/check-pr-policy.mjs
