@@ -41,6 +41,10 @@ project URL 和 browser-safe publishable key。PowerShell 不运行 `source`，�
 Flask API 地址是 `http://127.0.0.1:8080`。环境变量细节见[本地开发](#本地开发)。
 Portfolio analytics 可以在没有 Supabase 时运行，但 Top Picks 需要这两个配置值。
 
+安装好前后端依赖后，先激活 server Python 环境，再在仓库根目录运行
+`npm run dev`，即可启动两个服务。该命令不会同步 Top Picks universe。
+独立的数据库写入命令及环境变量边界见[同时启动与 universe 同步](#同时启动与-universe-同步)。
+
 ## 整体架构
 
 ```mermaid
@@ -330,6 +334,39 @@ PowerShell 改用 `.\.venv\Scripts\Activate.ps1` 激活环境，并使用
 替换为前端所用的同一个 Supabase project URL 和 browser-safe publishable key。
 已有的 process environment 具有更高优先级。这个 public read path 绝不能使用
 secret 或 service-role key。
+
+### 同时启动与 universe 同步
+
+在仓库根目录运行 `npm run dev` 或 `npm run dev:all`，只会启动 Flask 和
+Next。旧的 `TOP_PICKS_DEV_SYNC_*` 开关与延迟同步任务已移除。请先激活 server
+Python 环境，或在 process environment / `server/.env` 中用
+`FINANCE_DEV_SERVER_PYTHON` 指定其 Python executable。
+
+Universe 同步是独立、明确执行的 Supabase 写入操作：
+
+```bash
+npm run sync:top-picks -- --preset ASX200
+npm run sync:top-picks -- --preset SP500
+```
+
+执行前确认目标 project 和凭据。同步任务使用 server 环境，配置了
+`SUPABASE_SERVICE_ROLE_KEY` 时优先使用该 key。添加 `--dry-run` 可以准备记录而不
+写入数据库；preset 仍可能获取公开指数数据。Python 同步脚本支持的其他参数会原样传递。
+
+`server/.env` 只为 Flask 与同步任务提供默认值，已有 process environment 优先，
+launcher 将 `PYTHONPATH` 设为 `server/`。Next 继承的 process environment 会移除
+server `SUPABASE_*` 变量，并使用自己的 `client/.env.local`；不会注入 server dotenv
+值。Backend secret 应保留在 `server/.env`，绝不能使用 `NEXT_PUBLIC_` 名称。
+Launcher 不输出环境变量值，并会遮蔽转发输出中已配置的 key/token/password 值。
+
+关闭时会停止直接启动的 child process，等待输出流关闭，并在五秒后尝试强制停止。
+Node 无法保证 npm、shell 或 Python reloader 创建的后代进程也会结束；端口仍被占用时，
+请检查这些进程。`npm run test:dev` 会运行 fake-process regression 和 launcher
+coverage gate，不会启动服务、获取市场数据或访问 Supabase。
+
+不设置 `TOP_PICKS_CACHE_PATH` 时，两种启动目录都使用相同的 `server/.cache`。
+自定义 cache 请用 absolute path；旧的 `server/.cache/...` 等 relative override
+会按 working directory 解析，切换启动方式前应移除或改为 absolute path。
 
 ### Supabase
 

@@ -42,6 +42,12 @@ The Flask API opens at `http://127.0.0.1:8080`. See [Local setup](#local-setup)
 for environment details. Portfolio analytics can run without Supabase, but Top
 Picks needs those two values.
 
+Once both sets of dependencies are installed, activate the server Python
+environment and run `npm run dev` from the repository root to start both services.
+This command does not sync the Top Picks universe. See
+[Combined startup and universe sync](#combined-startup-and-universe-sync) for the
+separate database-writing command and its environment boundary.
+
 ## Architecture at a glance
 
 ```mermaid
@@ -332,6 +338,44 @@ configuration file with `Copy-Item .env.example .env`.
 Replace the placeholders with the same project URL and browser-safe publishable
 key used by the frontend. Existing process environment values take precedence.
 Never use a secret or service-role key for this public read path.
+
+### Combined startup and universe sync
+
+From the repository root, `npm run dev` (or `npm run dev:all`) starts Flask and
+Next only. The legacy `TOP_PICKS_DEV_SYNC_*` switches and delayed jobs are removed.
+Activate the server Python environment first, or set `FINANCE_DEV_SERVER_PYTHON`
+to its executable in the process environment or `server/.env`.
+
+Sync is an explicit, separate write to the configured Supabase project:
+
+```bash
+npm run sync:top-picks -- --preset ASX200
+npm run sync:top-picks -- --preset SP500
+```
+
+Check the project and credentials first. The sync job uses the server environment
+and prefers `SUPABASE_SERVICE_ROLE_KEY` when configured. Add `--dry-run` to prepare
+records without database writes; presets may still fetch public index data. The
+launcher forwards the Python sync script's other arguments unchanged.
+
+`server/.env` supplies defaults only to Flask and sync. Inherited process values
+take precedence, and the launcher sets `PYTHONPATH` to `server/`. Next inherits
+process settings with server `SUPABASE_*` variables removed, then uses its own
+`client/.env.local`; server dotenv values are never injected into it. Keep backend
+secrets in `server/.env` and never use a `NEXT_PUBLIC_` name for them. The launcher
+does not log environment values and redacts configured key/token/password values
+in forwarded child output.
+
+Shutdown stops direct children, waits for their streams to close, and escalates
+after five seconds. Node cannot guarantee that npm/shell/reloader descendants
+terminate; investigate remaining processes if a port stays busy. Run
+`npm run test:dev` for fake-process regressions and the launcher coverage gate.
+These tests do not start services, fetch market data, or access Supabase.
+
+Leave `TOP_PICKS_CACHE_PATH` unset to use the same `server/.cache` location from
+either startup directory. Use an absolute path for a custom cache. Existing
+relative overrides such as `server/.cache/...` are resolved from the working
+directory and should be removed or made absolute before switching launch methods.
 
 ### Supabase
 
