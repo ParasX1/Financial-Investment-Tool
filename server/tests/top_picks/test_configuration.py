@@ -93,6 +93,15 @@ def test_service_accepts_bounded_injected_assumptions():
         {"cache_ttl_seconds": True},
         {"cache_ttl_seconds": -1},
         {"cache_ttl_seconds": 86_401},
+        {"refresh_interval_seconds": 4},
+        {"refresh_interval_seconds": 3601},
+        {"refresh_interval_seconds": True},
+        {"max_subscribers": 0},
+        {"max_subscribers": 1025},
+        {"max_subscribers_per_client": 0},
+        {"max_subscribers_per_client": 129},
+        {"stream_lifetime_seconds": 29},
+        {"stream_lifetime_seconds": 3601},
     ],
 )
 def test_service_rejects_invalid_assumptions(overrides):

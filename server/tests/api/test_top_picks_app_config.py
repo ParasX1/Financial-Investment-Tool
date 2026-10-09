@@ -35,6 +35,10 @@ def test_app_configures_top_picks_service_assumptions(tmp_path):
             "TOP_PICKS_RISK_FREE_RATE_AS_OF": "2026-07-01",
             "TOP_PICKS_UNIVERSE_LIMIT": 12,
             "TOP_PICKS_CACHE_TTL_SECONDS": 30,
+            "TOP_PICKS_REFRESH_INTERVAL_SECONDS": "15",
+            "TOP_PICKS_MAX_SUBSCRIBERS": "128",
+            "TOP_PICKS_MAX_SUBSCRIBERS_PER_CLIENT": "32",
+            "TOP_PICKS_STREAM_LIFETIME_SECONDS": "600",
             "TOP_PICKS_CACHE_PATH": str(tmp_path / "snapshot.json"),
             "TOP_PICKS_HISTORY_PATH": str(tmp_path / "history.sqlite3"),
             "TOP_PICKS_SEED_PATH": "",
@@ -59,6 +63,10 @@ def test_app_configures_top_picks_service_assumptions(tmp_path):
     assert kwargs["risk_free_rate_as_of"] == "2026-07-01"
     assert kwargs["universe_limit"] == 12
     assert kwargs["cache_ttl_seconds"] == 30
+    assert kwargs["refresh_interval_seconds"] == "15"
+    assert kwargs["max_subscribers"] == "128"
+    assert kwargs["max_subscribers_per_client"] == "32"
+    assert kwargs["stream_lifetime_seconds"] == "600"
 
 
 def test_app_exposes_product_consistent_top_picks_defaults():
@@ -72,6 +80,10 @@ def test_app_exposes_product_consistent_top_picks_defaults():
     assert app.config["TOP_PICKS_RISK_FREE_RATE_AS_OF"] == "2026-06-17"
     assert app.config["TOP_PICKS_UNIVERSE_LIMIT"] == 1000
     assert app.config["TOP_PICKS_CACHE_TTL_SECONDS"] == 600
+    assert app.config["TOP_PICKS_REFRESH_INTERVAL_SECONDS"] == 60
+    assert app.config["TOP_PICKS_MAX_SUBSCRIBERS"] == 64
+    assert app.config["TOP_PICKS_MAX_SUBSCRIBERS_PER_CLIENT"] == 16
+    assert app.config["TOP_PICKS_STREAM_LIFETIME_SECONDS"] == 300
     assert app.config["TOP_PICKS_CACHE_PATH"].endswith(
         os.path.join("server", ".cache", "top-picks-snapshot-cache.json")
     )

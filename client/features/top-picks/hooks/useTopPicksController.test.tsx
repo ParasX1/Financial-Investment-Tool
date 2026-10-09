@@ -1692,6 +1692,60 @@ describe("useTopPicksController", () => {
     }
   });
 
+  it("keeps matching rows while inactive and consumes queued manual force once on recovery", async () => {
+    const keys = ["document", "window", "navigator"] as const;
+    const previous = keys.map((key) => Object.getOwnPropertyDescriptor(globalThis, key));
+    const document = Object.assign(new EventTarget(), { visibilityState: "visible" });
+    const window = new EventTarget();
+    const navigator = { onLine: true };
+    [document, window, navigator].forEach((value, index) =>
+      Object.defineProperty(globalThis, keys[index], { configurable: true, value }),
+    );
+    const pending = deferred<TopPicksResponse>();
+    const response = { ...emptyResponse, rows: [rowFor("MATCHING")], total: 1,
+      metadata: { generatedAt: "2026-10-04T00:00:00Z" } };
+    mockFetchTopPicks.mockResolvedValueOnce(response).mockReturnValueOnce(pending.promise).mockResolvedValue(response);
+    let latest: ReturnType<typeof useTopPicksController> | null = null;
+    let renderer: ReactTestRenderer | undefined;
+    function Probe() { latest = useTopPicksController(); return null; }
+    try {
+      await act(async () => { renderer = TestRenderer.create(<Probe />); await flushEffects(); });
+      await act(async () => { notifySnapshot(); await flushEffects(); });
+      const activeRequest = mockFetchTopPicks.mock.calls[1][0];
+      await act(async () => {
+        document.visibilityState = "hidden";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await flushEffects();
+        latest!.retry();
+        await flushEffects();
+      });
+      expect(activeRequest.signal?.aborted).toBe(true);
+      expect(latest!.rows[0].symbol).toBe("MATCHING");
+      expect(latest!.syncing).toBe(false);
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        navigator.onLine = false; window.dispatchEvent(new Event("offline"));
+        document.visibilityState = "visible"; document.dispatchEvent(new Event("visibilitychange"));
+        await flushEffects();
+      });
+      expect(mockFetchTopPicks).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        navigator.onLine = true; window.dispatchEvent(new Event("online")); await flushEffects();
+        pending.resolve({ ...response, rows: [rowFor("OBSOLETE")] }); await flushEffects();
+      });
+      expect(mockFetchTopPicks.mock.calls[2][0].forceRefresh).toBe(true);
+      expect(latest!.rows[0].symbol).toBe("MATCHING");
+      await act(async () => { latest!.setPage(2); await flushEffects(); });
+      expect(mockFetchTopPicks.mock.calls.slice(3).every(([options]) => !options.forceRefresh)).toBe(true);
+    } finally {
+      act(() => renderer?.unmount());
+      keys.forEach((key, index) => {
+        if (previous[index]) Object.defineProperty(globalThis, key, previous[index]!);
+        else Reflect.deleteProperty(globalThis, key);
+      });
+    }
+  });
+
   it("retains safe response metadata for the assumptions UI", async () => {
     const metadata = {
       benchmark: "^AXJO",

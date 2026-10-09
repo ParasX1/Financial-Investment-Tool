@@ -10,6 +10,7 @@ from ..top_picks.contracts import (
     validate_top_picks_request,
 )
 from ..top_picks.repository import TopPicksDataSourceError
+from ..top_picks.events import SubscriptionLimitError, SUBSCRIPTION_RETRY_SECONDS
 from ..top_picks.service import TopPicksConfigurationError
 from ..top_picks.service import TOP_PICKS_WINDOWS
 
@@ -24,7 +25,13 @@ def create_top_picks_blueprint(service_provider):
             return jsonify({"error": "Top Picks window is invalid."}), 400
         try:
             service = service_provider(current_app)
-            subscription = service.subscribe_updates(window)
+            # Use the actual server peer. Forwarding headers are untrusted here;
+            # trusted proxy identity must be configured at the deployment boundary.
+            subscription = service.subscribe_updates(window, client_id=request.remote_addr)
+        except SubscriptionLimitError:
+            return jsonify({"error": "Top Picks update capacity is busy. Please retry."}), 429, {
+                "Retry-After": str(SUBSCRIPTION_RETRY_SECONDS),
+            }
         except (SupabaseConfigurationError, TopPicksConfigurationError):
             return jsonify({"error": "Top Picks service is not configured."}), 503
         except Exception:
@@ -36,8 +43,13 @@ def create_top_picks_blueprint(service_provider):
                 ready = {"revision": subscription.revision, "window": window}
                 yield f"event: connected\ndata: {json.dumps(ready)}\n\n"
                 while True:
+                    remaining = subscription.remaining_seconds
+                    if remaining <= 0:
+                        subscription.close()
+                        yield f"retry: {SUBSCRIPTION_RETRY_SECONDS * 1000}\nevent: reconnect\ndata: {{}}\n\n"
+                        break
                     try:
-                        update = subscription.get(timeout=15)
+                        update = subscription.get(timeout=min(15, remaining))
                     except Empty:
                         # Transport heartbeat only; does not fetch market data.
                         yield ": keep-alive\n\n"

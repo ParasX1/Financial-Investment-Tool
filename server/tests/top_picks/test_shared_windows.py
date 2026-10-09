@@ -39,6 +39,11 @@ def build_service(
     repository.list_tickers.return_value = (
         Ticker("AAA", "AAA", "Technology"), Ticker("BBB", "BBB", "Materials"),
     )
+    refresh_time = [0]
+
+    def advance(seconds):
+        refresh_time[0] += seconds
+
     service = TopPicksService(
         ticker_repository=repository, calculator_provider=get_calculator,
         market_data_provider=Mock(side_effect=download), benchmark_ticker="SPY",
@@ -46,6 +51,7 @@ def build_service(
         today_provider=lambda: TODAY,
         round_complete_callback=round_complete_callback,
         cache_ttl_seconds=cache_ttl_seconds,
+        refresh_clock=lambda: refresh_time[0], refresh_waiter=advance,
     )
     jobs = []
 
