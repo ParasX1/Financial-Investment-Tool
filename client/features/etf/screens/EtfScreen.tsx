@@ -2,6 +2,7 @@ import Sidebar from "@/components/sidebar";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import {
   Box,
+  Button,
   Chip,
   Stack,
   ToggleButton,
@@ -10,7 +11,17 @@ import {
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { fetchEtfs } from "../api/fetchEtfs";
-import { ETF_WINDOWS, type EtfRow, type EtfWindow } from "../types";
+import { ETF_WINDOWS, type EtfResponse, type EtfRow, type EtfWindow } from "../types";
+
+const PREVIEW_DISCLOSURE = "ETF data is a hardcoded preview and is not live market data.";
+const WINDOW_LABELS: Record<EtfWindow, string> = {
+  "1D": "Day", "1W": "Week", "1M": "Month", "1Y": "Year",
+};
+const EMPTY_ROWS: EtfRow[] = [];
+
+type PreviewState =
+  | { window: EtfWindow; status: "loading" | "error" }
+  | { window: EtfWindow; status: "success"; response: EtfResponse };
 
 const formatPercent = (value: number) =>
   `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
@@ -150,29 +161,42 @@ function EtfTable({ rows }: { rows: EtfRow[] }) {
 
 export function EtfScreen() {
   const [selectedWindow, setSelectedWindow] = useState<EtfWindow>("1Y");
-  const [rows, setRows] = useState<EtfRow[]>([]);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [preview, setPreview] = useState<PreviewState>({ window: "1Y", status: "loading" });
+
+  // Hide any preceding window before its replacement effect starts.
+  const current = preview.window === selectedWindow;
+  const result = current && preview.status === "success" ? preview.response : null;
+  const rows = result?.rows ?? EMPTY_ROWS;
+  const warnings = result?.warnings ?? [];
+  const generatedAt = result?.metadata.generatedAt;
+  const loading = !current || preview.status === "loading";
+  const error = current && preview.status === "error";
+  const windowLabel = `${WINDOW_LABELS[selectedWindow]} (${selectedWindow})`;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
+    let active = true;
+    setPreview({ window: selectedWindow, status: "loading" });
     fetchEtfs(selectedWindow, controller.signal)
       .then((response) => {
-        setRows(response.rows);
-        setWarnings(response.warnings);
-        setGeneratedAt(response.metadata.generatedAt ?? null);
-        setError(null);
+        if (!active) return;
+        setPreview({ window: selectedWindow, status: "success", response });
       })
-      .catch((reason: unknown) => {
-        if (reason instanceof Error && reason.name === "AbortError") return;
-        setError("Unable to load ETF preview.");
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [selectedWindow]);
+      .catch(() => {
+        if (!active) return;
+        setPreview({ window: selectedWindow, status: "error" });
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [selectedWindow, attempt]);
+
+  const retry = () => {
+    setPreview({ window: selectedWindow, status: "loading" });
+    setAttempt((previous) => previous + 1);
+  };
 
   const summary = useMemo(() => {
     const topRanked = rows[0];
@@ -208,6 +232,7 @@ export function EtfScreen() {
       <Box
         component="main"
         id="main-content"
+        aria-busy={loading}
         tabIndex={-1}
         sx={{
           flex: 1,
@@ -274,7 +299,7 @@ export function EtfScreen() {
             size="small"
             value={selectedWindow}
             onChange={(_, nextWindow) => {
-              if (nextWindow) setSelectedWindow(nextWindow as EtfWindow);
+              if (ETF_WINDOWS.includes(nextWindow)) setSelectedWindow(nextWindow as EtfWindow);
             }}
             aria-label="ETF time window"
             sx={{
@@ -297,13 +322,7 @@ export function EtfScreen() {
           >
             {ETF_WINDOWS.map((window) => (
               <ToggleButton key={window} value={window}>
-                {window === "1D"
-                  ? "Day"
-                  : window === "1W"
-                    ? "Week"
-                    : window === "1M"
-                      ? "Month"
-                      : "Year"}
+                {WINDOW_LABELS[window]}
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
@@ -315,21 +334,31 @@ export function EtfScreen() {
           justifyContent="space-between"
           sx={{ px: { xs: 2, sm: 3 }, pb: 2 }}
         >
-          <Typography variant="body2" sx={{ color: "#aab6ca", fontWeight: 700 }}>
+          <Typography role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"} aria-atomic="true" variant="body2" sx={{ color: "#aab6ca", fontWeight: 700 }}>
             {loading
-              ? "Loading ETF preview..."
+              ? `Loading ETF preview for ${windowLabel}...`
               : error
-                ? error
-                : `${rows.length} ETF results`}
+                ? `Unable to load ETF preview for ${windowLabel}.`
+                : rows.length === 0
+                  ? `No ETF preview results for ${windowLabel}.`
+                  : `${rows.length} ETF results for ${windowLabel}`}
           </Typography>
           <Typography variant="caption" sx={{ color: "#8f98aa", fontWeight: 700 }}>
-            {updatedLabel ? `Updated ${updatedLabel}` : "Preview data"}
+            {updatedLabel ? `Updated ${updatedLabel}` : result ? "Generation time unavailable" : "Waiting for preview"}
           </Typography>
         </Stack>
 
+        {!loading && (error || rows.length === 0) && (
+          <Box sx={{ px: { xs: 2, sm: 3 }, pb: 2 }}>
+            <Button variant="outlined" aria-label="Retry loading ETF preview" onClick={retry}>
+              Retry
+            </Button>
+          </Box>
+        )}
+
         <EtfTable rows={rows} />
 
-        {warnings.map((warning) => (
+        {Array.from(new Set([PREVIEW_DISCLOSURE, ...warnings])).map((warning) => (
           <Typography
             key={warning}
             variant="caption"
