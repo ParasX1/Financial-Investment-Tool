@@ -23,9 +23,15 @@ const finiteNumber = (value: unknown): number | null => {
   return Number.isFinite(numberValue) ? numberValue : null;
 };
 
-const finiteNumberArray = (value: unknown): number[] =>
+// Allocation positions correspond to asset_order. Missing weights keep their slot.
+const normaliseWeights = (value: unknown): Array<number | null> =>
   Array.isArray(value)
-    ? value.map(finiteNumber).filter((item): item is number => item !== null)
+    ? value.map((weight) =>
+        typeof weight === "number" ||
+        (typeof weight === "string" && weight.trim() !== "")
+          ? finiteNumber(weight)
+          : null,
+      )
     : [];
 
 export const normalisePortfolioSeries = (data: unknown): PortfolioSeries => {
@@ -50,7 +56,7 @@ export const normalisePortfolioSeries = (data: unknown): PortfolioSeries => {
         return: pointReturn,
         risk: pointRisk,
         sharpe: pointSharpe,
-        weights: finiteNumberArray(rawWeights[index]),
+        weights: normaliseWeights(rawWeights[index]),
         sourceIndex: index,
       };
     },
@@ -61,7 +67,7 @@ export const normalisePortfolioSeries = (data: unknown): PortfolioSeries => {
       return: number;
       risk: number;
       sharpe: number;
-      weights: number[];
+      weights: Array<number | null>;
       sourceIndex: number;
     } => point !== null,
   );
