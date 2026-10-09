@@ -66,9 +66,9 @@ export function ProfileMain() {
     hasAccount && profile.profileLoading && !profile.profileSnapshot;
   const dialogIsCurrent = Boolean(
     !profile.authLoading &&
-    profile.profileSnapshot &&
-    dialogOwnerUserId &&
-    dialogOwnerUserId === profile.user?.id,
+      profile.profileSnapshot &&
+      dialogOwnerUserId &&
+      dialogOwnerUserId === profile.user?.id,
   );
 
   const resetDialogState = React.useCallback(() => {
@@ -216,6 +216,21 @@ export function ProfileMain() {
                   aria-live="polite"
                 >
                   {profile.message.text}
+                  {hasAccount &&
+                  !profile.profileSnapshot &&
+                  !profile.profileLoading ? (
+                    <button
+                      type="button"
+                      className={cn(
+                        styles.button,
+                        styles.buttonSecondary,
+                        FIT_FOCUS_VISIBLE,
+                      )}
+                      onClick={profile.retryProfile}
+                    >
+                      Retry profile
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
