@@ -190,8 +190,8 @@ class TopPicksHistoryProvider:
         # The last stored bar can be unfinished; updating it is normal. Earlier
         # bar changes can signal a split/dividend adjustment or a vendor revision.
         overlap = overlap[overlap < old.index[-1]]
-        overlap = overlap[old.loc[overlap].notna() &
-                          fresh.loc[overlap].notna()]
+        overlap = overlap[old.loc[overlap].notna()
+                          & fresh.loc[overlap].notna()]
         return bool(len(overlap) and not np.allclose(
             old.loc[overlap], fresh.loc[overlap], rtol=1e-7, atol=1e-8,
         ))
