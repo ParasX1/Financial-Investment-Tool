@@ -19,23 +19,68 @@ type RateLimitBucket = {
 
 function safeClientAddress(value: string | undefined): string | null {
   const address = value?.trim();
-  return address && isIP(address) ? address : null;
+  if (!address || !isIP(address) || address.includes("%")) return null;
+  if (isIP(address) === 4) return address;
+
+  // URL canonicalization collapses equivalent IPv6 spellings before bucket lookup.
+  const normalized = new URL(`http://[${address}]`).hostname.slice(1, -1);
+  const mapped = /^::ffff:([a-f0-9]{1,4}):([a-f0-9]{1,4})$/.exec(normalized);
+  if (!mapped) return normalized;
+  const high = parseInt(mapped[1], 16);
+  const low = parseInt(mapped[2], 16);
+  return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
 }
 
-export function getRequestClientKey(request: RequestIdentity): string {
-  const forwarded = request.headers["x-forwarded-for"];
-  const forwardedAddress = Array.isArray(forwarded)
-    ? forwarded[0]
-    : forwarded?.split(",")[0];
-  const realIp = request.headers["x-real-ip"];
-  const realAddress = Array.isArray(realIp) ? realIp[0] : realIp;
+function configuredTrustedProxyIps(): readonly string[] {
+  const configured = process.env.MARKET_TRUSTED_PROXY_IPS;
+  return configured ? configured.split(",") : [];
+}
 
-  return (
-    safeClientAddress(forwardedAddress) ??
-    safeClientAddress(realAddress) ??
-    safeClientAddress(request.socket.remoteAddress) ??
-    "unknown"
-  );
+function configuredTrustedProxyHeader():
+  | "x-forwarded-for"
+  | "x-real-ip"
+  | null {
+  const header = process.env.MARKET_TRUSTED_PROXY_HEADER ?? "x-forwarded-for";
+  return header === "x-forwarded-for" || header === "x-real-ip" ? header : null;
+}
+
+export function getRequestClientKey(
+  request: RequestIdentity,
+  trustedProxyIps: readonly string[] = configuredTrustedProxyIps(),
+): string {
+  const peer = safeClientAddress(request.socket?.remoteAddress);
+  if (!peer) return "unknown";
+  const trusted = trustedProxyIps.map(safeClientAddress);
+  // A malformed configuration disables header trust rather than partially enabling it.
+  if (trusted.length > 64 || trusted.some((address) => address === null))
+    return peer;
+  const trustedPeers = new Set(trusted);
+  if (!trustedPeers.has(peer)) return peer;
+
+  const proxyHeader = configuredTrustedProxyHeader();
+  if (!proxyHeader) return peer;
+  if (proxyHeader === "x-real-ip") {
+    const realIp = request.headers["x-real-ip"];
+    const realAddress = Array.isArray(realIp) ? realIp.join(",") : realIp;
+    return safeClientAddress(realAddress) ?? peer;
+  }
+
+  const forwarded = request.headers["x-forwarded-for"];
+  if (forwarded !== undefined) {
+    const raw = Array.isArray(forwarded) ? forwarded.join(",") : forwarded;
+    if (raw.length > 2_048) return peer;
+    const chain = raw.split(",").map(safeClientAddress);
+    if (!chain.length || chain.length > 32 || chain.some((address) => !address))
+      return peer;
+
+    // The nearest untrusted hop is the client. Entries further left are user input.
+    for (let index = chain.length - 1; index >= 0; index -= 1) {
+      const address = chain[index]!;
+      if (!trustedPeers.has(address) || index === 0) return address;
+    }
+  }
+
+  return peer;
 }
 
 export function createFixedWindowRateLimiter({

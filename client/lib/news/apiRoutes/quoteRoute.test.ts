@@ -24,7 +24,7 @@ function createRequest(
     headers: { "x-forwarded-for": address },
     method,
     query: { symbol },
-    socket: {},
+    socket: { remoteAddress: address },
   } as unknown as NextApiRequest;
 }
 

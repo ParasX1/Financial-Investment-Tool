@@ -299,7 +299,7 @@ describe("/api/news/market", () => {
           headers: { "x-forwarded-for": "203.0.113.74" },
           method: "GET",
           query: { kind: "general" },
-          socket: {},
+          socket: { remoteAddress: "203.0.113.74" },
         } as unknown as NextApiRequest,
         lastResponse.res,
       );
