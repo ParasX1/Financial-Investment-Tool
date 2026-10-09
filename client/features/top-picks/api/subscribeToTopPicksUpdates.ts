@@ -1,5 +1,9 @@
 import { API_BASE } from "@/lib/apiBase";
 import type { TopPicksWindow } from "../types";
+import {
+  isTopPicksActive,
+  subscribeToTopPicksActivity,
+} from "../lib/topPicksActivity";
 
 type SubscribeOptions = {
   window: TopPicksWindow;
@@ -34,20 +38,24 @@ const parseMessage = (event: Event): Record<string, unknown> | null => {
 };
 
 const createSubscription = (window: TopPicksWindow): SharedSubscription => {
-  const events = new EventSource(
-    `${API_BASE}/api/top-picks/events?window=${encodeURIComponent(window)}`,
-  );
   let active = true;
+  let events: EventSource | null = null;
+  let closeTransport = () => {};
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let retryDelay = 5000;
   let lastRevision: number | null = null;
+  const cancelRetry = () => {
+    if (retryTimer !== null) clearTimeout(retryTimer);
+    retryTimer = null;
+  };
   const subscription: SharedSubscription = {
     listeners: new Set(),
     receivedUpdate: false,
     close: () => {
       active = false;
-      events.removeEventListener("connected", handleUpdate);
-      events.removeEventListener("snapshot", handleUpdate);
-      events.removeEventListener("refresh-error", handleRefreshError);
-      events.close();
+      cancelRetry();
+      stopActivity();
+      closeTransport();
     },
   };
 
@@ -55,6 +63,7 @@ const createSubscription = (window: TopPicksWindow): SharedSubscription => {
     const message = parseMessage(event);
     if (
       !active ||
+      !isTopPicksActive() ||
       message?.window !== window ||
       typeof message.revision !== "number" ||
       !Number.isSafeInteger(message.revision) ||
@@ -64,6 +73,7 @@ const createSubscription = (window: TopPicksWindow): SharedSubscription => {
 
     // Reconnecting always reads the latest result, including missed events.
     if (event.type === "snapshot" && message.revision === lastRevision) return;
+    if (event.type === "connected") retryDelay = 5000;
     lastRevision = message.revision;
     subscription.receivedUpdate = true;
     subscription.listeners.forEach((listener) => {
@@ -73,15 +83,67 @@ const createSubscription = (window: TopPicksWindow): SharedSubscription => {
     });
   };
   const handleRefreshError = (event: Event) => {
-    if (!active || parseMessage(event)?.window !== window) return;
+    if (
+      !active ||
+      !isTopPicksActive() ||
+      parseMessage(event)?.window !== window
+    )
+      return;
     subscription.listeners.forEach((listener) => {
       if (listener.active) listener.onRefreshError();
     });
   };
 
-  events.addEventListener("connected", handleUpdate);
-  events.addEventListener("snapshot", handleUpdate);
-  events.addEventListener("refresh-error", handleRefreshError);
+  const openTransport = () => {
+    if (!active || !isTopPicksActive() || events !== null) return;
+    const source = new EventSource(
+      `${API_BASE}/api/top-picks/events?window=${encodeURIComponent(window)}`,
+    );
+    events = source;
+    const guard = (callback: (event: Event) => void) => (event: Event) => {
+      if (active && events === source && isTopPicksActive()) callback(event);
+    };
+    const reconnect = (reportError: boolean) => {
+      closeTransport();
+      if (reportError)
+        subscription.listeners.forEach((listener) => {
+          if (listener.active) listener.onRefreshError();
+        });
+      if (!active || !isTopPicksActive() || retryTimer !== null) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        openTransport();
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 60000);
+    };
+    const handlers: Record<string, EventListener> = {
+      connected: guard(handleUpdate),
+      snapshot: guard(handleUpdate),
+      "refresh-error": guard(handleRefreshError),
+      error: guard(() => reconnect(true)),
+      reconnect: guard(() => reconnect(false)),
+    };
+    Object.entries(handlers).forEach(([type, handler]) =>
+      source.addEventListener(type, handler),
+    );
+    closeTransport = () => {
+      if (events !== source) return;
+      events = null;
+      Object.entries(handlers).forEach(([type, handler]) =>
+        source.removeEventListener(type, handler),
+      );
+      source.close();
+    };
+  };
+  const stopActivity = subscribeToTopPicksActivity(() => {
+    if (!isTopPicksActive()) {
+      cancelRetry();
+      closeTransport();
+    } else if (retryTimer === null) {
+      openTransport();
+    }
+  });
+  openTransport();
   return subscription;
 };
 
@@ -109,7 +171,8 @@ export function subscribeToTopPicksUpdates({
     // A page returning to an existing background connection catches up without
     // opening another stream or missing updates received while it was away.
     queueMicrotask(() => {
-      if (!listener.active || listener.receivedUpdate) return;
+      if (!listener.active || listener.receivedUpdate || !isTopPicksActive())
+        return;
       listener.receivedUpdate = true;
       listener.onUpdate();
     });

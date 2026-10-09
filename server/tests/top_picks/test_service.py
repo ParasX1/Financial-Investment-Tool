@@ -561,6 +561,9 @@ def test_service_force_refresh_rebuilds_cached_snapshot_in_background(
     clear_calls = []
     monkeypatch.setattr(service_module, "Thread", ImmediateThread)
     service = RecordingService()
+    refresh_time = [0]
+    service._refresh_clock = lambda: refresh_time[0]
+    service._refresh_waiter = lambda seconds: refresh_time.__setitem__(0, refresh_time[0] + seconds)
 
     service.get_page(TopPicksRequest(1, 2, "sharpe", "desc"))
     service.built_windows.clear()
@@ -613,6 +616,9 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
     clear_calls = []
     monkeypatch.setattr(service_module, "Thread", CapturingThread)
     service = RecordingService()
+    refresh_time = [0]
+    service._refresh_clock = lambda: refresh_time[0]
+    service._refresh_waiter = lambda seconds: refresh_time.__setitem__(0, refresh_time[0] + seconds)
 
     service.get_page(TopPicksRequest(1, 2, "ret1y", "desc", "1D"))
     service.get_page(TopPicksRequest(1, 2, "sharpe", "desc", "1Y"))
@@ -626,14 +632,9 @@ def test_service_queues_force_refresh_when_window_refresh_is_running(
     captured_targets[0]()
 
     assert clear_calls == [True]
-    assert service.built_windows == [
-        "1W",
-        "1M",
-        "1Y",
-        "1D",
-        "1W",
-        "1M",
-    ]
+    # The force queued before the worker starts upgrades the pending round;
+    # it does not require a separate non-forced round plus another download.
+    assert service.built_windows == ["1Y", "1D", "1W", "1M"]
 
 
 def test_service_can_disable_snapshot_cache_with_zero_ttl(monkeypatch):

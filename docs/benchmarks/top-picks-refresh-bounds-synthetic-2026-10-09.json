@@ -1,0 +1,23 @@
+{
+  "kind": "controlled_synthetic_worker_comparison",
+  "baseline_commit": "3e36a257ca27a522deac6724876a6ca5adc7cb1e",
+  "method": "Actual baseline and candidate service worker/cache paths, deferred Thread, stub metric builder, one fixed ticker and benchmark, same one-second mock provider callback and fake cache clock. Candidate additionally injects the refresh clock and waits; baseline has no successful-round wait. No live provider or Supabase.",
+  "predeclared_successful_active_snapshot_age_budget_seconds": 61,
+  "duration_seconds": 120,
+  "initial_subscriber_windows": ["1Y", "1Y", "1M"],
+  "always_active": {
+    "baseline": {"provider_calls": 120, "snapshot_rebuilds": 480, "readable_responses": 120, "maximum_active_snapshot_age_seconds": 0},
+    "candidate": {"provider_calls": 2, "snapshot_rebuilds": 8, "readable_responses": 120, "maximum_active_snapshot_age_seconds": 60}
+  },
+  "controlled_disconnect_at_30_reconnect_at_90": {
+    "baseline": {"provider_calls": 60, "snapshot_rebuilds": 240, "readable_responses": 60, "maximum_active_snapshot_age_seconds": 0},
+    "candidate": {"provider_calls": 2, "snapshot_rebuilds": 8, "readable_responses": 60, "maximum_active_snapshot_age_seconds": 29}
+  },
+  "peer_limit_comparison": {
+    "fixture": "Same peer, three tabs with two windows each, then sixteen excess connection attempts",
+    "cap_4": {"legitimate_admitted": 4, "legitimate_rejected": 2, "excess_admitted": 0},
+    "cap_16": {"legitimate_admitted": 6, "legitimate_rejected": 0, "excess_admitted": 10}
+  },
+  "stopping_condition": "Declared age and response availability invariants, atomic admission/release, expiry, reconnect cooldown and manual-intent races, shared-window behavior, client lifecycle regressions and fresh review pass.",
+  "limits": "Synthetic counts and calculation age are not production provider quotas, market-price freshness, distributed limits, live acceptance or real-user study evidence. The lifecycle fixture applies the same disconnect protocol externally to both service revisions; actual client pause behavior is verified separately."
+}

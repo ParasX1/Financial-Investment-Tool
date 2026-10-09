@@ -17,7 +17,10 @@ from .analytics import (
     calculate_information_ratios,
     count_return_observations,
 )
-from .events import SnapshotUpdateHub
+from .events import (
+    DEFAULT_MAX_SUBSCRIBERS, DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+    DEFAULT_STREAM_LIFETIME_SECONDS, SnapshotUpdateHub,
+)
 from .repository import MAX_TICKER_UNIVERSE, TopPicksDataSourceError
 
 
@@ -27,6 +30,7 @@ DEFAULT_RISK_FREE_RATE_SOURCE = "RBA cash rate target"
 DEFAULT_RISK_FREE_RATE_AS_OF = "2026-06-17"
 DEFAULT_UNIVERSE_LIMIT = 1000
 DEFAULT_CACHE_TTL_SECONDS = 600
+DEFAULT_REFRESH_INTERVAL_SECONDS = 60
 DEFAULT_STALE_CACHE_TTL_SECONDS = 86_400
 MIN_TRAILING_RETURN_OBSERVATIONS = 200
 WINDOW_METHODS = {
@@ -503,6 +507,14 @@ def _normalize_source(value):
     return value.strip()[:120]
 
 
+def _normalize_refresh_setting(value, name, minimum, maximum):
+    if isinstance(value, str) and value.strip().isdecimal():
+        value = int(value.strip())
+    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+        raise TopPicksConfigurationError(f"Top Picks {name} is invalid.")
+    return value
+
+
 def _normalize_as_of(value):
     if value is None:
         return None
@@ -552,6 +564,12 @@ class TopPicksService:
         today_provider=date.today,
         yearly_metrics_provider=None,
         round_complete_callback=None,
+        refresh_interval_seconds=DEFAULT_REFRESH_INTERVAL_SECONDS,
+        max_subscribers=DEFAULT_MAX_SUBSCRIBERS,
+        max_subscribers_per_client=DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+        stream_lifetime_seconds=DEFAULT_STREAM_LIFETIME_SECONDS,
+        refresh_clock=monotonic,
+        refresh_waiter=time.sleep,
     ):
         self._ticker_repository = ticker_repository
         self._calculator_provider = calculator_provider
@@ -587,13 +605,24 @@ class TopPicksService:
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
+        self._refresh_interval_seconds = _normalize_refresh_setting(
+            refresh_interval_seconds, "refresh interval", 5, 3600,
+        )
+        self._refresh_clock = refresh_clock
+        self._refresh_waiter = refresh_waiter
+        self._next_refresh_at = 0
         self._snapshot_build_condition = Condition()
         self._building_snapshots = False
         self._waiting_snapshot_readers = 0
-        self._updates = SnapshotUpdateHub()
+        self._updates = SnapshotUpdateHub(
+            max_subscribers=_normalize_refresh_setting(max_subscribers, "process stream limit", 1, 1024),
+            max_per_client=_normalize_refresh_setting(max_subscribers_per_client, "peer stream limit", 1, 128),
+            max_lifetime_seconds=_normalize_refresh_setting(stream_lifetime_seconds, "stream lifetime", 30, 3600),
+            clock=refresh_clock,
+        )
 
-    def subscribe_updates(self, window):
-        subscription = self._updates.subscribe(window)
+    def subscribe_updates(self, window, client_id=None):
+        subscription = self._updates.subscribe(window, client_id=client_id)
         try:
             self._refresh_windows_in_background(
                 window, force_refresh=True, queue_if_busy=False,
@@ -628,6 +657,7 @@ class TopPicksService:
             "sortKey": top_picks_request.sort_key,
             "sortDir": top_picks_request.sort_dir,
             "snapshotRefreshing": refreshing,
+            "refreshIntervalSeconds": self._refresh_interval_seconds,
         }
         return {
             "data": {
@@ -739,8 +769,44 @@ class TopPicksService:
         def refresh_all():
             current_priority_window = priority_window
             current_force_refresh = force_refresh
+            # Page-request work must complete once even if a stream joins and
+            # leaves while it waits. Subscriber-only work may stop on inactivity.
+            must_complete_round = queue_if_busy
 
             while True:
+                delay = max(0, self._next_refresh_at - self._refresh_clock())
+                while delay:
+                    if self._updates.has_subscribers:
+                        self._updates.wait_for_inactive(delay)
+                        with self._refresh_lock:
+                            if (not self._updates.has_subscribers
+                                    and self._pending_force_refresh_window is None
+                                    and not must_complete_round):
+                                self._refreshing_all_windows = False
+                                # Return while still owning the lock. A new
+                                # subscriber can start another worker at unlock;
+                                # its shared flag cannot revive this old worker.
+                                return
+                    else:
+                        with self._refresh_lock:
+                            if (not must_complete_round
+                                    and self._pending_force_refresh_window is None):
+                                if not self._updates.has_subscribers:
+                                    self._refreshing_all_windows = False
+                                    return
+                                # A subscriber arrived during the activity check;
+                                # use its interruptible wait rather than sleep.
+                                continue
+                        # A manual request with no stream still shares the process
+                        # cooldown; return its saved snapshot while this job waits.
+                        self._refresh_waiter(delay)
+                    delay = max(0, self._next_refresh_at - self._refresh_clock())
+                with self._refresh_lock:
+                    if self._pending_force_refresh_window is not None:
+                        current_priority_window = self._pending_force_refresh_window
+                        self._pending_force_refresh_window = None
+                        current_force_refresh = True
+                        must_complete_round = True
                 failed = False
                 try:
                     with self._snapshot_build_condition:
@@ -769,27 +835,28 @@ class TopPicksService:
                     )
                 finally:
                     with self._refresh_lock:
+                        self._next_refresh_at = self._refresh_clock() + (
+                            5 if failed else self._refresh_interval_seconds
+                        )
                         pending_window = self._pending_force_refresh_window
                         self._pending_force_refresh_window = None
                         if pending_window is None:
                             if not self._updates.has_subscribers:
                                 self._refreshing_all_windows = False
-                                break
+                                return
                             current_priority_window = self._updates.preferred_window()
+                            must_complete_round = False
                         else:
                             current_priority_window = pending_window
+                            must_complete_round = True
                         current_force_refresh = True
-                if failed and pending_window is None:
-                    # Retry after source failures without a busy loop; closing
-                    # the last browser interrupts this wait immediately.
-                    self._updates.wait_for_inactive(5)
-                    with self._refresh_lock:
-                        if (not self._updates.has_subscribers
-                                and self._pending_force_refresh_window is None):
-                            self._refreshing_all_windows = False
-                            break
 
-        Thread(target=refresh_all, daemon=True).start()
+        try:
+            Thread(target=refresh_all, daemon=True).start()
+        except Exception:
+            with self._refresh_lock:
+                self._refreshing_all_windows = False
+            raise
 
     def _refresh_window_snapshots(self, today, priority_window, force_refresh):
         """Share one universe and annual download within a background round."""
