@@ -1,1 +1,5 @@
-export { getConfiguredSupabaseClient, supabase } from "./client";
+export {
+  getConfiguredSupabaseClient,
+  supabase,
+  supabaseBrowserConfig,
+} from "./client";

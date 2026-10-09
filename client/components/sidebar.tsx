@@ -216,6 +216,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   skipTargetId = "main-content",
 }) => {
   const { user, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const signOutOwnerRef = useRef<symbol | null>(null);
+
+  useEffect(() => {
+    signOutOwnerRef.current = null;
+    setSigningOut(false);
+    setSignOutError(null);
+  }, [user?.id]);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    const operation = Symbol("sign-out");
+    signOutOwnerRef.current = operation;
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await signOut();
+    } catch {
+      if (signOutOwnerRef.current === operation) {
+        setSignOutError("Log out failed. Please try again.");
+      }
+    } finally {
+      if (signOutOwnerRef.current === operation) setSigningOut(false);
+    }
+  };
   const [initialSidebarSnapshot] = useState(getInitialSidebarSnapshot);
   const [expanded, setExpanded] = useState(initialSidebarSnapshot.expanded);
   const [showLabel, setShowLabel] = useState(initialSidebarSnapshot.showLabel);
@@ -663,7 +689,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                       expanded ? "justify-start px-2" : "justify-center px-0",
                       focusRing,
                     ].join(" ")}
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    aria-busy={signingOut}
                     title="Log out"
                     aria-label="Log out"
                   >
@@ -680,9 +708,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                         showLabel ? "opacity-100" : "sr-only opacity-0",
                       ].join(" ")}
                     >
-                      Log out
+                      {signingOut ? "Logging out…" : "Log out"}
                     </span>
                   </button>
+                  {signOutError ? (
+                    <p
+                      role="alert"
+                      className="m-0 rounded-lg bg-red-950 px-2 py-2 text-xs text-red-200"
+                    >
+                      {signOutError}
+                    </p>
+                  ) : null}
                 </li>
               ) : null}
               <li className="list-none">

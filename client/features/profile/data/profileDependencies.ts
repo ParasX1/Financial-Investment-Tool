@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseBrowserConfig } from "@/lib/supabase";
 import {
   createProfileAccountClient,
   type ProfileAccountClient,
@@ -27,7 +27,10 @@ export interface ProfileControllerDependencies {
 }
 
 export const defaultProfileDependencies: ProfileControllerDependencies = {
-  accountClient: createProfileAccountClient(supabase.auth),
+  accountClient: createProfileAccountClient(
+    supabase.auth,
+    supabaseBrowserConfig,
+  ),
   avatarStorage: createProfileAvatarStorage(supabase.storage, {
     bucket: AVATAR_BUCKET,
   }),
