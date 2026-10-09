@@ -155,8 +155,10 @@ def create_top_picks_service_provider(
                     history_path, f"{DEFAULT_TOP_PICKS_CACHE_PATH}.history.sqlite3",
                 )
                 and _normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
-            def round_complete_callback():
+            def update_seed_archive():
                 create_seed_archive(snapshot_path, history_path, DEFAULT_TOP_PICKS_SEED_PATH)
+
+            round_complete_callback = update_seed_archive
 
         service = resolved_service_factory(
             ticker_repository=resolved_repository_factory(

@@ -102,7 +102,7 @@ export const guideSections = Object.freeze([
     formula:
       "Drawdown(t) = (Current Price - Highest Price So Far) / Highest Price So Far; Max Drawdown = minimum Drawdown(t)",
     interpretation:
-      "A drawdown of -0.25 means the price is 25% below its previous peak. " +
+      "A drawdown of -0.25 (-25%) means the price is 25% below its previous peak. " +
       "The lowest point on the chart is the Maximum Drawdown. " +
       "A return to 0 means the price has reached its previous high.",
     takeaway:
@@ -119,7 +119,7 @@ export const guideSections = Object.freeze([
     formula:
       "Historical VaR = max(0, - selected lower-tail return percentile)",
     interpretation:
-      "For example, a 95% VaR of 3% means that on about 5% of past trading days, the loss was more than 3%. " +
+      "In the historical daily return distribution, a 95% VaR of 3% means that on about 5% of past trading days, the loss was more than 3%. " +
       "Lower is better. VaR shows a loss threshold, not the maximum possible loss. " +
       "On the worst days, losses can be much larger, and VaR does not show how much larger they could be.",  
     takeaway:
@@ -131,7 +131,8 @@ export const guideSections = Object.freeze([
     icon: AccountTreeRoundedIcon,
     description:
       "The Efficient Frontier shows the relationship between risk and return when you combine different stocks in a portfolio. " +
-      "FIT creates 10,000 sample portfolios with different weightings and plots each one based on its estimated return and risk.",  
+      "FIT deterministically samples up to 10,000 long-only portfolios with different weightings and plots each one based on its estimated return and risk. " +
+      "These samples are not a mathematically optimized frontier.",
     formula:
       "For each sample: Expected Return = Weights x Annualised Mean Returns; Risk = √(Weights x Covariance Matrix x Weights)",
     interpretation:
