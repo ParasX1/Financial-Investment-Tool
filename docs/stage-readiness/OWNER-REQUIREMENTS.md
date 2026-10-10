@@ -9,6 +9,26 @@ research/comparison basis, and revise it when actual evidence changes a decision
 
 ## Intended outcome
 
+### Second review requested on 10 October 2026
+
+The owner requested a fresh whole-product and hosted Supabase confirmation after
+the first phase. Reconfirm current code and provider state; earlier PASS records
+are historical evidence, not a substitute for this review. Preserve the owner's
+long prompt as the outcome contract and improve the detailed method when actual
+research or controlled evidence identifies a better approach.
+
+Review the overall architecture and every substantive component architecture:
+responsibilities and dependency direction, browser/API/database contracts,
+account and async state ownership, data provenance and units, resource/concurrency
+limits, privacy/deletion, failure recovery, observability, extensibility and
+developer/contributor workflows. Assess maintainability, scalability,
+understandability and debugging through concrete flows and failure controls.
+Record what was inspected and what remains unverified per component. Keep
+important confirmed repairs separate from growth, admin, human and provider
+acceptance; avoid speculative rewrites or excessive defensive scaffolding.
+
+The current audit plan and granular evidence are in [SECOND-PASS.md](SECOND-PASS.md).
+
 ### Latest owner scope amendment (10 October2026)
 
 The owner explicitly narrowed this task to a basically usable development stage,
@@ -46,6 +66,7 @@ Use available subagents, skills, tools, worktrees and evidence-driven methods de
 
 - Branch from verified DevBranch in isolated worktrees; create focused PRs and attach them to this task.
 - Owner explicitly authorized self/subagent technical review and merging reviewed PRs into DevBranch after necessary checks pass. GitHub self-approval may be unavailable: do not impersonate reviewers or claim APPROVE was submitted when it was a technical COMMENT.
+- On 11 October Sydney time the owner reiterated: do not ask again for approval within this existing scope. Continue authorized reviewed fixes, verification and DevBranch merges autonomously; main remains held.
 - Main remains unmerged. Prepare its stage-release PR only when readiness evidence is sufficient; do not infer main merge/deployment authorization.
 - Owner identified the inherited Vercel preview as old and excluded it from DevBranch code merge gates. Deployment follow-up from #300 is consolidated into #268.
 - The owner explicitly requested actual hosted Supabase updates on 10 October2026 after distinguishing source/local work from deployment. Proceed with reviewed, rehearsed, compatible missing schema/policy/bucket/index effects and verify them on the configured project. This authorizes the scoped hosted fixes; it does not authorize destructive data changes, credential rotation, paid infrastructure or engine downtime. Preserve existing ledger history and old callers; no blind linked migration push/reset.
