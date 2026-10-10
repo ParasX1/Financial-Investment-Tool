@@ -3,6 +3,20 @@ import { PortfolioMetricCard as MetricCard } from "./PortfolioMetricCard";
 import { PortfolioObservation } from "./PortfolioObservation";
 import type { PortfolioMetricCard } from "../types";
 
+let mockDelayModalMount = false;
+
+// The node renderer tests geometry and callbacks. The real Modal's focus
+// behavior is covered by observationKeyboard.spec.ts in Chromium.
+jest.mock("@mui/material/Modal", () => ({
+  __esModule: true,
+  default: function MockModal({ children }: { children: React.ReactNode }) {
+    const react = jest.requireActual<typeof import("react")>("react");
+    const [mounted, setMounted] = react.useState(!mockDelayModalMount);
+    react.useEffect(() => setMounted(true), []);
+    return mounted ? children : null;
+  },
+}));
+
 jest.mock("./PortfolioMetricCard", () => ({
   PortfolioMetricCard: function MockPortfolioMetricCard() {
     return null;
@@ -10,7 +24,12 @@ jest.mock("./PortfolioMetricCard", () => ({
 }));
 
 const cards: PortfolioMetricCard[] = [
-  { id: "alpha", metricType: "AlphaComparison", overrides: {}, hiddenSymbols: [] },
+  {
+    id: "alpha",
+    metricType: "AlphaComparison",
+    overrides: {},
+    hiddenSymbols: [],
+  },
   { id: "beta", metricType: "BetaAnalysis", overrides: {}, hiddenSymbols: [] },
 ];
 
@@ -57,8 +76,24 @@ const createProps = (overrides: Record<string, unknown> = {}) => ({
   globalInputs,
   hasPendingDraft: false,
   layout: {
-    alpha: { cardId: "alpha", x: 10, y: 20, width: 420, height: 300, z: 10, visible: true },
-    beta: { cardId: "beta", x: 80, y: 70, width: 420, height: 300, z: 12, visible: false },
+    alpha: {
+      cardId: "alpha",
+      x: 10,
+      y: 20,
+      width: 420,
+      height: 300,
+      z: 10,
+      visible: true,
+    },
+    beta: {
+      cardId: "beta",
+      x: 80,
+      y: 70,
+      width: 420,
+      height: 300,
+      z: 12,
+      visible: false,
+    },
   },
   today: "2026-07-31",
   onDone: jest.fn(),
@@ -99,7 +134,9 @@ const renderObservation = (props = createProps()) => {
 
 const findButton = (root: ReactTestRenderer["root"], label: string) =>
   root.findAllByType("button").find((button) => {
-    const text = button.children.filter((child) => typeof child === "string").join("");
+    const text = button.children
+      .filter((child) => typeof child === "string")
+      .join("");
     return text === label || button.props["aria-label"] === label;
   });
 
@@ -137,9 +174,42 @@ const installResizeObserver = () => {
 
 describe("PortfolioObservation", () => {
   afterEach(() => {
+    mockDelayModalMount = false;
     jest.restoreAllMocks();
     Reflect.deleteProperty(global, "ResizeObserver");
     Reflect.deleteProperty(global, "window");
+  });
+
+  it("reconciles and observes the canvas when Modal mounts it after the parent effects", () => {
+    mockDelayModalMount = true;
+    const fakeWindow = installDesktopWindow();
+    const resizeObserver = installResizeObserver();
+    const props = createProps({
+      layout: {
+        ...createProps().layout,
+        alpha: { ...createProps().layout.alpha, x: 850, y: 590 },
+      },
+    });
+
+    const { renderer } = renderObservation(props);
+
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", {
+      x: 472,
+      y: 312,
+      width: 420,
+      height: 300,
+    });
+    expect(resizeObserver.observe).toHaveBeenCalledTimes(1);
+    expect(fakeWindow.addEventListener).toHaveBeenCalledWith(
+      "resize",
+      expect.any(Function),
+    );
+    act(() => renderer.unmount());
+    expect(resizeObserver.disconnect).toHaveBeenCalledTimes(1);
+    expect(fakeWindow.removeEventListener).toHaveBeenCalledWith(
+      "resize",
+      expect.any(Function),
+    );
   });
 
   it("reconciles visible and hidden persisted windows on desktop mount without dispatching stable geometry", () => {
@@ -385,7 +455,9 @@ describe("PortfolioObservation", () => {
 
     act(() => findButton(root, "Auto arrange")?.props.onClick());
     act(() => findButton(root, "Restore hidden")?.props.onClick());
-    act(() => findButton(root, "Hide Alpha vs benchmark window")?.props.onClick());
+    act(() =>
+      findButton(root, "Hide Alpha vs benchmark window")?.props.onClick(),
+    );
     act(() => findButton(root, "Done")?.props.onClick());
 
     expect(props.onArrange).toHaveBeenCalledTimes(1);
@@ -409,7 +481,10 @@ describe("PortfolioObservation", () => {
     act(() => metricCard.props.onDuplicate());
     act(() => metricCard.props.onDelete());
 
-    expect(props.onMetricChange).toHaveBeenCalledWith("alpha", "SharpeRatioMatrix");
+    expect(props.onMetricChange).toHaveBeenCalledWith(
+      "alpha",
+      "SharpeRatioMatrix",
+    );
     expect(props.onOverride).toHaveBeenCalledWith("alpha", {
       riskFreeRate: 0.05,
     });
@@ -420,11 +495,209 @@ describe("PortfolioObservation", () => {
     expect(props.onDelete).toHaveBeenCalledWith("alpha");
   });
 
+  it("wraps Tab at visible controls, excluding hidden or disabled controls", () => {
+    const { root } = renderObservation();
+    const dialog = root.findByProps({ role: "dialog" });
+    expect(dialog.props.onKeyDown).toEqual(expect.any(Function));
+    const first = {
+      tabIndex: 0,
+      matches: () => false,
+      getClientRects: () => [{}],
+      closest: () => null,
+      focus: jest.fn(),
+    };
+    const last = {
+      ...first,
+      closest: () => closedSummaryDetails,
+      focus: jest.fn(),
+    };
+    const closedSummaryDetails = {
+      querySelector: () => ({ contains: (node: unknown) => node === last }),
+      parentElement: null,
+    };
+    const hidden = { ...first, getClientRects: () => [] };
+    const disabled = { ...first, matches: () => true };
+    const nonTabbable = { ...first, tabIndex: -1 };
+    // Chromium can expose layout boxes for unfocusable closed-details contents.
+    const closedDetails = { querySelector: () => null, parentElement: null };
+    const closedInput = {
+      ...first,
+      closest: () => closedDetails,
+      focus: jest.fn(),
+    };
+    const currentTarget = {
+      querySelectorAll: () => [
+        first,
+        disabled,
+        nonTabbable,
+        last,
+        hidden,
+        closedInput,
+      ],
+    };
+    const event = {
+      key: "Tab",
+      target: first,
+      currentTarget,
+      shiftKey: true,
+      preventDefault: jest.fn(),
+    };
+
+    act(() => dialog.props.onKeyDown(event));
+    expect(last.focus).toHaveBeenCalledTimes(1);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    act(() =>
+      dialog.props.onKeyDown({ ...event, target: last, shiftKey: false }),
+    );
+    expect(first.focus).toHaveBeenCalledTimes(1);
+    expect(event.preventDefault).toHaveBeenCalledTimes(2);
+
+    act(() =>
+      dialog.props.onKeyDown({ ...event, target: first, shiftKey: false }),
+    );
+    act(() => dialog.props.onKeyDown({ ...event, key: "Escape" }));
+    act(() => dialog.props.onKeyDown({ ...event, defaultPrevented: true }));
+    expect(event.preventDefault).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["ArrowLeft", { x: 8, y: 20 }],
+    ["ArrowRight", { x: 20, y: 20 }],
+    ["ArrowUp", { x: 10, y: 10 }],
+    ["ArrowDown", { x: 10, y: 30 }],
+  ])("moves a desktop window with %s", (key, geometry) => {
+    installDesktopWindow();
+    const { props, root } = renderObservation();
+    const move = findButton(root, "Move Alpha vs benchmark window");
+    expect(move).toBeDefined();
+    const event = {
+      key,
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+    };
+
+    act(() => move!.props.onKeyDown(event));
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", geometry);
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", { z: 13 });
+  });
+
+  it.each([
+    ["ArrowLeft", { width: 410, height: 300 }],
+    ["ArrowRight", { width: 430, height: 300 }],
+    ["ArrowUp", { width: 420, height: 290 }],
+    ["ArrowDown", { width: 420, height: 310 }],
+  ])("resizes a desktop window with %s", (key, geometry) => {
+    installDesktopWindow();
+    const { props, root } = renderObservation();
+    const resize = findButton(root, "Resize Alpha vs benchmark window");
+    expect(resize?.props.onKeyDown).toEqual(expect.any(Function));
+    const event = {
+      key,
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+    };
+
+    act(() => resize!.props.onKeyDown(event));
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", geometry);
+  });
+
+  it("uses a larger Shift step and clamps keyboard geometry to canvas limits", () => {
+    installDesktopWindow();
+    const props = createProps({
+      layout: {
+        ...createProps().layout,
+        alpha: {
+          ...createProps().layout.alpha,
+          x: 460,
+          y: 300,
+          width: 420,
+          height: 300,
+        },
+      },
+    });
+    const { root } = renderObservation(props);
+    const event = {
+      key: "ArrowRight",
+      shiftKey: true,
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+    };
+
+    act(() =>
+      findButton(root, "Move Alpha vs benchmark window")!.props.onKeyDown(
+        event,
+      ),
+    );
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", {
+      x: 472,
+      y: 300,
+    });
+    act(() =>
+      findButton(root, "Resize Alpha vs benchmark window")!.props.onKeyDown(
+        event,
+      ),
+    );
+    expect(props.onWindowChange).toHaveBeenCalledWith("alpha", {
+      width: 432,
+      height: 300,
+    });
+  });
+
+  it("leaves other keys, modified shortcuts, composition and mobile geometry unchanged", () => {
+    const fakeWindow = installDesktopWindow();
+    const { props, root } = renderObservation();
+    const resize = findButton(root, "Resize Alpha vs benchmark window");
+    const event = {
+      key: "ArrowRight",
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+    };
+
+    for (const ignored of [
+      { key: "Tab" },
+      { key: "Escape" },
+      { ctrlKey: true },
+      { metaKey: true },
+      { altKey: true },
+      { nativeEvent: { isComposing: true } },
+    ]) {
+      act(() => resize!.props.onKeyDown({ ...event, ...ignored }));
+    }
+    fakeWindow.innerWidth = 700;
+    act(() => resize!.props.onKeyDown(event));
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(props.onWindowChange).not.toHaveBeenCalled();
+  });
+
   it("offers recovery when every observation window is hidden", () => {
     const props = createProps({
       layout: {
-        alpha: { cardId: "alpha", x: 10, y: 20, width: 420, height: 300, z: 10, visible: false },
-        beta: { cardId: "beta", x: 80, y: 70, width: 420, height: 300, z: 12, visible: false },
+        alpha: {
+          cardId: "alpha",
+          x: 10,
+          y: 20,
+          width: 420,
+          height: 300,
+          z: 10,
+          visible: false,
+        },
+        beta: {
+          cardId: "beta",
+          x: 80,
+          y: 70,
+          width: 420,
+          height: 300,
+          z: 12,
+          visible: false,
+        },
       },
     });
     const { root } = renderObservation(props);
@@ -510,7 +783,10 @@ describe("PortfolioObservation", () => {
   });
 
   it("drags a desktop window within the canvas and releases pointer capture", () => {
-    const listeners = new Map<string, (event: Record<string, unknown>) => void>();
+    const listeners = new Map<
+      string,
+      (event: Record<string, unknown>) => void
+    >();
     const fakeWindow = {
       innerWidth: 1280,
       addEventListener: jest.fn(
@@ -543,8 +819,16 @@ describe("PortfolioObservation", () => {
     };
 
     act(() => dragHandle?.props.onPointerDown(startEvent));
-    listeners.get("pointermove")?.({ pointerId: 99, clientX: 140, clientY: 150 });
-    listeners.get("pointermove")?.({ pointerId: 7, clientX: 140, clientY: 150 });
+    listeners.get("pointermove")?.({
+      pointerId: 99,
+      clientX: 140,
+      clientY: 150,
+    });
+    listeners.get("pointermove")?.({
+      pointerId: 7,
+      clientX: 140,
+      clientY: 150,
+    });
     listeners.get("pointerup")?.({ pointerId: 7 });
 
     expect(startEvent.preventDefault).toHaveBeenCalledTimes(1);
@@ -559,7 +843,10 @@ describe("PortfolioObservation", () => {
   });
 
   it("resizes on desktop but ignores secondary or mobile pointer gestures", () => {
-    const listeners = new Map<string, (event: Record<string, unknown>) => void>();
+    const listeners = new Map<
+      string,
+      (event: Record<string, unknown>) => void
+    >();
     const fakeWindow = {
       innerWidth: 1280,
       addEventListener: jest.fn(
@@ -590,7 +877,11 @@ describe("PortfolioObservation", () => {
     };
 
     act(() => resize?.props.onPointerDown(event));
-    listeners.get("pointermove")?.({ pointerId: 4, clientX: 500, clientY: 380 });
+    listeners.get("pointermove")?.({
+      pointerId: 4,
+      clientX: 500,
+      clientY: 380,
+    });
     expect(props.onWindowChange).toHaveBeenCalledWith("alpha", {
       width: 520,
       height: 380,
