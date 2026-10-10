@@ -43,6 +43,9 @@ const buildSingleValueModel = (
     ]),
   );
   const hasStatuses = Object.keys(statuses).length > 0;
+  const hasUnboundedSortino =
+    metricType === "SortinoRatioVisualization" &&
+    Object.values(statuses).some((status) => status.status === "infinite");
 
   return {
     columns: ["Symbol", metric.label, ...(hasStatuses ? ["Observations"] : [])],
@@ -79,9 +82,11 @@ const buildSingleValueModel = (
             label:
               metric.betterDirection === "lower"
                 ? "Lowest in comparison"
-                : metric.betterDirection === "higher"
-                  ? "Highest in comparison"
-                  : "Largest reading",
+                : hasUnboundedSortino
+                  ? "Highest finite Sortino"
+                  : metric.betterDirection === "higher"
+                    ? "Highest in comparison"
+                    : "Largest reading",
             value: `${leader[0]} · ${formatMetricValue(metricType, leader[1])}`,
           },
         ]
