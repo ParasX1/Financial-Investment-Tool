@@ -12,7 +12,7 @@ from time import time
 import numpy as np
 import pandas as pd
 
-from ..market_primitives import get_adjusted_close_prices, normalize_tickers
+from ..market_primitives import clean_prices, get_adjusted_close_prices, normalize_tickers
 from .repository import TopPicksDataSourceError
 
 
@@ -178,8 +178,7 @@ class TopPicksHistoryProvider:
 
     @staticmethod
     def _clean_series(prices):
-        prices = pd.to_numeric(prices, errors="coerce").replace(
-            [np.inf, -np.inf], np.nan)
+        prices = clean_prices(prices)
         prices.index = pd.to_datetime(prices.index).strftime("%Y-%m-%d")
         return prices.loc[~prices.index.duplicated(keep="last")].sort_index()
 

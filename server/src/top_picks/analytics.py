@@ -19,7 +19,8 @@ def calculate_information_ratio(stock_returns, benchmark_returns):
         ],
         axis=1,
         join="inner",
-    ).dropna()
+    )
+    aligned = aligned.where(np.isfinite(aligned)).dropna()
     if aligned.shape[0] < MIN_BENCHMARK_OBSERVATIONS:
         return None
 

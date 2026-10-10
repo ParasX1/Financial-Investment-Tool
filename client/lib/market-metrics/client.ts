@@ -27,13 +27,18 @@ export async function fetchMetrics(
       confidence_level: confidenceLevel ?? 0.05,
     }),
   });
-  const data = await response.json().catch(() => ({}));
+  const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const message =
       isRecord(data) && typeof data.error === "string"
         ? data.error
         : "Metrics are temporarily unavailable.";
     throw new Error(message);
+  }
+  if (!isRecord(data)) {
+    throw new Error(
+      "The metrics response could not be read. Please try again.",
+    );
   }
   return formatMetricsResponse(request.tickers, metricType, data);
 }

@@ -11,7 +11,12 @@ from time import monotonic
 
 import pandas as pd
 
-from ..market_primitives import TICKER_PATTERN, get_adjusted_close_prices
+from ..market_primitives import (
+    CALCULATION_VERSION,
+    TICKER_PATTERN,
+    calculate_returns,
+    get_adjusted_close_prices,
+)
 from .analytics import (
     ANNUALISATION_DAYS,
     calculate_information_ratios,
@@ -41,7 +46,7 @@ WINDOW_METHODS = {
 }
 TOP_PICKS_WINDOWS = ("1D", "1W", "1M", "1Y")
 WINDOW_MIN_OBSERVATIONS = {
-    "1D": {"ret1y": 2},
+    "1D": {"ret1y": 1},
     "1W": {"ret1y": 2, "volatility": 3, "maxDD": 2},
     "1M": {"ret1y": 2, "volatility": 10, "maxDD": 2},
     "1Y": {},
@@ -191,9 +196,11 @@ class TopPicksSnapshotCache:
             return False
         # Other namespaces are used by cache clients with their own values.
         # Production ranking keys carry the complete calculation context.
-        if len(key) != 7 or key[0] != "top-picks-snapshot":
+        if len(key) < 7 or key[0] != "top-picks-snapshot":
             return True
-        _, window, benchmark, rate, limit, start, end = key
+        if len(key) != 8 or key[5] != CALCULATION_VERSION:
+            return False
+        _, window, benchmark, rate, limit, version, start, end = key
         if (window not in TOP_PICKS_WINDOWS or not isinstance(benchmark, str)
                 or not TICKER_PATTERN.fullmatch(benchmark)
                 or not isinstance(rate, (int, float)) or not -1 <= rate <= 1
@@ -210,6 +217,8 @@ class TopPicksSnapshotCache:
         if (not isinstance(rows, list) or not isinstance(metadata, dict)
                 or not isinstance(warnings, list)
                 or any(not isinstance(warning, str) for warning in warnings)):
+            return False
+        if metadata.get("calculationVersion") != version:
             return False
         context = {
             "windowCode": window, "benchmark": benchmark,
@@ -945,6 +954,7 @@ class TopPicksService:
             self._benchmark_ticker,
             self._risk_free_rate,
             self._universe_limit,
+            CALCULATION_VERSION,
         )
 
     def _snapshot_cache_key(
@@ -1045,22 +1055,20 @@ class TopPicksService:
                 market_data, symbols, self._benchmark_ticker,
                 self._risk_free_rate,
             )
-        observations = self._observation_count_provider(
-            market_data,
-            symbols,
-        )
-
         metric_maps = {
             key: {} for key in METRIC_KEYS
         }
+        observations = {}
 
         if window in {"1D", "1W", "1M"}:
-            metric_maps.update(self._calculate_short_window_metric_maps(
+            short_metrics, observations = self._calculate_short_window_metric_maps(
                 market_data,
                 symbols,
                 window,
-            ))
+            )
+            metric_maps.update(short_metrics)
         elif window == "1Y":
+            observations = self._observation_count_provider(market_data, symbols)
             cumulative = self._calculator_provider(
                 "calculate_cumulative_return"
             )(metric_symbols, start_date, end_date)
@@ -1137,10 +1145,12 @@ class TopPicksService:
             "volatility": {},
             "maxDD": {},
         }
+        observations = {}
 
         for symbol in symbols:
             if symbol not in adj_close.columns:
                 continue
+            observations[symbol] = 0
             prices = adj_close[symbol].dropna().tail(price_observations)
             if prices.shape[0] < 2:
                 continue
@@ -1152,7 +1162,11 @@ class TopPicksService:
             drawdown = (prices / running_peak - 1).clip(upper=0)
             metric_maps["maxDD"][symbol] = _finite_float(drawdown.min())
 
-            returns = prices.pct_change(fill_method=None).dropna()
+            # Keep the supplied rows between the selected observed endpoints.
+            # Dropping them before pct_change would bridge missing prices.
+            sample = adj_close[[symbol]].loc[prices.index[0]:prices.index[-1]]
+            returns = calculate_returns(sample)[symbol].dropna()
+            observations[symbol] = int(returns.shape[0])
             if returns.shape[0] >= 2:
                 metric_maps["volatility"][symbol] = _finite_float(
                     returns.std() * math.sqrt(ANNUALISATION_DAYS)
@@ -1161,7 +1175,7 @@ class TopPicksService:
         if window == "1D":
             metric_maps["volatility"] = {}
             metric_maps["maxDD"] = {}
-        return metric_maps
+        return metric_maps, observations
 
     @staticmethod
     def _build_row(
@@ -1288,6 +1302,7 @@ class TopPicksService:
             "requestedEnd": end_date,
             "endDateInclusive": True,
             "annualisationDays": ANNUALISATION_DAYS,
+            "calculationVersion": CALCULATION_VERSION,
             "riskFreeRate": self._risk_free_rate,
             "riskFreeRateSource": self._risk_free_rate_source,
             "riskFreeRateAsOf": self._risk_free_rate_as_of,
@@ -1315,6 +1330,10 @@ class TopPicksService:
                 "window": WINDOW_METHODS.get(window, "trailing_one_year"),
             },
             "methods": {
+                "volatility": (
+                    "Annualised sample standard deviation of adjacent supplied "
+                    "daily returns in the selected observed-price span."
+                ),
                 "infoRatio": (
                     "Annualised mean active return divided by annualised "
                     "sample tracking error."
