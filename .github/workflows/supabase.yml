@@ -1,0 +1,93 @@
+name: Supabase CI
+
+on:
+  push:
+    branches: ["DevBranch", "main"]
+  pull_request:
+    branches: ["DevBranch", "main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    name: Database replay and authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Set up Python for the cleanup worker
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: server/requirements.txt
+      - name: Install the worker's pinned backend dependencies
+        run: python -m pip install -r server/requirements.txt
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3
+        with:
+          version: "2.84.2"
+      - name: Validate migration versions and historical provenance
+        run: node scripts/check-supabase-migrations.mjs
+      - name: Verify the protected Edge cleanup worker
+        run: node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 supabase/functions/community-image-cleanup/cleanup.test.mjs
+      - name: Start disposable local services
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p server/test-results/supabase
+          # Successful startup prints local keys to stdout. Discard stdout;
+          # retain migration/service errors from stderr without status output.
+          supabase start --exclude realtime,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > /dev/null 2> server/test-results/supabase/start.stderr.log
+      - name: Replay every migration from scratch
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db reset --local --yes 2>&1 | tee server/test-results/supabase/reset.log
+      - name: Check database functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db lint --local --schema public,private --level warning --fail-on warning 2>&1 | tee server/test-results/supabase/lint.log
+      - name: Exercise transactional database authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db --local 2>&1 | tee server/test-results/supabase/pgtap.log
+      - name: Check local database security advisors
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db advisors --local --type security --level warn --fail-on error 2>&1 | tee server/test-results/supabase/advisors.log
+      - name: Exercise durable cleanup and real Storage bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Start on the freshly reset stack before other API fixtures enqueue work.
+          node scripts/test-local-community-cleanup.mjs 2>&1 | tee server/test-results/supabase/cleanup-api.log
+      - name: Exercise local Auth and Storage APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-local-storage.mjs 2>&1 | tee server/test-results/supabase/storage-api.log
+      - name: Preserve database failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-failure-evidence
+          path: server/test-results/supabase/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Stop this disposable project
+        if: ${{ always() }}
+        run: supabase stop --no-backup

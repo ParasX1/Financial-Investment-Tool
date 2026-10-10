@@ -1,4 +1,13 @@
 {
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:all": "node scripts/dev-all.mjs",
+    "sync:top-picks": "node scripts/dev-all.mjs --sync-universe",
+    "test:dev": "node --experimental-test-coverage --test --test-coverage-include=scripts/dev-all.mjs --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 scripts/dev-all.test.mjs",
+    "dev:env": "powershell -ExecutionPolicy Bypass -File scripts/dev-with-external-env.ps1",
+    "dev:env:mac": "bash scripts/dev-with-external-env.sh",
+    "dev:docker": "docker compose up --build"
+  },
   "dependencies": {
     "@nextui-org/react": "^2.4.6",
     "d3": "^7.9.0"

@@ -1,54 +1,52 @@
-
 .main {
-    background-color: #D9D9D9;
-    display: flex;
-    /* flex-wrap: nowrap; */
-    width: "100%";
-    align-items: flex-start; 
-    gap: 2rem; 
-
+  background-color: #d9d9d9;
+  display: flex;
+  /* flex-wrap: nowrap; */
+  width: "100%";
+  align-items: flex-start;
+  gap: 2rem;
+  font-family: var(--fit-font-family);
+  font-size: var(--fit-type-size-body-sm);
+  line-height: var(--fit-type-leading-body);
 }
-
 
 .column {
-    flex: 1;  
-    display: flex;
-    flex-direction: column;
-    padding-left: 4vw;
-    padding-top: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-left: 4vw;
+  padding-top: 30px;
 }
 
-
-.attribute{
-    text-decoration: none;
+.attribute {
+  text-decoration: none;
 }
 
 .firstLi {
-    font-weight: bold;
-    padding-bottom: 10px;
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
+  padding-bottom: 10px;
 }
 
 .fitLogo {
-    width: 50px; 
-    height: auto;
-    margin-bottom: 8px;
-    object-fit: contain;
-  }
+  width: fit-content;
+  margin-bottom: 8px;
+}
 
-  .socialRow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 8px 0;
-  }
-  
-  .socialIcon {
-    width: 30px;
-    height: auto;
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-  
-  .socialIcon:hover {
-    transform: scale(1.1);
-  }
+.socialRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.socialIcon {
+  width: 30px;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.socialIcon:hover {
+  transform: scale(1.1);
+}

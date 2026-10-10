@@ -1,0 +1,94 @@
+.logo {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.62rem;
+  color: #f7f9ff;
+  font-family: var(--fit-font-family);
+  font-synthesis-weight: none;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.mark {
+  display: inline-grid;
+  min-width: 2.85rem;
+  min-height: 2rem;
+  place-items: center;
+  background: var(--fit-logo-gradient);
+  background-clip: text;
+  color: transparent;
+  font-size: var(--fit-logo-mark-size-medium);
+  font-weight: var(--fit-type-weight-bold);
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: 0 0 20px var(--fit-logo-glow);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wordmark {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+  color: #f7f9ff;
+}
+
+.wordmarkMain,
+.wordmarkSub {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wordmarkMain {
+  font-size: var(--fit-logo-wordmark-size);
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: var(--fit-type-leading-control);
+}
+
+.wordmarkSub {
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-logo-subtitle-size);
+  font-weight: var(--fit-type-weight-medium);
+  line-height: var(--fit-type-leading-control);
+}
+
+.compact .mark {
+  min-width: 2rem;
+  min-height: 1.65rem;
+  font-size: var(--fit-logo-mark-size-compact);
+}
+
+.small .mark {
+  min-width: 2.35rem;
+  min-height: 1.8rem;
+  font-size: var(--fit-logo-mark-size-small);
+}
+
+.medium .mark {
+  min-width: 2.85rem;
+  min-height: 2rem;
+  font-size: var(--fit-logo-mark-size-medium);
+}
+
+.large .mark {
+  min-width: 3.25rem;
+  min-height: 2.25rem;
+  font-size: var(--fit-logo-mark-size-large);
+}
+
+.large .wordmarkMain {
+  font-size: var(--fit-type-size-lg);
+}
+
+@media (forced-colors: active) {
+  .mark {
+    background: none;
+    color: CanvasText;
+    text-shadow: none;
+    -webkit-text-fill-color: CanvasText;
+  }
+}

@@ -1,0 +1,132 @@
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, jest } from "@jest/globals";
+import type { PostUI } from "../types";
+import { PostCard } from "./PostCard";
+
+function post(overrides: Partial<PostUI> = {}): PostUI {
+  return {
+    id: "post-1",
+    user: "Member",
+    initials: "ME",
+    title: "NVDA earnings review",
+    body: "Using the latest filing for context.",
+    votes: 4,
+    time: "now",
+    sortTime: Date.now(),
+    tags: ["$NVDA", "Earnings"],
+    postType: "analysis",
+    symbol: "NVDA",
+    sourceUrl: "https://www.sec.gov/Archives/example",
+    commentCount: 0,
+    avatarGradient: "linear-gradient(#000, #111)",
+    fromDB: true,
+    authorId: "user-a",
+    ...overrides,
+  };
+}
+
+describe("PostCard", () => {
+  it("renders neutral research context without inferred horizon or evidence labels", () => {
+    const html = renderToStaticMarkup(
+      <PostCard
+        post={post()}
+        comments={[]}
+        count={0}
+        liked={false}
+        likeBusy={false}
+        saved={false}
+        saveBusy={false}
+        canDeletePost={false}
+        canDeleteComment={() => false}
+        canAttachCommentImage={true}
+        onAddComment={jest.fn<any>()}
+        onDeleteComment={jest.fn<any>()}
+        onToggleLike={jest.fn<any>()}
+        onToggleSave={jest.fn<any>()}
+        onReport={jest.fn<any>()}
+      />,
+    );
+
+    expect(html).toContain("Post type");
+    expect(html).toContain("Analysis");
+    expect(html).toContain("sec.gov");
+    expect(html).toContain("Open source");
+    expect(html).toContain('href="https://www.sec.gov/Archives/example"');
+    expect(html).not.toContain(">Signals<");
+    expect(html).not.toContain(">Horizon<");
+    expect(html).not.toContain(">Evidence<");
+    expect(html).toContain("Save discussion");
+    expect(html).toContain("Report discussion");
+  });
+
+  it("renders each explicit ticker as its own market news route without a generic catch-all link", () => {
+    const html = renderToStaticMarkup(
+      <PostCard
+        post={post({
+          tags: ["Analysis"],
+          tickers: ["NVDA", "NFLX"],
+          symbol: "NVDA",
+        })}
+        comments={[]}
+        count={0}
+        liked={false}
+        likeBusy={false}
+        saved={false}
+        saveBusy={false}
+        canDeletePost={false}
+        canDeleteComment={() => false}
+        canAttachCommentImage={true}
+        onAddComment={jest.fn<any>()}
+        onDeleteComment={jest.fn<any>()}
+        onToggleLike={jest.fn<any>()}
+        onToggleSave={jest.fn<any>()}
+        onReport={jest.fn<any>()}
+      />,
+    );
+
+    expect(html).toContain("/MarketNews?quote=NVDA");
+    expect(html).toContain("/MarketNews?quote=NFLX");
+    expect(html).not.toContain(">View market news<");
+  });
+
+  it("does not request a persisted external image even when the row marks it as owned", () => {
+    const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+
+    try {
+      const html = renderToStaticMarkup(
+        <PostCard
+          post={post({
+            body: "![tracker](https://tracker.example/pixel.png)",
+            imageUrl: "https://tracker.example/pixel.png",
+            imagePath: "posts/pixel.png",
+          })}
+          comments={[]}
+          count={0}
+          liked={false}
+          likeBusy={false}
+          saved={false}
+          saveBusy={false}
+          canDeletePost={false}
+          canDeleteComment={() => false}
+          canAttachCommentImage={true}
+          onAddComment={jest.fn<any>()}
+          onDeleteComment={jest.fn<any>()}
+          onToggleLike={jest.fn<any>()}
+          onToggleSave={jest.fn<any>()}
+          onReport={jest.fn<any>()}
+        />,
+      );
+
+      expect(html).toContain("Image unavailable");
+      expect(html).not.toContain('src="https://tracker.example/pixel.png"');
+    } finally {
+      if (originalUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      } else {
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+      }
+    }
+  });
+});
