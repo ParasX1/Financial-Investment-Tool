@@ -4,7 +4,80 @@ Tracking #268. This continues the original owner request to improve the actual
 FIT Supabase project, beyond the completed source/local development phase.
 Hosted updates were explicitly requested on 10 October 2026.
 
-## First compatible batch
+## Current hosted status, 10 October 2026
+
+The requested hosted schema alignment, Auth/Storage acceptance and protected
+cleanup deployment are complete on `egjnhetinyoyrhbetbxi` (PostgreSQL 17.6).
+Production Edge version 4 is ACTIVE and exactly matches the approved handler/core,
+with custom Bearer authentication and `verify_jwt=false`. Its protected SQL
+invocation returned HTTP 200 with all six aggregate counts zero; external GET/missing
+Bearer/wrong Bearer controls returned 405/401/401 with zero cleanup attempts.
+
+Cron job 1, `fit-community-image-cleanup`, was scheduled at
+`2026-10-10T10:00:38Z` for `*/5 * * * *`, with an 80-second statement timeout.
+The first automatic run (run ID 1) succeeded from
+`2026-10-10T10:05:00.114046Z` to `2026-10-10T10:05:01.867628Z`, with return
+message `1 row`. The dispatcher raises on non-200/failed aggregates, establishing
+protected worker completion; cron itself records no raw HTTP response body.
+Backlog read-back found zero pending tickets, no oldest pending timestamp and
+zero errors. This is one observed scheduled run, not a long-term reliability claim.
+
+Source and hosted migration versions are explicitly mapped; existing history
+was preserved rather than renamed:
+
+| Effect | Source version | Hosted version |
+| --- | --- | --- |
+| Avatars/Profile/indexes | `20261010041548` | `20261010041548` |
+| Community RPC/Storage compatibility | `20261010045043` | `20261010080722` |
+| Remaining reference grants/avatar ownership | `20261010081946` | `20261010094015` |
+| Durable image-cleanup tickets | `20261009153003` | `20261010094115` |
+| Protected worker transport/authentication | `20261010084019` | `20261010094122` |
+
+Real hosted acceptance used the intended Edge slug twice. The first fixture
+incorrectly supplied forbidden `comments.id`; production grants correctly denied
+it at `comment_insert`. Only the fixture changed to a database-generated ID.
+The first HTTP response recorded 219 checks; the corrected response returned
+HTTP 200/PASS with 269. Stored results contain 218/268 because the final finish
+assertion follows result storage. Both runs are retained in ignored
+`server/.cache/hosted-edge/hosted-acceptance-results.json`.
+
+The corrected run covered login/refresh, old 9/1/1 and new 10/2/2 RPC dispatch,
+wrong/null intent denial, avatar/Community upload and upsert, foreign-user and
+anonymous metadata denial, cross-author cascade, forced Storage API failure,
+durable pending diagnostics, actual retry/ACK and public object endpoint/metadata
+absence, idempotency, unrelated fixture survival and exact API teardown.
+Independent SQL confirmed zero fixture Auth users, app users, profiles, posts,
+comments and objects. Original counts (10 Auth users, 10 app users, 24 posts,
+14 comments, 3 profiles, 8 objects) and five row/object aggregate fingerprints
+were restored exactly. All seven historical unreferenced candidates remain.
+
+Temporary gate ledger versions `20261010094333`/`20261010095938` record creation
+and retirement after fresh review. Only three synthetic reservations were
+removed; all four temporary RPCs and the gate table are absent. The ledger now
+has 17 entries while preserving its initial ten; all 11 pre-compatibility
+versions/names/statement fingerprints are unchanged. Final read-back after removal
+reconfirmed those counts/fingerprints and unchanged definitions/ACLs for all
+pre-existing public functions. No credentials were exported or rotated; the
+scoped caller was generated inside SQL/Vault and the service-role
+credential stayed in Edge's environment.
+
+Source PR #322 merged with all six checks passing. Revised Linux CI passed
+36 migrations, eight SQL files/269 assertions, lint/advisors, 85 real local
+cleanup checks and 63 local Auth/Community/Storage controls. The worker passed
+37 unit tests with 100% line/branch and 88.24% function coverage. Native Windows
+Docker replay is **NOT RUN** due to the existing startup failure. These CI/local
+results and the hosted run are distinct evidence.
+
+See [the deployed operation](hosted-community-cleanup-operation.md) for source
+identity, credential/transport boundaries and recurring-run observation.
+Broader #268 engine/SMTP/backups/governance/Vercel work remains partly open.
+Main stays unmerged in draft PR #319; completion of this hosted scope does not
+close those broader operational requirements.
+
+## Historical first compatible batch
+
+The following records the first batch's captured baseline and result before
+the later compatibility, grant/ownership and cleanup deployments above.
 
 Project `egjnhetinyoyrhbetbxi` matches the configured backend URL. Fresh read-only
 inspection found 10 historical ledger entries, 24 posts, 14 comments, 3 profiles
@@ -66,21 +139,23 @@ This batch neither rewrites user data nor depends on a whole-project data restor
 Its catalog snapshot and inverse SQL are narrow recovery evidence, not a verified
 full database/Storage backup. Larger populated upgrades need their own recovery plan.
 
-Expected-owner RPC deployment and durable image cleanup/worker scheduling remain
-the next actual hosted batches. Existing old clients must stay compatible during
+At this first checkpoint, expected-owner RPCs and durable cleanup/scheduling had
+not yet been deployed; those subsequent batches are now recorded above.
+Existing old clients must stay compatible during
 transition; do not drop their RPC signatures without a verified client cutover.
 No PostgreSQL engine restart/upgrade, paid branch/project or credential change is
 included in this first batch. Main remains unmerged.
 
-## Community compatibility batch
+## Historical Community compatibility batch
 
 Historical status before resumed access on 10 October2026: source and disposable
 verification complete; hosted application had not succeeded. Both prior attempts returned
 `Invalid or expired requestState`. Read-back after the second failure confirms
 the original 9/1/1 RPCs, absent comment limit, unchanged counts24/14/3/8 and the
-same eleven ledger fingerprints. Read operations work; browser is signed out
-and the local CLI is not authenticated. Restore supported access before another
-attempt. This is an access failure, not a request for renewed owner authorization.
+same eleven ledger fingerprints. At that checkpoint, read operations worked;
+the browser was signed out and the local CLI unauthenticated. Subsequent MCP
+access enabled the successful deployment below. These were access failures,
+not failures of the SQL or requests for renewed owner authorization.
 
 Migration `20261010045043_reconcile_hosted_community_compatibility` contains only
 the verified missing effects:
@@ -102,8 +177,9 @@ the verified missing effects:
 The five existing names outside posts/% and comments/% remain owner-readable
 and owner-deletable. UPDATE retaining an outside-prefix name becomes restricted;
 current generated-path uploads are compatible. No existing path, owner, image
-byte or application row is rewritten. Physical cross-author image cleanup still
-requires the separately reviewed capture migration and protected worker.
+byte or application row is rewritten. Physical cross-author image cleanup at
+this checkpoint still required the separately reviewed capture migration and
+protected worker, now deployed above.
 
 [PostgREST named arguments and overloads](https://docs.postgrest.org/en/stable/references/api/functions.html#overloaded-functions)
 support retaining distinct required argument sets during the client transition.
@@ -112,7 +188,7 @@ old callers; adding defaults could make payload dispatch ambiguous. Neither is
 used. Only the Community subset of the larger hardening migration is reconciled;
 the hosted project has no legacy Stocks/Symbols tables.
 
-## Verification and deployment procedure
+## Historical rehearsal and deployment safeguards
 
 The committed SQL SHA256 is
 `2eb72207b7813de73b7c3845c12ebaa603e12becc9f90f9ab04e67c177c9e6e3`.
@@ -154,14 +230,14 @@ new callers are no longer using the new signatures. Never run this inverse on a
 fresh source replay or after unrelated schema changes. A catalog snapshot and
 rehearsed targeted inverse are not a whole-project backup or Storage byte backup.
 
-The existing Python cleanup command remains the preferred protected operation.
-Read-only provider inspection found zero Edge Functions, no pg_cron/pg_net, and
+The initial plan preferred the existing Python cleanup command. That checkpoint's
+read-only provider inspection found zero Edge Functions, no pg_cron/pg_net, and
 an installed Vault with no secret entries. Edge Functions' default admin secret
 supports outbound access, but does not authenticate a privileged scheduled
-caller. Avoid an unscheduled second-runtime deployment that would leave cleanup
-unfinished. Protected server access/credential and observed scheduled runs are
-still pending under#268; no cleanup migration/worker/schedule or engine upgrade
-was applied in this batch.
+caller. No cleanup migration/worker/schedule or engine upgrade was applied in
+the compatibility batch itself. Because no protected Python scheduler existed,
+the later reviewed operation used Edge and synchronous HTTP; its completed
+deployment and observed automatic run are recorded above.
 
 ## Resumed actual deployment
 
@@ -177,14 +253,15 @@ remain historical evidence, not the current application status.
 
 Further review found remaining applicable #288 effects: unnecessary browser
 table/sequence grants on profiles/tickers/top_picks_universe, permissive
-postgres-created object defaults, and path-only Avatar INSERT. The next narrow
-forward migration reconciles those effects without touching private Users,
+postgres-created object defaults, and path-only Avatar INSERT. The narrow
+forward migration `20261010081946`, applied as `20261010094015`, reconciled
+those effects without touching private Users,
 existing function definitions/ACLs, service grants or other creators' defaults.
 Missing hosted Stocks/Symbols are excluded rather than inventing tables.
 
 The owner requested actual Auth/Storage and image-cleanup completion through MCP.
-No protected Python scheduler exists here, so the concrete hosted operation uses
-the existing ticket protocol in Edge with a Vault-generated caller token and
-Cron using synchronous HTTP; see [its operation and acceptance plan](hosted-community-cleanup-operation.md).
-Provisioning, deployment, actual API acceptance and observed recurring execution
-remain distinct checkpoints. Main stays unmerged.
+No protected Python scheduler exists here, so the hosted operation uses the
+existing ticket protocol in Edge with a Vault-generated caller token and cron
+using synchronous HTTP; see [the deployed operation](hosted-community-cleanup-operation.md).
+Provisioning, deployment, actual API acceptance and the first automatic cron run
+are verified above. Main stays unmerged.
