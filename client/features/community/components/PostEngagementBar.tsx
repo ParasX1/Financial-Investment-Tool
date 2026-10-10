@@ -17,9 +17,9 @@ interface PostEngagementBarProps {
   formattedVotes: string;
   voteLabel: string;
   commentsOpen: boolean;
-  liked: boolean;
+  liked: boolean | undefined;
   likeBusy: boolean;
-  saved: boolean;
+  saved: boolean | undefined;
   saveBusy: boolean;
   onToggleComments: () => void;
   onToggleLike: (postId: string) => Promise<void> | void;
@@ -76,7 +76,10 @@ export function PostEngagementBar({
         aria-label={`Toggle ${commentLabel} for ${postTitle}`}
         title={commentLabel}
       >
-        <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
+        <ChatBubbleOutlineRoundedIcon
+          sx={{ fontSize: 18 }}
+          aria-hidden="true"
+        />
         <span className="tabular-nums" aria-live="polite">
           {formattedCommentCount}
         </span>
@@ -85,16 +88,25 @@ export function PostEngagementBar({
       <button
         type="button"
         onClick={() => onToggleLike(postId)}
-        disabled={likeBusy}
+        disabled={likeBusy || liked === undefined}
         className={cn(
           actionBase,
           "justify-center",
           fitType.control,
-          actionState(liked, likeBusy),
+          actionState(Boolean(liked), likeBusy),
           FOCUS_VISIBLE,
         )}
         aria-pressed={liked}
-        aria-label={`${liked ? "Unlike" : "Like"} post. ${voteLabel}`}
+        aria-label={
+          liked === undefined
+            ? `Like state unavailable. ${voteLabel}`
+            : `${liked ? "Unlike" : "Like"} post. ${voteLabel}`
+        }
+        title={
+          liked === undefined
+            ? "Reload community data to check your like state."
+            : undefined
+        }
       >
         {liked ? (
           <ThumbUpRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
@@ -109,23 +121,34 @@ export function PostEngagementBar({
       <button
         type="button"
         onClick={() => onToggleSave(postId)}
-        disabled={saveBusy}
+        disabled={saveBusy || saved === undefined}
         className={cn(
           actionBase,
           "justify-center",
           fitType.control,
-          actionState(saved, saveBusy),
+          actionState(Boolean(saved), saveBusy),
           FOCUS_VISIBLE,
         )}
         aria-pressed={saved}
-        aria-label={`${saved ? "Remove saved" : "Save"} discussion`}
+        aria-label={
+          saved === undefined
+            ? "Saved state unavailable"
+            : `${saved ? "Remove saved" : "Save"} discussion`
+        }
+        title={
+          saved === undefined
+            ? "Reload community data to check your saved state."
+            : undefined
+        }
       >
         {saved ? (
           <BookmarkRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
         ) : (
           <BookmarkBorderRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
         )}
-        <span>{saved ? "Saved" : "Save"}</span>
+        <span>
+          {saved === undefined ? "Unavailable" : saved ? "Saved" : "Save"}
+        </span>
       </button>
     </div>
   );

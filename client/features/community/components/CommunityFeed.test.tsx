@@ -1,5 +1,6 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import TestRenderer, { act } from "react-test-renderer";
 import { describe, expect, it, jest } from "@jest/globals";
 import { createCommentsState } from "../state/commentsReducer";
 import type { PostUI } from "../types";
@@ -71,6 +72,7 @@ describe("CommunityFeed", () => {
     expect(partialHtml).toContain("Community data did not fully load");
     expect(partialHtml).toContain("Comments could not be refreshed.");
     expect(partialHtml).toContain(livePost.title);
+    expect(partialHtml).toContain("Try again");
 
     const emptyHtml = renderToStaticMarkup(
       <CommunityFeed {...props()} query="banks" />,
@@ -102,4 +104,70 @@ describe("CommunityFeed", () => {
     expect(filteredPartialHtml).toContain("No discussions match your search.");
     expect(filteredPartialHtml).not.toContain("Community is unavailable");
   });
+
+  it("offers an accessible partial retry and retains posts while the retry is busy", () => {
+    const input = props();
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        <CommunityFeed
+          {...input}
+          hasLoadedPosts
+          loadError="Comments unavailable."
+        />,
+      );
+    });
+    const retry = renderer.root.findByType("button");
+    act(() => {
+      retry.props.onClick();
+    });
+    expect(input.onRetry).toHaveBeenCalledTimes(1);
+    act(() => {
+      renderer.update(
+        <CommunityFeed
+          {...input}
+          hasLoadedPosts
+          loadError="Comments unavailable."
+          retrying
+        />,
+      );
+    });
+    expect(renderer.root.findByType("button").props.disabled).toBe(true);
+    expect(renderer.root.findByType("button").children).toEqual(["Retrying…"]);
+    expect(renderer.root.findByType("section").props["aria-busy"]).toBe(true);
+    renderer.unmount();
+    const busyHtml = renderToStaticMarkup(
+      <CommunityFeed
+        {...props([post()])}
+        loadError="Comments unavailable."
+        retrying
+      />,
+    );
+    expect(busyHtml).toContain(post().title);
+    expect(busyHtml).toContain("Retrying…");
+    expect(busyHtml).not.toContain("Loading latest discussions");
+  });
+
+  it.each(["saved", "liked", "commented"] as const)(
+    "does not claim the %s view is empty when associated state is unknown",
+    (view) => {
+      const html = renderToStaticMarkup(
+        <CommunityFeed
+          {...props()}
+          hasLoadedPosts
+          view={view}
+          loadError="Associated data unavailable."
+          commentsReady={false}
+          likesReady={false}
+          savesReady={false}
+        />,
+      );
+      expect(html).toContain(
+        "This view is unavailable until community data reloads",
+      );
+      expect(html).toContain("Try again");
+      expect(html).not.toContain(`No ${view} discussions yet.`);
+      expect(html).not.toContain("No discussions match your search.");
+    },
+  );
 });

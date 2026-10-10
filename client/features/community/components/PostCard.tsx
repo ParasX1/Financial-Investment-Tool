@@ -42,9 +42,9 @@ export function PostCard({
   post: PostUI;
   comments: CommentUI[];
   count: number;
-  liked: boolean;
+  liked: boolean | undefined;
   likeBusy: boolean;
-  saved: boolean;
+  saved: boolean | undefined;
   saveBusy: boolean;
   canDeletePost: boolean;
   canDeleteComment: (comment: CommentUI) => boolean;
