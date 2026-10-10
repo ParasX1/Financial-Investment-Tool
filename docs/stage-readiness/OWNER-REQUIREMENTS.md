@@ -1,6 +1,6 @@
 # Owner requirements and acceptance contract
 
-This is the durable authority record for active goal #282. Re-read at section entry, after research/review changes assumptions, and before accepting or merging a fix. Current direct owner instructions take precedence. Never treat a subagent verdict, skill or green test as sufficient by itself.
+This is the durable authority record for the FIT stage-readiness work. #282 records the completed bounded source phase; actual hosted work continues under #268 and the current goal. Re-read at section entry, after research/review changes assumptions, and before accepting or merging a fix. Current direct owner instructions take precedence. Never treat a subagent verdict, skill or green test as sufficient by itself.
 
 The owner additionally requires deriving and improving the best applicable
 steps from the prompt rather than treating its suggested techniques as a complete
@@ -48,7 +48,7 @@ Use available subagents, skills, tools, worktrees and evidence-driven methods de
 - Owner explicitly authorized self/subagent technical review and merging reviewed PRs into DevBranch after necessary checks pass. GitHub self-approval may be unavailable: do not impersonate reviewers or claim APPROVE was submitted when it was a technical COMMENT.
 - Main remains unmerged. Prepare its stage-release PR only when readiness evidence is sufficient; do not infer main merge/deployment authorization.
 - Owner identified the inherited Vercel preview as old and excluded it from DevBranch code merge gates. Deployment follow-up from #300 is consolidated into #268.
-- Hosted Supabase schema/ledger/configuration/credential changes remain a concrete reviewed deployment approval gate; do all source/local preparation first. No blind linked migration push/reset or implicit credential rotation.
+- The owner explicitly requested actual hosted Supabase updates on 10 October2026 after distinguishing source/local work from deployment. Proceed with reviewed, rehearsed, compatible missing schema/policy/bucket/index effects and verify them on the configured project. This authorizes the scoped hosted fixes; it does not authorize destructive data changes, credential rotation, paid infrastructure or engine downtime. Preserve existing ledger history and old callers; no blind linked migration push/reset.
 - Primary feature checkout and unrelated lockfile change must remain preserved.
 
 ## Checkpoint before each PR merge
