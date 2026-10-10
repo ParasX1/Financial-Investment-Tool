@@ -62,7 +62,7 @@ describe("PortfolioDataTable models", () => {
       ["NVDA", "insufficient overlap", "9"],
     ]);
     expect(model.keyFigures[0]).toEqual({
-      label: "Highest in comparison",
+      label: "Highest finite Sortino",
       value: "AAPL · +1.25",
     });
   });
