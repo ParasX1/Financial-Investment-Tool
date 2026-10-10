@@ -2,12 +2,18 @@
 
 from flask import Blueprint, jsonify
 
+from ..analytics.metric_contract import finite_json_value
+
 
 START_DATE = "2023-01-01"
 END_DATE = "2024-01-01"
 STOCK_TICKERS = ["AAPL", "GOOGL", "MSFT"]
 MARKET_TICKER = "SPY"
 RISK_FREE_RATE = 0.01
+
+
+def _json_response(value):
+    return jsonify(finite_json_value(value))
 
 
 def create_legacy_metrics_blueprint(calculator_provider):
@@ -21,7 +27,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
             START_DATE,
             END_DATE,
         )
-        return jsonify(betas)
+        return _json_response(betas)
 
     @blueprint.get("/api/alphacomparison")
     def get_alpha():
@@ -32,7 +38,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
             END_DATE,
             RISK_FREE_RATE,
         )
-        return jsonify(alphas)
+        return _json_response(alphas)
 
     @blueprint.get("/api/maxdrawdownanalysis")
     def get_drawdown():
@@ -41,7 +47,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
             START_DATE,
             END_DATE,
         )
-        return jsonify({
+        return _json_response({
             ticker: drawdown.to_dict()
             for ticker, drawdown in drawdowns.items()
         })
@@ -51,7 +57,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
         cumulative_returns = calculator_provider(
             "calculate_cumulative_return"
         )(STOCK_TICKERS, START_DATE, END_DATE)
-        return jsonify({
+        return _json_response({
             ticker: cumulative_return.to_dict()
             for ticker, cumulative_return in cumulative_returns.items()
         })
@@ -64,14 +70,14 @@ def create_legacy_metrics_blueprint(calculator_provider):
             END_DATE,
             RISK_FREE_RATE,
         )
-        return jsonify(sortino_ratios)
+        return _json_response(sortino_ratios)
 
     @blueprint.get("/api/marketcorrelationanalysis")
     def get_correlation():
         correlations = calculator_provider(
             "calculate_correlation_with_market"
         )(STOCK_TICKERS, MARKET_TICKER, START_DATE, END_DATE)
-        return jsonify(correlations)
+        return _json_response(correlations)
 
     @blueprint.get("/api/sharperatiomatrix")
     def get_sharpe_ratio():
@@ -81,7 +87,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
             END_DATE,
             RISK_FREE_RATE,
         )
-        return jsonify(sharpe_ratios)
+        return _json_response(sharpe_ratios)
 
     @blueprint.get("/api/volatilityanalysis")
     def get_volatility():
@@ -90,7 +96,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
             START_DATE,
             END_DATE,
         )
-        return jsonify({
+        return _json_response({
             ticker: volatilities[ticker] for ticker in volatilities
         })
 
@@ -99,7 +105,7 @@ def create_legacy_metrics_blueprint(calculator_provider):
         values_at_risk = calculator_provider(
             "calculate_value_at_risk"
         )(STOCK_TICKERS, START_DATE, END_DATE)
-        return jsonify({
+        return _json_response({
             ticker: values_at_risk[ticker] for ticker in values_at_risk
         })
 
@@ -108,6 +114,6 @@ def create_legacy_metrics_blueprint(calculator_provider):
         efficient_frontier = calculator_provider(
             "calculate_efficient_frontier"
         )(STOCK_TICKERS, START_DATE, END_DATE)
-        return jsonify(efficient_frontier)
+        return _json_response(efficient_frontier)
 
     return blueprint

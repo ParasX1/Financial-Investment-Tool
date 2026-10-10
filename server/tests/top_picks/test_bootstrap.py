@@ -398,7 +398,7 @@ def test_optional_seed_path_probe_permission_failure_preserves_normal_startup(
 def test_export_manifest_describes_verified_complete_package(seed_archive):
     manifest = seed_archive["manifest"]
     assert manifest["format_version"] == 1
-    assert manifest["calculation_version"] == 1
+    assert manifest["calculation_version"] == 2
     assert manifest["assumptions"] == {
         "benchmark": "^AXJO", "riskFreeRate": 0.0435,
         "universeLimit": 1000,

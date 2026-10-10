@@ -11,11 +11,11 @@ from src.server import create_app
 from tests.top_picks.test_snapshot_context import DeferredThread, RecordingService
 
 
-KEY = ("top-picks-snapshot", "1Y", "^AXJO", 0.0435, 1000,
+KEY = ("top-picks-snapshot", "1Y", "^AXJO", 0.0435, 1000, 2,
        "2025-07-31", "2026-07-31")
 SNAPSHOT = {
     "rows": [{"symbol": "AAA", "ret1y": 0.1}],
-    "metadata": {"windowCode": "1Y", "benchmark": "^AXJO",
+    "metadata": {"windowCode": "1Y", "benchmark": "^AXJO", "calculationVersion": 2,
                  "requestedStart": "2025-07-31", "requestedEnd": "2026-07-31"},
     "warnings": [],
 }
@@ -92,8 +92,8 @@ def test_invalid_snapshot_value_is_rebuilt_instead_of_served(tmp_path, monkeypat
     assert "private-broken-value" not in caplog.text
 
 
-def test_matching_assumptions_only_legacy_snapshot_keeps_stale_fallback(tmp_path):
-    value = {**SNAPSHOT, "metadata": {"assumptions": {
+def test_matching_assumptions_only_versioned_snapshot_keeps_stale_fallback(tmp_path):
+    value = {**SNAPSHOT, "metadata": {"calculationVersion": 2, "assumptions": {
         "benchmark": "^AXJO", "riskFreeRateAnnual": 0.0435,
         "universeLimit": 1000, "window": "trailing_one_year",
     }}}
@@ -103,6 +103,16 @@ def test_matching_assumptions_only_legacy_snapshot_keeps_stale_fallback(tmp_path
     }))
 
     assert cache.get(KEY) == (value, "stale")
+
+
+def test_generic_legacy_cache_namespace_keeps_dictionary_values(tmp_path):
+    key = ("top-picks", "1D", "legacy-cache-client")
+    value = {"cached": "generic legacy value"}
+    raw_key = json.dumps(key)
+    cache = TopPicksSnapshotCache(persistence_path=write_cache(tmp_path, {
+        "latest_key": raw_key, "entries": {raw_key: {"value": value}},
+    }))
+    assert cache.get(key) == (value, "stale")
 
 
 @pytest.mark.parametrize("payload", [None, [], 7])
