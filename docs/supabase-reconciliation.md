@@ -14,11 +14,11 @@ normalized replay SHA256 for all 28 original migration files. The original
 commit remains the source of the original SQL; the manifest does not assert
 that a hosted project applied those bytes.
 
-| Alternative | Fresh bootstrap | Existing deployment consequence | Decision |
-| --- | --- | --- | --- |
-| Minimal compatibility corrections and explicit historical mapping | Repairs the reproduced blockers while keeping the original effect sequence | Requires per-effect ledger reconciliation; existing applied SQL does not rerun when a file changes | Selected |
-| Replace the chain with a squashed new baseline | Could describe the final schema concisely | Requires a wholesale baseline/ledger transition and proof that deployed data and effects match | Deferred; larger transition without a verified hosted snapshot |
-| Append only a new forward migration | Can harden an already bootstrapped database | Cannot fix a failure in an earlier migration or duplicate version | Insufficient for bootstrap |
+| Alternative                                                       | Fresh bootstrap                                                            | Existing deployment consequence                                                                    | Decision                                                       |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Minimal compatibility corrections and explicit historical mapping | Repairs the reproduced blockers while keeping the original effect sequence | Requires per-effect ledger reconciliation; existing applied SQL does not rerun when a file changes | Selected                                                       |
+| Replace the chain with a squashed new baseline                    | Could describe the final schema concisely                                  | Requires a wholesale baseline/ledger transition and proof that deployed data and effects match     | Deferred; larger transition without a verified hosted snapshot |
+| Append only a new forward migration                               | Can harden an already bootstrapped database                                | Cannot fix a failure in an earlier migration or duplicate version                                  | Insufficient for bootstrap                                     |
 
 Only two historical files change:
 
@@ -51,13 +51,15 @@ file, paid service, or hosted credentials are needed.
 
 ```sh
 node scripts/check-supabase-migrations.mjs
+python -m pip install -r server/requirements.txt
 supabase start --exclude realtime,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 supabase db reset --local --yes
-supabase db lint --local --schema public --level warning --fail-on warning
+supabase db lint --local --schema public,private --level warning --fail-on warning
 supabase test db --local
 supabase db advisors --local --type security --level warn --fail-on error
+node scripts/test-local-community-cleanup.mjs
 node scripts/test-local-storage.mjs
-supabase stop
+supabase stop --no-backup
 ```
 
 The `Supabase CI` workflow runs on every PR/push targeting `DevBranch` or `main`,
@@ -68,15 +70,21 @@ Storage and REST. Failure artifacts preserve command exit results through
 the API runner stay in process memory. Cleanup stops only the runner's local
 project. It never links or deploys a hosted database.
 
-| Requirement | Native evidence | Decision/refinement |
-| --- | --- | --- |
-| Fresh bootstrap | Original startup fails on missing schema; fixing it exposes duplicate version; normalized chain resets successfully | Keep both failures; preserve original hash/effect map |
-| Private data | Transactional owner/other/anon tests for Users, Watchlist, Top Picks and Portfolio preferences, including ownership transfer and RPC validation | Keep existing owner-only contract |
-| Community authorization | Public reads, author writes/deletes, private likes/saves/reports, like idempotency, atomic ticker/post RPC and failed RPC rollback | Explicit grants complement RLS |
-| Least privilege | Actual SQL-role TRUNCATE probes and fresh temporary table/function default-grant tests | Remove inherited browser ALL and implicit function EXECUTE |
-| Image ownership | Real pgTAP role operations, including an unfiltered DELETE; owner/other/anon Storage metadata boundaries and bucket configuration | Use owner_id and remove the legacy discussion-owner policy |
-| Storage usability | Same local API runner fails baseline Community owner upsert with HTTP 400; candidate permits owner upload/upsert/list/delete and rejects cross-owner mutation | Restore required owner SELECT policy |
-| Cross-author post removal | Real REST deletion cascades another author's comment row; Storage denies removing their image; its owner then removes the synthetic orphan | Preserve object ownership; record cleanup limitation below |
+The cleanup runner uses Python on PATH and the pinned backend requirements. Run
+it before the other API fixtures, matching CI: the latter can enqueue cleanup
+work. Current cleanup behavior and its metadata boundary are documented in
+[Community image cleanup](community-image-cleanup.md). The counts below describe
+the original replay/hardening PR, rather than the later combined stage suite.
+
+| Requirement               | Native evidence                                                                                                                                               | Decision/refinement                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Fresh bootstrap           | Original startup fails on missing schema; fixing it exposes duplicate version; normalized chain resets successfully                                           | Keep both failures; preserve original hash/effect map      |
+| Private data              | Transactional owner/other/anon tests for Users, Watchlist, Top Picks and Portfolio preferences, including ownership transfer and RPC validation               | Keep existing owner-only contract                          |
+| Community authorization   | Public reads, author writes/deletes, private likes/saves/reports, like idempotency, atomic ticker/post RPC and failed RPC rollback                            | Explicit grants complement RLS                             |
+| Least privilege           | Actual SQL-role TRUNCATE probes and fresh temporary table/function default-grant tests                                                                        | Remove inherited browser ALL and implicit function EXECUTE |
+| Image ownership           | Real pgTAP role operations, including an unfiltered DELETE; owner/other/anon Storage metadata boundaries and bucket configuration                             | Use owner_id and remove the legacy discussion-owner policy |
+| Storage usability         | Same local API runner fails baseline Community owner upsert with HTTP 400; candidate permits owner upload/upsert/list/delete and rejects cross-owner mutation | Restore required owner SELECT policy                       |
+| Cross-author post removal | Real REST deletion cascades another author's comment row; Storage denies removing their image; its owner then removes the synthetic orphan                    | Preserve object ownership; record cleanup limitation below |
 
 Recorded local runs used `public.ecr.aws/supabase/postgres:17.6.1.095`, with
 `SHOW server_version = 17.6`, and `supabase/pg_prove:3.36`. The original complete
@@ -91,8 +99,7 @@ from these local runs.
 
 On the Windows verification host, gateway port 54321 was configured but Docker
 did not publish it. A runtime-only port 54331 isolated that infrastructure
-failure and allowed real API tests. Repository and Ubuntu CI config retain
-54321. Two failed local startup attempts are preserved as infrastructure
+failure and allowed real API tests. Repository and Ubuntu CI config retain 54321. Two failed local startup attempts are preserved as infrastructure
 outcomes, not passing API tests.
 
 Tests intentionally distinguish SQL-role capability from remote exposure.
@@ -133,18 +140,18 @@ deployment; RLS/table counts alone do not establish the effects below.
 
 The reported ledger has ten entries:
 
-| Hosted version | Recorded effect/name |
-| --- | --- |
-| 20240922110723 | remote_schema |
-| 20240922112057 | remote_schema |
-| 20260428025441 | remote_schema |
-| 20260714173009 | Watchlist |
-| 20260718144214 | research loop |
-| 20260719045820 | post tickers |
+| Hosted version | Recorded effect/name        |
+| -------------- | --------------------------- |
+| 20240922110723 | remote_schema               |
+| 20240922112057 | remote_schema               |
+| 20260428025441 | remote_schema               |
+| 20260714173009 | Watchlist                   |
+| 20260718144214 | research loop               |
+| 20260719045820 | post tickers                |
 | 20260719060205 | atomic post/ticker creation |
-| 20260724013151 | content limits |
-| 20260724014324 | image references |
-| 20260724015307 | image path integrity |
+| 20260724013151 | content limits              |
+| 20260724014324 | image references            |
+| 20260724015307 | image path integrity        |
 
 Several hosted versions differ from repository versions for similarly named
 effects. Matching names is not proof of matching SQL. The avatars and Community
@@ -168,26 +175,26 @@ statements before proposing any ledger bookkeeping.
    **present and matching**, **missing**, **present but different**, or
    **unverified**. A filename or ledger count alone cannot assign a status.
 
-| Historical effect group | Compare before deciding to apply |
-| --- | --- |
-| 2024 base schema and auth trigger | Extensions supported by the actual PG version; Stocks/Symbols/Users constraints, trigger body and final grants |
-| Original duplicate 20260508000000 | Distinguish conditional community ownership statements from avatars bucket/policies using stored statements and actual catalog effects |
-| 20260508010000 community bootstrap | profiles/tickers/posts/comments columns, public reads, final author policies, comment-images bucket and policies |
-| 20260508020000 likes | post_likes key/FKs, private SELECT, like/unlike bodies, explicit EXECUTE and auth guards |
-| 20260508030000 through 20260509020000 | body/tags/image fields, actual attachment references and historical cleanup policy |
-| 20260509030000 and 20260509040000 | authenticated authorship and author-only comment deletion, with final storage policy union |
-| 20260517090000 and 20260628090000 | phone, handle constraints and partial unique handle index |
-| 20260714173009 Watchlist | Existing symbol validity, normalized duplicates/counts/positions, constraints, owner policies, RPC contracts and trigger |
-| 20260717090000 profile security | Private Users fields/grants, auth-trigger/backfill completeness, canonical avatar path and owner_id coverage |
-| 20260717110000 Community grants | Column grants, no direct vote mutation, no broad table privileges, no anonymous mutation RPCs |
-| 20260718131804 research loop | Typed post metadata, private saves, private reports and moderation-only status writes |
-| 20260719030238 and 20260719053615 | Ordered ticker schema/backfill, atomic creation RPC, deferred primary-ticker consistency |
-| 20260724013151 through 20260724015410 | Existing title/body validity and the exact URL-to-path transformation; invalid references must be reviewed before data updates |
-| 20260731093733 and 20260731094217 | Owner preferences plus seed rows, with duplicates and existing ticker edits considered |
-| 20260731094703 | Profile policies plus comments author/post and posts author indexes; #268 requires verifying each actual index before installation |
-| 20260731124305 | Portfolio ownership, existing primary/FK keys, tags and unknown legacy owners; fail rather than invent ownership |
-| 20260808010000 | Curated universe constraints/read policy and data backfill/upsert effects |
-| New forward hardening | Actual public/column/default privileges, service maintenance, canonical owner_id and all permissive Storage policies; unknown hosted policies need review |
+| Historical effect group               | Compare before deciding to apply                                                                                                                          |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2024 base schema and auth trigger     | Extensions supported by the actual PG version; Stocks/Symbols/Users constraints, trigger body and final grants                                            |
+| Original duplicate 20260508000000     | Distinguish conditional community ownership statements from avatars bucket/policies using stored statements and actual catalog effects                    |
+| 20260508010000 community bootstrap    | profiles/tickers/posts/comments columns, public reads, final author policies, comment-images bucket and policies                                          |
+| 20260508020000 likes                  | post_likes key/FKs, private SELECT, like/unlike bodies, explicit EXECUTE and auth guards                                                                  |
+| 20260508030000 through 20260509020000 | body/tags/image fields, actual attachment references and historical cleanup policy                                                                        |
+| 20260509030000 and 20260509040000     | authenticated authorship and author-only comment deletion, with final storage policy union                                                                |
+| 20260517090000 and 20260628090000     | phone, handle constraints and partial unique handle index                                                                                                 |
+| 20260714173009 Watchlist              | Existing symbol validity, normalized duplicates/counts/positions, constraints, owner policies, RPC contracts and trigger                                  |
+| 20260717090000 profile security       | Private Users fields/grants, auth-trigger/backfill completeness, canonical avatar path and owner_id coverage                                              |
+| 20260717110000 Community grants       | Column grants, no direct vote mutation, no broad table privileges, no anonymous mutation RPCs                                                             |
+| 20260718131804 research loop          | Typed post metadata, private saves, private reports and moderation-only status writes                                                                     |
+| 20260719030238 and 20260719053615     | Ordered ticker schema/backfill, atomic creation RPC, deferred primary-ticker consistency                                                                  |
+| 20260724013151 through 20260724015410 | Existing title/body validity and the exact URL-to-path transformation; invalid references must be reviewed before data updates                            |
+| 20260731093733 and 20260731094217     | Owner preferences plus seed rows, with duplicates and existing ticker edits considered                                                                    |
+| 20260731094703                        | Profile policies plus comments author/post and posts author indexes; #268 requires verifying each actual index before installation                        |
+| 20260731124305                        | Portfolio ownership, existing primary/FK keys, tags and unknown legacy owners; fail rather than invent ownership                                          |
+| 20260808010000                        | Curated universe constraints/read policy and data backfill/upsert effects                                                                                 |
+| New forward hardening                 | Actual public/column/default privileges, service maintenance, canonical owner_id and all permissive Storage policies; unknown hosted policies need review |
 
 For #268, an absent avatars bucket requires the bucket **and** its final policy
 effects; marking a version applied cannot create them. Verify each requested

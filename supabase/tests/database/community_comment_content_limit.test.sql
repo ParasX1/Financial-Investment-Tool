@@ -9,6 +9,10 @@ insert into auth.users (id, email) values
 insert into public.posts (id, title, author_id) values
   ('29200000-0000-4000-8000-000000000002', 'Comment boundary fixture',
    '29200000-0000-4000-8000-000000000001');
+-- An image-only comment references an existing object owned by its author.
+insert into storage.objects (bucket_id, name, owner_id) values
+  ('comment-images', 'comments/29200000-0000-4000-8000-000000000002/image.png',
+   '29200000-0000-4000-8000-000000000001');
 
 select ok(exists (
   select 1 from pg_constraint
