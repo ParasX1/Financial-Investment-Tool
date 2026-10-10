@@ -3,7 +3,7 @@
 Tracking [#282](https://github.com/ParasX1/Financial-Investment-Tool/issues/282).
 Started 9 October 2026; updated 10 October 2026 (Australia/Sydney).
 Audit baseline: `3e36a257ca27a522deac6724876a6ca5adc7cb1e`.
-Current recorded DevBranch: `8697113a06f10abaa0611876a6a728815f925c8d`.
+Current integrated DevBranch: `677c337dd8c87d8697fd19d6d5c2679930b6bb46`.
 Main remains `c04875ef5d18d4134554fe36320bb05679125be4`.
 
 ## Current outcome and authority
@@ -34,12 +34,12 @@ claiming they were implemented.
 | Architecture and developer workflow | Source entrypoints/configuration traced; explicit startup and child environment isolation merged; primary changes preserved                                        | Arbitrary multi-process/descendant lifecycle and production capacity guarantees                     |
 | Auth/Profile/Community              | Account intent/retry, comment bounds and metadata-backed durable deletion merged; actual SDK and local role/API controls recorded                                  | Hosted Auth/email/avatar and coordinated RPC deployment; direct-owner missing-metadata cleanup edge |
 | Watchlist/navigation/Guide          | Existing CRUD/recovery/compact navigation reconciled; quality baseline and mocked browser checks retained                                                          | Human preference, optional drawer behavior, device/screen-reader acceptance                         |
-| Portfolio/charts                    | Date/null/asset/keyboard fixes merged; financial contracts and malformed-success parsing are being finished in #315                                                | Live provider accuracy and human visual acceptance                                                  |
+| Portfolio/charts                    | Date/null/asset/keyboard fixes merged; financial contracts and malformed-success parsing merged in #315                                                            | Live provider accuracy and human visual acceptance                                                  |
 | Top Picks/history/provider work     | Verified history/retry and paced shared refresh merged; synthetic matched workload and native transport controls pass                                              | Distributed quotas, production freshness/resource measurements and deferred live capabilities       |
 | ETF/Market News                     | Preview request ownership/missingness, legacy-route and shared-provider boundaries merged                                                                          | Live ETF capability and current deployment acceptance                                               |
-| Supabase maintainability/security   | Replay/provenance, grants/RLS/RPC/Storage tests and source cleanup merged; final fresh 32-migration run exposed a real integration fixture failure                 | Hosted effect/ledger/backup reconciliation, populated upgrade, schedule/legacy inventory/CDN        |
+| Supabase maintainability/security   | Replay/provenance, grants/RLS/RPC/Storage tests and source cleanup merged; the exposed image-only fixture gap was repaired and fresh 32/221/85/63 checks passed    | Hosted effect/ledger/backup reconciliation, populated upgrade, schedule/legacy inventory/CDN        |
 | CI/contribution                     | Six trusted Actions jobs now cover frontend, backend, mocked journeys, policy, launcher and native database/API behavior; incidental metadata restrictions relaxed | Browser mocks are not hosted integration; branch protection/admin governance remains separate       |
-| Existing issues/release             | Last owner snapshot is 45 -> 6 open; completed/duplicate/deferred scopes reconciled explicitly                                                                     | Final #315 integration, combined verification and promotion packet remain pending                   |
+| Existing issues/release             | Owner backlog 45 -> 3 open after #315; completed/duplicate/deferred scopes reconciled explicitly                                                                   | Reviewed history bridge and direct draft promotion remain; main/hosted stay unchanged               |
 
 The original matrix covered every architecture/component plus security, privacy,
 maintainability, scalability, debuggability and UX. Those dimensions still guide
@@ -47,36 +47,29 @@ material decisions. Its exhaustive all-path and all-bug expectations are superse
 by the owner's latest scope; neither the matrix nor several merged PRs certify a
 fully deployed or universally hardened product.
 
-## Remaining execution and stopping condition
+## Completed checks and remaining release step
 
-1. Finish #315 at an independently reviewed immutable head. Preserve calculation
-   version compatibility, ordinary self-correlation and genuine empty-response
-   behavior. Integrate the revised successful-response parser and verify current-head
-   CI before the authorized DevBranch merge. Close #298/#299/#245 only against their
-   actual revised acceptance and visible next-stage remainders.
-2. Resolve the combined database failure. Current source replay has 32 migrations,
-   six SQL files; the initial 220/221 pgTAP result failed. The parent restored the
-   image-only fixture's owned Storage object, and the complete rerun passed 221/221.
-   Independent repair review and corrected-head CI remain pending. Retain the
-   initial failure and the failing DevBranch push job as integration evidence.
-3. Finish checks on the exact combined candidate with its locked current Sharp
-   dependencies, native database/Auth/REST/Storage groups, feature coverage,
-   type/lint/build, relevant browser journeys and root tooling. Serialize operations
-   on the exclusively owned local database. The all-PR financial candidate at local
-   `79ad852` already passed 577 pinned backend tests, compilation and both configured
-   flake8 checks. Document every remaining result at its actual source/runtime.
-4. Obtain independent final evidence/diff review, reproduce actionable findings and
-   rerun affected checks. Refresh this plan, EVIDENCE.md and HANDOFF.md; publish a
-   focused reviewed documentation/acceptance PR. Inspect release history before
-   preparing a direct DevBranch-to-main draft; preserve the verified development
-   tree and leave main unmerged.
-5. Recheck actual open issues and unchanged main/primary edits. Close #282 only when
-   the bounded phase and reviewable promotion packet are complete. Leave the small
-   consolidated #257/#268 backlog with explicit owner/operational acceptance.
+Seventeen focused repairs/preparation PRs are integrated, including #315 and #317.
+The combined candidate passed 577 backend and 1,389 frontend tests, configured
+feature coverage gates, compile/types/lint/build, native 32/221/85/63 database/API
+checks and root policy/launcher/provenance checks. Both final PR heads passed all
+six necessary trusted Actions jobs before merge. The original database failure
+and the actual fixture correction remain visible in [EVIDENCE.md](EVIDENCE.md).
 
-Stop each lane when its declared behavior and material integration checks pass.
-A new material failure justifies refinement; an unchanged green check does not
-justify endless repetition or expanding the phase into a new architecture.
+The remaining step is the [reviewed history bridge](RELEASE-HISTORY.md). Its
+production tree stays unchanged while current main's archived rollback history
+becomes an ancestor. Merge that PR into DevBranch only after independent review
+and required CI, using a merge commit. Then create the direct DevBranch-to-main
+draft, verify the actual promotion checks, and leave main unmerged.
+
+Recheck the owner issue list and preserved primary edit; close #282 after that
+promotion packet exists. #257/#268 remain the small consolidated future and
+operational backlog. #245's unproved full four-window API/browser state matrix
+is explicitly deferred to #257 rather than falsely reported as executed.
+
+Stop each lane once its declared behavior and material integration checks pass.
+A new material failure warrants refinement; unchanged green results do not
+justify endless repetition or a new architectural scope.
 
 ## Decision and evidence method
 

@@ -2,7 +2,7 @@
 
 Updated 10 October 2026 (Australia/Sydney). Tracking [#282](https://github.com/ParasX1/Financial-Investment-Tool/issues/282).
 The immutable audit baseline is `3e36a257ca27a522deac6724876a6ca5adc7cb1e`.
-This checkpoint records merged DevBranch `8697113a06f10abaa0611876a6a728815f925c8d`;
+This checkpoint records integrated DevBranch `677c337dd8c87d8697fd19d6d5c2679930b6bb46`;
 main remains `c04875ef5d18d4134554fe36320bb05679125be4`.
 
 Apply [owner requirements](OWNER-REQUIREMENTS.md) and the [execution method](WORKFLOW.md).
@@ -12,7 +12,7 @@ superseded; this register does not certify every path, bug or deployed service.
 
 ## Integrated source and verification
 
-The following 15 focused PRs are ancestors of this checkpoint. Each received
+The following 15 initial repair PRs are ancestors of this checkpoint. Each received
 independent technical review and the necessary trusted GitHub Actions checks
 before its authorized DevBranch merge. Reviews submitted by the PR author were
 technical COMMENT reviews, not GitHub APPROVE reviews. Individual PR checks are
@@ -72,60 +72,62 @@ concrete refinements. [Anthropic's model-specific guidance](https://platform.cla
 and [YAGNI](https://martinfowler.com/bliki/Yagni.html) inform this rule; neither
 justifies silently converting malformed successful responses into empty data.
 
-## Pending financial integration
+## Integrated financial contracts and final combined check
 
-[#315](https://github.com/ParasX1/Financial-Investment-Tool/pull/315) remains open.
-Its earlier published head `6b99153f6fc309a6ae0756d647b4ecab3eb94cba` passed the
-six necessary Actions jobs. The local candidate standardizes positive-price and
-adjacent supplied-row samples, missingness, Sortino, finite/null JSON and version-2
-snapshot contracts. The shipped version-1 seed is unchanged and installs history
-only; old derived rankings require recalculation.
+[#315](https://github.com/ParasX1/Financial-Investment-Tool/pull/315) is merged.
+Its final head `1ffa60c40981a3ab505085db8a9ff5dae6e4cede` passed all six
+necessary trusted Actions jobs, including mocked Chromium journeys and native
+database/API checks. [#317](https://github.com/ParasX1/Financial-Investment-Tool/pull/317)
+also passed those gates and repaired the integrated SQL fixture. Together with
+the fifteen initial repairs above, seventeen focused phase PRs are integrated.
 
-A clean text merge with #306 initially bypassed persistence validation for the new
-eight-field key. Nineteen failing controls led to a narrow existing-validator fix.
-A normal SPY/SPY case then exposed an unnecessary off-diagonal restriction; two
-failing calculator/API controls led to the simpler finite-row availability rule.
-After integration with #311, 150 focused controls and 504 backend tests passed.
-These are the earlier financial checkpoint, not tests on the final all-PR source.
+The financial contract uses finite-positive prices, adjacent supplied-row
+returns, explicit missingness/Sortino and finite/null JSON. Calculation version 2
+prevents old derived rankings from being served/exported as new calculations.
+The unchanged version-1 seed installs history only. Nineteen failing controls
+exposed a new-key persistence-validation bypass; two actual calculator/API
+controls exposed an unnecessary restriction rejecting normal self-correlation.
+Both were refined in existing logic. Real Response controls first reported five
+failures/eight passes, then passed after the small external parsing-boundary fix.
+Valid empty objects and legacy/envelope responses remain supported.
 
-The latest three-file local follow-up stops `Response.json()` failure from becoming
-normal empty data. Real `Response` controls first produced five failures/eight
-passes; after correction, 13 client tests, 20 Portfolio hook tests and the configured
-305-test feature coverage suite passed. A valid empty object and legacy/envelope
-responses remain supported. Fresh technical review found no issue; its own test
-execution hit EPERM, so the worker's actual passing tests and the review are
-recorded separately. Publishing the revised immutable head, current-head CI,
-DevBranch integration and closing #298/#299/#245 remain PENDING. The parent then
-integrated all source through `8697113a` with this parsing change at local financial
-head `79ad852` (tree `2619282d3a504427b6ace04b74e90e82291c3044`). Its full pinned
-backend run passed 577 tests in 13.46 seconds; compilation and both configured
-flake8 commands passed. Final frontend and revised PR-head CI remain PENDING.
+| Boundary          | Actual final evidence                                                                                                                                             | Limit                                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Combined source   | Native candidate `79ad852`, then `453c405` after #317; integrated Dev `677c337dd8c87d8697fd19d6d5c2679930b6bb46`, tree `832445392213a426a91ae435fd08925849fdb81a` | #317 only added independently checked docs and the SQL fixture; no validated financial file changed |
+| Backend           | 577 pinned Python 3.12.14 tests; compilation and both configured flake8 checks passed                                                                             | Overall backend percentage coverage unmeasured                                                      |
+| Frontend          | 241 suites / 1,389 tests; typecheck, full lint and production build passed with matching lockfile and Sharp 0.35.5                                                | Two existing no-img-element warnings; native Node 24.15, CI Node 22                                 |
+| Feature coverage  | Portfolio/Top Picks 315 tests, lines 95.26%, branches 89.34%; Watchlist 120 tests, lines 94.74%, branches 84.04%; configured gates passed                         | These groups overlap the full suite and are not added to it                                         |
+| Database          | 32 source migrations/ledger entries, six SQL files, 221/221 pgTAP; source/runtime hashes and 28 historical mappings matched                                       | Fresh disposable replay, not a populated or hosted upgrade                                          |
+| Actual local APIs | Cleanup 85 then Auth/Community/Storage 63 passed; public/private lint and security advisors passed                                                                | Local PG 17.6 / Storage 1.44.11 / CLI 2.84.2; no hosted acceptance                                  |
+| Root tools        | Policy 37 and launcher 21 passed; launcher lines/branches/functions 96.72/96.20/95.45%; provenance32/28 passed                                                    | No arbitrary descendant-process lifecycle guarantee                                                 |
+| Trusted CI        | #315 head `1ffa60c` and #317 head `6918d75`: all six necessary Actions checks passed before merge                                                                 | Old Vercel preview excluded by explicit owner instruction                                           |
 
-## Final combined verification checkpoint
-
-| Candidate/boundary               | Actual current result                                                                                                                                                                                                  | Required next step                                                                                                           |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Current source database replay   | Fresh disposable reset copied all 32 source migrations and six SQL files from DevBranch `8697113a`; initial pgTAP reported 220/221 passing, exit 1. After the fixture repair, the complete native group passed 221/221 | Preserve both results; publish and verify the corrected immutable source revision                                            |
-| Database integration refinement  | The image-only fixture now creates its existing owned Storage object. All 221 native assertions pass; independent review confirms transaction rollback and unchanged production enforcement                            | Publish the corrected source and check its immutable GitHub head                                                             |
-| Actual DevBranch push CI         | Database replay and authorization job `114093250988` also failed on the integration gap                                                                                                                                | Verify the corrected immutable revision on trusted GitHub Actions; historical PR-head success does not override this failure |
-| Final backend/frontend/tooling   | Full pinned backend on local financial `79ad852` passed 577 tests; compile and both configured flake8 checks passed. Final frontend/browser checks have not yet completed                                              | PENDING: locked current frontend, type/lint/build, configured coverage and critical browser checks                           |
-| Final policy/launcher/provenance | Policy 37 and launcher 21 native tests passed; launcher lines/branches/functions 96.72/96.20/95.45%. Migration provenance confirmed 32 unique versions and 28 historical mappings                                      | Preserve these actual local results; revised-head GitHub CI is separate                                                      |
-| Final local Auth/REST/Storage    | Final corrected source passed cleanup 85 then Auth/Community/Storage 63, matching CI order; versions/names for all 32 ledger entries and source/runtime hashes match; public/private lint and security advisors pass   | Local acceptance complete; hosted acceptance remains #268                                                                    |
-| Main promotion                   | Main unchanged; release history is being reconciled separately                                                                                                                                                         | PENDING: independently reviewed promotion packet/draft PR; no main merge                                                     |
-
-The initial pgTAP failure is retained in ignored local verification artifacts.
-A subsequent SQL rerun after the API suite also failed because the latter left a
-synthetic queue ticket; the final run restarted from a fresh reset and followed
-CI order. Both failures are preserved. At completion there were zero fixture
+Fresh independent client review found no actionable issue; its own test attempt
+hit EPERM, so that review is separate from the actual worker/parent passes.
+The original image-only fixture failure reproduced locally (220/221) and in
+Dev push job `114093250988`. Adding the existing owned Storage object within the
+rollback transaction preserved production enforcement; independent review and
+the final 221 assertions passed. A post-API SQL rerun also exposed its fresh-queue
+precondition. Final verification restarted from reset and followed CI order.
+Both failed runs remain in ignored local artifacts. Completion left zero fixture
 users/posts/comments/Storage objects and one synthetic pending cleanup ticket,
-with no remaining physical fixture bytes. Reset ownership was serialized and
-released after verification. No hosted schema, ledger, configuration or
-credential change ran.
+with no physical fixture bytes. No hosted mutation ran.
+
+The remaining promotion step is the reviewed history bridge described in
+[RELEASE-HISTORY.md](RELEASE-HISTORY.md), followed by a direct DevBranch-to-main
+draft PR. Main remains unmerged; a source-phase acceptance is not a live release.
+
+The final #315 Chromium report records 39 passed and two flaky cases that passed
+on retry (historical plot measurement and Watchlist persistence). The job succeeded;
+this does not mean every journey passed on its first attempt. Keep test stability
+as a nonblocking follow-up in #257 rather than hiding retries or claiming pristine CI.
 
 ## Issue reconciliation and remaining scope
 
-The last live owner-issue snapshot was 45 -> 6 open issues:
-#299, #298, #282, #268, #257 and #245. Completed source acceptance was closed with
+The owner-issue backlog changed from 45 to three open issues after #315:
+#282, #268 and #257. #298/#299 are completed source defects; #245 closes the
+bounded supported window scope, with its unproved full four-window API/browser
+state matrix explicitly retained in #257. Completed source acceptance was closed with
 its evidence; duplicate and deliberately deferred scope was explicitly consolidated,
 not described as implemented. #282 remains active until combined phase acceptance.
 
