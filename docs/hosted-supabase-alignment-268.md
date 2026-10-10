@@ -25,13 +25,13 @@ zero errors. This is one observed scheduled run, not a long-term reliability cla
 Source and hosted migration versions are explicitly mapped; existing history
 was preserved rather than renamed:
 
-| Effect | Source version | Hosted version |
-| --- | --- | --- |
-| Avatars/Profile/indexes | `20261010041548` | `20261010041548` |
-| Community RPC/Storage compatibility | `20261010045043` | `20261010080722` |
+| Effect                                      | Source version   | Hosted version   |
+| ------------------------------------------- | ---------------- | ---------------- |
+| Avatars/Profile/indexes                     | `20261010041548` | `20261010041548` |
+| Community RPC/Storage compatibility         | `20261010045043` | `20261010080722` |
 | Remaining reference grants/avatar ownership | `20261010081946` | `20261010094015` |
-| Durable image-cleanup tickets | `20261009153003` | `20261010094115` |
-| Protected worker transport/authentication | `20261010084019` | `20261010094122` |
+| Durable image-cleanup tickets               | `20261009153003` | `20261010094115` |
+| Protected worker transport/authentication   | `20261010084019` | `20261010094122` |
 
 Real hosted acceptance used the intended Edge slug twice. The first fixture
 incorrectly supplied forbidden `comments.id`; production grants correctly denied
@@ -168,7 +168,7 @@ the verified missing effects:
 - Grant authenticated INSERT on saves.user_id and reports.reporter_id, with the
   existing owner RLS still checking the request JWT. No moderation grant is added.
 - Add the validated <=2000 Unicode-code-point comment CHECK. Actual hosted
- 14 comments have maximum30 characters and none exceed the new limit.
+  14 comments have maximum30 characters and none exceed the new limit.
 - Use canonical owner_id for Community Storage SELECT/INSERT/UPDATE/DELETE,
   allowing current owner upload/upsert/read/delete and removing post-author
   authority over somebody else's comment image. Managed Storage ACLs, defaults,
@@ -265,3 +265,33 @@ existing ticket protocol in Edge with a Vault-generated caller token and cron
 using synchronous HTTP; see [the deployed operation](hosted-community-cleanup-operation.md).
 Provisioning, deployment, actual API acceptance and the first automatic cron run
 are verified above. Main stays unmerged.
+
+## Fresh second review, 10 October UTC / 11 October Sydney
+
+The renewed whole-product review deployed the additive Watchlist owner-intent
+guard: source `20261010111650`, hosted `20261010124654`. Legacy one-argument
+definitions and ACLs are preserved; required two-argument invoker wrappers reject
+wrong/null/missing identity before mutation. PR #331 merged after independent
+review, required CI and actual hosted acceptance.
+
+Fresh real Auth/Community/Storage/Watchlist/cleanup acceptance returned HTTP200
+and PASS with 370 checks, zero teardown failures. Deferred real SDK token dispatch,
+normal/legacy RPCs, full fixture-row/timestamp preservation after denials,
+ownership/cascade, injected Storage failure/retry/ACK and Auth-FK teardown passed.
+Sixteen original aggregate counts/fingerprints remained identical, including
+10 Auth/10 Users/24 posts/14 comments/3 profiles/8 Storage objects. Original images
+and credentials were preserved.
+
+Temporary gate `20261010130447` was removed after proven exact fixture absence.
+MCP retirement DDL returned requestState expiry; exact ticket retirement succeeded
+through MCP and the reviewed table/four-function retirement ran in the signed-in
+Dashboard. MCP independently confirmed gate absent/functions zero. Nineteen
+ledger entries retain history, with this Dashboard retirement recorded explicitly.
+
+Production cleanup v6 restores the exact approved v4 bundle
+`c4d85371d94cade6a3fd5bbc27302b8e8cc23e0cccd881942889c63bfd8a0e69`, with no
+acceptance route. Named cron is active every five minutes; fresh automatic runs
+at13:20,13:30,13:35 UTC succeeded. Manual invocation HTTP200, pending0/errors0.
+Full source, aggregate proof and remaining backup/SMTP/caller/deployment/admin/
+engine/human limits are in [the second review](stage-readiness/SECOND-PASS.md) and
+[its evidence](stage-readiness/SECOND-PASS-EVIDENCE.json). Main remains held.

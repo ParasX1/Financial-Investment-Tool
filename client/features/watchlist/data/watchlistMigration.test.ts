@@ -22,14 +22,16 @@ const intentMigration = readFileSync(
     "20261010111650_watchlist_expected_account_intent.sql",
   ),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 
 describe("watchlist Supabase migration contract", () => {
   it("protects each CRUD operation with authenticated ownership policies", () => {
     expect(migration).toContain(
       "alter table public.user_watchlist enable row level security",
     );
-    expect(migration.match(/to authenticated/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(migration.match(/to authenticated/g)?.length).toBeGreaterThanOrEqual(
+      6,
+    );
     expect(migration).toContain("for select");
     expect(migration).toContain("for insert");
     expect(migration).toContain("for update");
@@ -44,17 +46,19 @@ describe("watchlist Supabase migration contract", () => {
     expect(migration).toContain(
       "function public.remove_watchlist_item(item_symbol text)",
     );
-    expect(migration.match(/security invoker/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(migration.match(/security invoker/g)?.length).toBeGreaterThanOrEqual(
+      3,
+    );
     expect(migration).toContain("set position = position - 1");
     expect(migration).toContain("unique (user_id, position)");
   });
 
   it("does not grant anonymous access to the table or mutation RPCs", () => {
     expect(migration).toContain("revoke all on table public.user_watchlist");
-    expect(migration).toContain("from public, anon, authenticated, service_role");
-    expect(migration).not.toMatch(
-      /grant .*user_watchlist[\s\S]*\bto anon\b/i,
+    expect(migration).toContain(
+      "from public, anon, authenticated, service_role",
     );
+    expect(migration).not.toMatch(/grant .*user_watchlist[\s\S]*\bto anon\b/i);
     expect(migration).toContain("from public, anon");
   });
 
@@ -115,7 +119,9 @@ describe("watchlist Supabase migration contract", () => {
   });
 
   it("preserves legacy definitions, ACLs and rows while exposing only the new protected signatures", () => {
-    expect(intentMigration).not.toMatch(/\b(drop|alter|delete|update|insert)\b/i);
+    expect(intentMigration).not.toMatch(
+      /\b(drop|alter|delete|update|insert)\b/i,
+    );
     expect(intentMigration).not.toMatch(
       /function public\.(remove_watchlist_item\(text\)|reorder_watchlist\(text\[\]\)|remove_watchlist_item\(item_symbol text\)|reorder_watchlist\(ordered_symbols text\[\]\))/,
     );
