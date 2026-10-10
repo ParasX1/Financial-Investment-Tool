@@ -179,6 +179,7 @@ export function createWatchlistRepository(
       const normalized = requireSymbol(symbol);
       const { error } = await client.rpc("remove_watchlist_item", {
         item_symbol: normalized,
+        p_expected_user_id: userId,
       });
 
       if (error) repositoryError("remove_failed");
@@ -189,6 +190,7 @@ export function createWatchlistRepository(
       const symbols = orderedSymbols.map(requireSymbol);
       const { error } = await client.rpc("reorder_watchlist", {
         ordered_symbols: symbols,
+        p_expected_user_id: userId,
       });
 
       if (error) repositoryError("order_failed");

@@ -13,6 +13,17 @@ const migration = readFileSync(
   "utf8",
 );
 
+const intentMigration = readFileSync(
+  join(
+    process.cwd(),
+    "..",
+    "supabase",
+    "migrations",
+    "20261010111650_watchlist_expected_account_intent.sql",
+  ),
+  "utf8",
+);
+
 describe("watchlist Supabase migration contract", () => {
   it("protects each CRUD operation with authenticated ownership policies", () => {
     expect(migration).toContain(
@@ -73,5 +84,52 @@ describe("watchlist Supabase migration contract", () => {
     expect(cleanupIndex).toBeGreaterThanOrEqual(0);
     expect(normalizeIndex).toBeGreaterThan(cleanupIndex);
     expect(constraintIndex).toBeGreaterThan(normalizeIndex);
+  });
+
+  it("guards required expected accounts before calling the legacy atomic mutations", () => {
+    for (const [name, argument] of [
+      ["remove_watchlist_item", "item_symbol text"],
+      ["reorder_watchlist", "ordered_symbols text[]"],
+    ]) {
+      const declaration = `function public.${name}(\n  ${argument},\n  p_expected_user_id uuid\n)`;
+      expect(intentMigration).toContain(declaration);
+      const start = intentMigration.indexOf(declaration);
+      const body = intentMigration.slice(
+        start,
+        intentMigration.indexOf("$$;", start),
+      );
+      expect(body).toContain("returns void");
+      expect(body).toContain("security invoker");
+      expect(body).toContain("set search_path = ''");
+      expect(body).toContain("current_user_id is null");
+      expect(body).toContain(
+        "p_expected_user_id is distinct from current_user_id",
+      );
+      expect(body).toContain("errcode = '42501'");
+      expect(body.indexOf("raise exception")).toBeLessThan(
+        body.indexOf(`perform public.${name}(`),
+      );
+      expect(body).not.toMatch(/\bdefault\b/i);
+    }
+    expect(intentMigration).not.toMatch(/security definer/i);
+  });
+
+  it("preserves legacy definitions, ACLs and rows while exposing only the new protected signatures", () => {
+    expect(intentMigration).not.toMatch(/\b(drop|alter|delete|update|insert)\b/i);
+    expect(intentMigration).not.toMatch(
+      /function public\.(remove_watchlist_item\(text\)|reorder_watchlist\(text\[\]\)|remove_watchlist_item\(item_symbol text\)|reorder_watchlist\(ordered_symbols text\[\]\))/,
+    );
+    for (const signature of [
+      "remove_watchlist_item(text, uuid)",
+      "reorder_watchlist(text[], uuid)",
+    ]) {
+      expect(intentMigration).toContain(
+        `revoke all on function public.${signature}\nfrom public, anon;`,
+      );
+      expect(intentMigration).toContain(
+        `grant execute on function public.${signature}\nto authenticated, service_role;`,
+      );
+    }
+    expect(intentMigration).toContain("notify pgrst, 'reload schema';");
   });
 });
