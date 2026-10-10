@@ -179,7 +179,7 @@ const buildFrontierModel = (data: MetricsResponse): TableModel => {
     portfolio.asset_order
       .map((symbol, assetIndex) => {
         const weight = portfolio.weights[index]?.[assetIndex];
-        return Number.isFinite(weight)
+        return typeof weight === "number" && Number.isFinite(weight)
           ? `${symbol} ${formatMetricValue(
               "EfficientFrontierVisualization",
               weight,

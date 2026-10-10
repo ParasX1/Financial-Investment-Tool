@@ -1,8 +1,6 @@
 import { describe, expect, it, jest } from "@jest/globals";
-import {
-  buildMarketNewsTickerStripSnapshot,
-  resolveMarketNewsMarketScope,
-} from "./index";
+import { resolveMarketNewsMarketScope } from "./index";
+import { buildMarketNewsTickerStripSnapshot } from "./snapshotService";
 
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {

@@ -229,9 +229,21 @@ export const usePortfolioWorkspaceController = ({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.isComposing ||
+        event.repeat
+      )
+        return;
       const target = event.target as HTMLElement | null;
       if (
-        target?.matches("input, textarea, select, [contenteditable='true']")
+        target?.closest?.(
+          "input, textarea, select, [contenteditable]:not([contenteditable='false'])",
+        )
       ) {
         return;
       }

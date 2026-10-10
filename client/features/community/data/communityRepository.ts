@@ -150,6 +150,7 @@ export async function insertCommunityCommentRow({
   db,
   ...input
 }: CommunityCommentInsert & { db: SupabaseClient }) {
+  // The service validates the immutable text before either persistence adapter.
   const currentResult = await insertCurrentCommunityCommentRow(db, input);
 
   if (!currentResult.error && currentResult.data) return currentResult.data;

@@ -78,7 +78,9 @@ describe("PortfolioChart", () => {
     ]);
     expect(bar.props.ariaLabel).toBe("Alpha vs benchmark comparison");
     expect(bar.props.valueFormat(0.125)).toBe("+12.5%");
-    expect(renderer.root.findByProps({ "data-benchmark": "^AXJO" })).toBeDefined();
+    expect(
+      renderer.root.findByProps({ "data-benchmark": "^AXJO" }),
+    ).toBeDefined();
   });
 
   it("converts dated observations for the line chart", () => {
@@ -221,7 +223,7 @@ describe("PortfolioChart", () => {
     expect(selectionText).toContain("Pinned sampled portfolio");
     expect(selectionText).toContain("Sharpe 0.70");
     expect(selectionText).toContain("AAPL 60.0%");
-    expect(selectionText).not.toContain("MSFT");
+    expect(selectionText).toContain("MSFT N/A");
   });
 
   it("uses safe frontier fallbacks when optional sample details are absent", () => {
@@ -263,7 +265,11 @@ describe("PortfolioChart", () => {
   });
 
   it("reacts to container measurements and disconnects its observer", () => {
-    let resize: ((entries: { contentRect: { width: number; height: number } }[]) => void) | undefined;
+    let resize:
+      | ((
+          entries: { contentRect: { width: number; height: number } }[],
+        ) => void)
+      | undefined;
     const observe = jest.fn();
     const disconnect = jest.fn();
     class FakeResizeObserver {

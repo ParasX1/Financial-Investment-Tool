@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
-  buildMarketNewsTickerStripSnapshot,
   resolveMarketNewsMarketScope,
   type MarketNewsTickerStripSnapshot,
 } from "@/lib/news/tickerStrip";
+import { buildMarketNewsTickerStripSnapshot } from "@/lib/news/tickerStrip/snapshotService";
 import {
   getRequestClientKey,
   marketApiRateLimiter,

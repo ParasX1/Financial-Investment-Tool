@@ -610,7 +610,7 @@ describe("usePortfolioWorkspaceController", () => {
     const { listeners } = installWindow();
     const harness = await renderController({ authLoading: false });
     const keydown = () => Array.from(listeners.get("keydown") ?? []).at(-1);
-    const editableTarget = { matches: jest.fn(() => true) };
+    const editableTarget = { closest: jest.fn(() => ({})) };
 
     act(() => {
       keydown()?.({ key: "o", target: editableTarget } as unknown as Event);
@@ -634,6 +634,25 @@ describe("usePortfolioWorkspaceController", () => {
       keydown()?.({ key: "Escape", target: null } as unknown as Event);
       keydown()?.({ key: "x", target: null } as unknown as Event);
     });
+    expect(harness.latest.workspace.view).toEqual({ mode: "board" });
+    harness.unmount();
+  });
+
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+    { shiftKey: true },
+    { isComposing: true },
+    { repeat: true },
+    { defaultPrevented: true },
+  ])("leaves workspace shortcuts untouched for %o", async (guard) => {
+    const { listeners } = installWindow();
+    const harness = await renderController({ authLoading: false });
+    const keydown = Array.from(listeners.get("keydown") ?? []).at(-1);
+    act(() =>
+      keydown?.({ key: "o", target: null, ...guard } as unknown as Event),
+    );
     expect(harness.latest.workspace.view).toEqual({ mode: "board" });
     harness.unmount();
   });

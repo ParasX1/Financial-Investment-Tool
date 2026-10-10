@@ -201,6 +201,41 @@ exact CI flake8 commands passed, exit 0; staged and working-tree diff checks
 passed. The seed archive SHA-256 is unchanged. These are local synthetic checks;
 no live provider, Supabase action, push or PR occurred.
 
+### External successful-response parsing
+
+Backend finite/null normalization ensures that numerical values emitted by the
+metric routes are standard JSON. It does not validate a malformed successful
+body arriving at the frontend. The client previously swallowed `Response.json()`
+failure as `{}`, which turned unreadable HTTP 200 data into a normal empty result.
+This #298/#299 acceptance boundary is now fixed separately in `fetchMetrics`.
+
+Parsing failure uses a null sentinel. A successful response must be a record;
+otherwise the client throws the safe retryable message
+`The metrics response could not be read. Please try again.` A valid `{}` remains
+a legitimate empty result, and normal envelope/raw legacy responses still reach
+the existing normalizer. Non-2xx non-JSON responses keep the existing generic
+unavailable error; normal JSON errors remain compatible. No deeper schema or
+validator framework was introduced.
+
+Real native `Response` fixtures reproduced **5 failures, 8 passes** before the
+fix: malformed success JSON and successful null/array/scalar bodies incorrectly
+resolved as empty data. After correction, **13 client tests** and **20 Portfolio
+hook tests** passed, including existing empty/error/retry controls. The configured
+Portfolio/Top Picks coverage suite passed **47 suites, 305 tests** and all its
+coverage gates. Portfolio aggregate coverage was **93.03% lines, 88.76% branches,
+92.33% functions, 92.53% statements**; the affected `client.ts` measured **100%
+lines, 93.75% branches, 100% functions, 94.44% statements**.
+
+`npm run typecheck` (Next typegen and TypeScript), affected-file ESLint and
+Prettier checks passed. Formatting initially required correction and was applied
+only to the two owned client files; the 13-test client suite passed afterward.
+Tests used Node 24.15.0 and reused the existing dependency directory after
+verifying identical lockfile SHA-256, with workspace-local Jest caches. Metrics network calls were
+mocked. Backend code was unchanged, so its previous 504-test verification was
+not repeated or presented as new frontend evidence. This is a three-file local
+follow-up; no browser or CI Node-22 run is claimed. The parent owns updating the
+existing PR and combined verification.
+
 ## Primary references
 
 - [pandas 2.3 pct_change](https://pandas.pydata.org/pandas-docs/version/2.3/reference/api/pandas.DataFrame.pct_change.html): default change is from the immediately previous supplied row; use `fill_method=None`.
