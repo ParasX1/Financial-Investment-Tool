@@ -6,6 +6,7 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
 } from "./communityService";
+import type { PostUI } from "../types";
 
 type QueryResult = {
   data?: unknown;
@@ -343,6 +344,110 @@ describe("Community delete image cleanup", () => {
       savedPostIds: [],
     });
   });
+
+  it.each([
+    { table: "comments", comments: true, likes: false, saves: false },
+    { table: "post_likes", comments: false, likes: true, saves: false },
+    { table: "post_saves", comments: false, likes: false, saves: true },
+  ])(
+    "retries only the failed $table query with the retained post IDs",
+    async ({ table, ...details }) => {
+      const retained: PostUI = {
+        id: "post-1",
+        user: "Member",
+        initials: "ME",
+        title: "Live post",
+        body: "Notes",
+        votes: 4,
+        time: "now",
+        sortTime: 100,
+        tags: [],
+        commentCount: 0,
+        avatarGradient: "#000",
+        fromDB: true,
+      };
+      const { db, events } = createMockSupabase([
+        { table, result: { data: [], error: null } },
+      ]);
+      const result = await loadCommunityData(db, "user-1", {
+        posts: [retained],
+        ...details,
+      });
+      expect(result.posts).toEqual([retained]);
+      expect(events).toEqual([`table.${table}`]);
+      const query = db.from.mock.results[0].value;
+      expect(query.in).toHaveBeenCalledWith("post_id", [retained.id]);
+      if (table !== "comments")
+        expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(db.auth.getSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    {
+      table: "comments",
+      errorKey: "commentsError",
+      comments: true,
+      likes: false,
+      saves: false,
+    },
+    {
+      table: "post_likes",
+      errorKey: "likesError",
+      comments: false,
+      likes: true,
+      saves: false,
+    },
+    {
+      table: "post_saves",
+      errorKey: "savesError",
+      comments: false,
+      likes: false,
+      saves: true,
+    },
+  ] as const)(
+    "keeps retained posts and a stable secondary warning when $table recovery fails",
+    async ({ table, errorKey, ...details }) => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      try {
+        const retained: PostUI = {
+          id: "post-1",
+          user: "Member",
+          initials: "ME",
+          title: "Live post",
+          body: "Notes",
+          votes: 4,
+          time: "now",
+          sortTime: 100,
+          tags: [],
+          commentCount: 0,
+          avatarGradient: "#000",
+          fromDB: true,
+        };
+        const { db, events } = createMockSupabase([
+          {
+            table,
+            result: {
+              data: null,
+              error: { message: "Internal policy details" },
+            },
+          },
+        ]);
+        const result = await loadCommunityData(db, "user-1", {
+          posts: [retained],
+          ...details,
+        });
+        expect(result.posts).toEqual([retained]);
+        expect(result[errorKey]).toMatch(/Posts loaded, but/);
+        expect(result[errorKey]).not.toContain("Internal policy");
+        expect(events).toEqual([`table.${table}`]);
+      } finally {
+        consoleError.mockRestore();
+      }
+    },
+  );
 
   it("finishes comment deletion without browser storage cleanup", async () => {
     const { db, remove } = createMockSupabase([

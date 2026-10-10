@@ -101,4 +101,19 @@ describe("PostEngagementBar", () => {
     expect(onToggleLike).toHaveBeenCalledWith("post-1");
     expect(onToggleSave).toHaveBeenCalledWith("post-1");
   });
+
+  it("marks unknown like and saved state as unavailable instead of unselected", () => {
+    const renderer = renderBar({ liked: undefined, saved: undefined });
+    const buttons = renderer.root.findAllByType("button");
+    expect(buttons[1].props.disabled).toBe(true);
+    expect(buttons[1].props["aria-pressed"]).toBeUndefined();
+    expect(buttons[1].props["aria-label"]).toBe(
+      "Like state unavailable. 1 vote",
+    );
+    expect(buttons[2].props.disabled).toBe(true);
+    expect(buttons[2].props["aria-pressed"]).toBeUndefined();
+    expect(buttons[2].props["aria-label"]).toBe("Saved state unavailable");
+    expect(buttons[2].findByType("span").children).toEqual(["Unavailable"]);
+    renderer.unmount();
+  });
 });

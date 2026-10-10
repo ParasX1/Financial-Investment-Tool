@@ -2,7 +2,10 @@
 import * as React from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEMO_POSTS } from "../constants";
-import { loadCommunityData } from "../data/communityService";
+import {
+  loadCommunityData,
+  type CommunityDetailsRetry,
+} from "../data/communityService";
 import { subscribeToCommunityCommentInserts } from "../data/communityRealtime";
 import { commentFromRow } from "../lib/communityMappers";
 import { getCommunityLoadErrorMessage } from "../lib/communityLoadStatus";
@@ -30,17 +33,35 @@ type CommunityResource = {
   commentsState: CommentsState;
   likedPostIds: Set<string>;
   savedPostIds: Set<string>;
+  likesReady: boolean;
+  savesReady: boolean;
   posts: PostUI[];
   // Rebuilt only when the feed resource loads, so live counters cannot move cards.
   topPostOrderIds: readonly string[];
 };
 
+type SecondaryLoadErrors = Pick<
+  Awaited<ReturnType<typeof loadCommunityData>>,
+  "commentsError" | "likesError" | "savesError"
+>;
+
+type LoadRequest = {
+  attempt: number;
+  ownerKey: string;
+  recovery?: {
+    details: CommunityDetailsRetry;
+    commentsState: CommentsState;
+  };
+};
+
 type CommunityResourceState = {
   error: string | null;
   loading: boolean;
-  loadAttempt: number;
+  loadRequest: LoadRequest;
   ownerKey: string;
   resource: CommunityResource;
+  secondaryErrors: SecondaryLoadErrors;
+  recoveryCommentActions: CommentsAction[];
 };
 
 export type CommunityDataDependencies = {
@@ -57,6 +78,8 @@ const EMPTY_RESOURCE: CommunityResource = {
   commentsState: createCommentsState([]),
   likedPostIds: new Set(),
   savedPostIds: new Set(),
+  likesReady: false,
+  savesReady: false,
   posts: [],
   topPostOrderIds: [],
 };
@@ -71,6 +94,8 @@ function createDemoResource(): CommunityResource {
     commentsState,
     likedPostIds: new Set(),
     savedPostIds: new Set(),
+    likesReady: true,
+    savesReady: true,
     posts: [...DEMO_POSTS],
     topPostOrderIds: getTopCommunityPostOrder({
       posts: DEMO_POSTS,
@@ -84,6 +109,8 @@ function createCachedResource(cache: CommunityMemoryCache): CommunityResource {
     commentsState: cache.commentsState,
     likedPostIds: new Set(cache.likedPostIds),
     savedPostIds: new Set(cache.savedPostIds),
+    likesReady: true,
+    savesReady: true,
     posts: cache.posts,
     topPostOrderIds: getTopCommunityPostOrder({
       posts: cache.posts,
@@ -101,12 +128,33 @@ function createLoadedResource(
     commentsState,
     likedPostIds: new Set(result.likedPostIds),
     savedPostIds: new Set(result.savedPostIds),
+    likesReady: !result.likesError,
+    savesReady: !result.savesError,
     posts: result.posts,
     topPostOrderIds: getTopCommunityPostOrder({
       posts: result.posts,
       commentsState,
     }),
   };
+}
+
+function recoverComments(
+  posts: PostUI[],
+  result: Awaited<ReturnType<typeof loadCommunityData>>,
+  previous: CommentsState,
+  actions: CommentsAction[],
+) {
+  const postIds = new Set(posts.map((post) => post.id));
+  let next = createCommentsState(
+    posts,
+    result.comments.filter(({ postId }) => postIds.has(postId)),
+  );
+  for (const [postId, comments] of Object.entries(previous.byPost)) {
+    for (const comment of comments) {
+      next = commentsReducer(next, { type: "addComment", postId, comment });
+    }
+  }
+  return actions.reduce(commentsReducer, next);
 }
 
 function getOwnerKey({
@@ -136,9 +184,11 @@ function createInitialState({
     return {
       error: null,
       loading: false,
-      loadAttempt: 0,
+      loadRequest: { attempt: 0, ownerKey },
       ownerKey,
       resource: createDemoResource(),
+      secondaryErrors: {},
+      recoveryCommentActions: [],
     };
   }
 
@@ -147,9 +197,11 @@ function createInitialState({
   return {
     error: null,
     loading: !cache,
-    loadAttempt: 0,
+    loadRequest: { attempt: 0, ownerKey },
     ownerKey,
     resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
+    secondaryErrors: {},
+    recoveryCommentActions: [],
   };
 }
 
@@ -181,7 +233,7 @@ export function useCommunityData(
   );
   const stateIsCurrent = state.ownerKey === ownerKey;
   const resource = stateIsCurrent ? state.resource : EMPTY_RESOURCE;
-  const loadAttempt = state.loadAttempt;
+  const loadRequest = state.loadRequest;
 
   const retryLoad = React.useCallback(() => {
     if (!supabase || authLoading) return;
@@ -190,14 +242,30 @@ export function useCommunityData(
         current.ownerKey !== ownerKey ||
         current.loading ||
         !current.error ||
-        current.resource.posts.length > 0
+        (current.resource.posts.length > 0 &&
+          !getCommunityLoadErrorMessage(current.secondaryErrors))
       )
         return current;
       return {
         ...current,
-        error: null,
+        error: current.resource.posts.length ? current.error : null,
         loading: true,
-        loadAttempt: current.loadAttempt + 1,
+        recoveryCommentActions: [],
+        loadRequest: {
+          attempt: current.loadRequest.attempt + 1,
+          ownerKey,
+          recovery: current.resource.posts.length
+            ? {
+                details: {
+                  posts: current.resource.posts,
+                  comments: Boolean(current.secondaryErrors.commentsError),
+                  likes: Boolean(current.secondaryErrors.likesError),
+                  saves: Boolean(current.secondaryErrors.savesError),
+                },
+                commentsState: current.resource.commentsState,
+              }
+            : undefined,
+        },
       };
     });
   }, [authLoading, ownerKey, supabase]);
@@ -252,12 +320,25 @@ export function useCommunityData(
 
   const dispatchComments = React.useCallback<React.Dispatch<CommentsAction>>(
     (action) => {
-      updateCurrentResource((current) => ({
-        ...current,
-        commentsState: commentsReducer(current.commentsState, action),
-      }));
+      setState((current) => {
+        if (current.ownerKey !== ownerKey) return current;
+        return {
+          ...current,
+          resource: {
+            ...current.resource,
+            commentsState: commentsReducer(
+              current.resource.commentsState,
+              action,
+            ),
+          },
+          recoveryCommentActions:
+            current.loading && current.loadRequest.recovery?.details.comments
+              ? [...current.recoveryCommentActions, action]
+              : current.recoveryCommentActions,
+        };
+      });
     },
-    [updateCurrentResource],
+    [ownerKey],
   );
 
   React.useEffect(() => {
@@ -275,34 +356,99 @@ export function useCommunityData(
   }, [ownerKey, state, stateIsCurrent]);
 
   React.useEffect(() => {
+    if (loadRequest.ownerKey !== ownerKey) {
+      setState(createInitialState({ authLoading, ownerKey, supabase }));
+      return;
+    }
     if (!supabase || authLoading) return;
 
     let active = true;
     const cache = getCachedCommunityForOwner(ownerKey);
+    const recovery = loadRequest.recovery;
 
-    setState({
-      error: null,
-      loading: !cache,
-      loadAttempt,
-      ownerKey,
-      resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
-    });
+    setState((current) =>
+      recovery && current.ownerKey === ownerKey
+        ? { ...current, loading: true }
+        : {
+            error: null,
+            loading: !cache,
+            loadRequest,
+            ownerKey,
+            resource: cache ? createCachedResource(cache) : EMPTY_RESOURCE,
+            secondaryErrors: {},
+            recoveryCommentActions: [],
+          },
+    );
 
-    dependencies
-      .load(supabase, currentUserId)
+    const loading = recovery
+      ? dependencies.load(supabase, currentUserId, recovery.details)
+      : dependencies.load(supabase, currentUserId);
+    loading
       .then((result) => {
         if (!active) return;
 
-        setState({
-          error: getCommunityLoadErrorMessage({
-            commentsError: result.commentsError,
-            likesError: result.likesError,
-            savesError: result.savesError,
-          }),
-          loading: false,
-          loadAttempt,
-          ownerKey,
-          resource: createLoadedResource(result),
+        setState((current) => {
+          if (
+            current.ownerKey !== ownerKey ||
+            current.loadRequest !== loadRequest
+          )
+            return current;
+          const secondaryErrors = recovery
+            ? {
+                commentsError: recovery.details.comments
+                  ? result.commentsError
+                  : current.secondaryErrors.commentsError,
+                likesError: recovery.details.likes
+                  ? result.likesError
+                  : current.secondaryErrors.likesError,
+                savesError: recovery.details.saves
+                  ? result.savesError
+                  : current.secondaryErrors.savesError,
+              }
+            : {
+                commentsError: result.commentsError,
+                likesError: result.likesError,
+                savesError: result.savesError,
+              };
+          const postIds = new Set(
+            current.resource.posts.map((post) => post.id),
+          );
+          const resource = recovery
+            ? {
+                ...current.resource,
+                commentsState:
+                  recovery.details.comments && !result.commentsError
+                    ? recoverComments(
+                        current.resource.posts,
+                        result,
+                        recovery.commentsState,
+                        current.recoveryCommentActions,
+                      )
+                    : current.resource.commentsState,
+                likedPostIds:
+                  recovery.details.likes && !result.likesError
+                    ? new Set(
+                        result.likedPostIds.filter((id) => postIds.has(id)),
+                      )
+                    : current.resource.likedPostIds,
+                savedPostIds:
+                  recovery.details.saves && !result.savesError
+                    ? new Set(
+                        result.savedPostIds.filter((id) => postIds.has(id)),
+                      )
+                    : current.resource.savedPostIds,
+                likesReady: !secondaryErrors.likesError,
+                savesReady: !secondaryErrors.savesError,
+              }
+            : createLoadedResource(result);
+          return {
+            ...current,
+            error: getCommunityLoadErrorMessage(secondaryErrors),
+            loading: false,
+            resource,
+            secondaryErrors,
+            recoveryCommentActions: [],
+          };
         });
       })
       .catch((error) => {
@@ -310,11 +456,18 @@ export function useCommunityData(
         if (!active) return;
 
         setState((current) => {
-          if (current.ownerKey !== ownerKey) return current;
+          if (
+            current.ownerKey !== ownerKey ||
+            current.loadRequest !== loadRequest
+          )
+            return current;
           return {
             ...current,
-            error: "Could not load latest community posts.",
+            error: recovery
+              ? "Could not reload community details. Try again."
+              : "Could not load latest community posts.",
             loading: false,
+            recoveryCommentActions: [],
           };
         });
       });
@@ -326,7 +479,7 @@ export function useCommunityData(
     authLoading,
     currentUserId,
     dependencies,
-    loadAttempt,
+    loadRequest,
     ownerKey,
     supabase,
   ]);
@@ -400,6 +553,19 @@ export function useCommunityData(
     filteredPosts,
     likedPostIds: resource.likedPostIds,
     savedPostIds: resource.savedPostIds,
+    likesReady: resource.likesReady,
+    savesReady: resource.savesReady,
+    commentsReady: stateIsCurrent && !state.secondaryErrors.commentsError,
+    canRetryLoad:
+      stateIsCurrent &&
+      Boolean(state.error) &&
+      (!resource.posts.length ||
+        Boolean(getCommunityLoadErrorMessage(state.secondaryErrors))),
+    retryingCommunity:
+      stateIsCurrent &&
+      state.loading &&
+      loadRequest.ownerKey === ownerKey &&
+      Boolean(loadRequest.recovery),
     loadError: stateIsCurrent ? state.error : null,
     loadingCommunity:
       !stateIsCurrent || (state.loading && resource.posts.length === 0),

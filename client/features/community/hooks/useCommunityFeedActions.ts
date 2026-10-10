@@ -72,9 +72,11 @@ export function useCommunityFeedActions(
     currentUserId,
     dispatchComments,
     likedPostIds,
+    likesReady = true,
     posts,
     pushFeedback,
     savedPostIds,
+    savesReady = true,
     sessionKey,
     setLikedPostIds,
     setSavedPostIds,
@@ -87,9 +89,11 @@ export function useCommunityFeedActions(
     currentUserId: string | null;
     dispatchComments: React.Dispatch<CommentsAction>;
     likedPostIds: Set<string>;
+    likesReady?: boolean;
     posts: PostUI[];
     pushFeedback: PushFeedback;
     savedPostIds: Set<string>;
+    savesReady?: boolean;
     sessionKey: string;
     setLikedPostIds: React.Dispatch<React.SetStateAction<Set<string>>>;
     setSavedPostIds: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -110,6 +114,11 @@ export function useCommunityFeedActions(
   const committedSessionKeyRef = React.useRef(sessionKey);
   const inFlightLikeTokensRef = React.useRef(new Map<string, symbol>());
   const inFlightSaveTokensRef = React.useRef(new Map<string, symbol>());
+  const toggleReadinessRef = React.useRef({ likesReady, savesReady });
+
+  useCommittedLayoutEffect(() => {
+    toggleReadinessRef.current = { likesReady, savesReady };
+  }, [likesReady, savesReady]);
 
   useCommittedLayoutEffect(() => {
     committedSessionKeyRef.current = sessionKey;
@@ -281,6 +290,8 @@ export function useCommunityFeedActions(
   async function handleToggleLike(postId: string) {
     const target = posts.find((post) => post.id === postId);
     if (!target || inFlightLikeTokensRef.current.has(postId)) return;
+    if (target.fromDB && supabase && !toggleReadinessRef.current.likesReady)
+      return;
 
     if (target.fromDB && supabase && !currentUserId) {
       pushFeedback({
@@ -378,6 +389,8 @@ export function useCommunityFeedActions(
   async function handleToggleSave(postId: string) {
     const target = posts.find((post) => post.id === postId);
     if (!target || inFlightSaveTokensRef.current.has(postId)) return;
+    if (target.fromDB && supabase && !toggleReadinessRef.current.savesReady)
+      return;
 
     if (target.fromDB && supabase && !currentUserId) {
       pushFeedback({

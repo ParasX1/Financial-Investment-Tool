@@ -54,9 +54,17 @@ function requireSessionUserId(uid: string | null, action: string) {
   return uid;
 }
 
+export type CommunityDetailsRetry = {
+  posts: PostUI[];
+  comments: boolean;
+  likes: boolean;
+  saves: boolean;
+};
+
 export async function loadCommunityData(
   db: SupabaseClient,
   currentUserId?: string | null,
+  retryDetails?: CommunityDetailsRetry,
 ): Promise<{
   posts: PostUI[];
   comments: CommentEntry[];
@@ -69,26 +77,31 @@ export async function loadCommunityData(
   const activeUserId =
     currentUserId === undefined ? await getSessionUserId(db) : currentUserId;
 
-  const { data: rows, error } = await loadCommunityPostRows(db);
+  let posts = retryDetails?.posts;
+  if (!posts) {
+    const { data: rows, error } = await loadCommunityPostRows(db);
+    if (error) throw error;
+    posts = (rows ?? []).map((row) => postFromRow(row, activeUserId));
+  }
 
-  if (error) throw error;
-
-  const dbPosts: PostUI[] = rows
-    ? rows.map((row) => postFromRow(row, activeUserId))
-    : [];
-  const posts: PostUI[] = dbPosts;
-
-  if (!dbPosts.length) {
+  if (!posts.length) {
     return { posts, comments: [], likedPostIds: [], savedPostIds: [] };
   }
 
-  const postIds = dbPosts.map((post) => post.id);
-  const commentsQuery = await loadCommunityCommentRows(db, postIds);
+  const postIds = posts.map((post) => post.id);
+  const commentsQuery =
+    !retryDetails || retryDetails.comments
+      ? await loadCommunityCommentRows(db, postIds)
+      : { data: [], error: null };
 
   const { data: allComments, error: commentsError } = commentsQuery;
   const [likedPostIds, savedPostIds] = await Promise.all([
-    loadLikedPostIds(db, postIds, activeUserId),
-    loadSavedPostIds(db, postIds, activeUserId),
+    !retryDetails || retryDetails.likes
+      ? loadLikedPostIds(db, postIds, activeUserId)
+      : Promise.resolve({ ids: [], error: undefined }),
+    !retryDetails || retryDetails.saves
+      ? loadSavedPostIds(db, postIds, activeUserId)
+      : Promise.resolve({ ids: [], error: undefined }),
   ]);
 
   if (commentsError) {
