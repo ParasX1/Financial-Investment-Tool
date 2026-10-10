@@ -13,6 +13,7 @@ import {
   uploadCommentImage,
 } from "../data/communityStorage";
 import { createLocalComment } from "../lib/communityMappers";
+import { validateCommunityCommentContent } from "../lib/communityValidation";
 import type {
   CommentUI,
   CommentsAction,
@@ -183,6 +184,8 @@ export function useCommunityFeedActions(
   }
 
   async function handleAddComment(postId: string, data: NewComment) {
+    const contentError = validateCommunityCommentContent(data.text);
+    if (contentError) throw new Error(contentError);
     const target = posts.find((post) => post.id === postId);
     if (!target) throw new Error("Discussion is no longer available.");
 

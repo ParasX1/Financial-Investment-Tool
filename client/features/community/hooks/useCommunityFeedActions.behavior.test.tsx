@@ -152,6 +152,35 @@ async function renderHarness(options: HarnessOptions) {
 }
 
 describe("useCommunityFeedActions behavior", () => {
+  it.each([true, false])(
+    "rejects an overlong comment before upload or mutation (remote=%s)",
+    async (fromDB) => {
+      const dependencies = createDependencies();
+      const harness = await renderHarness({
+        dependencies,
+        initialPosts: [createPost({ fromDB })],
+      });
+      let failure: unknown;
+      await act(async () => {
+        try {
+          await harness.latest.handleAddComment("post-1", {
+            text: "x".repeat(2001),
+            file: new File(["image"], "image.png", { type: "image/png" }),
+          });
+        } catch (error) {
+          failure = error;
+        }
+      });
+      expect(failure).toEqual(
+        new Error("Keep the comment to 2,000 characters or fewer."),
+      );
+      expect(dependencies.uploadCommentImage).not.toHaveBeenCalled();
+      expect(dependencies.createComment).not.toHaveBeenCalled();
+      expect(harness.latest.commentsState.byPost["post-1"]).toEqual([]);
+      harness.renderer.unmount();
+    },
+  );
+
   it("persists a remote comment with its uploaded image", async () => {
     const dependencies = createDependencies();
     const savedComment = createComment();
@@ -293,9 +322,7 @@ describe("useCommunityFeedActions behavior", () => {
       initialComments: [{ postId: "post-1", comment }],
     });
 
-    act(() =>
-      harness.latest.requestDeleteComment(comment.id, "post-1"),
-    );
+    act(() => harness.latest.requestDeleteComment(comment.id, "post-1"));
     await act(async () => {
       await harness.latest.confirmPendingDelete();
     });
@@ -339,7 +366,9 @@ describe("useCommunityFeedActions behavior", () => {
   it("ignores a delete response that belongs to a previous account", async () => {
     const request = deferred<void>();
     const dependencies = createDependencies();
-    (dependencies.deletePost as jest.Mock<any>).mockReturnValue(request.promise);
+    (dependencies.deletePost as jest.Mock<any>).mockReturnValue(
+      request.promise,
+    );
     const harness = await renderHarness({ dependencies });
     let pending!: Promise<void>;
 
