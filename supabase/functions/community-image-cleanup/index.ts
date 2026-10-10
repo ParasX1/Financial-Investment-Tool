@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { handleCleanup } from './cleanup.mjs';
 
-// The custom service-only token RPC is the caller gate; deploy with verify_jwt=false.
+// The service-only RPC validates the custom Bearer token; deploy with verify_jwt=false.
 Deno.serve((request: Request) => handleCleanup(request, {
   env: {
     SUPABASE_URL: Deno.env.get('SUPABASE_URL'),

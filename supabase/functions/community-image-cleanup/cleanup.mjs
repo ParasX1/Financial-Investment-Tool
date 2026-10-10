@@ -32,7 +32,7 @@ export function createBoundedFetch(fetcher, deadline, now = () => performance.no
     const timeout = AbortSignal.timeout(Math.min(REQUEST_TIMEOUT_MS, remaining));
     const upstream = init.signal ?? (input instanceof Request ? input.signal : undefined);
     const signal = upstream ? AbortSignal.any([upstream, timeout]) : timeout;
-    return fetcher(input, { ...init, signal });
+    return fetcher(input, { ...init, signal, redirect: 'error' });
   };
 }
 
@@ -78,8 +78,10 @@ export async function handleCleanup(request, { env, createClient, fetcher = fetc
   });
   const reject = (status) => { summary.failed += 1; return reply(status); };
   if (request.method !== 'POST') return reject(405);
-  const token = request.headers.get('x-fit-cleanup-token');
-  if (token?.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(token)) return reject(401);
+  const authorization = request.headers.get('authorization');
+  if (authorization?.length !== 71) return reject(401);
+  const token = /^Bearer ([0-9a-fA-F]{64})$/i.exec(authorization)?.[1];
+  if (!token) return reject(401);
   const deadline = now() + BUDGET_MS;
   let client;
   try {

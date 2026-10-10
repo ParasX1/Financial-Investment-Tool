@@ -113,5 +113,151 @@ select is((select count(*) from public.profiles where id='61616161-6161-4161-816
 select throws_ok($$insert into public.profiles(id) values('62626262-6262-4262-8262-626262626262')$$,'42501',null,'anonymous profile INSERT is denied');
 select throws_ok($$update public.profiles set first_name='Attack'$$,'42501',null,'anonymous profile UPDATE is denied');
 reset role;
+
+-- Exercise the reviewed recovery and forward bodies inside this same rollback
+-- transaction. Compare sorted exploded ACL tuples, since GRANT changes raw ACL
+-- array order without changing its effective permission identity.
+create function pg_temp.reference_contract_snapshot() returns jsonb language sql as $snapshot$
+  with relations as (
+    select n.nspname||'.'||c.relname as name,c.relkind,c.relowner,c.relrowsecurity,c.relforcerowsecurity,
+      coalesce((select jsonb_agg(jsonb_build_array(a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+        order by a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+        from aclexplode(coalesce(c.relacl,acldefault(case when c.relkind='S' then 's'::"char" else 'r'::"char" end,c.relowner))) a),'[]'::jsonb) as acl,
+      (select jsonb_agg(jsonb_build_object('column',att.attname,'type',format_type(att.atttypid,att.atttypmod),
+        'acl',coalesce((select jsonb_agg(jsonb_build_array(a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+          order by a.grantor,a.grantee,a.privilege_type,a.is_grantable) from aclexplode(att.attacl) a),'[]'::jsonb)) order by att.attnum)
+        from pg_attribute att where att.attrelid=c.oid and att.attnum>0 and not att.attisdropped) as columns
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname in ('public','private','storage') and c.relkind in ('r','p','S','v','m')
+  ), functions as (
+    select n.nspname as schema,p.oid::regprocedure::text as signature,p.proowner,p.prosecdef,p.proconfig,
+      p.proargnames,p.pronargdefaults,pg_get_functiondef(p.oid) as definition,obj_description(p.oid,'pg_proc') as comment,
+      coalesce((select jsonb_agg(jsonb_build_array(a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+        order by a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+        from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a),'[]'::jsonb) as acl
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname in ('public','private') and p.prokind in ('f','p')
+  ), defaults as (
+    select pg_get_userbyid(d.defaclrole) as creator,coalesce(n.nspname,'GLOBAL') as schema,d.defaclobjtype,
+      coalesce((select jsonb_agg(jsonb_build_array(a.grantor,a.grantee,a.privilege_type,a.is_grantable)
+        order by a.grantor,a.grantee,a.privilege_type,a.is_grantable) from aclexplode(d.defaclacl) a),'[]'::jsonb) as acl
+    from pg_default_acl d left join pg_namespace n on n.oid=d.defaclnamespace
+  ), service_relation_acl as (
+    select r.name,'TABLE' as scope,a.value as acl from relations r
+      cross join lateral jsonb_array_elements(r.acl) a
+      where a.value->>1=(select oid::text from pg_roles where rolname='service_role')
+    union all
+    select r.name,col.value->>'column',a.value from relations r
+      cross join lateral jsonb_array_elements(r.columns) col
+      cross join lateral jsonb_array_elements(col.value->'acl') a
+      where a.value->>1=(select oid::text from pg_roles where rolname='service_role')
+  ), service_default_acl as (
+    select d.creator,d.schema,d.defaclobjtype,a.value as acl from defaults d
+      cross join lateral jsonb_array_elements(d.acl) a
+      where a.value->>1=(select oid::text from pg_roles where rolname='service_role')
+  ), policies as (
+    select schemaname,tablename,policyname,permissive,cmd,roles,qual,with_check
+    from pg_policies where schemaname in ('public','private','storage')
+  ), protected as (
+    select jsonb_build_object(
+      'untargetedRelations',(select jsonb_agg(to_jsonb(r) order by name) from relations r
+        where name not in ('public.profiles','public.tickers','public.top_picks_universe','public.tickers_id_seq')),
+      'functionsHash',(select md5(jsonb_agg(to_jsonb(f) order by schema,signature)::text) from functions f),
+      'serviceRelationACL',(select jsonb_agg(to_jsonb(s) order by name,scope,acl::text) from service_relation_acl s),
+      'serviceDefaultACL',(select jsonb_agg(to_jsonb(s) order by creator,schema,defaclobjtype,acl::text) from service_default_acl s),
+      'otherDefaults',(select jsonb_agg(to_jsonb(d) order by creator,schema,defaclobjtype) from defaults d
+        where not (creator='postgres' and ((schema='public' and defaclobjtype in ('r','S','f')) or (schema='GLOBAL' and defaclobjtype='f')))),
+      'untargetedPolicies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from policies p
+        where not (schemaname='storage' and tablename='objects' and policyname='Users can upload their own avatar images.')),
+      'dataHash',md5(jsonb_build_object(
+        'profiles',(select jsonb_agg(to_jsonb(r) order by id) from public.profiles r),
+        'tickers',(select jsonb_agg(to_jsonb(r) order by id) from public.tickers r),
+        'universe',(select jsonb_agg(to_jsonb(r) order by symbol) from public.top_picks_universe r),
+        'Users',(select jsonb_agg(to_jsonb(r) order by id) from public."Users" r),
+        'authUsers',(select jsonb_agg(to_jsonb(r) order by id) from auth.users r),
+        'objects',(select jsonb_agg(to_jsonb(r) order by id) from storage.objects r),
+        'posts',(select jsonb_agg(to_jsonb(r) order by id) from public.posts r),
+        'comments',(select jsonb_agg(to_jsonb(r) order by id) from public.comments r),
+        'tickets',(select jsonb_agg(to_jsonb(r) order by id) from private.community_image_cleanup r),
+        'tickerSequence',(select jsonb_build_array(last_value,is_called) from public.tickers_id_seq),
+        'ledger',(select jsonb_agg(to_jsonb(r) order by version) from supabase_migrations.schema_migrations r)
+      )::text)
+    ) as state
+  )
+  select jsonb_build_object(
+    'targets',(select jsonb_agg(to_jsonb(r) order by name) from relations r
+      where name in ('public.profiles','public.tickers','public.top_picks_universe','public.tickers_id_seq')),
+    'defaults',(select jsonb_agg(to_jsonb(d) order by creator,schema,defaclobjtype) from defaults d),
+    'avatarInsert',(select to_jsonb(p) from policies p where schemaname='storage' and tablename='objects'
+      and policyname='Users can upload their own avatar images.'),
+    'protected',(select state from protected)
+  );
+$snapshot$;
+create temporary table reference_contract_before as select pg_temp.reference_contract_snapshot() as state;
+
+-- Exact inverse.sql body; its BEGIN/COMMIT wrappers are deliberately omitted.
+set local lock_timeout = '3s';
+set local statement_timeout = '30s';
+alter policy "Users can upload their own avatar images." on storage.objects
+  to authenticated with check (
+    bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar'
+  );
+revoke insert (id, first_name, last_name, avatar_url, updated_at),
+  update (first_name, last_name, avatar_url, updated_at)
+  on table public.profiles from authenticated;
+grant all on table public.profiles, public.tickers, public.top_picks_universe to anon, authenticated;
+grant all on sequence public.tickers_id_seq to anon, authenticated;
+alter default privileges for role postgres in schema public grant all on tables to anon, authenticated;
+alter default privileges for role postgres in schema public grant all on sequences to anon, authenticated;
+alter default privileges for role postgres in schema public grant all on functions to anon, authenticated;
+alter default privileges for role postgres grant execute on functions to public;
+notify pgrst, 'reload schema';
+
+select ok((select bool_and(has_table_privilege(r,t,p))
+  from unnest(array['anon','authenticated']) r
+  cross join unnest(array['public.profiles','public.tickers','public.top_picks_universe']) t
+  cross join unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER','MAINTAIN']) p)
+  and (select bool_and(has_sequence_privilege(r,'public.tickers_id_seq',p))
+    from unnest(array['anon','authenticated']) r cross join unnest(array['USAGE','SELECT','UPDATE']) p)
+  and not exists(select from pg_attribute where attrelid='public.profiles'::regclass and attnum>0
+    and not attisdropped and attacl is not null)
+  and (select cmd='INSERT' and roles=array['authenticated']::name[] and with_check not like '%owner_id%'
+    and with_check like '%auth.uid%' and with_check like '%/avatar%'
+    from pg_policies where schemaname='storage' and tablename='objects'
+      and policyname='Users can upload their own avatar images.'),
+  'inverse body restores broad browser grants, empty profile column ACLs and path-only avatar INSERT');
+select is(pg_temp.reference_contract_snapshot()->'protected',
+  (select state->'protected' from reference_contract_before),
+  'inverse body preserves Users, existing functions, service grants, other defaults, policies and fixture data');
+
+-- Exact 20261010081946 forward body, also without transaction wrappers.
+set local lock_timeout = '3s';
+set local statement_timeout = '30s';
+alter default privileges for role postgres in schema public
+  revoke all on tables from anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke all on sequences from anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke all on functions from anon, authenticated;
+alter default privileges for role postgres revoke execute on functions from public;
+revoke all on table public.profiles, public.tickers, public.top_picks_universe
+  from public, anon, authenticated;
+revoke all on sequence public.tickers_id_seq from public, anon, authenticated;
+grant select on table public.profiles, public.tickers, public.top_picks_universe
+  to anon, authenticated;
+grant insert (id, first_name, last_name, avatar_url, updated_at),
+  update (first_name, last_name, avatar_url, updated_at)
+  on table public.profiles to authenticated;
+alter policy "Users can upload their own avatar images." on storage.objects
+  to authenticated
+  with check (
+    bucket_id = 'avatars'
+    and owner_id = (select auth.uid())::text
+    and name = (select auth.uid())::text || '/avatar'
+  );
+notify pgrst, 'reload schema';
+select is(pg_temp.reference_contract_snapshot(),(select state from reference_contract_before),
+  'forward body restores the complete canonical grant, default, avatar and protected data snapshot');
+
 select * from finish();
 rollback;

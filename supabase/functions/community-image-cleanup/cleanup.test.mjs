@@ -56,7 +56,7 @@ function fixture(overrides = {}) {
 async function invoke(f, options = {}, method = 'POST', token = TOKEN) {
   const response = await handleCleanup(new Request('https://worker.invalid', {
     method,
-    headers: token === null ? {} : { 'x-fit-cleanup-token': token },
+    headers: token === null ? {} : { Authorization: `Bearer ${token}` },
     ...(method === 'POST' ? { body: '{"path":"avatars/foreign.png","limit":100}' } : {}),
   }), { ...f.deps, ...options });
   return { response, summary: await response.json() };
@@ -99,6 +99,40 @@ for (const token of [null, '', 'a'.repeat(63), 'a'.repeat(65), 'g'.repeat(64)]) 
     assert.deepEqual(f.calls, []);
   });
 }
+
+test('Bearer scheme is case-insensitive and passes only the token to the authorization RPC', async () => {
+  const f = fixture();
+  const response = await handleCleanup(new Request('https://worker.invalid', {
+    method: 'POST', headers: { Authorization: `bEaReR ${TOKEN}` },
+  }), f.deps);
+  assert.equal(response.status, 200);
+  assert.deepEqual(f.calls[0], ['community_image_cleanup_authorized', { p_token: TOKEN }]);
+});
+
+test('malformed Bearer scheme, whitespace, and newline values reject before privileged client creation', async () => {
+  for (const authorization of [TOKEN, `Basic ${TOKEN}`, `Bearer${TOKEN}`, `Bearer  ${TOKEN}`,
+    `Bearer\t${TOKEN}`, `Bearer ${TOKEN}\n`, `Bearer ${TOKEN.slice(0, 63)}\n`,
+    `Bearer ${TOKEN}\r\n`, `Bearer ${TOKEN},other`]) {
+    const f = fixture();
+    // Native Headers rejects newlines itself; this exercises the handler boundary too.
+    const request = { method: 'POST', headers: { get(name) { assert.equal(name, 'authorization'); return authorization; } } };
+    const response = await handleCleanup(request, f.deps);
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), { ...EMPTY, failed: 1 });
+    assert.equal(f.created(), 0);
+    assert.deepEqual(f.calls, []);
+  }
+});
+
+test('legacy custom token header provides no authorization fallback', async () => {
+  const f = fixture();
+  const response = await handleCleanup(new Request('https://worker.invalid', {
+    method: 'POST', headers: { 'x-fit-cleanup-token': TOKEN },
+  }), f.deps);
+  assert.equal(response.status, 401);
+  assert.equal(f.created(), 0);
+  assert.deepEqual(f.calls, []);
+});
 
 for (const value of [success(false), success('true'), success(null), success([true])]) {
   test(`only a boolean authorization success permits work (${JSON.stringify(value.data)})`, async () => {
@@ -289,6 +323,17 @@ test('fetch timeout is 8 seconds or the shorter remaining global budget', async 
     await createBoundedFetch(async () => new Response('{}'), 60_000, () => 59_500)('https://api.invalid');
     assert.deepEqual(timeouts, [8_000, 500]);
   } finally { timeout.mock.restore(); }
+});
+
+test('outbound requests require redirect rejection, including caller follow requests', async () => {
+  const attempts = [];
+  const bounded = createBoundedFetch(async (input, init) => {
+    attempts.push(init.redirect);
+    return new Response('{}');
+  }, 60_000, () => 0);
+  await bounded('https://api.invalid', { redirect: 'follow', headers: { Authorization: 'Bearer unit-service-credential' } });
+  await bounded(new Request('https://api.invalid', { redirect: 'follow' }));
+  assert.deepEqual(attempts, ['error', 'error']);
 });
 
 test('fetch does not start after the deadline and retains caller cancellation', async () => {

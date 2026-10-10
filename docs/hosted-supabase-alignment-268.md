@@ -185,6 +185,6 @@ Missing hosted Stocks/Symbols are excluded rather than inventing tables.
 The owner requested actual Auth/Storage and image-cleanup completion through MCP.
 No protected Python scheduler exists here, so the concrete hosted operation uses
 the existing ticket protocol in Edge with a Vault-generated caller token and
-Cron; see [its operation and acceptance plan](hosted-community-cleanup-operation.md).
+Cron using synchronous HTTP; see [its operation and acceptance plan](hosted-community-cleanup-operation.md).
 Provisioning, deployment, actual API acceptance and observed recurring execution
 remain distinct checkpoints. Main stays unmerged.

@@ -4,5 +4,5 @@
 select cron.schedule(
   'fit-community-image-cleanup',
   '*/5 * * * *',
-  $job$select private.invoke_community_image_cleanup('https://<project-ref>.supabase.co/functions/v1/community-image-cleanup');$job$
+  $job$set statement_timeout='80s'; select private.invoke_community_image_cleanup('https://<project-ref>.supabase.co/functions/v1/community-image-cleanup');$job$
 );
