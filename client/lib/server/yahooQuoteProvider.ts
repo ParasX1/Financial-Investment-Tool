@@ -1,3 +1,5 @@
+import { fetchAdmittedProviderResponse } from "./providerAdmission";
+
 export interface YahooQuoteSnapshot {
   change: number | null;
   changePercent: number | null;
@@ -177,13 +179,13 @@ export function mapYahooChartMetaQuote(
   };
 }
 
-function requestInit(timeoutMs: number): RequestInit {
+function requestInit(signal: AbortSignal): RequestInit {
   return {
     headers: {
       Accept: "application/json",
       "User-Agent": YAHOO_USER_AGENT,
     },
-    signal: AbortSignal.timeout(timeoutMs),
+    signal,
   };
 }
 
@@ -200,6 +202,7 @@ async function fetchSparkQuotes(
   fetchImpl: FetchImplementation,
   timeoutMs: number,
   nowEpochSeconds: number,
+  signal: AbortSignal,
 ): Promise<ReadonlyMap<string, YahooQuoteSnapshot>> {
   const url = new URL("/v7/finance/spark", YAHOO_HOST);
   url.searchParams.set("symbols", symbols.join(","));
@@ -208,7 +211,11 @@ async function fetchSparkQuotes(
 
   let response: Response;
   try {
-    response = await fetchImpl(url.toString(), requestInit(timeoutMs));
+    response = await fetchAdmittedProviderResponse(
+      url.toString(),
+      requestInit(signal),
+      { fetcher: fetchImpl, timeoutMs },
+    );
   } catch {
     throw new YahooQuoteProviderError("network");
   }
@@ -239,6 +246,7 @@ async function fetchChartQuote(
   fetchImpl: FetchImplementation,
   timeoutMs: number,
   nowEpochSeconds: number,
+  signal: AbortSignal,
 ): Promise<YahooQuoteSnapshot | null> {
   const url = new URL(
     `/v8/finance/chart/${encodeURIComponent(symbol)}`,
@@ -249,7 +257,11 @@ async function fetchChartQuote(
 
   let response: Response;
   try {
-    response = await fetchImpl(url.toString(), requestInit(timeoutMs));
+    response = await fetchAdmittedProviderResponse(
+      url.toString(),
+      requestInit(signal),
+      { fetcher: fetchImpl, timeoutMs },
+    );
   } catch {
     throw new YahooQuoteProviderError("network");
   }
@@ -276,15 +288,22 @@ async function fetchChartFallback(
   clock: () => number,
   nowEpochSeconds: number,
   batchSize: number,
+  signal: AbortSignal,
 ) {
   let results: PromiseSettledResult<YahooQuoteSnapshot | null>[] = [];
   for (let start = 0; start < symbols.length; start += batchSize) {
     const remainingMs = Math.floor(deadline - clock());
-    if (remainingMs <= 0) break;
+    if (remainingMs <= 0 || signal.aborted) break;
     const batch = symbols.slice(start, start + batchSize);
     const settled = await Promise.allSettled(
       batch.map((symbol) =>
-        fetchChartQuote(symbol, fetchImpl, remainingMs, nowEpochSeconds),
+        fetchChartQuote(
+          symbol,
+          fetchImpl,
+          remainingMs,
+          nowEpochSeconds,
+          signal,
+        ),
       ),
     );
     results = [...results, ...settled];
@@ -319,6 +338,8 @@ export async function fetchYahooQuoteSnapshots(
   );
   const clock = options.clock ?? Date.now;
   const deadline = clock() + timeoutMs;
+  // Spark, fallback batches and their admission waits share this operation budget.
+  const signal = AbortSignal.timeout(timeoutMs);
   const nowEpochSeconds = Math.floor((options.now?.() ?? Date.now()) / 1_000);
   const fallbackBatchSize = Math.max(
     1,
@@ -331,6 +352,7 @@ export async function fetchYahooQuoteSnapshots(
       fetchImpl,
       Math.max(1, Math.ceil(timeoutMs / 2)),
       nowEpochSeconds,
+      signal,
     );
     return normalizedSymbols.map(
       (symbol) => quoteMap.get(symbol) ?? createUnavailableYahooQuote(symbol),
@@ -344,6 +366,7 @@ export async function fetchYahooQuoteSnapshots(
       clock,
       nowEpochSeconds,
       fallbackBatchSize,
+      signal,
     );
     if (!fallbackResults.some((result) => result.status === "fulfilled")) {
       throw new YahooQuoteProviderError("upstream");

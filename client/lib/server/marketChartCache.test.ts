@@ -5,6 +5,7 @@ import {
   getMarketChartCacheTtl,
   MARKET_CHART_MAX_IN_FLIGHT,
 } from "./marketChartCache";
+import { NEWS_PROVIDER_MAX_ACTIVE } from "./providerAdmission";
 
 function chartResponse(symbol: string, price = 105) {
   return new Response(
@@ -54,6 +55,7 @@ describe("market chart server cache", () => {
       rangeId: "3m",
     });
 
+    await Promise.resolve();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     release?.(chartResponse("CBA.AX"));
     const [firstSnapshot, secondSnapshot] = await Promise.all([first, second]);
@@ -96,9 +98,15 @@ describe("market chart server cache", () => {
   });
 
   it("bounds distinct upstream work while still coalescing matching requests", async () => {
-    const fetchImpl = jest.fn(
-      () => new Promise<Response>(() => undefined),
-    );
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const fetchImpl = jest.fn(async (input: string | URL | Request) => {
+      await gate;
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      return chartResponse(decodeURIComponent(url.pathname.split("/").at(-1)!));
+    });
     const pending = Array.from(
       { length: MARKET_CHART_MAX_IN_FLIGHT },
       (_, index) =>
@@ -108,15 +116,22 @@ describe("market chart server cache", () => {
         }),
     );
 
+    try {
+      await Promise.resolve();
+      expect(fetchImpl).toHaveBeenCalledTimes(NEWS_PROVIDER_MAX_ACTIVE);
+      expect(
+        fetchCachedYahooChartSnapshot("S0", { fetchImpl, rangeId: "1d" }),
+      ).toBe(pending[0]);
+      await expect(
+        fetchCachedYahooChartSnapshot("OVERFLOW", {
+          fetchImpl,
+          rangeId: "1d",
+        }),
+      ).rejects.toThrow("Market chart request capacity reached");
+    } finally {
+      release();
+      await Promise.all(pending);
+    }
     expect(fetchImpl).toHaveBeenCalledTimes(MARKET_CHART_MAX_IN_FLIGHT);
-    expect(
-      fetchCachedYahooChartSnapshot("S0", { fetchImpl, rangeId: "1d" }),
-    ).toBe(pending[0]);
-    await expect(
-      fetchCachedYahooChartSnapshot("OVERFLOW", {
-        fetchImpl,
-        rangeId: "1d",
-      }),
-    ).rejects.toThrow("Market chart request capacity reached");
   });
 });

@@ -5,6 +5,7 @@ import {
   MARKET_API_RETRY_AFTER_SECONDS,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
+import { fetchAdmittedProviderResponse } from "@/lib/server/providerAdmission";
 
 const SUPPORTED_QUOTE_TYPES = new Set([
   "CRYPTOCURRENCY",
@@ -114,10 +115,11 @@ export default async function handler(
     url.searchParams.set("quotesCount", String(MAX_RESULTS));
     url.searchParams.set("newsCount", "0");
 
-    const response = await fetch(url, {
-      headers: { "User-Agent": "financial-investment-tool" },
-      signal: AbortSignal.timeout(MARKET_PROVIDER_TIMEOUT_MS),
-    });
+    const response = await fetchAdmittedProviderResponse(
+      url,
+      { headers: { "User-Agent": "financial-investment-tool" } },
+      { timeoutMs: MARKET_PROVIDER_TIMEOUT_MS },
+    );
     if (!response.ok) {
       throw new Error(`Symbol search provider returned ${response.status}`);
     }

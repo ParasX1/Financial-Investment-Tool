@@ -3,6 +3,7 @@ import {
   fetchYahooChartSnapshot,
   YahooChartProviderError,
 } from "./yahooChartProvider";
+import { DEFAULT_PROVIDER_BODY_LIMIT_BYTES } from "./boundedProviderFetch";
 
 function chartResponse(overrides: Record<string, unknown> = {}) {
   return new Response(
@@ -142,4 +143,45 @@ describe("Yahoo chart provider", () => {
       }),
     );
   });
+
+  it.each([
+    { rangeId: "1d" as const, count: 1_440, step: 60 },
+    { rangeId: "max" as const, count: 2_400, step: 31 * 24 * 60 * 60 },
+  ])(
+    "accepts full OHLCV history for $rangeId before compacting display points",
+    async ({ rangeId, count, step }) => {
+      // A full 24-hour minute series and a generous 200-year monthly history.
+      const timestamps = Array.from(
+        { length: count },
+        (_, index) => 1784094000 + index * step,
+      );
+      const prices = timestamps.map((_, index) => 100 + index / 1_000_000);
+      const response = chartResponse({
+        timestamp: timestamps,
+        indicators: {
+          adjclose: [{ adjclose: prices }],
+          quote: [
+            {
+              close: prices,
+              high: prices,
+              low: prices,
+              open: prices,
+              volume: prices.map(() => 9_000_000_000),
+            },
+          ],
+        },
+      });
+      expect((await response.clone().arrayBuffer()).byteLength).toBeLessThan(
+        DEFAULT_PROVIDER_BODY_LIMIT_BYTES,
+      );
+      const fetchImpl = jest.fn<typeof fetch>().mockResolvedValue(response);
+      const snapshot = await fetchYahooChartSnapshot("CBA.AX", {
+        fetchImpl,
+        rangeId,
+      });
+      expect(snapshot.points).toHaveLength(240);
+      expect(snapshot.points[0]?.timeMs).toBe(timestamps[0]! * 1_000);
+      expect(snapshot.points.at(-1)?.timeMs).toBe(timestamps.at(-1)! * 1_000);
+    },
+  );
 });
