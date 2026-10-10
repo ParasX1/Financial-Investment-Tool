@@ -38,6 +38,8 @@ jobs:
           version: "2.84.2"
       - name: Validate migration versions and historical provenance
         run: node scripts/check-supabase-migrations.mjs
+      - name: Verify the protected Edge cleanup worker
+        run: node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 supabase/functions/community-image-cleanup/cleanup.test.mjs
       - name: Start disposable local services
         shell: bash
         run: |

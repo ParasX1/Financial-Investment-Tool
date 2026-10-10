@@ -74,8 +74,8 @@ included in this first batch. Main remains unmerged.
 
 ## Community compatibility batch
 
-Status on 10 October2026: source and disposable verification complete; **hosted
-application has not succeeded**. Both Management API attempts returned
+Historical status before resumed access on 10 October2026: source and disposable
+verification complete; hosted application had not succeeded. Both prior attempts returned
 `Invalid or expired requestState`. Read-back after the second failure confirms
 the original 9/1/1 RPCs, absent comment limit, unchanged counts24/14/3/8 and the
 same eleven ledger fingerprints. Read operations work; browser is signed out
@@ -162,3 +162,29 @@ caller. Avoid an unscheduled second-runtime deployment that would leave cleanup
 unfinished. Protected server access/credential and observed scheduled runs are
 still pending under#268; no cleanup migration/worker/schedule or engine upgrade
 was applied in this batch.
+
+## Resumed actual deployment
+
+After the owner's request to continue with MCP, the exact committed compatibility
+SQL applied successfully as `20261010080722_reconcile_hosted_community_compatibility`.
+Source identity remains `20261010045043`; the effect/content match is recorded
+explicitly rather than renaming prior history. Fresh catalog confirms the three
+new required10/2/2 functions, anonymous denial and authenticated access, all three
+old9/1/1 definitions/ACLs preserved, validated comment CHECK, four exact canonical
+Community policies and all four unchanged Avatar policies. All eleven prior
+ledger fingerprints and counts24/14/3/8 are preserved. Earlier failed requests
+remain historical evidence, not the current application status.
+
+Further review found remaining applicable #288 effects: unnecessary browser
+table/sequence grants on profiles/tickers/top_picks_universe, permissive
+postgres-created object defaults, and path-only Avatar INSERT. The next narrow
+forward migration reconciles those effects without touching private Users,
+existing function definitions/ACLs, service grants or other creators' defaults.
+Missing hosted Stocks/Symbols are excluded rather than inventing tables.
+
+The owner requested actual Auth/Storage and image-cleanup completion through MCP.
+No protected Python scheduler exists here, so the concrete hosted operation uses
+the existing ticket protocol in Edge with a Vault-generated caller token and
+Cron; see [its operation and acceptance plan](hosted-community-cleanup-operation.md).
+Provisioning, deployment, actual API acceptance and observed recurring execution
+remain distinct checkpoints. Main stays unmerged.
