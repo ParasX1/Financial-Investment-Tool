@@ -19,7 +19,6 @@ import {
   insertCommunityPostReportRow,
   insertCommunityPostRow,
   isMissingAuthorIdColumn,
-  loadCommentImagePathRowsForPost,
   loadCommunityCommentRows,
   loadCommunityPostRows,
   selectCommentDeleteContext,
@@ -30,7 +29,6 @@ import {
   setCommunityPostSavedValue,
   type CommentDeleteContext,
 } from "./communityRepository";
-import { removeCommunityImages, uniqueImagePaths } from "./communityStorage";
 import type {
   CommentEntry,
   CommunityReportReason,
@@ -120,14 +118,6 @@ export async function loadCommunityData(
     likesError: likedPostIds.error,
     savesError: savedPostIds.error,
   };
-}
-
-async function loadCommentImagePathsForPost(
-  db: SupabaseClient,
-  postId: string,
-) {
-  const rows = await loadCommentImagePathRowsForPost(db, postId);
-  return uniqueImagePaths(rows.map((row) => row.image_path));
 }
 
 function canDeleteCommentFromContext(
@@ -232,11 +222,6 @@ export async function deleteCommunityPost(
     throw new Error("You can only delete discussions you created.");
   }
 
-  const imagePaths = uniqueImagePaths([
-    owner.image_path,
-    ...(await loadCommentImagePathsForPost(db, postId)),
-  ]);
-
   const { data, error } = await deleteCommunityPostRow(
     db,
     postId,
@@ -247,8 +232,6 @@ export async function deleteCommunityPost(
   if (!data?.length) {
     throw new Error("You can only delete discussions you created.");
   }
-
-  await removeCommunityImages(db, imagePaths);
 }
 
 export async function createCommunityComment({
@@ -326,8 +309,6 @@ export async function deleteCommunityComment(
   if (!data?.length) {
     throw new Error("You can only delete comments you created.");
   }
-
-  await removeCommunityImages(db, [owner.image_path]);
 }
 
 export async function setCommunityPostLike(
