@@ -441,6 +441,15 @@ supabase db push
 
 所有通过 `supabase-js` 使用的 public table 都需要：最小 explicit grant、RLS、按 operation 区分的 policy、必要的 ownership check，以及 update 时同时检查 `USING` 和 `WITH CHECK`。Grant 决定 Data API 能否触达 table；RLS 决定可以触达哪些 row，这两者不能互相替代。
 
+已持久化的 Community 附件通过 private database ticket 和受保护的 server worker
+清理，包括删除 discussion 时其他 comment 作者上传的图片。先部署 #288 ownership
+policy，再部署 cleanup migration。在服务端受保护环境配置 `SUPABASE_URL` 和明确的
+`SUPABASE_SERVICE_ROLE_KEY`，定期运行 `python scripts/cleanup_community_images.py --limit 100`。
+失败 batch 返回非零退出码并保留重试机会；completed reservation 必须保留，以重新清理
+删除后才完成的 upload。Origin 删除在上传结束、定时 worker 成功运行后最终完成；public
+cache 可能继续保留副本。权限、并发、local API 验证和 hosted deployment/schedule gate
+见 [cleanup runbook](docs/community-image-cleanup.md)。
+
 ## 贡献流程
 
 1. 搜索已有 issue 和 PR。在 substantive work 前创建或采用 issue，写明 problem、可复现 evidence、scope 和 acceptance criteria。

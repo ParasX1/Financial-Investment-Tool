@@ -450,6 +450,17 @@ Never change the shared remote database directly in the Dashboard. Do not push m
 
 Every public table used through `supabase-js` needs minimum explicit grants, RLS, operation-specific policies, ownership checks where applicable, and both `USING` and `WITH CHECK` for ownership-preserving updates. Grants decide whether the Data API can reach a table; RLS decides which rows are reachable.
 
+Persisted Community attachment cleanup uses private database tickets and a protected
+server worker, including images belonging to other comment authors when a post is
+deleted. Deploy the #288 ownership policies before the cleanup migration. Configure
+`SUPABASE_URL` and explicit server-only `SUPABASE_SERVICE_ROLE_KEY`, then schedule
+`python scripts/cleanup_community_images.py --limit 100` in the protected server
+environment. Failed batches return a nonzero exit status and remain retryable;
+completed reservations must be retained for late upload reconciliation. Origin
+deletion is eventual after in-flight uploads finish and successful scheduled runs;
+cached public copies can remain. See [the cleanup runbook](docs/community-image-cleanup.md)
+for authority, concurrency, local API controls and hosted deployment/schedule gates.
+
 ## Contribution workflow
 
 1. Search existing issues and PRs. Create or adopt an issue with the problem, reproducible evidence, scope and acceptance criteria before substantive work.
