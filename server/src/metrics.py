@@ -23,14 +23,18 @@ STOCK_DATA_DOWNLOAD_THREADS = 96
 # not retain DataFrames indefinitely, even before the two-minute TTL expires.
 STOCK_DATA_CACHE_MAX_ENTRIES = 128
 _stock_data_cache = OrderedDict()
+_stock_data_cache_generation = 0
 _stock_data_lock = RLock()
 # yfinance shares result dictionaries and its worker pool across download calls.
 _stock_download_lock = RLock()
 
 
 def clear_stock_data_cache():
+    global _stock_data_cache_generation
     with _stock_data_lock:
         _stock_data_cache.clear()
+        # Invalidate active fills without waiting for their provider downloads.
+        _stock_data_cache_generation += 1
 
 
 def _prune_expired_stock_data(now):
@@ -148,28 +152,42 @@ def fetch_stock_data(stock_tickers, start_date, end_date, force_refresh=False):
             _stock_data_cache.move_to_end(cache_key)
             return cached["data"].copy(deep=True)
 
-    stock_data = download_stock_data(stock_tickers, start_date, end_date)
-    missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
-    retry_frames = []
+    # Serialize a complete cold fill, including retries and cache publication.
+    # The downloader reenters this RLock for Yahoo's shared worker state. A
+    # waiting request must recheck the cache after the preceding fill completes.
+    with _stock_download_lock:
+        with _stock_data_lock:
+            _prune_expired_stock_data(monotonic())
+            cached = _stock_data_cache.get(cache_key)
+            if not force_refresh and cached:
+                _stock_data_cache.move_to_end(cache_key)
+                return cached["data"].copy(deep=True)
+            fill_generation = _stock_data_cache_generation
 
-    for ticker in missing_tickers:
-        retry_frame = download_stock_data([ticker], start_date, end_date)
-        if not retry_frame.empty:
-            retry_frames.append(retry_frame)
+        stock_data = download_stock_data(stock_tickers, start_date, end_date)
+        missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
+        retry_frames = []
 
-    if retry_frames:
-        stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+        for ticker in missing_tickers:
+            retry_frame = download_stock_data([ticker], start_date, end_date)
+            if not retry_frame.empty:
+                retry_frames.append(retry_frame)
 
-    with _stock_data_lock:
-        now = monotonic()
-        _prune_expired_stock_data(now)
-        _stock_data_cache[cache_key] = {
-            "created_at": now,
-            "data": stock_data.copy(deep=True),
-        }
-        _stock_data_cache.move_to_end(cache_key)
-        while len(_stock_data_cache) > STOCK_DATA_CACHE_MAX_ENTRIES:
-            _stock_data_cache.popitem(last=False)
+        if retry_frames:
+            stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+
+        with _stock_data_lock:
+            if fill_generation != _stock_data_cache_generation:
+                return stock_data
+            now = monotonic()
+            _prune_expired_stock_data(now)
+            _stock_data_cache[cache_key] = {
+                "created_at": now,
+                "data": stock_data.copy(deep=True),
+            }
+            _stock_data_cache.move_to_end(cache_key)
+            while len(_stock_data_cache) > STOCK_DATA_CACHE_MAX_ENTRIES:
+                _stock_data_cache.popitem(last=False)
 
     return stock_data
 
