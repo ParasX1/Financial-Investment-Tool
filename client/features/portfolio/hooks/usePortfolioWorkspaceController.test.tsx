@@ -27,14 +27,17 @@ type ControllerProps = {
 type Deferred<T> = {
   promise: Promise<T>;
   resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
 };
 
 const createDeferred = <T,>(): Deferred<T> => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((resolvePromise) => {
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
     resolve = resolvePromise;
+    reject = rejectPromise;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 };
 
 const installWindow = (initialValues: Record<string, string> = {}) => {
@@ -110,6 +113,45 @@ const renderController = async (initialProps: ControllerProps) => {
   };
 };
 
+const advancePersistenceTimers = async (milliseconds = 500) => {
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(milliseconds);
+  });
+};
+
+const applySymbols = (
+  harness: Awaited<ReturnType<typeof renderController>>,
+  symbols: string[],
+) => {
+  act(() => harness.latest.setDraftSymbols(symbols));
+  act(() => harness.latest.actions.applyDraft());
+};
+
+const installDeferredCloudWrites = () => {
+  const writes: (Deferred<void> & { userId: string; tags: string[] })[] = [];
+  const cloud = new Map<string, string[]>();
+  savePortfolioConfigMock.mockImplementation((userId, prefs) => {
+    const write = { ...createDeferred<void>(), userId, tags: [...prefs.tags] };
+    writes.push(write);
+    return write.promise.then(() => {
+      cloud.set(write.userId, write.tags);
+    });
+  });
+  return {
+    writes,
+    cloud,
+    async settle() {
+      // Drain requests that begin while an earlier request is being settled.
+      for (let index = 0; index < writes.length; index += 1) {
+        await act(async () => {
+          writes[index].resolve(undefined);
+          await Promise.resolve();
+        });
+      }
+    },
+  };
+};
+
 beforeEach(() => {
   jest.useFakeTimers();
   loadPortfolioConfigMock.mockReset();
@@ -127,6 +169,304 @@ afterEach(() => {
 });
 
 describe("usePortfolioWorkspaceController", () => {
+  it("persists ordinary completed symbol changes in their applied order", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-control")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-control",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      await act(async () => deferred.writes[0].resolve(undefined));
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes.map(({ tags }) => tags)).toEqual([
+        ["AAPL"],
+        ["MSFT"],
+      ]);
+      await act(async () => deferred.writes[1].resolve(undefined));
+      expect(deferred.cloud.get("save-control")).toEqual(["MSFT"]);
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("serializes overlapping cloud writes so older symbols cannot finish after newer symbols", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-order")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-order",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      expect(harness.latest.workspace.symbols).toEqual(["MSFT"]);
+      expect(deferred.writes).toHaveLength(1);
+      await act(async () => deferred.writes[0].resolve(undefined));
+      expect(deferred.writes.map(({ tags }) => tags)).toEqual([
+        ["AAPL"],
+        ["MSFT"],
+      ]);
+      await act(async () => deferred.writes[1].resolve(undefined));
+      expect(deferred.cloud.get("save-order")).toEqual(["MSFT"]);
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("coalesces waiting cloud writes to the latest applied symbols", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-coalesce")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-coalesce",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      applySymbols(harness, ["NVDA"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      await act(async () => deferred.writes[0].resolve(undefined));
+      expect(deferred.writes.map(({ tags }) => tags)).toEqual([
+        ["AAPL"],
+        ["NVDA"],
+      ]);
+      await act(async () => deferred.writes[1].resolve(undefined));
+      expect(deferred.cloud.get("save-coalesce")).toEqual(["NVDA"]);
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("continues the latest cloud write after an older failure without stale feedback", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-old-failure")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-old-failure",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      await act(async () =>
+        deferred.writes[0].reject(new Error("older write failed")),
+      );
+      expect(deferred.writes).toHaveLength(2);
+      expect(harness.latest.persistenceStatus).toBeNull();
+      await act(async () => deferred.writes[1].resolve(undefined));
+      expect(deferred.cloud.get("save-old-failure")).toEqual(["MSFT"]);
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("keeps a failed latest write explicit until retry saves the current symbols", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-retry")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-retry",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      await act(async () => deferred.writes[0].resolve(undefined));
+      await act(async () =>
+        deferred.writes[1].reject(new Error("latest write failed")),
+      );
+      expect(harness.latest.persistenceStatus).toMatchObject({
+        canRetry: true,
+        retrying: false,
+      });
+      expect(harness.latest.persistenceStatus?.message).toContain(
+        "could not be synced",
+      );
+      await advancePersistenceTimers(2_000);
+      expect(deferred.writes).toHaveLength(2);
+      act(() => harness.latest.actions.retryPersistence());
+      await advancePersistenceTimers();
+      expect(loadPortfolioConfigMock).not.toHaveBeenCalled();
+      expect(deferred.writes[2].tags).toEqual(["MSFT"]);
+      await act(async () =>
+        deferred.writes[2].reject(new Error("retry failed")),
+      );
+      expect(harness.latest.persistenceStatus?.canRetry).toBe(true);
+      act(() => harness.latest.actions.retryPersistence());
+      await advancePersistenceTimers();
+      await act(async () => deferred.writes[3].resolve(undefined));
+      expect(deferred.cloud.get("save-retry")).toEqual(["MSFT"]);
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("isolates owner feedback and serializes A writes across an A to B to A switch", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-owner-a")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+      [getWorkspaceStorageKey("save-owner-b")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["GOOGL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-owner-a",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      await harness.update({ userId: "save-owner-a", authLoading: true });
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      await harness.update({ userId: "save-owner-b", authLoading: false });
+      await advancePersistenceTimers();
+      expect(
+        deferred.writes.map(({ userId, tags }) => ({ userId, tags })),
+      ).toEqual([
+        { userId: "save-owner-a", tags: ["AAPL"] },
+        { userId: "save-owner-b", tags: ["GOOGL"] },
+      ]);
+      await act(async () =>
+        deferred.writes[1].reject(new Error("B write failed")),
+      );
+      expect(harness.latest.persistenceStatus?.canRetry).toBe(true);
+      await harness.update({ userId: "save-owner-a", authLoading: false });
+      expect(harness.latest.workspace.symbols).toEqual(["MSFT"]);
+      applySymbols(harness, ["NVDA"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(2);
+      await act(async () =>
+        deferred.writes[0].reject(new Error("stale A write failed")),
+      );
+      expect(harness.latest.persistenceStatus).toBeNull();
+      expect(deferred.writes[2]).toMatchObject({
+        userId: "save-owner-a",
+        tags: ["NVDA"],
+      });
+      await act(async () => deferred.writes[2].resolve(undefined));
+      expect(deferred.cloud.get("save-owner-a")).toEqual(["NVDA"]);
+      expect(deferred.cloud.has("save-owner-b")).toBe(false);
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("continues the queued latest symbols after unmount without updating stale feedback", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-unmount")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const harness = await renderController({
+      userId: "save-unmount",
+      authLoading: false,
+    });
+    try {
+      await advancePersistenceTimers();
+      applySymbols(harness, ["MSFT"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      harness.unmount();
+      await act(async () => deferred.writes[0].resolve(undefined));
+      expect(deferred.writes[1]).toMatchObject({
+        userId: "save-unmount",
+        tags: ["MSFT"],
+      });
+      await act(async () =>
+        deferred.writes[1].reject(new Error("unmounted write failed")),
+      );
+      expect(harness.latest.persistenceStatus).toBeNull();
+    } finally {
+      harness.unmount();
+      await deferred.settle();
+    }
+  });
+
+  it("orders same-owner cloud writes across unmount and local-first remount", async () => {
+    installWindow({
+      [getWorkspaceStorageKey("save-remount")]: JSON.stringify(
+        createDefaultWorkspace(TODAY, ["AAPL"]),
+      ),
+    });
+    const deferred = installDeferredCloudWrites();
+    const first = await renderController({
+      userId: "save-remount",
+      authLoading: false,
+    });
+    let second: Awaited<ReturnType<typeof renderController>> | undefined;
+    try {
+      await advancePersistenceTimers();
+      applySymbols(first, ["MSFT"]);
+      await advancePersistenceTimers();
+      first.unmount();
+      second = await renderController({
+        userId: "save-remount",
+        authLoading: false,
+      });
+      expect(second.latest.workspace.symbols).toEqual(["MSFT"]);
+      expect(loadPortfolioConfigMock).not.toHaveBeenCalled();
+      applySymbols(second, ["NVDA"]);
+      await advancePersistenceTimers();
+      expect(deferred.writes).toHaveLength(1);
+      await act(async () => deferred.writes[0].resolve(undefined));
+      expect(deferred.writes.map(({ tags }) => tags)).toEqual([
+        ["AAPL"],
+        ["NVDA"],
+      ]);
+      await act(async () => deferred.writes[1].resolve(undefined));
+      expect(deferred.cloud.get("save-remount")).toEqual(["NVDA"]);
+      expect(second.latest.persistenceStatus).toBeNull();
+    } finally {
+      first.unmount();
+      second?.unmount();
+      await deferred.settle();
+    }
+  });
+
   it("keeps trusted local symbols and session edits across local midnight", async () => {
     jest.setSystemTime(new Date(2026, 9, 3, 23, 59, 59));
     const local = createDefaultWorkspace("2026-10-03", ["LOCAL"]);
@@ -187,7 +527,7 @@ describe("usePortfolioWorkspaceController", () => {
     expect(harness.latest.workspace.symbols).toEqual(["AAPL"]);
     expect(loadPortfolioConfigMock).not.toHaveBeenCalledWith("user-a");
 
-    act(() => jest.runOnlyPendingTimers());
+    await advancePersistenceTimers(1_000);
     storage.setItem.mockClear();
     savePortfolioConfigMock.mockClear();
 
@@ -212,7 +552,7 @@ describe("usePortfolioWorkspaceController", () => {
       userBRemote.resolve({ tags: ["MSFT"] });
       await userBRemote.promise;
     });
-    act(() => jest.advanceTimersByTime(1_000));
+    await advancePersistenceTimers(1_000);
     const latestUserBWrite = storage.setItem.mock.calls
       .filter(([key]) => key === getWorkspaceStorageKey("user-b"))
       .at(-1);
