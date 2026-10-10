@@ -8,8 +8,9 @@ Hosted updates were explicitly requested on 10 October 2026.
 
 Project `egjnhetinyoyrhbetbxi` matches the configured backend URL. Fresh read-only
 inspection found 10 historical ledger entries, 24 posts, 14 comments, 3 profiles
-and 8 Community Storage objects. Existing canonical avatar policies already
-match the current client path `<user-id>/avatar` and owner_id boundaries.
+and 8 Community Storage objects. Existing avatar policies use the current client
+path `<user-id>/avatar`. SELECT/UPDATE/DELETE also check owner_id; hosted INSERT
+checks the path alone. This batch preserves all four definitions exactly.
 
 The first migration creates the absent public avatars bucket (5 MiB; JPEG,
 PNG, WebP and GIF), adds the three absent Community foreign-key indexes, and
@@ -70,3 +71,94 @@ the next actual hosted batches. Existing old clients must stay compatible during
 transition; do not drop their RPC signatures without a verified client cutover.
 No PostgreSQL engine restart/upgrade, paid branch/project or credential change is
 included in this first batch. Main remains unmerged.
+
+## Community compatibility batch
+
+Status on 10 October2026: source and disposable verification complete; **hosted
+application has not succeeded**. Both Management API attempts returned
+`Invalid or expired requestState`. Read-back after the second failure confirms
+the original 9/1/1 RPCs, absent comment limit, unchanged counts24/14/3/8 and the
+same eleven ledger fingerprints. Read operations work; browser is signed out
+and the local CLI is not authenticated. Restore supported access before another
+attempt. This is an access failure, not a request for renewed owner authorization.
+
+Migration `20261010045043_reconcile_hosted_community_compatibility` contains only
+the verified missing effects:
+
+- Add required-identity create10 / like2 / unlike2 overloads, preserving every
+  existing hosted9/1/1 definition and ACL. Fresh source replay still has only the
+  new signatures. Nullable fields remain explicit JSON keys; identity arguments
+  have no defaults. The old methods remain authenticated-only and retain their
+  old session-switch behavior until the deployed callers retire.
+- Grant authenticated INSERT on saves.user_id and reports.reporter_id, with the
+  existing owner RLS still checking the request JWT. No moderation grant is added.
+- Add the validated <=2000 Unicode-code-point comment CHECK. Actual hosted
+ 14 comments have maximum30 characters and none exceed the new limit.
+- Use canonical owner_id for Community Storage SELECT/INSERT/UPDATE/DELETE,
+  allowing current owner upload/upsert/read/delete and removing post-author
+  authority over somebody else's comment image. Managed Storage ACLs, defaults,
+  bucket settings and all avatar policies remain unchanged.
+
+The five existing names outside posts/% and comments/% remain owner-readable
+and owner-deletable. UPDATE retaining an outside-prefix name becomes restricted;
+current generated-path uploads are compatible. No existing path, owner, image
+byte or application row is rewritten. Physical cross-author image cleanup still
+requires the separately reviewed capture migration and protected worker.
+
+[PostgREST named arguments and overloads](https://docs.postgrest.org/en/stable/references/api/functions.html#overloaded-functions)
+support retaining distinct required argument sets during the client transition.
+Copying the older source expected-account migration wholesale would drop hosted
+old callers; adding defaults could make payload dispatch ambiguous. Neither is
+used. Only the Community subset of the larger hardening migration is reconciled;
+the hosted project has no legacy Stocks/Symbols tables.
+
+## Verification and deployment procedure
+
+The committed SQL SHA256 is
+`2eb72207b7813de73b7c3845c12ebaa603e12becc9f90f9ab04e67c177c9e6e3`.
+The rehearsed3180f409 checkpoint differs only by one removed blank line at EOF.
+Fresh-context source/inverse review found no actionable defect. Disposable
+host-shaped controls passed54 RPC,23 comment and17 Community Storage assertions.
+Actual local Auth/PostgREST/Storage requests passed464 assertions including exact
+fixture cleanup, covering old/new dispatch, persisted actors/tickers/votes,
+refresh, wrong/null intent, private saves/reports, owner upsert and cross-owner
+denial. A snapshot-specific inverse restored the targeted catalog/rows/counts/
+ledger; the final SQL then passed two applications and repeated54/17 controls.
+Fresh source replay passed34 migrations, six files/221 assertions, lint/advisors
+and41 exact source/runtime file hashes. These are local results.
+
+The rehearsal retained source-only cleanup triggers, so it is not a complete
+hosted replica. It also deliberately preserved the actual weak avatar INSERT;
+two assertions in the broader source Storage suite failed from that one gap
+and its duplicate-insert consequence. Fresh-source221 uses the already hardened
+source avatar policy and passes. Legacy outside-prefix Storage API mutation and
+avatar cross-owner API controls were not run. Prior fixture syntax failure and
+baseline negative controls remain recorded; no global check was weakened.
+
+Before actual application, recapture definitions/ACLs, policies, constraint and
+actor grants, comment/ownership aggregates and ledger fingerprints. The captured
+baseline has no new RPCs or same-name comment CHECK; reject drift and regenerate
+recovery SQL rather than assuming `IF NOT EXISTS` proves equivalent definitions.
+Apply the exact SQL transaction with3-second per-lock and30-second per-statement
+timeouts;30 seconds is not a whole-batch deadline. Then independently verify the
+new ledger record, old/new signatures with zero defaults, old ACLs unchanged,
+new authenticated-only access, exact policies, validated CHECK and preserved
+rows/objects/history. Verify hosted authenticated API flows when protected test
+access is available; catalog evidence alone does not prove API routing.
+
+The inspected inverse is valid only for the captured old-only host: remove the
+three newly added signatures, two INSERT column grants and length CHECK, and
+restore only the captured Community policies. It does not alter old RPCs, avatar
+policies or data. Reverting restores weaker policies and requires checking that
+new callers are no longer using the new signatures. Never run this inverse on a
+fresh source replay or after unrelated schema changes. A catalog snapshot and
+rehearsed targeted inverse are not a whole-project backup or Storage byte backup.
+
+The existing Python cleanup command remains the preferred protected operation.
+Read-only provider inspection found zero Edge Functions, no pg_cron/pg_net, and
+an installed Vault with no secret entries. Edge Functions' default admin secret
+supports outbound access, but does not authenticate a privileged scheduled
+caller. Avoid an unscheduled second-runtime deployment that would leave cleanup
+unfinished. Protected server access/credential and observed scheduled runs are
+still pending under#268; no cleanup migration/worker/schedule or engine upgrade
+was applied in this batch.
