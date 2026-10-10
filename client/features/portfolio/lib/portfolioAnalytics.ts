@@ -45,9 +45,11 @@ function addUniquePoints<Point extends PortfolioPoint>(
   limit: number,
 ): IndexedPoint<Point>[] {
   const selectedIndexes = new Set(selected.map(({ index }) => index));
-  const additions = candidates.filter(
-    ({ index }) => !selectedIndexes.has(index),
-  );
+  const additions = candidates.filter(({ index }) => {
+    if (selectedIndexes.has(index)) return false;
+    selectedIndexes.add(index);
+    return true;
+  });
   return [
     ...selected,
     ...additions.slice(0, Math.max(0, limit - selected.length)),

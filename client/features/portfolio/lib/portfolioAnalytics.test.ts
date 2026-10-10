@@ -5,6 +5,14 @@ import {
 } from "./portfolioAnalytics";
 
 describe("portfolio analytics chart helpers", () => {
+  it("shows a portfolio once when it is both the lowest risk and best Sharpe sample", () => {
+    const best = { risk: 0.1, return: 0.1, sharpe: 1 };
+    const second = { risk: 0.2, return: 0.12, sharpe: 0.6 };
+    const view = buildFrontierView([best, second]);
+    expect(view.displayPoints).toEqual([best, second]);
+    expect(view.minimumRisk).toBe(best);
+    expect(view.maximumSharpe).toBe(best);
+  });
   it("keeps an all-negative return domain focused on the observed data", () => {
     const domain = getPaddedDomain([-0.96, -0.61, -0.28]);
 
