@@ -238,8 +238,12 @@ presentation. Fresh independent review inspected current source, retained deskto
 | Profile          | Guest presentation and signed-in settings source were inspected. Field errors have labels, aria-invalid and descriptions; real assistive-technology operation was not tested. No stage blocker was established.                         |
 | Guide / Help     | Shared layout, topic navigation/focus and readable formulas/answers were inspected. Actual no-JS links expose only initial-topic content; subsequent selection needs JavaScript and the notice now says so.                             |
 
-No P1 was found in this bounded review. The two material P2 findings are tracked
+No P1 was found in this bounded review. The three material P2 findings are tracked
 in [#344](https://github.com/ParasX1/Financial-Investment-Tool/issues/344); final
 red/green evidence includes five intended unit failures and three genuine native geometry failures before the fix; 61 affected tests and three browser journeys pass after refinement. The parent separately reran all three on the final production build with fully isolated synthetic provider responses; no real provider requests or account data were used. Fresh independent static review found no actionable defect. Human
 preference/recognition, physical-device/software-keyboard and screen-reader trials,
 trademark clearance, hosted deployment and release acceptance remain separate.
+
+### Shared document-title refinement
+
+Final parent verification found empty browser titles outside Home. Following [WCAG page-title guidance](https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html) and [Next Pages Head](https://nextjs.org/docs/pages/api-reference/components/head), the shared page header now emits its existing title as one string child. The first two-child form exposed React 18 SSR comment markers in no-JS titles; fresh review and an actual failed browser test caught it before integration. The one-string refinement passes both SSR and public client navigation/back/forward cases. HTTP inspection confirms exactly one correct title on 11 shared routes, including the Portfolio alias. No route map or additional metadata state was introduced. Forty-eight affected unit tests, the refined production build and two native cases pass; final exact-head CI remains the integration gate.

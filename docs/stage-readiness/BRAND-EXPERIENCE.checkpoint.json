@@ -160,10 +160,11 @@
     "review": "source and retained synthetic native screenshots",
     "materialFindings": [
       "narrow Community editor clipping",
-      "Top Picks retained-results recovery below table"
+      "Top Picks retained-results recovery below table",
+      "missing document titles outside Home"
     ],
     "issue": 344,
-    "refinement": "PASS: 61 affected unit tests;3 native dummy journeys;3 final production isolated-fixture journeys;fresh independent static review"
+    "refinement": "PASS: 61 affected unit tests;3 native dummy journeys;3 final production isolated-fixture journeys;fresh independent static review;shared-title SSR/comment-marker refinement48units+2native+11HTTPchecks PASS"
   },
   "publication": {
     "target": "DevBranch",

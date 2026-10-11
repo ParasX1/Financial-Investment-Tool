@@ -152,6 +152,39 @@ const pages = [
   { path: "/Help", heading: "Help Center" },
 ] as const;
 
+test("page titles follow public navigation and browser history", async ({
+  page,
+}) => {
+  await installThemeFixtures(page);
+  await page.goto("/Help");
+  await expect(page).toHaveTitle("Help Center | FIT");
+  await page.getByRole("link", { name: "FIT home", exact: true }).click();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.getByRole("link", { name: "Guide", exact: true }).click();
+  await expect(page).toHaveURL(/\/Guide$/);
+  await expect(page).toHaveTitle("Guide | FIT");
+  await page.goBack();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.goBack();
+  await expect(page).toHaveTitle("Help Center | FIT");
+  await page.goForward();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.goForward();
+  await expect(page).toHaveTitle("Guide | FIT");
+});
+
+test.describe("server-rendered page titles", () => {
+  test.use({ javaScriptEnabled: false });
+  test("public learning pages identify their purpose before hydration", async ({
+    page,
+  }) => {
+    await page.goto("/Help");
+    await expect(page).toHaveTitle("Help Center | FIT");
+    await page.goto("/Guide");
+    await expect(page).toHaveTitle("Guide | FIT");
+  });
+});
+
 test("ETF retry retains readable primary ink after a preview failure", async ({
   page,
 }) => {
@@ -271,6 +304,11 @@ for (const width of [1440, 320]) {
           exact: true,
         });
         await expect(heading).toBeVisible();
+        await expect(page).toHaveTitle(
+          entry.path === "/"
+            ? "FIT | Financial Investment Tool"
+            : `${entry.heading} | FIT`,
+        );
         const main = page.getByRole("main");
         await expect(main).toHaveCount(1);
         await expect(main).toHaveAttribute("tabindex", "-1");
