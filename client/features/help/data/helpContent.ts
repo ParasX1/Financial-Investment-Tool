@@ -23,7 +23,7 @@ export const helpSections = Object.freeze([
       {
         question: "How do I log in?",
         answer:
-          "Select Sign in, then enter your email and password or choose Continue with Google. FIT returns you to the page where you opened the account dialog.",
+          "Select Sign in, then enter your email and password or choose Sign in with Google. FIT returns you to the page where you opened the account dialog.",
       },
       {
         question: "Can I use social login?",
@@ -40,7 +40,8 @@ export const helpSections = Object.freeze([
   {
     id: "portfolio",
     label: "Portfolio",
-    subtitle: "Scan six metrics, investigate one, and preserve your research desk",
+    subtitle:
+      "Scan six metrics, investigate one, and preserve your research desk",
     icon: AccountBalanceWalletRoundedIcon,
     faqs: [
       {

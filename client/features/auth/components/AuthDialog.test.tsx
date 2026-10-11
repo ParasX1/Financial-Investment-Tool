@@ -65,7 +65,7 @@ describe("AuthDialog", () => {
     );
   });
 
-  it("submits normalized sign-in details and returns to the requested page", async () => {
+  it("submits normalized sign-in details, including an existing short password, and returns to the requested page", async () => {
     signIn.mockResolvedValue(undefined);
     const onHide = jest.fn();
     let view!: renderer.ReactTestRenderer;
@@ -85,7 +85,7 @@ describe("AuthDialog", () => {
         target: { value: "  Student@Example.com " },
       });
       inputById(view.root, "auth-password").props.onChange({
-        target: { value: "a safe password" },
+        target: { value: "sixchr" },
       });
     });
 
@@ -95,10 +95,7 @@ describe("AuthDialog", () => {
         .props.onSubmit({ preventDefault: jest.fn() });
     });
 
-    expect(signIn).toHaveBeenCalledWith(
-      "student@example.com",
-      "a safe password",
-    );
+    expect(signIn).toHaveBeenCalledWith("student@example.com", "sixchr");
     expect(onHide).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith("/Watchlist");
   });
@@ -152,6 +149,51 @@ describe("AuthDialog", () => {
     ).toContain("confirmation link");
     expect(inputById(view.root, "auth-password").props.type).toBe("password");
     expect(inputById(view.root, "auth-password").props.value).toBe("");
+  });
+
+  it("closes and uses the safe default destination when signup returns an active session", async () => {
+    signUp.mockResolvedValue("confirmed");
+    const onHide = jest.fn();
+    let view!: renderer.ReactTestRenderer;
+    act(() => {
+      view = renderer.create(
+        <AuthDialog
+          initialMode="sign-up"
+          redirectTo="//external.example"
+          show
+          onHide={onHide}
+        />,
+      );
+    });
+    act(() => {
+      inputById(view.root, "auth-first-name").props.onChange({
+        target: { value: "Example" },
+      });
+      inputById(view.root, "auth-last-name").props.onChange({
+        target: { value: "Student" },
+      });
+      inputById(view.root, "auth-email").props.onChange({
+        target: { value: "ui-fixture@example.invalid" },
+      });
+      inputById(view.root, "auth-password").props.onChange({
+        target: { value: "local UI example password" },
+      });
+    });
+    await act(async () => {
+      await view.root.findByType("form").props.onSubmit({
+        preventDefault: jest.fn(),
+      });
+    });
+
+    expect(signUp).toHaveBeenCalledWith(
+      "ui-fixture@example.invalid",
+      "local UI example password",
+      { first_name: "Example", last_name: "Student" },
+      "/Portfolio",
+    );
+    expect(onHide).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/Portfolio");
+    expect(view.root.findAllByProps({ role: "status" })).toHaveLength(0);
   });
 
   it("reveals the password without changing its value and hides it when switching modes", () => {
@@ -243,6 +285,10 @@ describe("AuthDialog", () => {
       view.root.findByProps({ "aria-label": "Close authentication dialog" })
         .props.disabled,
     ).toBe(true);
+    expect(buttonByText(view.root, "Create account")!.props.disabled).toBe(
+      true,
+    );
+    expect(buttonByText(view.root, "Sign in")!.props.disabled).toBe(true);
     expect(
       view.root.findByProps({ role: "dialog" }).props.onHide,
     ).toBeUndefined();
@@ -277,9 +323,9 @@ describe("AuthDialog", () => {
         <AuthDialog redirectTo="//external.example" show onHide={jest.fn()} />,
       );
     });
-    const googleButton = view.root
-      .findAllByType("button")
-      .find((button) => button.children.includes("Continue with Google"))!;
+    const googleButton = view.root.findByProps({
+      "aria-label": "Sign in with Google",
+    });
     await act(async () => {
       await googleButton.props.onClick();
     });
@@ -290,9 +336,8 @@ describe("AuthDialog", () => {
     ).toContain("Google");
     expect(view.root.findByType("form").props["aria-busy"]).toBe(true);
     expect(
-      view.root
-        .findAllByType("button")
-        .some((button) => button.children.includes("Connecting to Google...")),
+      view.root.findByProps({ "aria-label": "Sign in with Google" }).props
+        .disabled,
     ).toBe(true);
   });
   it("clears the password draft and visibility when closed and reopened", () => {
@@ -320,9 +365,9 @@ describe("AuthDialog", () => {
     act(() => {
       view = renderer.create(<AuthDialog show onHide={jest.fn()} />);
     });
-    const googleButton = view.root
-      .findAllByType("button")
-      .find((button) => button.children.includes("Continue with Google"))!;
+    const googleButton = view.root.findByProps({
+      "aria-label": "Sign in with Google",
+    });
     await act(async () => {
       await googleButton.props.onClick();
     });
@@ -333,5 +378,74 @@ describe("AuthDialog", () => {
       "Google sign-in couldn't start. Please try again.",
     );
     expect(view.root.findAllByProps({ role: "status" })).toHaveLength(0);
+  });
+
+  it("preserves the email draft while clearing stale field errors on a mode change", async () => {
+    let view!: renderer.ReactTestRenderer;
+    act(() => {
+      view = renderer.create(<AuthDialog show onHide={jest.fn()} />);
+    });
+    act(() => {
+      inputById(view.root, "auth-email").props.onChange({
+        target: { value: "student@example.invalid" },
+      });
+    });
+    await act(async () => {
+      await view.root.findByType("form").props.onSubmit({
+        preventDefault: jest.fn(),
+      });
+    });
+    expect(inputById(view.root, "auth-password").props["aria-invalid"]).toBe(
+      true,
+    );
+    act(() => buttonByText(view.root, "Create account")!.props.onClick());
+    expect(inputById(view.root, "auth-email").props.value).toBe(
+      "student@example.invalid",
+    );
+    expect(inputById(view.root, "auth-password").props["aria-invalid"]).toBe(
+      false,
+    );
+    expect(
+      inputById(view.root, "auth-password").props["aria-describedby"],
+    ).toBe("auth-password-description");
+  });
+
+  it("announces an email request outside the busy form", async () => {
+    let resolveSignIn!: () => void;
+    signIn.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSignIn = resolve;
+        }),
+    );
+    let view!: renderer.ReactTestRenderer;
+    act(() => {
+      view = renderer.create(<AuthDialog show onHide={jest.fn()} />);
+    });
+    act(() => {
+      inputById(view.root, "auth-email").props.onChange({
+        target: { value: "student@example.invalid" },
+      });
+      inputById(view.root, "auth-password").props.onChange({
+        target: { value: "sixchr" },
+      });
+    });
+    let request!: Promise<void>;
+    act(() => {
+      request = view.root.findByType("form").props.onSubmit({
+        preventDefault: jest.fn(),
+      });
+    });
+    const status = view.root.findByProps({ role: "status" });
+    expect(status.children.join("")).toContain("Signing in");
+    let ancestor = status.parent;
+    while (ancestor) {
+      expect(ancestor.type).not.toBe("form");
+      ancestor = ancestor.parent;
+    }
+    await act(async () => {
+      resolveSignIn();
+      await request;
+    });
   });
 });

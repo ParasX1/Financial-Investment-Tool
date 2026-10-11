@@ -27,14 +27,13 @@
 }
 
 .primaryButton {
-  border-color: var(--fit-color-brand-border-hover);
-  background: var(--fit-color-accent);
-  color: var(--fit-color-action-ink);
+  border-color: var(--fit-color-action);
+  background: var(--fit-color-action);
+  color: var(--fit-color-on-action);
 }
 
 .primaryButton:hover:not(:disabled) {
-  border-color: var(--fit-color-accent);
-  background: var(--fit-color-brand-gradient-hover);
+  background: var(--fit-color-action-hover);
 }
 
 .secondaryButton {

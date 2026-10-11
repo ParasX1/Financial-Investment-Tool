@@ -191,7 +191,7 @@ export function ReportPostDialog({
               type="submit"
               disabled={!reason || busy}
               className={cn(
-                "rounded-lg bg-[var(--fit-color-accent)] px-4 py-2 text-[var(--fit-color-action-ink)] transition-colors hover:bg-[var(--fit-color-action-hover)] disabled:cursor-not-allowed disabled:opacity-50",
+                "rounded-lg bg-[var(--fit-color-action)] px-4 py-2 text-[var(--fit-color-on-action)] transition-colors hover:bg-[var(--fit-color-action-hover)] disabled:cursor-not-allowed disabled:opacity-50",
                 fitType.control,
                 FOCUS_VISIBLE,
               )}

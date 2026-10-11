@@ -1,94 +1,75 @@
-import Image from "next/image";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import Link from "next/link";
-import graphsImage from "@/assets/graphs.png";
 import { homeHeroActions } from "../data/homeContent";
+import { HomePortfolioPreview } from "./HomePortfolioPreview";
 import styles from "../styles/home.module.css";
 
 export function HomeHero({
   authLoading,
   signedIn,
   onSignIn,
+  onGetStarted,
 }: {
   authLoading: boolean;
   signedIn: boolean;
   onSignIn: () => void;
+  onGetStarted: () => void;
 }) {
   return (
     <section id="top" className={styles.hero} aria-labelledby="home-hero-title">
       <div className={styles.heroContent}>
-        <p className={styles.eyebrow}>Research with perspective</p>
+        <p className={styles.eyebrow}>Financial Investment Tool</p>
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Learn how investment decisions come together.
+          See your investments in perspective.
         </h1>
         <p className={styles.heroSubtitle}>
-          Review portfolio data, put market news in context, and understand
-          unfamiliar metrics at your own pace before forming a view.
+          Bring portfolio performance, market context and research into one
+          clear workspace.
         </p>
 
         <div className={styles.heroActions}>
           {signedIn ? (
             <Link href="/Portfolio" className={styles.primaryButton}>
-              Open dashboard
+              Open portfolio
               <KeyboardArrowRightRoundedIcon
                 sx={{ fontSize: 18 }}
                 aria-hidden="true"
               />
             </Link>
           ) : (
-            <button
-              type="button"
-              className={styles.primaryButton}
-              disabled={authLoading}
-              onClick={onSignIn}
-            >
-              {homeHeroActions.primary}
-              <KeyboardArrowRightRoundedIcon
-                sx={{ fontSize: 18 }}
-                aria-hidden="true"
-              />
-            </button>
+            <>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={authLoading}
+                onClick={onGetStarted}
+              >
+                {homeHeroActions.primary}
+                <KeyboardArrowRightRoundedIcon
+                  sx={{ fontSize: 18 }}
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={authLoading}
+                onClick={onSignIn}
+              >
+                Sign in
+              </button>
+            </>
           )}
-          <a href="#experience" className={styles.secondaryButton}>
-            {homeHeroActions.secondary}
-          </a>
         </div>
-      </div>
-      <div className={styles.heroVisual} aria-hidden="true">
-        <div className={styles.visualHeading}>
-          <span>THE RESEARCH WORKSPACE</span>
-          <span>FIT</span>
-        </div>
-        <div className={styles.visualPlot}>
-          <Image
-            className={styles.heroImage}
-            src={graphsImage}
-            alt=""
-            priority
+        <a href="#experience" className={styles.heroExplore}>
+          {homeHeroActions.secondary}
+          <KeyboardArrowRightRoundedIcon
+            sx={{ fontSize: 17 }}
+            aria-hidden="true"
           />
-          <div className={styles.heroShade} />
-          <span className={styles.visualCaption}>
-            Questions before conclusions.
-          </span>
-        </div>
-        <div className={styles.visualSteps}>
-          <div>
-            <span>01</span>
-            <strong>Observe</strong>
-            <p>Read the evidence</p>
-          </div>
-          <div>
-            <span>02</span>
-            <strong>Compare</strong>
-            <p>Keep context close</p>
-          </div>
-          <div>
-            <span>03</span>
-            <strong>Understand</strong>
-            <p>Develop your view</p>
-          </div>
-        </div>
+        </a>
       </div>
+      <HomePortfolioPreview />
     </section>
   );
 }

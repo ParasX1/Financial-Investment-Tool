@@ -139,7 +139,7 @@ async function expectKeyboardTableScroll(page: Page, name: string) {
 }
 
 const pages = [
-  { path: "/", heading: "Learn how investment decisions come together." },
+  { path: "/", heading: "See your investments in perspective." },
   { path: "/Profile", heading: "Profile" },
   { path: "/Portfolio", heading: "Portfolio" },
   { path: "/TopPicks", heading: "Top Picks" },
@@ -151,6 +151,88 @@ const pages = [
   { path: "/Guide", heading: "Guide" },
   { path: "/Help", heading: "Help Center" },
 ] as const;
+
+test("page titles follow public navigation and browser history", async ({
+  page,
+}) => {
+  await installThemeFixtures(page);
+  await page.goto("/Help");
+  await expect(page).toHaveTitle("Help Center | FIT");
+  await page.getByRole("link", { name: "FIT home", exact: true }).click();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.getByRole("link", { name: "Guide", exact: true }).click();
+  await expect(page).toHaveURL(/\/Guide$/);
+  await expect(page).toHaveTitle("Guide | FIT");
+  await page.goBack();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.goBack();
+  await expect(page).toHaveTitle("Help Center | FIT");
+  await page.goForward();
+  await expect(page).toHaveTitle("FIT | Financial Investment Tool");
+  await page.goForward();
+  await expect(page).toHaveTitle("Guide | FIT");
+});
+
+test.describe("server-rendered page titles", () => {
+  test.use({ javaScriptEnabled: false });
+  test("public learning pages identify their purpose before hydration", async ({
+    page,
+  }) => {
+    await page.goto("/Help");
+    await expect(page).toHaveTitle("Help Center | FIT");
+    await page.goto("/Guide");
+    await expect(page).toHaveTitle("Guide | FIT");
+  });
+});
+
+test("ETF retry retains readable primary ink after a preview failure", async ({
+  page,
+}) => {
+  await installThemeFixtures(page);
+  await page.route("**/api/etfs?*", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({ error: "Preview temporarily unavailable" }),
+    }),
+  );
+  await page.goto("/ETF");
+  const retry = page.getByRole("button", { name: "Retry loading ETF preview" });
+  await expect(retry).toBeVisible();
+  const colors = await retry.evaluate((element) => {
+    let background = "";
+    for (
+      let ancestor: Element | null = element;
+      ancestor;
+      ancestor = ancestor.parentElement
+    ) {
+      const value = getComputedStyle(ancestor).backgroundColor;
+      if (value !== "rgba(0, 0, 0, 0)") {
+        background = value;
+        break;
+      }
+    }
+    return { foreground: getComputedStyle(element).color, background };
+  });
+  expect(contrast(colors.foreground, colors.background)).toBeGreaterThanOrEqual(
+    4.5,
+  );
+});
+
+test("Top Picks secondary actions retain their local surface and text roles", async ({
+  page,
+}) => {
+  await installThemeFixtures(page);
+  await page.goto("/TopPicks");
+  const edit = page.getByRole("button", { name: "Edit Columns", exact: true });
+  await expect(edit).toBeEnabled();
+  await expect(edit).toHaveCSS("background-color", rgb(fitColors.field));
+  await expect(edit).toHaveCSS("color", rgb(fitColors.body));
+  await edit.hover();
+  await expect(edit).toHaveCSS("background-color", rgb(fitColors.raised));
+  await expect(edit).toHaveCSS("color", rgb(fitColors.body));
+});
 
 test("first Tab exposes a readable skip action and Enter reaches the main", async ({
   page,
@@ -222,6 +304,11 @@ for (const width of [1440, 320]) {
           exact: true,
         });
         await expect(heading).toBeVisible();
+        await expect(page).toHaveTitle(
+          entry.path === "/"
+            ? "FIT | Financial Investment Tool"
+            : `${entry.heading} | FIT`,
+        );
         const main = page.getByRole("main");
         await expect(main).toHaveCount(1);
         await expect(main).toHaveAttribute("tabindex", "-1");
@@ -409,15 +496,15 @@ for (const width of [1440, 320]) {
     const email = dialog.getByLabel("Email address");
     await expect(email).toBeFocused();
     await expect(email).toHaveCSS("background-color", rgb(fitColors.field));
-    await expect(email).toHaveCSS("border-color", rgb(fitColors.accent));
+    await expect(email).toHaveCSS("border-color", rgb(fitColors.focus));
     expect(
-      contrast(rgb(fitColors.accent), rgb(fitColors.field)),
+      contrast(rgb(fitColors.focus), rgb(fitColors.field)),
     ).toBeGreaterThanOrEqual(3);
     const submit = dialog.locator('button[type="submit"]');
-    await expect(submit).toHaveCSS("background-color", rgb(fitColors.accent));
-    await expect(submit).toHaveCSS("color", rgb(fitColors.actionInk));
+    await expect(submit).toHaveCSS("background-color", rgb(fitColors.action));
+    await expect(submit).toHaveCSS("color", rgb(fitColors.onAction));
     expect(
-      contrast(rgb(fitColors.actionInk), rgb(fitColors.accent)),
+      contrast(rgb(fitColors.onAction), rgb(fitColors.action)),
     ).toBeGreaterThanOrEqual(4.5);
     await dialog
       .getByRole("button", { name: "Create account", exact: true })

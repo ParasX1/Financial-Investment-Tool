@@ -6,6 +6,20 @@ export function ThemeFoundation() {
     <>
       <Head>
         <meta name="theme-color" content={fitColors.page} />
+        <link
+          key="fit-favicon-ico"
+          rel="icon"
+          href="/favicon.ico"
+          sizes="16x16 32x32"
+          type="image/x-icon"
+        />
+        <link
+          key="fit-favicon-svg"
+          rel="icon"
+          href="/brand/fit-favicon.svg"
+          sizes="any"
+          type="image/svg+xml"
+        />
       </Head>
       <style
         data-fit-theme="dark-purple"

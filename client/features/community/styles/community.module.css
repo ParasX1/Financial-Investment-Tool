@@ -363,8 +363,8 @@
   top: 12px;
   z-index: 10000;
   border-radius: 8px;
-  background: var(--fit-color-accent);
-  color: var(--fit-color-action-ink);
+  background: var(--fit-color-action);
+  color: var(--fit-color-on-action);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);

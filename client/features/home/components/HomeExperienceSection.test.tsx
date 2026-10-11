@@ -4,16 +4,19 @@ import { homeExperiencePoints } from "../data/homeContent";
 import { HomeExperienceSection } from "./HomeExperienceSection";
 
 describe("HomeExperienceSection", () => {
-  it("uses photos as visual context without visible caption labels", () => {
+  it("renders the research sequence and guide as readable static content", () => {
     const markup = renderToStaticMarkup(
       <HomeExperienceSection points={homeExperiencePoints} />,
     );
 
     expect(markup).not.toContain("<figcaption");
-    expect(markup).not.toContain("Market context</figcaption>");
-    expect(markup).not.toContain("Portfolio view</figcaption>");
-    expect(markup).not.toContain("Shared review</figcaption>");
-    expect(markup).toContain("A research loop you can repeat.");
-    expect(markup).toContain("Check the source");
+    expect(markup).toContain("Questions before conclusions.");
+    expect(markup).toContain("<ol");
+    expect(markup.match(/<li[ >]/g)).toHaveLength(4);
+    for (const point of homeExperiencePoints) {
+      expect(markup).toContain(point.label);
+      expect(markup).toContain(point.description);
+    }
+    expect(markup).toContain('href="/Guide"');
   });
 });

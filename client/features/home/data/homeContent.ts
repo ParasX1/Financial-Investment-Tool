@@ -17,21 +17,27 @@ export const homeMetadata = {
 } as const;
 
 export const homeHeroActions = {
-  primary: "Sign in",
+  primary: "Get started",
   secondary: "See how FIT works",
 };
 
+export const homePreviewMetrics = [
+  { label: "Annualised volatility", classification: "Estimated" },
+  { label: "Drawdown history", classification: "Historical" },
+  { label: "Sharpe ratio", classification: "Estimated" },
+] as const;
+
 export const homeCta = {
-  body: "Use FIT to practise a clear research process at your own pace.",
-  primarySignedIn: "Open workspace",
+  body: "A place to explore the evidence and develop your own view.",
+  primarySignedIn: "Open portfolio",
   primarySignedOut: "Create an account",
-  title: "Build confidence through practice.",
+  title: "Make room for a clearer question.",
 } as const;
 
 export const homeRouteLinks = [
   {
     description:
-      "What has driven performance? See return and risk in context, then identify what deserves a closer look.",
+      "Read historical returns alongside volatility, drawdown and risk-adjusted performance. See what deserves a closer look.",
     gated: true,
     href: "/Portfolio",
     icon: AccountBalanceWalletRoundedIcon,
@@ -39,7 +45,7 @@ export const homeRouteLinks = [
   },
   {
     description:
-      "What changed in the market? Follow a theme or ticker and read beyond the headline.",
+      "Follow companies and themes. Compare the source and publication date, then bring market news into your own questions.",
     gated: true,
     href: "/MarketNews",
     icon: NewspaperRoundedIcon,
@@ -47,7 +53,7 @@ export const homeRouteLinks = [
   },
   {
     description:
-      "How strong is the case? Compare viewpoints, make your reasoning explicit, and refine the next question.",
+      "Compare ideas in the community, make your reasoning explicit and refine the next question as you learn.",
     gated: true,
     href: "/Community",
     icon: GroupsRoundedIcon,

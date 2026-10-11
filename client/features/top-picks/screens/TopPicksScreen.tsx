@@ -53,6 +53,20 @@ export function TopPicksScreen() {
           onRetry={controller.retry}
         />
 
+        <TopPicksStatus
+          loading={controller.loading}
+          error={controller.error}
+          hasRetainedResults={
+            Boolean(controller.error) && controller.rows.length > 0
+          }
+          warnings={controller.warnings}
+          metadata={controller.metadata}
+          total={controller.total}
+          page={controller.page}
+          totalPages={controller.totalPages}
+          onRetry={controller.retry}
+        />
+
         <TopPicksTable
           rows={controller.rows}
           loading={controller.loading}
@@ -65,17 +79,6 @@ export function TopPicksScreen() {
           onSortChange={controller.toggleSort}
           onPageChange={controller.setPage}
           onPageSizeChange={controller.setPageSize}
-        />
-
-        <TopPicksStatus
-          loading={controller.loading}
-          error={controller.error}
-          warnings={controller.warnings}
-          metadata={controller.metadata}
-          total={controller.total}
-          page={controller.page}
-          totalPages={controller.totalPages}
-          onRetry={controller.retry}
         />
 
         <TopPicksColumnsDialog

@@ -1,5 +1,6 @@
 import { cn, fitText, fitType } from "./uiPrimitives";
 import type { ReactNode } from "react";
+import Head from "next/head";
 import styles from "./FitPageHeader.module.css";
 
 export function FitPageHeader({
@@ -19,6 +20,9 @@ export function FitPageHeader({
 }) {
   return (
     <header className={cn(styles.header, className)}>
+      <Head>
+        <title>{`${title} | FIT`}</title>
+      </Head>
       <div className="min-w-0">
         <p className={styles.eyebrow}>{eyebrow}</p>
         <h1
