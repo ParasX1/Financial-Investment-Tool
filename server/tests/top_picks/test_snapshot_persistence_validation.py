@@ -1,10 +1,12 @@
 from datetime import date
 import json
+import logging
 from unittest.mock import Mock
 
 import pytest
 
 from src.top_picks import service as service_module
+from src.top_picks import snapshot_cache as snapshot_cache_module
 from src.top_picks.contracts import TopPicksRequest
 from src.top_picks.service import TopPicksSnapshotCache
 from src.server import create_app
@@ -25,6 +27,65 @@ def write_cache(tmp_path, payload):
     path = tmp_path / "snapshot.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
     return str(path)
+
+
+@pytest.mark.parametrize("phase", ["temporary_file", "write", "replace"])
+def test_failed_persistence_is_diagnosed_without_losing_memory_snapshot(
+    tmp_path, monkeypatch, caplog, phase,
+):
+    path = tmp_path / "private-cache-location.json"
+    cache = TopPicksSnapshotCache(persistence_path=str(path))
+    cache.set(KEY, SNAPSHOT, 600)
+    previous_bytes = path.read_bytes()
+    updated = {**SNAPSHOT, "warnings": ["private-snapshot-payload"]}
+    failure = PermissionError("private-error-detail", str(path))
+    if phase == "temporary_file":
+        monkeypatch.setattr(
+            snapshot_cache_module, "NamedTemporaryFile", Mock(side_effect=failure),
+        )
+    elif phase == "write":
+        def failed_write(payload, handle, **kwargs):
+            handle.write('{"incomplete":')
+            raise failure
+
+        monkeypatch.setattr(snapshot_cache_module.json, "dump", failed_write)
+    else:
+        monkeypatch.setattr(
+            snapshot_cache_module.os, "replace", Mock(side_effect=failure),
+        )
+
+    with caplog.at_level(logging.WARNING):
+        cache.set(KEY, updated, 600)
+
+    assert cache.get(KEY) == (updated, "hit")
+    assert cache.get_latest_stale(prefix=KEY[:-2]) == (updated, "stale")
+    assert path.read_bytes() == previous_bytes
+    assert list(tmp_path.iterdir()) == [path]
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == logging.WARNING
+    assert record.getMessage() == (
+        "Top Picks snapshot persistence failed; continuing with the in-memory cache."
+    )
+    assert record.exc_info is None
+    assert "private-" not in caplog.text
+
+
+@pytest.mark.parametrize("persist", [False, True])
+def test_successful_or_disabled_persistence_has_no_failure_warning(
+    tmp_path, caplog, persist,
+):
+    path = tmp_path / "snapshot.json"
+    cache = TopPicksSnapshotCache(
+        persistence_path=str(path) if persist else None,
+    )
+
+    with caplog.at_level(logging.WARNING):
+        cache.set(KEY, SNAPSHOT, 600)
+
+    assert cache.get(KEY) == (SNAPSHOT, "hit")
+    assert path.exists() is persist
+    assert caplog.records == []
 
 
 @pytest.mark.parametrize("payload", [None, [], 7, "private-broken-payload", {"entries": []}])

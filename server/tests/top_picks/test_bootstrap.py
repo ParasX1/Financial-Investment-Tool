@@ -14,7 +14,7 @@ import pytest
 
 from src.top_picks.batch_analytics import calculate_yearly_metrics
 from src.top_picks import bootstrap as bootstrap_module
-from src.top_picks import service as service_module
+from src.top_picks import snapshot_cache as snapshot_cache_module
 from src.top_picks.bootstrap import (
     bootstrap_top_picks_cache,
     create_seed_archive,
@@ -597,7 +597,7 @@ def test_snapshot_persistence_replaces_only_with_complete_json(monkeypatch, tmp_
     key = ("top-picks-snapshot", "1D")
     cache.set(key, {"rows": ["old"]}, 600)
     original_bytes = snapshot_path.read_bytes()
-    original_replace = service_module.os.replace
+    original_replace = snapshot_cache_module.os.replace
     replacements = []
 
     def checked_replace(source, target):
@@ -612,7 +612,7 @@ def test_snapshot_persistence_replaces_only_with_complete_json(monkeypatch, tmp_
         replacements.append(source_path)
         original_replace(source, target)
 
-    monkeypatch.setattr(service_module.os, "replace", checked_replace)
+    monkeypatch.setattr(snapshot_cache_module.os, "replace", checked_replace)
 
     cache.set(key, {"rows": ["new"]}, 600)
 
@@ -637,10 +637,10 @@ def test_failed_snapshot_persistence_preserves_old_file_and_cleans_temp(
             handle.write('{"incomplete":')
             raise OSError("Test JSON write failure.")
 
-        monkeypatch.setattr(service_module.json, "dump", failed_write)
+        monkeypatch.setattr(snapshot_cache_module.json, "dump", failed_write)
     else:
         monkeypatch.setattr(
-            service_module.os, "replace",
+            snapshot_cache_module.os, "replace",
             Mock(side_effect=OSError("Test atomic replace failure.")),
         )
 

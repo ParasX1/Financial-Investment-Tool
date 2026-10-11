@@ -75,6 +75,31 @@ describe("/api/market/charts", () => {
       unavailableSymbols: ["BHP.AX"],
     });
     expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(response.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "private, no-store, max-age=0",
+    );
+  });
+
+  it("keeps an all-unavailable comparison as a private ordered 200 response", async () => {
+    jest.spyOn(global, "fetch").mockImplementation(async () =>
+      new Response("provider secret", { status: 429 }),
+    );
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const response = responseHarness();
+
+    await handler(request("ALLFAILONE,ALLFAILTWO"), response);
+
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({
+      rangeId: "3m",
+      snapshots: [],
+      unavailableSymbols: ["ALLFAILONE", "ALLFAILTWO"],
+    });
+    expect(response.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "private, no-store, max-age=0",
+    );
   });
 
   it.each([

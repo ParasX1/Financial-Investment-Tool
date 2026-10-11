@@ -298,7 +298,7 @@ def test_snapshot_cache_persists_complete_values_as_stale_after_restart(
     monkeypatch,
 ):
     now = [100.0]
-    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    monkeypatch.setattr("src.top_picks.snapshot_cache.time.time", lambda: now[0])
     cache_path = tmp_path / "top-picks-cache.json"
     first_cache = TopPicksSnapshotCache(
         clock=lambda: 100.0,
@@ -329,7 +329,7 @@ def test_snapshot_cache_keeps_expired_persisted_values_as_startup_fallback(
     monkeypatch,
 ):
     now = [100.0]
-    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    monkeypatch.setattr("src.top_picks.snapshot_cache.time.time", lambda: now[0])
     cache_path = tmp_path / "top-picks-cache.json"
     first_cache = TopPicksSnapshotCache(
         clock=lambda: 100.0,
@@ -360,7 +360,7 @@ def test_snapshot_cache_returns_latest_persisted_snapshot_for_new_key(
     monkeypatch,
 ):
     now = [100.0]
-    monkeypatch.setattr("src.top_picks.service.time.time", lambda: now[0])
+    monkeypatch.setattr("src.top_picks.snapshot_cache.time.time", lambda: now[0])
     cache_path = tmp_path / "top-picks-cache.json"
     first_cache = TopPicksSnapshotCache(
         clock=lambda: 100.0,

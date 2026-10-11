@@ -91,6 +91,43 @@ describe("watchlist market API handlers", () => {
       expect.any(String),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+    expect(harness.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "private, no-store, max-age=0",
+    );
+  });
+
+  it("returns normalized search results with the existing public success cache", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          quotes: [
+            { symbol: "cba.ax", quoteType: "EQUITY", longname: "Commonwealth Bank" },
+            { symbol: "STORY", quoteType: "NEWS" },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const harness = responseHarness();
+
+    await symbolSearchHandler(
+      { ...requestBase, method: "GET", query: { q: " CBA   bank " } } as never,
+      harness.response as never,
+    );
+
+    expect(harness.response.status).toHaveBeenCalledWith(200);
+    expect(harness.json).toHaveBeenCalledWith({
+      results: [
+        { exchange: null, name: "Commonwealth Bank", quoteType: "EQUITY", symbol: "CBA.AX" },
+      ],
+    });
+    expect(harness.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "s-maxage=300, stale-while-revalidate=3600",
+    );
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(new URL(String(url)).searchParams.get("q")).toBe("CBA bank");
   });
 
   it("redacts complete quote provider failures", async () => {
@@ -114,6 +151,10 @@ describe("watchlist market API handlers", () => {
       error: "Market data is temporarily unavailable.",
     });
     expect(JSON.stringify(harness.json.mock.calls)).not.toContain("provider secret");
+    expect(harness.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "private, no-store, max-age=0",
+    );
   });
 
   it("sanitizes provider failures", async () => {
@@ -130,5 +171,9 @@ describe("watchlist market API handlers", () => {
     expect(harness.json).toHaveBeenCalledWith({
       error: "Symbol search is temporarily unavailable.",
     });
+    expect(harness.setHeader).toHaveBeenLastCalledWith(
+      "Cache-Control",
+      "private, no-store, max-age=0",
+    );
   });
 });

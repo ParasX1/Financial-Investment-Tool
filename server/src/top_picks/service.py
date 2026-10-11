@@ -1,19 +1,15 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
-import json
 import logging
 import math
-import os
 import time
 from threading import Condition, RLock, Thread
-from tempfile import NamedTemporaryFile
 from time import monotonic
 
 import pandas as pd
 
 from ..market_primitives import (
     CALCULATION_VERSION,
-    TICKER_PATTERN,
     calculate_returns,
     get_adjusted_close_prices,
 )
@@ -26,356 +22,38 @@ from .events import (
     DEFAULT_MAX_SUBSCRIBERS, DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
     DEFAULT_STREAM_LIFETIME_SECONDS, SnapshotUpdateHub,
 )
-from .repository import MAX_TICKER_UNIVERSE, TopPicksDataSourceError
-
-
-DEFAULT_BENCHMARK_TICKER = "^AXJO"
-DEFAULT_RISK_FREE_RATE = 0.0435
-DEFAULT_RISK_FREE_RATE_SOURCE = "RBA cash rate target"
-DEFAULT_RISK_FREE_RATE_AS_OF = "2026-06-17"
-DEFAULT_UNIVERSE_LIMIT = 1000
-DEFAULT_CACHE_TTL_SECONDS = 600
-DEFAULT_REFRESH_INTERVAL_SECONDS = 60
-DEFAULT_STALE_CACHE_TTL_SECONDS = 86_400
-MIN_TRAILING_RETURN_OBSERVATIONS = 200
-WINDOW_METHODS = {
-    "1D": "trailing_day",
-    "1W": "trailing_week",
-    "1M": "trailing_month",
-    "1Y": "trailing_one_year",
-}
-TOP_PICKS_WINDOWS = ("1D", "1W", "1M", "1Y")
-WINDOW_MIN_OBSERVATIONS = {
-    "1D": {"ret1y": 1},
-    "1W": {"ret1y": 2, "volatility": 3, "maxDD": 2},
-    "1M": {"ret1y": 2, "volatility": 10, "maxDD": 2},
-    "1Y": {},
-}
-WINDOW_PRICE_OBSERVATIONS = {
-    "1D": 2,
-    "1W": 6,
-    "1M": 22,
-}
-METRIC_KEYS = (
-    "ret1y",
-    "sharpe",
-    "sortino",
-    "volatility",
-    "maxDD",
-    "beta",
-    "alpha",
-    "infoRatio",
+from .configuration import (
+    DEFAULT_BENCHMARK_TICKER,
+    DEFAULT_CACHE_TTL_SECONDS,
+    DEFAULT_REFRESH_INTERVAL_SECONDS,
+    DEFAULT_RISK_FREE_RATE,
+    DEFAULT_RISK_FREE_RATE_AS_OF,
+    DEFAULT_RISK_FREE_RATE_SOURCE,
+    DEFAULT_UNIVERSE_LIMIT,
+    METRIC_KEYS,
+    METRIC_UNITS,
+    MIN_TRAILING_RETURN_OBSERVATIONS,
+    TOP_PICKS_WINDOWS,
+    WINDOW_METHODS,
+    WINDOW_METRIC_KEYS,
+    WINDOW_MIN_OBSERVATIONS,
+    WINDOW_PRICE_OBSERVATIONS,
+    normalize_as_of,
+    normalize_benchmark,
+    normalize_cache_ttl,
+    normalize_refresh_setting,
+    normalize_risk_free_rate,
+    normalize_source,
+    normalize_universe_limit,
 )
-METRIC_UNITS = {
-    "ret1y": "decimal_return",
-    "sharpe": "ratio",
-    "sortino": "ratio",
-    "volatility": "decimal_annualized",
-    "maxDD": "decimal_drawdown",
-    "beta": "ratio",
-    "alpha": "decimal_annualized",
-    "infoRatio": "ratio",
-}
-WINDOW_METRIC_KEYS = {
-    "1D": ("ret1y",),
-    "1W": ("ret1y", "volatility", "maxDD"),
-    "1M": ("ret1y", "volatility", "maxDD"),
-    "1Y": METRIC_KEYS,
-}
+# Preserve public imports used by routes and existing cache clients.
+from .configuration import DEFAULT_STALE_CACHE_TTL_SECONDS  # noqa: F401
+from .configuration import TopPicksConfigurationError  # noqa: F401
+from .repository import TopPicksDataSourceError
+from .snapshot_cache import TopPicksSnapshotCache
+
+
 LOGGER = logging.getLogger(__name__)
-
-
-class TopPicksConfigurationError(ValueError):
-    pass
-
-
-class TopPicksSnapshotCache:
-    def __init__(
-        self,
-        clock=monotonic,
-        persistence_path=None,
-        stale_ttl_seconds=DEFAULT_STALE_CACHE_TTL_SECONDS,
-    ):
-        self._clock = clock
-        self._entries = {}
-        self._latest_key = None
-        self._latest_keys = {}
-        self._lock = RLock()
-        self._persistence_path = persistence_path
-        self._stale_ttl_seconds = stale_ttl_seconds
-        self._load_persisted_entries()
-
-    def get(self, key):
-        now = self._clock()
-        with self._lock:
-            entry = self._entries.get(key)
-            if entry is None:
-                return None, "miss"
-            if entry["stale_expires_at"] <= now:
-                self._entries.pop(key, None)
-                return None, "miss"
-            if entry["expires_at"] <= now:
-                return deepcopy(entry["value"]), "stale"
-            return deepcopy(entry["value"]), "hit"
-
-    def get_latest_stale(self, excluded_key=None, prefix=None):
-        with self._lock:
-            latest_key = (
-                self._latest_keys.get(prefix)
-                if prefix is not None
-                else self._latest_key
-            )
-            if latest_key is None or latest_key == excluded_key:
-                return None, "miss"
-            entry = self._entries.get(latest_key)
-            if entry is None:
-                return None, "miss"
-            return deepcopy(entry["value"]), "stale"
-
-    def set(
-        self,
-        key,
-        value,
-        ttl_seconds,
-        stale_ttl_seconds=None,
-    ):
-        if ttl_seconds <= 0:
-            return
-        now = self._clock()
-        resolved_stale_ttl = (
-            self._stale_ttl_seconds
-            if stale_ttl_seconds is None
-            else stale_ttl_seconds
-        )
-        stale_ttl = max(ttl_seconds, resolved_stale_ttl)
-        with self._lock:
-            self._entries[key] = {
-                "expires_at": now + ttl_seconds,
-                "stale_expires_at": now + stale_ttl,
-                "stale_expires_at_wall_time": time.time() + stale_ttl,
-                "value": deepcopy(value),
-            }
-            self._latest_key = key
-            self._latest_keys[self._key_prefix(key)] = key
-            retained_keys = {self._latest_key, *self._latest_keys.values()}
-            expired_keys = [
-                old_key for old_key, entry in self._entries.items()
-                if old_key not in retained_keys
-                and (entry["stale_expires_at"] <= now
-                     or math.isinf(entry["stale_expires_at"]))
-            ]
-            for old_key in expired_keys:
-                self._entries.pop(old_key)
-            self._persist_entries()
-
-    def clear(self):
-        with self._lock:
-            self._entries.clear()
-            self._latest_key = None
-            self._latest_keys.clear()
-            self._persist_entries()
-
-    @staticmethod
-    def _serialize_key(key):
-        return json.dumps(list(key), separators=(",", ":"))
-
-    @staticmethod
-    def _deserialize_key(value):
-        decoded = json.loads(value)
-        if (not isinstance(decoded, list) or not decoded
-                or any(not isinstance(part, (str, int, float))
-                       or isinstance(part, bool)
-                       or (isinstance(part, float) and not math.isfinite(part))
-                       for part in decoded)):
-            return None
-        return tuple(decoded)
-
-    @staticmethod
-    def _valid_persisted_value(key, value):
-        if not isinstance(value, dict):
-            return False
-        # Other namespaces are used by cache clients with their own values.
-        # Production ranking keys carry the complete calculation context.
-        if len(key) < 7 or key[0] != "top-picks-snapshot":
-            return True
-        if len(key) != 8 or key[5] != CALCULATION_VERSION:
-            return False
-        _, window, benchmark, rate, limit, version, start, end = key
-        if (window not in TOP_PICKS_WINDOWS or not isinstance(benchmark, str)
-                or not TICKER_PATTERN.fullmatch(benchmark)
-                or not isinstance(rate, (int, float)) or not -1 <= rate <= 1
-                or not isinstance(limit, int) or not 1 <= limit <= MAX_TICKER_UNIVERSE):
-            return False
-        try:
-            if date.fromisoformat(start).isoformat() != start or date.fromisoformat(end).isoformat() != end or start > end:
-                return False
-        except (TypeError, ValueError):
-            return False
-        rows = value.get("rows")
-        metadata = value.get("metadata")
-        warnings = value.get("warnings")
-        if (not isinstance(rows, list) or not isinstance(metadata, dict)
-                or not isinstance(warnings, list)
-                or any(not isinstance(warning, str) for warning in warnings)):
-            return False
-        if metadata.get("calculationVersion") != version:
-            return False
-        context = {
-            "windowCode": window, "benchmark": benchmark,
-            "window": WINDOW_METHODS[window],
-            "riskFreeRate": rate, "universeLimit": limit,
-            "requestedStart": start, "requestedEnd": end,
-        }
-        if any(name in metadata and metadata[name] != expected for name, expected in context.items()):
-            return False
-        assumptions = metadata.get("assumptions", {})
-        if not isinstance(assumptions, dict):
-            return False
-        assumed_context = {
-            "benchmark": benchmark, "riskFreeRateAnnual": rate,
-            "universeLimit": limit, "window": WINDOW_METHODS[window],
-        }
-        if any(name in assumptions and assumptions[name] != expected for name, expected in assumed_context.items()):
-            return False
-        for row in rows:
-            if not isinstance(row, dict) or not isinstance(row.get("symbol"), str) or not row["symbol"]:
-                return False
-            statuses = row.get("metricStatus", {})
-            if not isinstance(statuses, dict) or any(not isinstance(status, str) for status in statuses.values()):
-                return False
-            for metric in METRIC_KEYS:
-                metric_value = row.get(metric)
-                if metric_value is not None:
-                    try:
-                        if (isinstance(metric_value, bool)
-                                or not isinstance(metric_value, (int, float))
-                                or not math.isfinite(metric_value)):
-                            return False
-                    except OverflowError:
-                        return False
-        return True
-
-    @staticmethod
-    def _key_prefix(key):
-        if len(key) >= 7 and key[0] == "top-picks-snapshot":
-            return tuple(key[:-2])
-        return tuple(key[:2]) if len(key) >= 2 else tuple(key[:1])
-
-    def _load_persisted_entries(self):
-        if not self._persistence_path or not os.path.exists(
-            self._persistence_path
-        ):
-            return
-
-        try:
-            with open(self._persistence_path, encoding="utf-8") as handle:
-                payload = json.load(handle)
-        except (OSError, ValueError, TypeError):
-            LOGGER.warning("Top Picks persisted cache is invalid or unavailable; rebuilding.")
-            return
-
-        if not isinstance(payload, dict):
-            LOGGER.warning("Top Picks persisted cache is invalid; rebuilding.")
-            return
-        persisted_entries = payload.get("entries")
-        if not isinstance(persisted_entries, dict):
-            LOGGER.warning("Top Picks persisted cache is invalid; rebuilding.")
-            return
-        persisted_latest_key = None
-        invalid_entries = False
-        try:
-            if payload.get("latest_key") is not None:
-                persisted_latest_key = self._deserialize_key(payload["latest_key"])
-                invalid_entries = persisted_latest_key is None
-        except (TypeError, ValueError):
-            invalid_entries = True
-
-        now = self._clock()
-        with self._lock:
-            loaded_keys = []
-            for raw_key, entry in persisted_entries.items():
-                if not isinstance(entry, dict) or "value" not in entry:
-                    invalid_entries = True
-                    continue
-                try:
-                    key = self._deserialize_key(raw_key)
-                except (TypeError, ValueError):
-                    invalid_entries = True
-                    continue
-                if key is None or not self._valid_persisted_value(key, entry["value"]):
-                    invalid_entries = True
-                    continue
-                # Persisted snapshots are intentionally loaded as stale so the
-                # user sees the last complete ranking immediately while a fresh
-                # build starts in the background. They do not expire on disk:
-                # the latest successful calculation is the startup fallback
-                # even after the old stale window has passed or the date-based
-                # cache key has moved on.
-                self._entries[key] = {
-                    "expires_at": now - 1,
-                    "stale_expires_at": math.inf,
-                    "stale_expires_at_wall_time": entry.get(
-                        "stale_expires_at_wall_time"
-                    ),
-                    "value": entry["value"],
-                }
-                loaded_keys.append(key)
-            if persisted_latest_key in self._entries:
-                self._latest_key = persisted_latest_key
-            elif loaded_keys:
-                self._latest_key = loaded_keys[-1]
-            self._latest_keys = {
-                self._key_prefix(key): key for key in loaded_keys
-            }
-        if invalid_entries:
-            LOGGER.warning("Top Picks persisted cache contains invalid entries; retaining valid snapshots and rebuilding missing contexts.")
-
-    def _persist_entries(self):
-        if not self._persistence_path:
-            return
-
-        directory = os.path.dirname(self._persistence_path)
-        temporary_path = None
-        try:
-            if directory:
-                os.makedirs(directory, exist_ok=True)
-            persisted_keys = []
-            for key in [self._latest_key, *self._latest_keys.values()]:
-                if key is not None and key in self._entries:
-                    persisted_keys.append(key)
-            persisted_keys = list(dict.fromkeys(persisted_keys))
-            payload = {
-                "latest_key": (
-                    self._serialize_key(self._latest_key)
-                    if self._latest_key is not None
-                    else None
-                ),
-                "entries": {
-                    self._serialize_key(key): {
-                        "stale_expires_at_wall_time": entry.get(
-                            "stale_expires_at_wall_time"
-                        ),
-                        "value": entry["value"],
-                    }
-                    for key in persisted_keys
-                    for entry in [self._entries[key]]
-                }
-            }
-            with NamedTemporaryFile(
-                mode="w", encoding="utf-8", dir=directory or ".",
-                prefix=".top-picks-snapshot-", delete=False,
-            ) as handle:
-                temporary_path = handle.name
-                json.dump(payload, handle, separators=(",", ":"))
-            os.replace(temporary_path, self._persistence_path)
-        except OSError:
-            return
-        finally:
-            if temporary_path is not None:
-                try:
-                    os.unlink(temporary_path)
-                except OSError:
-                    pass
 
 
 def _finite_float(value):
@@ -458,92 +136,6 @@ def _one_year_before(value):
         return value.replace(year=value.year - 1, day=28)
 
 
-def _normalize_benchmark(value):
-    if not isinstance(value, str):
-        raise TopPicksConfigurationError(
-            "Top Picks benchmark must be a ticker symbol."
-        )
-    benchmark = value.strip().upper()
-    if not TICKER_PATTERN.fullmatch(benchmark):
-        raise TopPicksConfigurationError(
-            "Top Picks benchmark must be a ticker symbol."
-        )
-    return benchmark
-
-
-def _normalize_risk_free_rate(value):
-    rate = _finite_float(value)
-    if rate is None or not -1 <= rate <= 1:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free rate is invalid."
-        )
-    return rate
-
-
-def _normalize_universe_limit(value):
-    if isinstance(value, str) and value.strip().isdecimal():
-        value = int(value.strip())
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 1 <= value <= MAX_TICKER_UNIVERSE
-    ):
-        raise TopPicksConfigurationError(
-            "Top Picks universe limit is invalid."
-        )
-    return value
-
-
-def _normalize_cache_ttl(value):
-    if isinstance(value, str) and value.strip().isdecimal():
-        value = int(value.strip())
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 0 <= value <= 86_400
-    ):
-        raise TopPicksConfigurationError(
-            "Top Picks cache TTL is invalid."
-        )
-    return value
-
-
-def _normalize_source(value):
-    if not isinstance(value, str) or not value.strip():
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free source is invalid."
-        )
-    return value.strip()[:120]
-
-
-def _normalize_refresh_setting(value, name, minimum, maximum):
-    if isinstance(value, str) and value.strip().isdecimal():
-        value = int(value.strip())
-    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
-        raise TopPicksConfigurationError(f"Top Picks {name} is invalid.")
-    return value
-
-
-def _normalize_as_of(value):
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        )
-    try:
-        parsed = date.fromisoformat(value)
-    except ValueError as error:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        ) from error
-    if parsed.isoformat() != value:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        )
-    return value
-
-
 def _symbol_summary(prefix, symbols):
     noun = "symbol" if len(symbols) == 1 else "symbols"
     displayed = symbols[:10]
@@ -585,10 +177,10 @@ class TopPicksService:
         self._market_data_provider = market_data_provider
         self._information_ratio_provider = information_ratio_provider
         self._observation_count_provider = observation_count_provider
-        self._benchmark_ticker = _normalize_benchmark(benchmark_ticker)
-        self._risk_free_rate = _normalize_risk_free_rate(risk_free_rate)
-        normalized_source = _normalize_source(risk_free_rate_source)
-        normalized_as_of = _normalize_as_of(risk_free_rate_as_of)
+        self._benchmark_ticker = normalize_benchmark(benchmark_ticker)
+        self._risk_free_rate = normalize_risk_free_rate(risk_free_rate)
+        normalized_source = normalize_source(risk_free_rate_source)
+        normalized_as_of = normalize_as_of(risk_free_rate_as_of)
         if self._risk_free_rate != DEFAULT_RISK_FREE_RATE:
             if normalized_source == DEFAULT_RISK_FREE_RATE_SOURCE:
                 normalized_source = "Application configuration"
@@ -596,8 +188,8 @@ class TopPicksService:
                 normalized_as_of = None
         self._risk_free_rate_source = normalized_source
         self._risk_free_rate_as_of = normalized_as_of
-        self._universe_limit = _normalize_universe_limit(universe_limit)
-        self._cache_ttl_seconds = _normalize_cache_ttl(cache_ttl_seconds)
+        self._universe_limit = normalize_universe_limit(universe_limit)
+        self._cache_ttl_seconds = normalize_cache_ttl(cache_ttl_seconds)
         self._snapshot_cache = (
             TopPicksSnapshotCache()
             if snapshot_cache is None
@@ -614,7 +206,7 @@ class TopPicksService:
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
-        self._refresh_interval_seconds = _normalize_refresh_setting(
+        self._refresh_interval_seconds = normalize_refresh_setting(
             refresh_interval_seconds, "refresh interval", 5, 3600,
         )
         self._refresh_clock = refresh_clock
@@ -624,9 +216,9 @@ class TopPicksService:
         self._building_snapshots = False
         self._waiting_snapshot_readers = 0
         self._updates = SnapshotUpdateHub(
-            max_subscribers=_normalize_refresh_setting(max_subscribers, "process stream limit", 1, 1024),
-            max_per_client=_normalize_refresh_setting(max_subscribers_per_client, "peer stream limit", 1, 128),
-            max_lifetime_seconds=_normalize_refresh_setting(stream_lifetime_seconds, "stream lifetime", 30, 3600),
+            max_subscribers=normalize_refresh_setting(max_subscribers, "process stream limit", 1, 1024),
+            max_per_client=normalize_refresh_setting(max_subscribers_per_client, "peer stream limit", 1, 128),
+            max_lifetime_seconds=normalize_refresh_setting(stream_lifetime_seconds, "stream lifetime", 30, 3600),
             clock=refresh_clock,
         )
 

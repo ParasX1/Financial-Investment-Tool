@@ -1,8 +1,7 @@
 ﻿import type { NextApiRequest, NextApiResponse } from "next";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
 import {
@@ -14,7 +13,6 @@ import {
 
 const MAX_MARKET_QUOTES = 20;
 const MARKET_SYMBOL_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
-const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 const MARKET_DATA_UNAVAILABLE = "Market data is temporarily unavailable.";
 
 type MarketQuotesResponse =
@@ -42,20 +40,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<MarketQuotesResponse>,
 ) {
-  res.setHeader("Cache-Control", PRIVATE_NO_STORE);
-
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
-
-  const clientKey = `market-quotes:${getRequestClientKey(req)}`;
-  if (!marketApiRateLimiter.allow(clientKey)) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res.status(429).json({
-      error: "Too many quote requests. Please wait a moment.",
-    });
+  if (!beginMarketApiRequest(req, res)) return;
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: "market-quotes",
+      errorMessage: "Too many quote requests. Please wait a moment.",
+    })
+  ) {
     return;
   }
 

@@ -5,9 +5,8 @@ import {
   type MarketChartRangeId,
 } from "@/lib/market/chartRanges";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
 import { fetchCachedYahooChartSnapshot } from "@/lib/server/marketChartCache";
@@ -16,8 +15,6 @@ import {
   type YahooChartSnapshot,
 } from "@/lib/server/yahooChartProvider";
 import { normalizeYahooMarketSymbol } from "@/lib/server/yahooQuoteProvider";
-
-const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 
 interface MarketChartsResponse {
   rangeId: MarketChartRangeId;
@@ -48,13 +45,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<MarketChartsApiResponse>,
 ) {
-  res.setHeader("Cache-Control", PRIVATE_NO_STORE);
-
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
+  if (!beginMarketApiRequest(req, res)) return;
 
   const symbols = parseSymbols(req.query.symbols);
   const rawRange = Array.isArray(req.query.range)
@@ -68,12 +59,13 @@ export default async function handler(
   }
   const rangeId = rawRange;
 
-  const clientKey = `market-data:${getRequestClientKey(req)}`;
-  if (!marketApiRateLimiter.allow(clientKey, symbols.length)) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res.status(429).json({
-      error: "Too many chart requests. Please wait a moment.",
-    });
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: "market-data",
+      errorMessage: "Too many chart requests. Please wait a moment.",
+      cost: symbols.length,
+    })
+  ) {
     return;
   }
 

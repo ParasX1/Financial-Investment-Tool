@@ -13,17 +13,17 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
 
 from ..market_primitives import CALCULATION_VERSION, TICKER_PATTERN
-from .service import (
+from .configuration import (
     DEFAULT_BENCHMARK_TICKER,
     DEFAULT_CACHE_TTL_SECONDS,
     DEFAULT_RISK_FREE_RATE,
     DEFAULT_UNIVERSE_LIMIT,
     METRIC_KEYS,
     TOP_PICKS_WINDOWS,
-    _normalize_benchmark,
-    _normalize_cache_ttl,
-    _normalize_risk_free_rate,
-    _normalize_universe_limit,
+    normalize_benchmark,
+    normalize_cache_ttl,
+    normalize_risk_free_rate,
+    normalize_universe_limit,
 )
 
 
@@ -81,9 +81,9 @@ def _prepare_snapshots(payload, calculation_version=SEED_CALCULATION_VERSION):
         if (any(not isinstance(symbol, str) or not TICKER_PATTERN.fullmatch(symbol) for symbol in symbols)
                 or len(set(symbols)) != len(symbols)):
             raise ValueError("Initial snapshot symbols must be unique.")
-        if (_normalize_benchmark(key[2]) != key[2]
-                or _normalize_risk_free_rate(key[3]) != key[3]
-                or _normalize_universe_limit(key[4]) != key[4]):
+        if (normalize_benchmark(key[2]) != key[2]
+                or normalize_risk_free_rate(key[3]) != key[3]
+                or normalize_universe_limit(key[4]) != key[4]):
             raise ValueError("Initial snapshot calculation settings are invalid.")
         if (metadata.get("windowCode") != window
                 or metadata.get("benchmark") != key[2]
@@ -360,7 +360,7 @@ def bootstrap_top_picks_cache(
     """Install missing caches; existing files always belong to the running app."""
     installed = {"snapshot": False, "history": False}
     targets = {
-        "snapshot": snapshot_path if _normalize_cache_ttl(cache_ttl_seconds) > 0 else None,
+        "snapshot": snapshot_path if normalize_cache_ttl(cache_ttl_seconds) > 0 else None,
         "history": history_path,
     }
     try:
@@ -372,9 +372,9 @@ def bootstrap_top_picks_cache(
         LOGGER.warning("Top Picks initial paths unavailable; using normal refresh.")
         return installed
     expected = {
-        "benchmark": _normalize_benchmark(benchmark_ticker),
-        "riskFreeRate": _normalize_risk_free_rate(risk_free_rate),
-        "universeLimit": _normalize_universe_limit(universe_limit),
+        "benchmark": normalize_benchmark(benchmark_ticker),
+        "riskFreeRate": normalize_risk_free_rate(risk_free_rate),
+        "universeLimit": normalize_universe_limit(universe_limit),
     }
     try:
         manifest, files = _read_seed(seed_path)

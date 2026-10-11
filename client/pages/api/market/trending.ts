@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { fetchBoundedProviderResponse } from "@/lib/server/boundedProviderFetch";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
+  MARKET_API_PRIVATE_CACHE_CONTROL,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
 import { normalizeYahooMarketSymbol } from "@/lib/server/yahooQuoteProvider";
@@ -27,7 +27,6 @@ type YahooQuoteRow = {
 };
 
 const PUBLIC_TRENDING_CACHE = "s-maxage=60, stale-while-revalidate=300";
-const PRIVATE_TRENDING_CACHE = "private, no-store, max-age=0";
 const YAHOO_USER_AGENT = "trend-proxy";
 const MARKET_DATA_UNAVAILABLE = "Market data unavailable";
 const FALLBACK_SEEDS_BY_REGION: Record<string, readonly string[]> = {
@@ -131,7 +130,9 @@ function parseWatchlist(value: string | string[] | undefined) {
 }
 
 function getCacheControl(watchlist: readonly string[]) {
-  return watchlist.length ? PRIVATE_TRENDING_CACHE : PUBLIC_TRENDING_CACHE;
+  return watchlist.length
+    ? MARKET_API_PRIVATE_CACHE_CONTROL
+    : PUBLIC_TRENDING_CACHE;
 }
 
 async function fetchYahooJson(
@@ -226,12 +227,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Resp>,
 ) {
-  res.setHeader("Cache-Control", PRIVATE_TRENDING_CACHE);
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
+  if (!beginMarketApiRequest(req, res)) return;
   const regionValue = req.query.region;
   const region =
     typeof regionValue === "string"
@@ -251,15 +247,12 @@ export default async function handler(
     return;
   }
   if (
-    !marketApiRateLimiter.allow(
-      `market-trending:${getRequestClientKey(req)}`,
-      2,
-    )
+    !admitMarketApiRequest(req, res, {
+      namespace: "market-trending",
+      errorMessage: "Too many market requests. Please wait a moment.",
+      cost: 2,
+    })
   ) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res
-      .status(429)
-      .json({ error: "Too many market requests. Please wait a moment." });
     return;
   }
   const deadline = Date.now() + MARKET_PROVIDER_TIMEOUT_MS;

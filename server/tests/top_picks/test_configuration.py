@@ -3,6 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
+from src.top_picks import configuration
 from src.top_picks.contracts import Ticker, TopPicksRequest
 from src.top_picks.service import (
     DEFAULT_BENCHMARK_TICKER,
@@ -12,6 +13,53 @@ from src.top_picks.service import (
     TopPicksConfigurationError,
     TopPicksService,
 )
+from src.top_picks.snapshot_cache import TopPicksSnapshotCache
+
+
+@pytest.mark.parametrize("name,value,expected", [
+    ("benchmark", " spy ", "SPY"),
+    ("risk_free_rate", "0.025", 0.025),
+    ("risk_free_rate", -1, -1.0),
+    ("risk_free_rate", 1, 1.0),
+    ("universe_limit", " 1000 ", 1000),
+    ("cache_ttl", " 0 ", 0),
+    ("cache_ttl", 86_400, 86_400),
+    ("source", " Test source ", "Test source"),
+    ("source", "x" * 121, "x" * 120),
+    ("as_of", None, None),
+    ("as_of", "2026-07-31", "2026-07-31"),
+])
+def test_public_configuration_validation_preserves_normalization(name, value, expected):
+    assert getattr(configuration, f"normalize_{name}")(value) == expected
+
+
+@pytest.mark.parametrize("name,value", [
+    ("benchmark", None),
+    ("benchmark", "bad ticker"),
+    ("risk_free_rate", True),
+    ("risk_free_rate", "NaN"),
+    ("risk_free_rate", "Infinity"),
+    ("risk_free_rate", 1.001),
+    ("universe_limit", True),
+    ("universe_limit", 1001),
+    ("cache_ttl", True),
+    ("cache_ttl", 86_401),
+    ("source", "  "),
+    ("as_of", "20260731"),
+])
+def test_public_configuration_validation_retains_bounded_errors(name, value):
+    with pytest.raises(TopPicksConfigurationError):
+        getattr(configuration, f"normalize_{name}")(value)
+
+
+def test_refresh_setting_normalization_and_existing_imports_remain_compatible():
+    from src.top_picks import service
+
+    assert configuration.normalize_refresh_setting(" 5 ", "refresh interval", 5, 3600) == 5
+    with pytest.raises(TopPicksConfigurationError):
+        configuration.normalize_refresh_setting(True, "refresh interval", 5, 3600)
+    assert service.TopPicksConfigurationError is configuration.TopPicksConfigurationError
+    assert service.TopPicksSnapshotCache is TopPicksSnapshotCache
 
 
 class RecordingTickerRepository:

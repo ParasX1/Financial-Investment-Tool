@@ -88,7 +88,7 @@ describe("/api/market/chart", () => {
     jest
       .spyOn(global, "fetch")
       .mockResolvedValue(new Response("provider secret", { status: 429 }));
-    const { response } = responseHarness();
+    const { headers, response } = responseHarness();
 
     await handler(request("BHP.AX"), response);
 
@@ -96,5 +96,6 @@ describe("/api/market/chart", () => {
     expect(response.json).toHaveBeenCalledWith({
       error: "Market chart is temporarily unavailable.",
     });
+    expect(headers.get("cache-control")).toBe("private, no-store, max-age=0");
   });
 });

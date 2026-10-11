@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from "@/lib/server/marketApiGuard";
 import { fetchAdmittedProviderResponse } from "@/lib/server/providerAdmission";
@@ -16,7 +15,6 @@ const SUPPORTED_QUOTE_TYPES = new Set([
 const SYMBOL_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
 const MAX_RESULTS = 10;
 const MAX_QUERY_LENGTH = 50;
-const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 const SEARCH_UNAVAILABLE = "Symbol search is temporarily unavailable.";
 
 type YahooSearchQuote = Record<string, unknown>;
@@ -88,18 +86,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SymbolSearchResponse>,
 ) {
-  res.setHeader("Cache-Control", PRIVATE_NO_STORE);
-
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
-
-  const clientKey = `symbol-search:${getRequestClientKey(req)}`;
-  if (!marketApiRateLimiter.allow(clientKey)) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res.status(429).json({ error: "Too many searches. Please wait a moment." });
+  if (!beginMarketApiRequest(req, res)) return;
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: "symbol-search",
+      errorMessage: "Too many searches. Please wait a moment.",
+    })
+  ) {
     return;
   }
 
