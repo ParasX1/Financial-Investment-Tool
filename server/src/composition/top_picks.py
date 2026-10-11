@@ -11,7 +11,7 @@ from ..top_picks.events import (
     DEFAULT_MAX_SUBSCRIBERS, DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
     DEFAULT_STREAM_LIFETIME_SECONDS,
 )
-from ..top_picks.service import (
+from ..top_picks.configuration import (
     DEFAULT_BENCHMARK_TICKER,
     DEFAULT_CACHE_TTL_SECONDS,
     DEFAULT_REFRESH_INTERVAL_SECONDS,
@@ -19,10 +19,10 @@ from ..top_picks.service import (
     DEFAULT_RISK_FREE_RATE_AS_OF,
     DEFAULT_RISK_FREE_RATE_SOURCE,
     DEFAULT_UNIVERSE_LIMIT,
-    TopPicksSnapshotCache,
-    TopPicksService,
-    _normalize_cache_ttl,
+    normalize_cache_ttl,
 )
+from ..top_picks.service import TopPicksService
+from ..top_picks.snapshot_cache import TopPicksSnapshotCache
 
 
 PROJECT_ROOT = os.path.abspath(
@@ -171,7 +171,7 @@ def create_top_picks_service_provider(
                 and _is_default_cache_path(
                     history_path, f"{DEFAULT_TOP_PICKS_CACHE_PATH}.history.sqlite3",
                 )
-                and _normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
+                and normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
             def update_seed_archive():
                 create_seed_archive(snapshot_path, history_path, DEFAULT_TOP_PICKS_SEED_PATH)
 

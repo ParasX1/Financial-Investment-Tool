@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { fetchBoundedProviderResponse } from "@/lib/server/boundedProviderFetch";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
+  MARKET_API_PRIVATE_CACHE_CONTROL,
 } from "@/lib/server/marketApiGuard";
 import { normalizeYahooMarketSymbol } from "@/lib/server/yahooQuoteProvider";
 
@@ -16,7 +16,6 @@ type SparkResp = {
 };
 
 const MARKET_DATA_UNAVAILABLE = "Market data unavailable";
-const MARKET_DATA_ERROR_CACHE = "private, no-store, max-age=0";
 
 async function fetchYahooChart(symbol: string) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`;
@@ -61,23 +60,19 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SparkResp | { error: string }>,
 ) {
-  res.setHeader("Cache-Control", MARKET_DATA_ERROR_CACHE);
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
+  if (!beginMarketApiRequest(req, res)) return;
 
   const symbol = normalizeYahooMarketSymbol(req.query.symbol);
   if (!symbol) {
     res.status(400).json({ error: "symbol is required" });
     return;
   }
-  if (!marketApiRateLimiter.allow(`market-data:${getRequestClientKey(req)}`)) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res
-      .status(429)
-      .json({ error: "Too many chart requests. Please wait a moment." });
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: "market-data",
+      errorMessage: "Too many chart requests. Please wait a moment.",
+    })
+  ) {
     return;
   }
 
@@ -91,7 +86,7 @@ export default async function handler(
     console.error("Market sparkline error", {
       name: error instanceof Error ? error.name : "UnknownError",
     });
-    res.setHeader("Cache-Control", MARKET_DATA_ERROR_CACHE);
+    res.setHeader("Cache-Control", MARKET_API_PRIVATE_CACHE_CONTROL);
     res.status(502).json({
       error: MARKET_DATA_UNAVAILABLE,
     });

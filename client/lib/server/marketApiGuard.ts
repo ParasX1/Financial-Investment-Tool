@@ -139,3 +139,44 @@ export const marketNewsApiRateLimiter = createFixedWindowRateLimiter({
 
 export const MARKET_API_RETRY_AFTER_SECONDS = 60;
 export const MARKET_PROVIDER_TIMEOUT_MS = 5_000;
+export const MARKET_API_PRIVATE_CACHE_CONTROL = "private, no-store, max-age=0";
+
+type MarketApiErrorResponse = {
+  setHeader(name: string, value: string): unknown;
+  status(code: number): { json(body: { error: string }): unknown };
+};
+
+/** Keep method/privacy setup separate from admission so routes own validation order. */
+export function beginMarketApiRequest(
+  request: { method?: string },
+  response: MarketApiErrorResponse,
+  allowedMethods: readonly string[] = ["GET"],
+): boolean {
+  response.setHeader("Cache-Control", MARKET_API_PRIVATE_CACHE_CONTROL);
+  if (request.method && allowedMethods.includes(request.method)) return true;
+
+  response.setHeader("Allow", allowedMethods.join(", "));
+  response.status(405).json({ error: "Method not allowed." });
+  return false;
+}
+
+export function admitMarketApiRequest(
+  request: RequestIdentity,
+  response: MarketApiErrorResponse,
+  {
+    namespace,
+    errorMessage,
+    cost,
+  }: { namespace: string; errorMessage: string; cost?: number },
+): boolean {
+  const clientKey = `${namespace}:${getRequestClientKey(request)}`;
+  const allowed =
+    cost === undefined
+      ? marketApiRateLimiter.allow(clientKey)
+      : marketApiRateLimiter.allow(clientKey, cost);
+  if (allowed) return true;
+
+  response.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
+  response.status(429).json({ error: errorMessage });
+  return false;
+}
