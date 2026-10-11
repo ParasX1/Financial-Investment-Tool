@@ -50,13 +50,22 @@ export function HomeScreenView({
           loading={authLoading}
           signedIn={signedIn}
           onSignIn={() => openLogin()}
+          onGetStarted={() => openSignUp()}
         />
 
         <main id="main-content" className={styles.page} tabIndex={-1}>
+          <noscript>
+            <p className={styles.noScriptNotice}>
+              Enable JavaScript to sign in or create an account. You can still
+              read this introduction and the first Guide and Help Center topics.
+              Topic navigation and analytics also require JavaScript.
+            </p>
+          </noscript>
           <HomeHero
             authLoading={authLoading}
             signedIn={signedIn}
             onSignIn={() => openLogin()}
+            onGetStarted={() => openSignUp()}
           />
           <div className={styles.content}>
             <HomeProductSection

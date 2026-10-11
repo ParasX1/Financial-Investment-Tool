@@ -1,8 +1,29 @@
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import Link from "next/link";
-import type { HomeRouteLink } from "../types";
+import type { HomeEntryDestination, HomeRouteLink } from "../types";
 import styles from "../styles/home.module.css";
+
+const chapters: Record<
+  HomeEntryDestination,
+  { label: string; title: string; action: string }
+> = {
+  "/Portfolio": {
+    label: "Portfolio",
+    title: "See performance and risk together.",
+    action: "Explore portfolio",
+  },
+  "/MarketNews": {
+    label: "Market context",
+    title: "Look beyond the headline.",
+    action: "Read market news",
+  },
+  "/Community": {
+    label: "Research",
+    title: "Build a considered view.",
+    action: "Explore community",
+  },
+};
 
 export function HomeProductSection({
   authLoading,
@@ -22,53 +43,54 @@ export function HomeProductSection({
       aria-labelledby="home-product-title"
     >
       <div className={styles.sectionIntro}>
-        <p className={styles.eyebrow}>Explore FIT</p>
-        <h2 id="home-product-title">Start with the questions that matter.</h2>
+        <h2 id="home-product-title">
+          More context.
+          <br />A clearer question.
+        </h2>
+        <p>Three ways to explore the evidence behind an investment decision.</p>
       </div>
 
       <div className={styles.routeGrid}>
-        {routes.map((route) => {
-          const Icon = route.icon;
+        {routes.map((route, index) => {
           const locked = Boolean(route.gated && !signedIn);
-          const tileContent = (
+          const chapter = chapters[route.href];
+          const entryContent = (
             <>
-              <span className={styles.routeIcon} aria-hidden="true">
-                {Icon ? <Icon sx={{ fontSize: 19 }} /> : null}
-              </span>
-              <span className={styles.routeBody}>
-                <strong>{route.label}</strong>
-                <span>{route.description}</span>
-              </span>
-              <span className={styles.routeAction} aria-hidden="true">
-                {locked ? <LockOutlinedIcon sx={{ fontSize: 15 }} /> : null}
-                <KeyboardArrowRightRoundedIcon sx={{ fontSize: 20 }} />
-              </span>
+              {chapter.action}
+              {locked ? (
+                <LockOutlinedIcon sx={{ fontSize: 14 }} aria-hidden="true" />
+              ) : null}
+              <KeyboardArrowRightRoundedIcon
+                sx={{ fontSize: 18 }}
+                aria-hidden="true"
+              />
             </>
           );
 
-          if (!locked) {
-            return (
-              <Link
-                key={route.href}
-                href={route.href}
-                className={styles.routeTile}
-              >
-                {tileContent}
-              </Link>
-            );
-          }
-
           return (
-            <button
-              key={route.href}
-              type="button"
-              className={styles.routeTile}
-              aria-label={`${route.label} requires sign in`}
-              disabled={authLoading}
-              onClick={() => onRouteSelect(route)}
-            >
-              {tileContent}
-            </button>
+            <article key={route.href} className={styles.routeChapter}>
+              <p className={styles.chapterLabel}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {chapter.label}
+              </p>
+              <h3>{chapter.title}</h3>
+              <p className={styles.chapterDescription}>{route.description}</p>
+              {locked ? (
+                <button
+                  type="button"
+                  className={styles.routeTile}
+                  aria-label={`${chapter.action}, sign in required`}
+                  disabled={authLoading}
+                  onClick={() => onRouteSelect(route)}
+                >
+                  {entryContent}
+                </button>
+              ) : (
+                <Link href={route.href} className={styles.routeTile}>
+                  {entryContent}
+                </Link>
+              )}
+            </article>
           );
         })}
       </div>

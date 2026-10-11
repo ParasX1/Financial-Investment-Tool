@@ -250,7 +250,7 @@ export function CommunityComposer({
           type="submit"
           disabled={creating || !canSubmit}
           className={cn(
-            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[var(--fit-color-accent)] px-[16px] text-[var(--fit-color-action-ink)] transition-colors",
+            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[var(--fit-color-action)] px-[16px] text-[var(--fit-color-on-action)] transition-colors",
             fitType.control,
             "hover:bg-[var(--fit-color-action-hover)]",
             communityUi.disabled,

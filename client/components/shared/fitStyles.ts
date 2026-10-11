@@ -27,7 +27,7 @@ export const fitNav = {
 
 export const fitButton = {
   primary:
-    "bg-[var(--fit-color-accent)] text-[var(--fit-color-action-ink)] transition-colors hover:bg-[var(--fit-color-action-hover)]",
+    "bg-[var(--fit-color-action)] text-[var(--fit-color-on-action)] transition-colors hover:bg-[var(--fit-color-action-hover)]",
   secondary:
     "bg-[var(--fit-color-field)] text-[var(--fit-color-text-body)] transition-colors hover:bg-[var(--fit-color-surface-soft)]",
   subtle:

@@ -301,7 +301,7 @@
   .fit-type-page-title,
   .fit-type-feature-title {
     font-family: var(--fit-font-display);
-    font-weight: 400;
+    font-weight: var(--fit-font-display-weight);
     letter-spacing: -0.025em;
   }
 

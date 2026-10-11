@@ -22,13 +22,13 @@ export const theme = createTheme({
     fontWeightBold: 700,
     h1: {
       fontFamily: "var(--fit-font-display)",
-      fontWeight: 400,
+      fontWeight: 600,
       letterSpacing: 0,
       lineHeight: "var(--fit-type-leading-heading)",
     },
     h2: {
       fontFamily: "var(--fit-font-display)",
-      fontWeight: 400,
+      fontWeight: 600,
       letterSpacing: 0,
       lineHeight: "var(--fit-type-leading-heading)",
     },
@@ -59,7 +59,17 @@ export const theme = createTheme({
       },
     },
     MuiButton: {
-      styleOverrides: { root: { boxShadow: "none", minHeight: 40 } },
+      styleOverrides: {
+        root: { boxShadow: "none", minHeight: 40 },
+        containedPrimary: ({ ownerState }) =>
+          ownerState.disabled
+            ? {}
+            : {
+                backgroundColor: fitColors.action,
+                color: fitColors.onAction,
+                "&:hover": { backgroundColor: fitColors.actionHover },
+              },
+      },
     },
     MuiPaper: { styleOverrides: { root: { backgroundImage: "none" } } },
     MuiOutlinedInput: {

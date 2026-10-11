@@ -137,15 +137,19 @@
   align-self: end;
   min-height: 43px;
   padding: 0 16px;
-  border: 1px solid var(--fit-color-accent);
+  border: 1px solid var(--fit-color-action);
   border-radius: 9px;
-  color: var(--fit-color-action-ink);
-  background: var(--fit-color-accent);
+  color: var(--fit-color-on-action);
+  background: var(--fit-color-action);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 760;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.runButton:hover:not(:disabled) {
+  background: var(--fit-color-action-hover);
 }
 
 .runButton:disabled {

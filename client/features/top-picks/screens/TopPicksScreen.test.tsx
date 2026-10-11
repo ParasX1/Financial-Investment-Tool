@@ -212,6 +212,53 @@ describe("TopPicksScreen", () => {
     });
   });
 
+  it.each([25, 100])(
+    "presents refresh recovery before a retained page of %s rows",
+    (rowCount) => {
+      const controller = {
+        ...createController(),
+        rows: Array.from({ length: rowCount }, (_, index) => ({
+          ...row,
+          symbol: `ROW${index}`,
+        })),
+        error: "Refresh unavailable",
+      };
+      (useTopPicksController as jest.Mock).mockReturnValue(controller);
+      const elements = collectElements(TopPicksScreen());
+      const statusIndex = elements.findIndex(
+        (element) => element.type === TopPicksStatus,
+      );
+      const tableIndex = elements.findIndex(
+        (element) => element.type === TopPicksTable,
+      );
+
+      expect(statusIndex).toBeLessThan(tableIndex);
+      expect(elements[statusIndex].props).toMatchObject({
+        error: "Refresh unavailable",
+        hasRetainedResults: true,
+        onRetry: controller.retry,
+      });
+      expect(elements[tableIndex].props).toMatchObject({
+        rows: controller.rows,
+        error: "Refresh unavailable",
+      });
+    },
+  );
+
+  it.each([
+    { error: null, rows: [row] },
+    { error: "Initial load unavailable", rows: [] },
+  ])("does not label other states as retained results: %j", (state) => {
+    (useTopPicksController as jest.Mock).mockReturnValue({
+      ...createController(),
+      ...state,
+    });
+    const status = collectElements(TopPicksScreen()).find(
+      (element) => element.type === TopPicksStatus,
+    );
+    expect(status?.props).toMatchObject({ hasRetainedResults: false });
+  });
+
   it("exports the current ranked page as a downloaded CSV and releases the URL", () => {
     const controller = createController();
     (useTopPicksController as jest.Mock).mockReturnValue(controller);

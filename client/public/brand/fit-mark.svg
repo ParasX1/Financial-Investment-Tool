@@ -1,0 +1,10 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  fill="currentColor"
+  role="img"
+  aria-labelledby="fit-title"
+>
+  <title id="fit-title">FIT</title>
+  <path d="M8 4H28V8H22V10H10V15H22V21H10V28H4V8A4 4 0 0 1 8 4Z" />
+</svg>

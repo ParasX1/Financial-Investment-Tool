@@ -558,7 +558,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <a
         href={`#${skipTargetId}`}
         className={[
-          "sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[var(--fit-color-brand-start)] px-3 py-2 text-[var(--fit-color-action-ink)] no-underline shadow-lg",
+          "sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[var(--fit-color-action)] px-3 py-2 text-[var(--fit-color-on-action)] no-underline shadow-lg",
           fitType.control,
           "focus:not-sr-only focus:no-underline",
           focusRing,

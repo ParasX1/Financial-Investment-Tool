@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import Modal from "react-bootstrap/Modal";
 import ModalBody from "react-bootstrap/ModalBody";
 import { useRouter } from "next/router";
@@ -171,45 +172,14 @@ export function AuthDialog({
             <path d="m6 6 12 12M18 6 6 18" />
           </svg>
         </button>
-        <aside className={styles.contextPanel} aria-label="Your FIT workspace">
-          <FitLogo className={styles.authLogo} showWordmark size="small" />
-          <div className={styles.contextIntro}>
-            <p className={styles.eyebrow}>
-              Research. Perspective. Possibility.
-            </p>
-            <p className={styles.contextTitle}>
-              A clearer view of your next idea.
-            </p>
-            <p className={styles.contextDescription}>
-              Bring your market research, watchlists and portfolios into one
-              workspace.
-            </p>
-          </div>
-          <ol className={styles.contextList}>
-            <li>
-              <span aria-hidden="true">01</span>
-              <div>
-                <strong>Follow the market</strong>
-                <p>Quotes, news and company research.</p>
-              </div>
-            </li>
-            <li>
-              <span aria-hidden="true">02</span>
-              <div>
-                <strong>Keep your perspective</strong>
-                <p>Your watchlists and portfolios, together.</p>
-              </div>
-            </li>
-            <li>
-              <span aria-hidden="true">03</span>
-              <div>
-                <strong>Explore your next move</strong>
-                <p>A place to compare and develop your ideas.</p>
-              </div>
-            </li>
-          </ol>
-          <p className={styles.contextFooter}>Financial Investment Tool</p>
-        </aside>
+        <div className={styles.brandHeader}>
+          <FitLogo
+            className={styles.authLogo}
+            showWordmark
+            size="small"
+            wordmark="FIT"
+          />
+        </div>
 
         <section className={styles.formPanel}>
           <div
@@ -238,9 +208,6 @@ export function AuthDialog({
           </div>
 
           <header className={styles.intro}>
-            <p className={styles.eyebrow}>
-              {isSignUp ? "Get started" : "Your workspace"}
-            </p>
             <h2 id="auth-dialog-title" className={styles.title}>
               {title}
             </h2>
@@ -248,6 +215,30 @@ export function AuthDialog({
               {subtitle}
             </p>
           </header>
+
+          {error ? (
+            <p className={styles.errorMessage} role="alert">
+              {error}
+            </p>
+          ) : null}
+          {info ? (
+            <div className={styles.confirmationMessage}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M3 5h18v14H3zM3 5l9 7 9-7" />
+              </svg>
+              <div>
+                <h3>Confirm your email</h3>
+                <p className={styles.successMessage} role="status">
+                  {info}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          {Object.values(fieldErrors).some(Boolean) ? (
+            <p className={styles.validationMessage} role="alert">
+              Check the highlighted fields to continue.
+            </p>
+          ) : null}
 
           <form
             key={mode}
@@ -308,25 +299,6 @@ export function AuthDialog({
               onChange={(value) => updateField("password", value)}
             />
 
-            {error ? (
-              <p className={styles.errorMessage} role="alert">
-                {error}
-              </p>
-            ) : null}
-            {info ? (
-              <div className={styles.confirmationMessage}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                  <path d="M3 5h18v14H3zM3 5l9 7 9-7" />
-                </svg>
-                <div>
-                  <h3>Confirm your email</h3>
-                  <p className={styles.successMessage} role="status">
-                    {info}
-                  </p>
-                </div>
-              </div>
-            ) : null}
-
             <button
               type="submit"
               className={styles.primaryButton}
@@ -346,18 +318,28 @@ export function AuthDialog({
             <button
               type="button"
               className={styles.googleButton}
+              aria-label="Sign in with Google"
               disabled={pending}
               onClick={handleGoogleSignIn}
             >
-              <GoogleIcon />
-              {pendingAction === "google"
-                ? "Connecting to Google..."
-                : "Continue with Google"}
+              <Image
+                src="/brand/google-signin-dark.svg"
+                alt=""
+                aria-hidden="true"
+                className={styles.googleArtwork}
+                width={180}
+                height={40}
+                unoptimized
+              />
             </button>
           </form>
-          {pendingAction === "google" ? (
+          {pending ? (
             <p className={styles.pendingMessage} role="status">
-              Opening Google sign-in. Complete the next step to continue.
+              {pendingAction === "google"
+                ? "Opening Google sign-in. Complete the next step to continue."
+                : isSignUp
+                  ? "Creating your account. Please wait."
+                  : "Signing in. Please wait."}
             </p>
           ) : null}
         </section>
@@ -446,36 +428,5 @@ function AuthField({
         </p>
       ) : null}
     </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className={styles.googleIcon}
-      viewBox="0 0 24 24"
-      focusable="false"
-    >
-      <path
-        fill="currentColor"
-        d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"
-      />
-      <path
-        fill="currentColor"
-        opacity=".82"
-        d="M12 22c2.7 0 4.98-.9 6.64-2.43l-3.24-2.54c-.9.6-2.05.96-3.4.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.61A10 10 0 0 0 12 22Z"
-      />
-      <path
-        fill="currentColor"
-        opacity=".62"
-        d="M6.39 13.86A6 6 0 0 1 6.08 12c0-.65.11-1.28.31-1.86V7.53H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.47l3.35-2.61Z"
-      />
-      <path
-        fill="currentColor"
-        opacity=".92"
-        d="M12 6.01c1.47 0 2.79.5 3.83 1.5L18.7 4.63A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.53l3.35 2.61C7.18 7.77 9.39 6.01 12 6.01Z"
-      />
-    </svg>
   );
 }

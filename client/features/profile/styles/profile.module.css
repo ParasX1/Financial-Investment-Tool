@@ -178,9 +178,9 @@
 }
 
 .profilePrimaryAction {
-  border: 1px solid var(--fit-color-accent);
-  background: var(--fit-color-accent);
-  color: var(--fit-color-action-ink);
+  border: 1px solid var(--fit-color-action);
+  background: var(--fit-color-action);
+  color: var(--fit-color-on-action);
 }
 
 .profilePrimaryAction:hover {
@@ -431,9 +431,9 @@
 }
 
 .buttonPrimary {
-  border: 1px solid var(--fit-color-accent);
-  background: var(--fit-color-accent);
-  color: var(--fit-color-action-ink);
+  border: 1px solid var(--fit-color-action);
+  background: var(--fit-color-action);
+  color: var(--fit-color-on-action);
 }
 
 .buttonPrimary:hover {

@@ -56,10 +56,31 @@ const baseProps = {
 const exportButtonTag = (markup: string) => {
   const labelIndex = markup.indexOf("Export page CSV");
   expect(labelIndex).toBeGreaterThan(-1);
-  return markup.slice(markup.lastIndexOf("<button", labelIndex)).split(">", 1)[0];
+  return markup
+    .slice(markup.lastIndexOf("<button", labelIndex))
+    .split(">", 1)[0];
 };
 
 describe("TopPicksStatus", () => {
+  it("identifies retained results together with the refresh error", () => {
+    const status = TopPicksStatus({
+      ...baseProps,
+      error: "Refresh unavailable",
+      hasRetainedResults: true,
+    });
+    expect(collectText(status)).toContain(
+      "Showing previous results. Error: Refresh unavailable",
+    );
+  });
+
+  it.each([
+    { error: null, hasRetainedResults: true },
+    { error: "Initial load unavailable", hasRetainedResults: false },
+  ])("omits the retained-results label when it does not apply: %j", (state) => {
+    const status = TopPicksStatus({ ...baseProps, ...state });
+    expect(collectText(status)).not.toContain("Showing previous results");
+  });
+
   it("offers an accessible retry interaction after a load failure", () => {
     const onRetry = jest.fn();
     const status = TopPicksStatus({
@@ -131,15 +152,17 @@ describe("TopPicksToolbar", () => {
     );
 
     expect(markup).toContain("Showing previous results - Syncing - Updated");
-    expect(markup).toContain(lastUpdatedAt.toLocaleString("sv-SE", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }));
+    expect(markup).toContain(
+      lastUpdatedAt.toLocaleString("sv-SE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+      }),
+    );
     expect(exportButtonTag(markup)).not.toContain("disabled");
   });
 

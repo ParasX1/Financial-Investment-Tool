@@ -36,7 +36,31 @@ describe("shared theme readability and library integration", () => {
   it("uses the same MUI panel surface as CSS", () => {
     expect(theme.palette.background.paper).toBe(color("--fit-color-surface"));
   });
-  it("uses the same MUI primary as shared action colors", () => {
-    expect(theme.palette.primary.main).toBe(color("--fit-color-accent-strong"));
+  it("keeps MUI primary ink readable on dark surfaces", () => {
+    for (const surface of [
+      "--fit-color-page-bg",
+      "--fit-color-surface",
+      "--fit-color-surface-soft",
+    ] as const) {
+      expect(
+        contrast(theme.palette.primary.main, color(surface)),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it("keeps primary and hover labels readable while retaining bright link ink", () => {
+    for (const background of [
+      "--fit-color-action",
+      "--fit-color-action-hover",
+    ] as const) {
+      expect(
+        contrast(color("--fit-color-on-action"), color(background)),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(
+      contrast(color("--fit-color-accent"), color("--fit-color-surface")),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(color("--fit-color-action-ink"), color("--fit-color-danger")),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 });

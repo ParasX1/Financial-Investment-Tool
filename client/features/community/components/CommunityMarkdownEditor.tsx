@@ -301,15 +301,15 @@ export function CommunityMarkdownEditor({
     <div>
       <div
         className={cn(
-          "overflow-hidden rounded-lg bg-[var(--fit-color-field)]",
+          "min-w-0 overflow-hidden rounded-lg bg-[var(--fit-color-field)]",
           communityStyles.inputBorder,
         )}
       >
-        <div className="flex items-center justify-between border-b border-[var(--fit-color-border-subtle)] px-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 border-b border-[var(--fit-color-border-subtle)] px-2">
           <div
             role="group"
             aria-label="Writing mode"
-            className="flex items-center"
+            className="flex shrink-0 items-center"
           >
             {(["write", "preview"] as const).map((item) => (
               <button
@@ -327,7 +327,7 @@ export function CommunityMarkdownEditor({
 
           <span
             className={cn(
-              "px-2 text-[var(--fit-color-text-muted)]",
+              "ml-auto shrink-0 px-2 py-2 text-[var(--fit-color-text-muted)]",
               fitType.caption,
             )}
             aria-label="Post body character count"
@@ -495,7 +495,7 @@ export function CommunityMarkdownEditor({
                     type="button"
                     onClick={saveLink}
                     className={cn(
-                      "h-9 rounded-lg bg-[var(--fit-color-accent)] px-3 text-[var(--fit-color-action-ink)] hover:bg-[var(--fit-color-action-hover)]",
+                      "h-9 rounded-lg bg-[var(--fit-color-action)] px-3 text-[var(--fit-color-on-action)] hover:bg-[var(--fit-color-action-hover)]",
                       fitType.control,
                       FOCUS_VISIBLE,
                     )}

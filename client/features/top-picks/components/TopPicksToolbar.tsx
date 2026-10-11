@@ -39,7 +39,7 @@ type TopPicksStatusProps = Pick<
   | "page"
   | "totalPages"
   | "onRetry"
->;
+> & { hasRetainedResults?: boolean };
 
 export function TopPicksToolbar({
   loading,
@@ -142,6 +142,7 @@ export function TopPicksToolbar({
 export function TopPicksStatus({
   loading,
   error,
+  hasRetainedResults = false,
   warnings,
   metadata = {},
   total,
@@ -155,7 +156,7 @@ export function TopPicksStatus({
       ? `${total} results - Showing page ${page} of ${totalPages}`
       : "Loading..."
     : error
-      ? `Error: ${error}`
+      ? `${hasRetainedResults ? "Showing previous results. " : ""}Error: ${error}`
       : total === 0
         ? "No results"
         : `${total} results - Showing page ${page} of ${totalPages}`;
