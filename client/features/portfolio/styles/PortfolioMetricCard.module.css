@@ -8,19 +8,17 @@
   border: 1px solid var(--portfolio-card-outline);
   border-radius: 8px;
   overflow: hidden;
-  background:
-    linear-gradient(145deg, rgba(101, 160, 253, 0.07), transparent 42%),
-    var(--portfolio-surface);
+  background: var(--portfolio-surface);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.035) inset,
     0 14px 38px rgba(0, 0, 0, 0.28),
-    0 2px 0 rgba(101, 160, 253, 0.1);
+    0 2px 0 var(--fit-color-accent-soft);
 }
 
 .metricCard:focus-within {
-  border-color: rgba(101, 160, 253, 0.82);
+  border-color: var(--fit-color-accent);
   box-shadow:
-    0 0 0 1px rgba(101, 160, 253, 0.45),
+    0 0 0 1px var(--fit-color-accent),
     0 16px 42px rgba(0, 0, 0, 0.36);
 }
 
@@ -39,15 +37,15 @@
 
 .cardHeader {
   display: flex;
+  flex: 0 0 auto;
   min-height: 39px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
   padding: 7px 9px;
   border-bottom: 1px solid var(--portfolio-border-strong);
-  background:
-    linear-gradient(180deg, rgba(20, 30, 46, 0.82), rgba(10, 15, 23, 0.84)),
-    rgba(9, 13, 20, 0.9);
+  background: var(--fit-color-surface-soft);
 }
 
 .cardIdentity,
@@ -61,17 +59,19 @@
 }
 
 .cardHeaderSettings {
-  flex: 1 1 auto;
+  order: 3;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: 7px;
-  padding: 0 8px 0 60px;
+  padding: 0;
 }
 
 .cardHeaderSettingsLabel {
   flex: 0 0 auto;
   max-width: 118px;
   color: var(--portfolio-muted);
-  font-size: 0.52rem;
+  font-size: 0.75rem;
   font-weight: 760;
   letter-spacing: 0.055em;
   line-height: 1.15;
@@ -83,7 +83,7 @@
   min-width: 115px;
   gap: 2px;
   color: var(--portfolio-muted);
-  font-size: 0.52rem;
+  font-size: 0.75rem;
   font-weight: 760;
   letter-spacing: 0.055em;
   text-transform: uppercase;
@@ -97,10 +97,10 @@
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 6px;
   color: var(--portfolio-ink);
-  background: rgba(4, 7, 12, 0.74);
+  background: var(--fit-color-field);
   color-scheme: dark;
   font: inherit;
-  font-size: 0.67rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -111,15 +111,15 @@
   color: var(--portfolio-ink);
   background: transparent;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 720;
   text-overflow: ellipsis;
   cursor: pointer;
 }
 
 .cardIdentity select option {
-  color: #eef3fb;
-  background: #111721;
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-surface-soft);
 }
 
 .classificationBadge,
@@ -130,25 +130,25 @@
   padding: 3px 5px;
   border: 1px solid var(--portfolio-border);
   border-radius: 999px;
-  font-size: 0.53rem;
+  font-size: 0.75rem;
   font-weight: 780;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .classification_historical {
-  color: #a7d2ff;
-  background: rgba(72, 135, 202, 0.11);
+  color: var(--fit-color-info);
+  background: var(--fit-color-info-soft);
 }
 
 .classification_estimated {
-  color: #e2c891;
-  background: rgba(184, 139, 62, 0.1);
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
 }
 
 .classification_simulated {
-  color: #b9a9ff;
-  background: rgba(116, 92, 209, 0.11);
+  color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
 }
 
 .linkedBadge,
@@ -157,9 +157,9 @@
 }
 
 .customBadge {
-  border-color: rgba(240, 180, 70, 0.35);
-  color: #f0c579;
-  background: rgba(240, 180, 70, 0.08);
+  border-color: var(--fit-color-warning);
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
 }
 
 .cardActions > button,
@@ -182,8 +182,8 @@
 .cardMenu summary:hover,
 .cardMenu button:hover {
   border-color: var(--portfolio-border);
-  color: #fff;
-  background: rgba(101, 160, 253, 0.1);
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
 }
 
 .cardMenu {
@@ -204,7 +204,7 @@
   padding: 5px;
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 8px;
-  background: #111721;
+  background: var(--fit-color-surface-soft);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.42);
 }
 
@@ -216,7 +216,7 @@
   background: transparent;
   text-align: left;
   font: inherit;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -226,20 +226,20 @@
 }
 
 .status_success {
-  border-color: rgba(88, 214, 165, 0.25);
+  border-color: var(--fit-color-success-soft);
   color: var(--portfolio-green);
 }
 
 .status_stale,
 .status_partial {
-  border-color: rgba(240, 180, 70, 0.3);
-  color: #efc46d;
+  border-color: var(--fit-color-warning);
+  color: var(--fit-color-warning);
 }
 
 .status_error,
 .status_invalid {
-  border-color: rgba(255, 117, 135, 0.28);
-  color: #ff9eaa;
+  border-color: var(--fit-color-danger);
+  color: var(--fit-color-danger);
 }
 
 .cardMeta {
@@ -248,8 +248,8 @@
   overflow: hidden;
   border-bottom: 1px solid var(--portfolio-card-separator);
   color: var(--portfolio-muted);
-  background: rgba(4, 7, 12, 0.28);
-  font-size: 0.58rem;
+  background: var(--fit-color-field);
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -267,15 +267,15 @@
   gap: 8px;
   flex-wrap: wrap;
   padding: 6px 9px;
-  border-bottom: 1px solid rgba(240, 180, 70, 0.16);
-  color: #efc87f;
-  background: rgba(123, 82, 13, 0.08);
-  font-size: 0.63rem;
+  border-bottom: 1px solid var(--fit-color-warning);
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
+  font-size: 0.75rem;
 }
 
 .cardWarning button {
   border: 0;
-  color: #f6d597;
+  color: var(--fit-color-warning);
   background: transparent;
   text-decoration: underline;
   cursor: pointer;
@@ -286,11 +286,11 @@
   min-height: 0;
   flex: 1 1 auto;
   overflow: hidden;
-  background:
-    linear-gradient(rgba(143, 164, 196, 0.036) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(143, 164, 196, 0.036) 1px, transparent 1px),
-    rgba(4, 7, 12, 0.52);
-  background-size: 26px 26px;
+  background: var(--fit-color-field);
+}
+
+.metricCard_observer .cardChart {
+  overflow: auto;
 }
 
 .updatingBadge {
@@ -298,11 +298,11 @@
   right: 8px;
   top: 8px;
   padding: 4px 7px;
-  border: 1px solid rgba(240, 180, 70, 0.28);
+  border: 1px solid var(--fit-color-warning);
   border-radius: 999px;
-  color: #efc87f;
-  background: rgba(22, 18, 10, 0.88);
-  font-size: 0.58rem;
+  color: var(--fit-color-warning);
+  background: var(--fit-color-field);
+  font-size: 0.75rem;
 }
 
 .cardInsight {
@@ -313,7 +313,7 @@
   gap: 10px;
   padding: 6px 9px;
   border-top: 1px solid var(--portfolio-border-strong);
-  background: rgba(8, 12, 19, 0.82);
+  background: var(--fit-color-field);
 }
 
 .metricCard_standard .cardInsight,
@@ -324,20 +324,20 @@
 
 .metricCard_standard .cardInsight span,
 .metricCard_compact .cardInsight span {
-  font-size: 0.45rem;
+  font-size: 0.75rem;
   letter-spacing: 0.045em;
 }
 
 .metricCard_standard .cardInsight strong,
 .metricCard_compact .cardInsight strong {
   margin-top: 0;
-  font-size: 0.54rem;
+  font-size: 0.875rem;
 }
 
 .cardInsight span {
   min-width: 0;
   color: var(--portfolio-muted);
-  font-size: 0.56rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -348,7 +348,7 @@
   margin-top: 2px;
   overflow: hidden;
   color: var(--portfolio-ink);
-  font-size: 0.67rem;
+  font-size: 0.875rem;
   font-weight: 620;
   letter-spacing: 0;
   text-overflow: ellipsis;
@@ -360,20 +360,20 @@
   max-width: 52%;
   margin: 0;
   color: var(--portfolio-body);
-  font-size: 0.63rem;
+  font-size: 0.875rem;
   line-height: 1.35;
 }
 
 .cardSettings {
   flex: 0 0 auto;
   border-top: 1px solid var(--portfolio-border-strong);
-  background: rgba(6, 10, 16, 0.88);
+  background: var(--fit-color-field);
 }
 
 .cardSettings summary {
   padding: 5px 9px;
   color: var(--portfolio-muted);
-  font-size: 0.59rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -383,14 +383,14 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
   padding: 6px 9px 9px;
-  background: rgba(4, 7, 12, 0.66);
+  background: var(--fit-color-field);
 }
 
 .cardSettingsGrid label {
   display: grid;
   gap: 3px;
   color: var(--portfolio-muted);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.055em;
   text-transform: uppercase;
@@ -404,21 +404,21 @@
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 7px;
   color: var(--portfolio-ink);
-  background: rgba(4, 7, 12, 0.74);
+  background: var(--fit-color-field);
   color-scheme: dark;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
 }
 
 .cardSettingsGrid button {
   min-height: 31px;
   align-self: end;
-  border: 1px solid rgba(101, 160, 253, 0.3);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 7px;
-  color: #dfeaff;
-  background: rgba(101, 160, 253, 0.1);
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
   font: inherit;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -441,8 +441,8 @@
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 50%;
   color: var(--portfolio-accent);
-  background: rgba(101, 160, 253, 0.08);
-  font-size: 0.7rem;
+  background: var(--fit-color-accent-soft);
+  font-size: 0.75rem;
 }
 
 .cardState strong {
@@ -453,17 +453,17 @@
   max-width: 310px;
   margin: 6px 0 0;
   color: var(--portfolio-muted);
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
 .cardState button {
   margin-top: 9px;
   border: 0;
-  color: #bcd8ff;
+  color: var(--fit-color-accent);
   background: transparent;
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -475,18 +475,13 @@
   align-content: end;
   gap: 11%;
   padding: 18px;
-  background: linear-gradient(
-    100deg,
-    transparent 15%,
-    rgba(101, 160, 253, 0.055),
-    transparent 70%
-  );
+  background: var(--fit-color-surface-soft);
   animation: pulse 1.4s ease-in-out infinite alternate;
 }
 
 .cardSkeleton span {
   height: 2px;
-  background: rgba(143, 164, 196, 0.14);
+  background: var(--fit-color-border-subtle);
 }
 
 .cardHeaderSettings input:focus-visible,
@@ -516,17 +511,6 @@
 
   .cardSettingsGrid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .cardHeader {
-    flex-wrap: wrap;
-  }
-
-  .cardHeaderSettings {
-    order: 3;
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    padding-left: 0;
   }
 
   .cardHeaderSettingsLabel {

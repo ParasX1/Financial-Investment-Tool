@@ -12,9 +12,11 @@ import {
 } from "../lib/smartTags";
 
 const TAG_KIND_CLASS: Record<SmartTagSuggestion["kind"], string> = {
-  type: "border-[#5367ff]/60 bg-[#141a3f] text-[#d5ddff]",
-  topic: "border-[#2d3342] bg-[#111318] text-[#aeb7c8]",
-  ticker: "border-[#2c5d4a]/70 bg-[#0c1c17] text-[#9ff0c8]",
+  type: "border-[var(--fit-color-accent)] bg-[var(--fit-color-surface)] text-[var(--fit-color-text-body)]",
+  topic:
+    "border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] text-[var(--fit-color-text-muted)]",
+  ticker:
+    "border-[var(--fit-color-success)] bg-[var(--fit-color-surface)] text-[var(--fit-color-success)]",
 };
 
 export function SmartTagSuggestions({
@@ -37,14 +39,14 @@ export function SmartTagSuggestions({
   return (
     <div
       className={cn(
-        "rounded-lg bg-[#101014] px-[12px] py-[10px]",
+        "rounded-lg bg-[var(--fit-color-surface)] px-[12px] py-[10px]",
         communityStyles.softBorder,
       )}
     >
       <div className="mb-[9px] flex flex-wrap items-center justify-between gap-[8px]">
         <div
           className={cn(
-            "flex items-center gap-[6px] text-[#9aa3b5]",
+            "flex items-center gap-[6px] text-[var(--fit-color-text-muted)]",
             fitType.caption,
           )}
         >
@@ -59,8 +61,8 @@ export function SmartTagSuggestions({
               "rounded-md border px-[7px] py-[2px]",
               fitType.badge,
               selected.size
-                ? "border-[#394050] bg-[#171923] text-[#c4ccdc]"
-                : "border-[#2b2f3a] bg-[#0b0b0e] text-[#858d9d]",
+                ? "border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] text-[var(--fit-color-text-body)]"
+                : "border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] text-[var(--fit-color-text-muted)]",
             )}
           >
             {selectedCountLabel}
@@ -72,7 +74,7 @@ export function SmartTagSuggestions({
               onClick={onClear}
               aria-label="Clear all selected discussion tags"
               className={cn(
-                "inline-flex h-6 touch-manipulation items-center gap-[4px] rounded-md border border-[#303340] bg-[#0c0c10] px-[7px] text-[#9aa3b5] transition-colors hover:border-[#464c5f] hover:text-[#e2e7f2]",
+                "inline-flex h-6 touch-manipulation items-center gap-[4px] rounded-md border border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] px-[7px] text-[var(--fit-color-text-muted)] transition-colors hover:border-[var(--fit-color-border-control)] hover:text-[var(--fit-color-text-strong)]",
                 fitType.badge,
                 FOCUS_VISIBLE,
               )}
@@ -114,7 +116,7 @@ export function SmartTagSuggestions({
                         TAG_KIND_CLASS[item.kind],
                         "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                       )
-                    : "border-[#303340] bg-[#0c0c10] text-[#858d9d] hover:border-[#464c5f] hover:bg-[#111218] hover:text-[#c4ccdc]",
+                    : "border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] text-[var(--fit-color-text-muted)] hover:border-[var(--fit-color-border-control)] hover:bg-[var(--fit-color-surface)] hover:text-[var(--fit-color-text-body)]",
                   "disabled:cursor-not-allowed disabled:opacity-45",
                   FOCUS_VISIBLE,
                   communityStyles.wrapAnywhere,
@@ -124,8 +126,8 @@ export function SmartTagSuggestions({
                   className={cn(
                     "grid h-4 w-4 shrink-0 place-items-center rounded-full",
                     isSelected
-                      ? "bg-white/[0.10] text-current"
-                      : "bg-white/[0.04] text-[#70798b]",
+                      ? "bg-[var(--fit-color-surface-soft)] text-current"
+                      : "bg-[var(--fit-color-surface-soft)] text-[var(--fit-color-text-muted)]",
                   )}
                   aria-hidden="true"
                 >

@@ -69,19 +69,26 @@ export function TopPicksTable({
           : null;
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3 }, pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3, pt: 1 }}>
       <Box
+        role="region"
+        aria-label="Top Picks table scroll area"
+        tabIndex={0}
         sx={{
-          bgcolor: "var(--fit-color-surface, #09090b)",
-          border:
-            "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
-          borderRadius: "0.75rem",
+          bgcolor: "var(--fit-color-surface)",
+          border: "1px solid var(--fit-color-border-subtle)",
+          borderRadius: "var(--fit-radius-panel)",
           overflow: "auto",
+          "&:focus-visible": {
+            outline: "2px solid var(--fit-color-focus-ring)",
+            outlineOffset: 2,
+          },
         }}
       >
         <Table
           stickyHeader
           size="small"
+          aria-label="Top Picks rankings"
           aria-busy={loading}
           sx={{ minWidth: 1120, borderCollapse: "separate", borderSpacing: 0 }}
         >
@@ -93,13 +100,12 @@ export function TopPicksTable({
                   align={column.align ?? "left"}
                   sx={{
                     top: 0,
-                    bgcolor: "var(--fit-color-surface-soft, #111114)",
-                    color: "#fff",
+                    bgcolor: "var(--fit-color-surface-soft)",
+                    color: "var(--fit-color-text-strong)",
                     fontWeight: "var(--fit-type-weight-semibold)",
                     fontSize: "var(--fit-type-size-body-sm)",
                     whiteSpace: "nowrap",
-                    borderBottom:
-                      "1px solid var(--fit-color-border-panel, #27272a)",
+                    borderBottom: "1px solid var(--fit-color-border-panel)",
                     py: 1.8,
                     px: 2,
                     width: column.width,
@@ -119,19 +125,18 @@ export function TopPicksTable({
                         onClick={() => onSortChange(column.key)}
                         sx={{
                           color: "inherit",
-                          "&:hover": { color: "#fff" },
-                          "&.Mui-active": { color: "#fff" },
+                          "&:hover": { color: "var(--fit-color-text-strong)" },
+                          "&.Mui-active": {
+                            color: "var(--fit-color-text-strong)",
+                          },
                           "& .MuiTableSortLabel-icon": {
-                            color:
-                              "var(--fit-color-text-label, #687184) !important",
+                            color: "var(--fit-color-text-label) !important",
                           },
                           "&.Mui-active .MuiTableSortLabel-icon": {
-                            color:
-                              "var(--fit-color-accent-strong, #65a0fd) !important",
+                            color: "var(--fit-color-accent-strong) !important",
                           },
                           "&:focus-visible": {
-                            outline:
-                              "2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))",
+                            outline: "2px solid var(--fit-color-focus-ring)",
                             outlineOffset: 2,
                           },
                         }}
@@ -154,7 +159,7 @@ export function TopPicksTable({
                   align="center"
                   role="status"
                   sx={{
-                    color: "var(--fit-color-text-muted, #8f98aa)",
+                    color: "var(--fit-color-text-muted)",
                     borderBottom: 0,
                     py: 6,
                   }}
@@ -169,8 +174,7 @@ export function TopPicksTable({
                   hover
                   sx={{
                     "&:hover td": {
-                      bgcolor:
-                        "var(--fit-color-brand-fill-hover, rgba(123, 140, 255, 0.12))",
+                      bgcolor: "var(--fit-color-brand-fill-hover)",
                     },
                   }}
                 >
@@ -181,7 +185,7 @@ export function TopPicksTable({
                         align="left"
                         sx={{
                           borderBottom:
-                            "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+                            "1px solid var(--fit-color-border-subtle)",
                           py: 2,
                           px: 2,
                         }}
@@ -249,11 +253,12 @@ function TopPicksPaginationControls({
       <Stack direction="row" gap={1} alignItems="center">
         <Typography
           variant="body2"
-          sx={{ color: "var(--fit-color-text-muted, #8f98aa)" }}
+          sx={{ color: "var(--fit-color-text-muted)" }}
         >
           Rows per page:
         </Typography>
         <Select
+          inputProps={{ "aria-label": "Top Picks rows per page" }}
           size="small"
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
@@ -275,16 +280,15 @@ function TopPicksPaginationControls({
         sx={{
           alignSelf: { xs: "center", sm: "auto" },
           "& .MuiPaginationItem-root": {
-            color: "var(--fit-color-text-body, #b9c1d0)",
+            color: "var(--fit-color-text-body)",
             borderRadius: "0.5rem",
           },
           "& .MuiPaginationItem-root.Mui-selected": {
-            bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.1))",
-            color: "#fff",
+            bgcolor: "var(--fit-color-brand-chip)",
+            color: "var(--fit-color-text-strong)",
           },
           "& .MuiPaginationItem-root:focus-visible": {
-            outline:
-              "2px solid var(--fit-color-focus-ring, rgba(123, 140, 255, 0.82))",
+            outline: "2px solid var(--fit-color-focus-ring)",
             outlineOffset: 2,
           },
         }}
@@ -318,11 +322,10 @@ function TopPicksValueCell({
       sx={{
         color:
           column.key === "symbol"
-            ? "var(--fit-color-accent-strong, #65a0fd)"
+            ? "var(--fit-color-accent-strong)"
             : valueColor(column.key, rawValue, status),
         whiteSpace: "nowrap",
-        borderBottom:
-          "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
+        borderBottom: "1px solid var(--fit-color-border-subtle)",
         py: 2,
         px: 2,
         fontWeight:

@@ -42,10 +42,7 @@ function ArticleMeta({ article }: { article: Article }) {
         {formatArticleTime(article.publishedAt)}
       </time>
       {relatedSymbols.map((symbol) => (
-        <ArticleChip
-          key={symbol}
-          title={`Story appears related to ${symbol}`}
-        >
+        <ArticleChip key={symbol} title={`Story appears related to ${symbol}`}>
           {symbol}
         </ArticleChip>
       ))}
@@ -251,14 +248,21 @@ export function EmptyArticleState({
   return (
     <section className="rounded-xl border border-[var(--fit-color-border-panel)] bg-[var(--fit-color-surface)] p-6">
       <p className={cn(fitType.eyebrow, fitText.label)}>Empty view</p>
-      <h2 className={cn("mt-2 text-white", fitType.panelTitle)}>{title}</h2>
+      <h2
+        className={cn(
+          "mt-2 text-[var(--fit-color-text-strong)]",
+          fitType.panelTitle,
+        )}
+      >
+        {title}
+      </h2>
       <p className={cn("mt-2 max-w-[38rem]", fitType.bodySm, fitText.body)}>
         {message}
       </p>
       {detail ? (
         <p
           className={cn(
-            "mt-3 max-w-[42rem] rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2",
+            "mt-3 max-w-[42rem] rounded-lg border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] px-3 py-2",
             fitType.caption,
             fitText.subtle,
           )}

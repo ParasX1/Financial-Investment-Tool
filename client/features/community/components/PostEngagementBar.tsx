@@ -27,13 +27,13 @@ interface PostEngagementBarProps {
 }
 
 const actionBase =
-  "inline-flex min-h-9 min-w-0 touch-manipulation items-center gap-[7px] rounded-md bg-white/[0.025] px-[9px] py-[5px] transition-[background-color,color,transform] duration-150 active:translate-y-px";
+  "inline-flex min-h-9 min-w-0 touch-manipulation items-center gap-[7px] rounded-md bg-[var(--fit-color-surface-soft)] px-[9px] py-[5px] transition-[background-color,color,transform] duration-150 active:translate-y-px";
 
 function actionState(active: boolean, busy = false) {
   return cn(
     active
-      ? "bg-[#171b4a] text-[#cfd8ff]"
-      : "text-[#8f98aa] hover:bg-white/[0.055] hover:text-[#f3f6ff]",
+      ? "bg-[var(--fit-color-accent-soft)] text-[var(--fit-color-accent)]"
+      : "text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
     busy ? "cursor-wait opacity-70" : "",
   );
 }

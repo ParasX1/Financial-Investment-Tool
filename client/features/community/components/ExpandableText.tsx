@@ -35,7 +35,7 @@ export function ExpandableText({
         allowedImageUrl={allowedImageUrl}
         id={contentId}
         className={cn(
-          "text-[#c4ccdc]",
+          "text-[var(--fit-color-text-body)]",
           fitType.body,
           communityStyles.wrapAnywhere,
         )}
@@ -49,7 +49,7 @@ export function ExpandableText({
             type="button"
             onClick={() => setExpanded((value) => !value)}
             className={cn(
-              "inline-flex min-h-8 touch-manipulation items-center gap-[4px] rounded-md px-[8px] py-[4px] text-[#9eb2ff] transition-colors hover:bg-white/[0.04] hover:text-[#d9e0ff]",
+              "inline-flex min-h-8 touch-manipulation items-center gap-[4px] rounded-md px-[8px] py-[4px] text-[var(--fit-color-accent)] transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-body)]",
               fitType.control,
               FOCUS_VISIBLE,
             )}

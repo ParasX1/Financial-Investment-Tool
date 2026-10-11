@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "@jest/globals";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { FitPageHeader } from "@/components/shared/FitPageHeader";
 
 const readClientSource = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), "utf8");
@@ -28,14 +31,18 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
       .join("\n");
 
     [
-      "--fit-font-family",
-      "--fit-color-page-bg",
       "--fit-color-surface",
       "--fit-color-field",
       "--fit-color-text-body",
       "--fit-color-accent-strong",
       "--fit-color-focus-ring",
     ].forEach((token) => expect(source).toContain(token));
+    const screen = readClientSource(
+      "features/top-picks/screens/TopPicksScreen.tsx",
+    );
+    expect(screen).toContain("<FitPageShell");
+    expect(screen).toContain("<FitPageContent");
+    expect(screen).toContain("<FitPageHeader");
   });
 
   it("keeps the redesigned Portfolio workspace on the shared FIT foundation", () => {
@@ -47,10 +54,17 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
       "features/portfolio/styles/PortfolioChart.module.css",
     );
 
-    expect(styles).toContain("var(--fit-page-background)");
-    expect(styles).toContain("var(--fit-font-family)");
-    expect(styles).toContain("color-scheme: dark");
-    expect(styles).toContain("min-height: 100dvh");
+    [
+      "--fit-color-text-strong",
+      "--fit-color-surface",
+      "--fit-color-accent",
+      "--fit-color-border-control",
+    ].forEach((token) => expect(styles).toContain(`var(${token})`));
+    const layout = readClientSource(
+      "components/shared/FitPageContent.module.css",
+    );
+    expect(layout).toContain("min-height: 100dvh");
+    expect(styles).not.toMatch(/--fit-color-[\w-]+\s*:/);
     expect(styles).not.toContain("#fc03d7");
   });
 
@@ -91,22 +105,48 @@ describe("Portfolio Analytics and Top Picks theme contract", () => {
     );
   });
 
-  it("renders a responsive Portfolio h1 with natural page scrolling", () => {
+  it("renders Portfolio through the shared responsive page header with natural scrolling", () => {
     const screen = readClientSource(
       "features/portfolio/screens/PortfolioScreen.tsx",
     );
     const styles = readClientSource(
       "features/portfolio/styles/PortfolioWorkspaceShell.module.css",
     );
-    const titleTag = openingTagContaining(
-      screen,
-      "Scan broadly. Investigate deeply.",
-    );
+    const headerTag = openingTagContaining(screen, 'title="Portfolio"');
 
-    expect(titleTag).toMatch(/^<h1>/);
-    expect(styles).toMatch(/\.traderHeader h1\s*\{[\s\S]*?clamp\(/);
+    expect(headerTag).toMatch(/^<FitPageHeader\b/);
+    expect(headerTag).toContain('subtitle="Scan broadly. Investigate deeply."');
+    const headerStyles = readClientSource(
+      "components/shared/FitPageHeader.module.css",
+    );
+    expect(headerStyles).toMatch(/\.title\s*\{[\s\S]*?clamp\(/);
+    expect(headerStyles).toContain("@media (max-width: 767px)");
     expect(styles).toContain("@media (max-width: 720px)");
     expect(styles).not.toMatch(/height:\s*100vh/);
+  });
+
+  it("gives shared headers one h1, readable supporting text and optional actions", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(FitPageHeader, {
+        title: "Research page",
+        subtitle: "An explanation that remains readable on narrow screens.",
+        eyebrow: "Research context",
+        actions: React.createElement(
+          "button",
+          { type: "button" },
+          "Refresh data",
+        ),
+      }),
+    );
+    expect(markup.match(/<h1\b/g)).toHaveLength(1);
+    expect(markup).toContain("Research page</h1>");
+    expect(markup).toContain("Research context");
+    expect(markup).toContain(
+      "An explanation that remains readable on narrow screens.",
+    );
+    expect(markup).toContain("var(--fit-color-text-strong)");
+    expect(markup).toContain("var(--fit-color-text-body)");
+    expect(markup).toContain('type="button">Refresh data</button>');
   });
 
   it("associates Portfolio inputs and exposes the accessible data alternative", () => {

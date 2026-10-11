@@ -3,7 +3,7 @@
   border: 1px solid var(--portfolio-border);
   border-radius: 14px;
   overflow: hidden;
-  background: rgba(7, 10, 17, 0.72);
+  background: var(--fit-color-field);
 }
 
 .dataSection summary {
@@ -23,7 +23,7 @@
   width: 100%;
   min-width: 520px;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
 }
 
 .dataTable th,
@@ -36,7 +36,7 @@
 
 .dataTable th {
   color: var(--portfolio-muted);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

@@ -6,35 +6,13 @@
   --profile-border: var(--fit-color-border-panel, #27272a);
   --profile-accent: var(--fit-color-accent-strong, #65a0fd);
   --profile-copy: var(--fit-color-text-body, #b9c1d0);
-  --profile-muted: var(--fit-color-text-muted, #8f98aa);
-}
-
-.page {
-  min-height: 100vh;
-  margin-left: var(--app-sidebar-width, 64px);
-  overflow-x: hidden;
-  background: transparent;
-  padding: 1.5rem clamp(0.75rem, 1.2vw, 1.35rem) 2rem;
-  color: #ffffff;
-  transition: margin-left 200ms ease-out;
+  --profile-muted: var(--fit-color-text-muted, var(--fit-color-text-muted));
 }
 
 .pageInner {
   width: 100%;
   min-width: 0;
   margin: 0 auto;
-}
-
-.header :global(h1) {
-  font-size: var(--fit-type-size-page-title);
-  font-weight: var(--fit-type-weight-semibold);
-  line-height: var(--fit-type-leading-heading);
-}
-
-.header :global(p) {
-  max-width: 30rem;
-  font-size: var(--fit-type-size-body);
-  line-height: var(--fit-type-leading-body);
 }
 
 .signedOutLayout {
@@ -47,7 +25,7 @@
 .panel {
   min-width: 0;
   border: 1px solid var(--profile-border);
-  border-radius: 0.5rem;
+  border-radius: var(--fit-radius-panel);
   background: var(--profile-panel);
 }
 
@@ -65,7 +43,7 @@
 }
 
 .panel:focus {
-  outline: 2px solid rgba(123, 140, 255, 0.72);
+  outline: 2px solid var(--fit-color-focus-ring);
   outline-offset: 3px;
 }
 
@@ -130,7 +108,7 @@
 }
 
 .avatarInitialsLarge {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-avatar-xl);
   font-weight: var(--fit-type-weight-bold);
   letter-spacing: 0;
@@ -145,7 +123,7 @@
 .profileDisplayName {
   margin: 0.3rem 0 0;
   overflow-wrap: anywhere;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-feature-title);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -155,7 +133,7 @@
 .profileHandle {
   margin: 0.28rem 0 0;
   overflow-wrap: anywhere;
-  color: #aab4c7;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-lg);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -164,7 +142,7 @@
 .profileEmail {
   margin: 0.65rem 0 0;
   overflow-wrap: anywhere;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-sm);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -200,25 +178,25 @@
 }
 
 .profilePrimaryAction {
-  border: 1px solid rgba(123, 140, 255, 0.62);
-  background: #5d67ff;
-  color: #ffffff;
+  border: 1px solid var(--fit-color-accent);
+  background: var(--fit-color-accent);
+  color: var(--fit-color-action-ink);
 }
 
 .profilePrimaryAction:hover {
-  background: #7079ff;
+  background: var(--fit-color-action-hover);
 }
 
 .profileSecondaryAction {
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: rgba(255, 255, 255, 0.045);
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .profileSecondaryAction:hover {
-  border-color: rgba(123, 140, 255, 0.42);
-  background: rgba(123, 140, 255, 0.12);
-  color: #ffffff;
+  border-color: var(--fit-color-focus-ring);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-strong);
 }
 
 .profilePrimaryAction:active,
@@ -240,7 +218,7 @@
   gap: 0.45rem;
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   padding-top: 0.9rem;
-  color: #8f98aa;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
@@ -260,7 +238,7 @@
 
 .settingsColumnHeader h3 {
   margin: 0.24rem 0 0;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-lg);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -296,7 +274,7 @@
 
 .panelTitle {
   margin-top: 0.35rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-panel-title);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -320,7 +298,7 @@
   border-radius: 0.65rem;
   background: rgba(246, 200, 95, 0.08);
   padding: 0.75rem 0.85rem;
-  color: #ffe7a3;
+  color: var(--fit-color-warning);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -360,7 +338,7 @@
 
 .fieldLabel {
   display: block;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -374,7 +352,7 @@
   border-radius: 0.62rem;
   background: var(--profile-field);
   padding: 0.65rem 0.75rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-body);
   font-weight: var(--fit-type-weight-regular);
   line-height: var(--fit-type-leading-control);
@@ -392,7 +370,7 @@
 
 .fieldInput:disabled {
   cursor: not-allowed;
-  background: #101013;
+  background: var(--fit-color-field);
   color: rgba(255, 255, 255, 0.48);
 }
 
@@ -413,7 +391,7 @@
 }
 
 .fieldError {
-  color: #ff9bb0;
+  color: var(--fit-color-danger);
 }
 
 .actionRow {
@@ -453,42 +431,42 @@
 }
 
 .buttonPrimary {
-  border: 1px solid rgba(111, 124, 255, 0.62);
-  background: #5d67ff;
-  color: #ffffff;
+  border: 1px solid var(--fit-color-accent);
+  background: var(--fit-color-accent);
+  color: var(--fit-color-action-ink);
 }
 
 .buttonPrimary:hover {
-  background: #7079ff;
+  background: var(--fit-color-action-hover);
 }
 
 .buttonSecondary {
   border: 1px solid rgba(132, 146, 176, 0.24);
   background: var(--profile-field);
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .buttonSecondary:hover {
-  border-color: rgba(83, 103, 255, 0.48);
-  background: rgba(83, 103, 255, 0.14);
-  color: #ffffff;
+  border-color: var(--fit-color-focus-ring);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-strong);
 }
 
 .buttonGhost {
   border: 1px solid rgba(132, 146, 176, 0.24);
   background: transparent;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .buttonGhost:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
 }
 
 .buttonWarning {
   border: 1px solid rgba(246, 200, 95, 0.45);
   background: rgba(246, 200, 95, 0.1);
-  color: #ffe7a3;
+  color: var(--fit-color-warning);
 }
 
 .buttonWarning:hover {
@@ -524,7 +502,7 @@
 
 .settingCardTitle {
   margin: 0;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-body);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -556,7 +534,7 @@
   width: 2.35rem;
   height: 2.35rem;
   place-items: center;
-  border-radius: 0.5rem;
+  border-radius: var(--fit-radius-panel);
   background: rgba(83, 103, 255, 0.1);
   color: #dbe4ff;
 }
@@ -576,7 +554,7 @@
 }
 
 .settingLabel {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
@@ -616,7 +594,7 @@
   justify-content: flex-start;
   gap: 0.15rem;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: var(--fit-radius-panel);
   background: transparent;
   padding: 0.4rem 0;
   color: var(--profile-accent);
@@ -627,7 +605,7 @@
 }
 
 .rowAction:hover {
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .rowAction:disabled {
@@ -652,13 +630,13 @@
 .statusBadgeSuccess {
   border-color: rgba(102, 224, 162, 0.34);
   background: rgba(102, 224, 162, 0.09);
-  color: #99f6c8;
+  color: var(--fit-color-success);
 }
 
 .statusBadgeWarning {
   border-color: rgba(246, 200, 95, 0.4);
   background: rgba(246, 200, 95, 0.1);
-  color: #ffe7a3;
+  color: var(--fit-color-warning);
 }
 
 .editDialog {
@@ -676,7 +654,7 @@
   border-radius: 0.72rem;
   background:
     linear-gradient(145deg, rgba(83, 103, 255, 0.08), transparent 36%), #09090b;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   box-shadow: 0 1.8rem 5rem rgba(0, 0, 0, 0.62);
 }
 
@@ -696,7 +674,7 @@
 }
 
 .editDialogTitle {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-xl);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -730,15 +708,15 @@
   height: 2.5rem;
   place-items: center;
   border: 1px solid rgba(132, 146, 176, 0.22);
-  border-radius: 0.5rem;
+  border-radius: var(--fit-radius-panel);
   background: rgba(255, 255, 255, 0.035);
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .iconButton:hover {
-  border-color: rgba(83, 103, 255, 0.48);
+  border-color: var(--fit-color-focus-ring);
   background: rgba(83, 103, 255, 0.12);
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
 }
 
 .message {
@@ -789,7 +767,7 @@
       transparent 28%
     ),
     linear-gradient(145deg, #5367ff, #2b164f);
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-2xl);
   font-weight: var(--fit-type-weight-bold);
   line-height: 1;
@@ -803,7 +781,7 @@
 .authGateTitle {
   max-width: 32rem;
   margin: 0;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-panel-title);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;

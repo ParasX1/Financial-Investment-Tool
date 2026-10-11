@@ -1,0 +1,113 @@
+{
+  "scope": "Fresh unified UI and structure review: read-only hosted checkpoint",
+  "baseline_dev": "b8fbe55c884d7d2c3ebff6e09cf58781d295d328",
+  "held_main": "c04875ef5d18d4134554fe36320bb05679125be4",
+  "hosted_project": "egjnhetinyoyrhbetbxi",
+  "mutation_acceptance": "NOT RERUN: historical 370-check acceptance retained in SECOND-PASS",
+  "fingerprint_query": "select jsonb_build_object('observed_utc',clock_timestamp(),'fingerprints',(select jsonb_agg(f order by f.name) from (select 'Users' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"Users\" t union all select 'comments' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"comments\" t union all select 'portfolio_prefs' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"portfolio_prefs\" t union all select 'post_likes' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"post_likes\" t union all select 'post_reports' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"post_reports\" t union all select 'post_saves' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"post_saves\" t union all select 'post_tickers' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"post_tickers\" t union all select 'posts' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"posts\" t union all select 'profiles' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"profiles\" t union all select 'tickers' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"tickers\" t union all select 'top_picks_prefs' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"top_picks_prefs\" t union all select 'top_picks_universe' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"top_picks_universe\" t union all select 'user_watchlist' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"public\".\"user_watchlist\" t union all select 'storage_objects' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"storage\".\"objects\" t union all select 'cleanup_tickets' as name,count(*) as rows,md5(coalesce(string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text),'')) as md5 from \"private\".\"community_image_cleanup\" t) f),'auth_users_count',(select count(*) from auth.users),'pending_cleanup',(select count(*) from private.community_image_cleanup where completed_at is null),'cleanup_errors',(select count(*) from private.community_image_cleanup where error_code is not null)) as checkpoint;",
+  "checkpoint": {
+    "fingerprints": [
+      {
+        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "name": "cleanup_tickets",
+        "rows": 0
+      },
+      {
+        "md5": "c26834cd5b968753edf0eee50285edf2",
+        "name": "comments",
+        "rows": 14
+      },
+      {
+        "md5": "23e36f2d0b51a975aac7a40421795c4c",
+        "name": "portfolio_prefs",
+        "rows": 3
+      },
+      {
+        "md5": "c985987edf5c26b0f5ca45238331423f",
+        "name": "post_likes",
+        "rows": 6
+      },
+      {
+        "md5": "371351b03e52dee73907d475fbd665c7",
+        "name": "post_reports",
+        "rows": 1
+      },
+      {
+        "md5": "8ca8451bfb6e1e59e859f6846bf0c34e",
+        "name": "post_saves",
+        "rows": 2
+      },
+      {
+        "md5": "7b967dddeffb8f69cc9dbe0a2c18dcce",
+        "name": "post_tickers",
+        "rows": 4
+      },
+      {
+        "md5": "ad24949b8e544fd0d7b9694e1fb6f08e",
+        "name": "posts",
+        "rows": 24
+      },
+      {
+        "md5": "2169295b7abc3921726adced48d81121",
+        "name": "profiles",
+        "rows": 3
+      },
+      {
+        "md5": "b2d9e86a9c3c46dba3b5105d4a1b1bdf",
+        "name": "storage_objects",
+        "rows": 8
+      },
+      {
+        "md5": "af691fd4a23f0381e861e5bcb198885e",
+        "name": "tickers",
+        "rows": 22
+      },
+      {
+        "md5": "33e778dccf655628a9e865726a202ea9",
+        "name": "top_picks_prefs",
+        "rows": 2
+      },
+      {
+        "md5": "758f00cb6847cd4dd7f50da8a79a3373",
+        "name": "top_picks_universe",
+        "rows": 708
+      },
+      {
+        "md5": "b0c1124888f79a6ea6799968a80e0677",
+        "name": "user_watchlist",
+        "rows": 8
+      },
+      {
+        "md5": "3ef5a367f9318ea205bd123e7b199555",
+        "name": "Users",
+        "rows": 10
+      }
+    ],
+    "observed_utc": "2026-10-11T14:25:30.789599+00:00",
+    "cleanup_errors": 0,
+    "pending_cleanup": 0,
+    "auth_users_count": 10
+  },
+  "comparison": "Matches fifteen fresh earlier row/object aggregates and Auth count. portfolio_prefs differs from historical SECOND-PASS before this UI round; cause unverified.",
+  "cron": {
+    "schedule": "*/5 * * * *",
+    "active": true,
+    "recorded_successes": 337,
+    "non_successes": 0,
+    "latest_success_utc": "2026-10-11T14:20:02.456118Z"
+  },
+  "production_edge": {
+    "version": 6,
+    "verify_jwt": false,
+    "authentication": "custom caller gate",
+    "sha256": "c4d85371d94cade6a3fd5bbc27302b8e8cc23e0cccd881942889c63bfd8a0e69"
+  },
+  "unverified": [
+    "Real human visual preference",
+    "Other browser engines and physical devices",
+    "Production market accuracy",
+    "Live OAuth/SMTP delivery",
+    "Physical backing bytes and CDN retention",
+    "Full backup/restore and populated engine upgrade"
+  ]
+}

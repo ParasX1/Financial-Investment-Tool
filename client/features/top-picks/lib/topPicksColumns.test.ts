@@ -23,10 +23,10 @@ describe("topPicksColumns", () => {
   });
 
   it("assigns semantic value colors by metric meaning", () => {
-    expect(valueColor("ret1y", 2)).toBe("#38d996");
-    expect(valueColor("alpha", -1)).toBe("#ff5b7c");
+    expect(valueColor("ret1y", 2)).toBe("var(--fit-color-success)");
+    expect(valueColor("alpha", -1)).toBe("var(--fit-color-danger)");
     expect(valueColor("volatility", 20)).toContain("--fit-color-text-body");
-    expect(valueColor("beta", 1.1)).toBe("#e2e7f2");
+    expect(valueColor("beta", 1.1)).toBe("var(--fit-color-text-strong)");
   });
 
   it("defines accessible metric meanings and units", () => {

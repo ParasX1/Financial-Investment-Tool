@@ -37,7 +37,7 @@ export function MarketNewsSearchBar({
           Search market news
         </label>
         <SearchRoundedIcon
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8f98aa]"
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--fit-color-text-muted)]"
           sx={{ fontSize: 21 }}
           aria-hidden="true"
         />
@@ -60,7 +60,7 @@ export function MarketNewsSearchBar({
             onClick={onClear}
             aria-label="Clear market news search"
             className={cn(
-              "absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-[#a5adbf] transition-colors hover:bg-white/[0.06] hover:text-white",
+              "absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-[var(--fit-color-text-muted)] transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
               FIT_FOCUS_VISIBLE,
             )}
           >
@@ -88,7 +88,7 @@ export function MarketNewsSearchBar({
         onClick={onRefresh}
         aria-label="Refresh market news"
         className={cn(
-          "grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-[var(--fit-color-border-subtle)] text-[#dce4ff]",
+          "grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-[var(--fit-color-border-subtle)] text-[var(--fit-color-text-body)]",
           fitButton.secondary,
           FIT_FOCUS_VISIBLE,
         )}

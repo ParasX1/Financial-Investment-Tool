@@ -132,16 +132,19 @@ export function CommentForm({
         placeholder="Add to the discussion…"
         rows={3}
         className={cn(
-          "w-full resize-none overflow-hidden rounded-md bg-[#18181b] px-[12px] py-[10px] text-[#e2e7f2]",
+          "w-full resize-none overflow-hidden rounded-md bg-[var(--fit-color-field)] px-[12px] py-[10px] text-[var(--fit-color-text-strong)]",
           fitType.bodySm,
           communityStyles.softBorder,
-          "placeholder:text-[#7f8798] focus:border-[#6f7cff]/75 focus:outline-none focus:ring-2 focus:ring-[#6f7cff]/20",
+          "placeholder:text-[var(--fit-color-text-muted)] focus:border-[var(--fit-color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--fit-color-accent)]",
         )}
       />
 
       <p
         id={commentLimitId}
-        className={cn("mt-2 text-[#8f98aa]", fitType.caption)}
+        className={cn(
+          "mt-2 text-[var(--fit-color-text-muted)]",
+          fitType.caption,
+        )}
       >
         {countCommunityCommentCharacters(text).toLocaleString("en-US")} /{" "}
         {MAX_COMMUNITY_COMMENT_BODY_CHARS.toLocaleString("en-US")} characters
@@ -150,7 +153,7 @@ export function CommentForm({
       {previewUrl ? (
         <div
           className={cn(
-            "mt-[12px] overflow-hidden rounded-md bg-black/30",
+            "mt-[12px] overflow-hidden rounded-md bg-[var(--fit-color-inner-surface)]",
             communityStyles.softBorder,
           )}
         >
@@ -183,7 +186,7 @@ export function CommentForm({
             disabled={busy || !canAttachImage}
             className={cn(
               communityUi.iconButton,
-              "h-9 w-9 text-[#8f98aa] hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+              "h-9 w-9 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
               communityUi.disabled,
               FOCUS_VISIBLE,
             )}
@@ -199,7 +202,7 @@ export function CommentForm({
               onClick={() => handleFile(null)}
               disabled={busy}
               className={cn(
-                "inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-[#c8d1e5] transition-colors hover:border-[#ff8aa3]/50 hover:text-[#ffc4d2]",
+                "inline-flex min-w-0 touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-[var(--fit-color-text-body)] transition-colors hover:border-[var(--fit-color-danger)] hover:text-[var(--fit-color-danger)]",
                 fitType.caption,
                 communityUi.disabled,
                 communityStyles.softBorder,
@@ -218,9 +221,9 @@ export function CommentForm({
           type="submit"
           disabled={busy || !text.trim() || Boolean(contentError)}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[14px] py-[8px] text-white transition-colors",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[var(--fit-color-accent)] px-[14px] py-[8px] text-[var(--fit-color-action-ink)] transition-colors",
             fitType.control,
-            "hover:bg-[#7079ff]",
+            "hover:bg-[var(--fit-color-action-hover)]",
             communityUi.disabled,
             FOCUS_VISIBLE,
           )}
@@ -234,7 +237,7 @@ export function CommentForm({
         <p
           id={commentErrorId}
           className={cn(
-            "mt-[12px] rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-[12px] py-[8px] text-[#ffd9e2]",
+            "mt-[12px] rounded-md border border-[var(--fit-color-danger)] bg-[var(--fit-color-danger-soft)] px-[12px] py-[8px] text-[var(--fit-color-danger)]",
             fitType.bodySm,
             communityStyles.wrapAnywhere,
           )}

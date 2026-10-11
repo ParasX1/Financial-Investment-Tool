@@ -103,7 +103,7 @@ export function CommunityComposer({
         <div
           className={cn(
             communityUi.avatar,
-            "h-10 w-10 bg-gradient-to-br from-[#4f63ff] to-[#7c3aed]",
+            "h-10 w-10 bg-[var(--fit-color-accent)] !text-[var(--fit-color-action-ink)]",
             fitType.avatarMd,
           )}
         >
@@ -133,7 +133,7 @@ export function CommunityComposer({
           />
           <span
             className={cn(
-              "-mt-1 block text-right text-[#7f899c]",
+              "-mt-1 block text-right text-[var(--fit-color-text-muted)]",
               fitType.caption,
             )}
             aria-label="Post title character count"
@@ -250,9 +250,9 @@ export function CommunityComposer({
           type="submit"
           disabled={creating || !canSubmit}
           className={cn(
-            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[#5d67ff] px-[16px] text-white transition-colors",
+            "inline-flex h-9 shrink-0 touch-manipulation items-center gap-2 rounded-lg bg-[var(--fit-color-accent)] px-[16px] text-[var(--fit-color-action-ink)] transition-colors",
             fitType.control,
-            "hover:bg-[#7079ff]",
+            "hover:bg-[var(--fit-color-action-hover)]",
             communityUi.disabled,
             FOCUS_VISIBLE,
           )}
@@ -263,7 +263,12 @@ export function CommunityComposer({
       </div>
 
       {!draft.postType ? (
-        <p className={cn("mt-[12px] text-[#8d95a6]", fitType.bodySm)}>
+        <p
+          className={cn(
+            "mt-[12px] text-[var(--fit-color-text-muted)]",
+            fitType.bodySm,
+          )}
+        >
           Choose a post type so readers know whether this is a question, news
           discussion, portfolio review, or analysis.
         </p>

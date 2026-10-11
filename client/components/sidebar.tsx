@@ -140,7 +140,7 @@ function SidebarItem({
             ? activeExpanded
               ? fitNav.iconActive
               : fitNav.iconActiveStandalone
-            : "bg-[#141419] text-[#8f98aa] group-hover:text-[#dce4ff]",
+            : "bg-[var(--fit-color-surface)] text-[var(--fit-color-text-muted)] group-hover:text-[var(--fit-color-text-body)]",
         ].join(" ")}
         aria-hidden="true"
       >
@@ -558,7 +558,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <a
         href={`#${skipTargetId}`}
         className={[
-          "sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[var(--fit-color-brand-start)] px-3 py-2 text-white no-underline shadow-lg",
+          "sr-only fixed left-2 top-2 z-[1100] rounded-md bg-[var(--fit-color-brand-start)] px-3 py-2 text-[var(--fit-color-action-ink)] no-underline shadow-lg",
           fitType.control,
           "focus:not-sr-only focus:no-underline",
           focusRing,
@@ -581,7 +581,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ref={sidebarRef}
         aria-label="Application navigation"
         aria-modal={compact && expanded ? true : undefined}
-        className="fixed left-0 top-0 z-[1000] flex h-screen flex-col overflow-x-hidden border-r border-[#141622] bg-[#07080a] text-[#dce4ff] shadow-[18px_0_40px_rgba(0,0,0,0.28)] transition-[width] duration-200 ease-out motion-reduce:transition-none"
+        className="fixed left-0 top-0 z-[1000] flex h-screen flex-col overflow-x-hidden border-r border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-navigation)] text-[var(--fit-color-text-body)] shadow-[18px_0_40px_rgba(0,0,0,0.28)] transition-[width] duration-200 ease-out motion-reduce:transition-none"
         role={compact && expanded ? "dialog" : undefined}
         onBlurCapture={handleBlur}
         onKeyDownCapture={trapCompactDrawerFocus}
@@ -609,7 +609,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         }}
         style={{ width: visualWidth, colorScheme: "dark" }}
       >
-        <div className="border-b border-[#141622] px-2 py-4">
+        <div className="border-b border-[var(--fit-color-border-subtle)] px-2 py-4">
           {showManualToggle ? (
             <button
               ref={manualToggleRef}
@@ -627,7 +627,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={handleManualToggle}
             >
               <span
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br from-[#14182d] via-[#151126] to-[#0f1016] text-[#8ea0ff] shadow-[inset_0_0_0_1px_rgba(123,140,255,0.16)]"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--fit-color-accent-soft)] text-[var(--fit-color-accent)]"
                 aria-hidden="true"
               >
                 {expanded ? (
@@ -677,7 +677,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {SIDEBAR_MAIN_NAV_ITEMS.map(renderNavItem)}
           </ul>
 
-          <div className="mt-auto border-t border-[#141622] pt-4">
+          <div className="mt-auto border-t border-[var(--fit-color-border-subtle)] pt-4">
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {SIDEBAR_UTILITY_NAV_ITEMS.map(renderNavItem)}
               {user ? (
@@ -685,7 +685,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     className={[
-                      "group flex min-h-[44px] w-full touch-manipulation items-center gap-3 rounded-lg py-2 text-left text-[#a5adbf] no-underline transition-[background-color,color] duration-150 hover:bg-[linear-gradient(135deg,rgba(83,103,255,0.10),rgba(124,58,237,0.12))] hover:text-[#f4f7ff] hover:no-underline",
+                      "group flex min-h-[44px] w-full touch-manipulation items-center gap-3 rounded-lg py-2 text-left text-[var(--fit-color-text-muted)] no-underline transition-[background-color,color] duration-150 hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)] hover:no-underline",
                       expanded ? "justify-start px-2" : "justify-center px-0",
                       focusRing,
                     ].join(" ")}
@@ -696,7 +696,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     aria-label="Log out"
                   >
                     <span
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[#141419] text-[#8f98aa] transition-colors duration-150 group-hover:text-[#dce4ff]"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--fit-color-surface)] text-[var(--fit-color-text-muted)] transition-colors duration-150 group-hover:text-[var(--fit-color-text-body)]"
                       aria-hidden="true"
                     >
                       <LogoutRoundedIcon sx={{ fontSize: 18 }} />

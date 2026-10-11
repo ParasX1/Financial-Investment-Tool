@@ -6,7 +6,19 @@ production cleanup worker are deployed on `egjnhetinyoyrhbetbxi` (PostgreSQL
 this project's deployed scheduler uses the same SQL ticket protocol through
 Supabase Edge, pg_cron and synchronous HTTP.
 
-## Current hosted evidence, 10 October 2026
+## Current hosted checkpoint
+
+The fresh UI/structure audit independently reconfirmed **19 ledger entries** and
+production **Edge v6**, whose retrieved handler/core retain the approved bundle
+hash below. At `2026-10-11T14:20:02.456118Z`, the active five-minute cron had
+337 recorded successful runs and zero non-successful runs. The following read-only
+checkpoint found zero cleanup tickets/errors and unchanged original row/object
+aggregates within this review. Auth/Storage mutations were not rerun in this UI
+round; the later 370-check acceptance remains historical evidence. Detailed
+boundaries and the fingerprint recipe are in
+[the fresh review](stage-readiness/UI-STRUCTURE-REVIEW.md).
+
+## Historical deployment evidence, 10 October 2026
 
 `community-image-cleanup` version 4 is ACTIVE with custom Bearer authentication
 and `verify_jwt=false`. Retrieved `index.ts` and `cleanup.mjs` exactly match the

@@ -63,7 +63,7 @@ function getMarkdownOptions(
               href={safeHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#9eb2ff] underline decoration-[#6f7cff]/50 underline-offset-4 hover:text-[#dce3ff]"
+              className="font-semibold text-[var(--fit-color-accent)] underline decoration-[var(--fit-color-accent)] underline-offset-4 hover:text-[var(--fit-color-text-body)]"
             >
               {children}
             </a>
@@ -77,7 +77,7 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"blockquote">) => (
           <blockquote
             {...props}
-            className="my-3 border-l-2 border-[#7384ff]/60 bg-white/[0.025] py-1 pl-4 text-[#b8c2d6]"
+            className="my-3 border-l-2 border-[var(--fit-color-accent)] bg-[var(--fit-color-surface-soft)] py-1 pl-4 text-[var(--fit-color-text-body)]"
           >
             {children}
           </blockquote>
@@ -92,7 +92,7 @@ function getMarkdownOptions(
           <code
             {...props}
             className={cn(
-              "rounded bg-white/[0.07] px-1.5 py-0.5 font-mono text-[0.92em] text-[#dbe2ff]",
+              "rounded bg-[var(--fit-color-surface-soft)] px-1.5 py-0.5 font-mono text-[0.92em] text-[var(--fit-color-text-body)]",
               className,
             )}
           >
@@ -115,7 +115,10 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"h2">) => (
           <h2
             {...props}
-            className={cn("mb-2 mt-5 text-[#f6f7ff]", fitType.sectionTitle)}
+            className={cn(
+              "mb-2 mt-5 text-[var(--fit-color-text-strong)]",
+              fitType.sectionTitle,
+            )}
           >
             {children}
           </h2>
@@ -128,7 +131,10 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"h3">) => (
           <h3
             {...props}
-            className={cn("mb-2 mt-4 text-[#f6f7ff]", fitType.panelTitle)}
+            className={cn(
+              "mb-2 mt-4 text-[var(--fit-color-text-strong)]",
+              fitType.panelTitle,
+            )}
           >
             {children}
           </h3>
@@ -139,7 +145,10 @@ function getMarkdownOptions(
           children,
           ...props
         }: React.ComponentPropsWithoutRef<"h4">) => (
-          <h4 {...props} className="mb-1.5 mt-4 font-semibold text-[#f2f4ff]">
+          <h4
+            {...props}
+            className="mb-1.5 mt-4 font-semibold text-[var(--fit-color-text-strong)]"
+          >
             {children}
           </h4>
         ),
@@ -149,7 +158,10 @@ function getMarkdownOptions(
           children,
           ...props
         }: React.ComponentPropsWithoutRef<"h5">) => (
-          <h5 {...props} className="mb-1 mt-3 font-semibold text-[#eef1ff]">
+          <h5
+            {...props}
+            className="mb-1 mt-3 font-semibold text-[var(--fit-color-text-strong)]"
+          >
             {children}
           </h5>
         ),
@@ -159,7 +171,10 @@ function getMarkdownOptions(
           children,
           ...props
         }: React.ComponentPropsWithoutRef<"h6">) => (
-          <h6 {...props} className="mb-1 mt-3 font-semibold text-[#e8ecfb]">
+          <h6
+            {...props}
+            className="mb-1 mt-3 font-semibold text-[var(--fit-color-text-strong)]"
+          >
             {children}
           </h6>
         ),
@@ -171,7 +186,7 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"p">) => (
           <p
             {...props}
-            className="mb-1 mt-3 font-semibold uppercase tracking-wide text-[#dfe5f7]"
+            className="mb-1 mt-3 font-semibold uppercase tracking-wide text-[var(--fit-color-text-strong)]"
           >
             {children}
           </p>
@@ -179,7 +194,10 @@ function getMarkdownOptions(
       },
       hr: {
         component: (props: React.ComponentPropsWithoutRef<"hr">) => (
-          <hr {...props} className="my-5 border-white/10" />
+          <hr
+            {...props}
+            className="my-5 border-[var(--fit-color-border-subtle)]"
+          />
         ),
       },
       img: {
@@ -191,7 +209,7 @@ function getMarkdownOptions(
           const safeSrc = normalizeAllowedUrl(src, IMAGE_PROTOCOLS);
           if (!safeSrc || safeSrc !== normalizedAllowedImage) {
             return (
-              <span className="my-2 inline-flex rounded-md border border-white/10 bg-white/[0.025] px-3 py-2 text-[#8f99ac]">
+              <span className="my-2 inline-flex rounded-md border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] px-3 py-2 text-[var(--fit-color-text-muted)]">
                 Image unavailable{alt ? `: ${alt}` : "."}
               </span>
             );
@@ -204,7 +222,7 @@ function getMarkdownOptions(
               src={safeSrc}
               alt={alt || "Discussion image"}
               loading="lazy"
-              className="my-3 max-h-[28rem] w-full rounded-lg bg-black/30 object-contain"
+              className="my-3 max-h-[28rem] w-full rounded-lg bg-[var(--fit-color-inner-surface)] object-contain"
             />
           );
         },
@@ -220,7 +238,7 @@ function getMarkdownOptions(
             checked={Boolean(checked)}
             readOnly
             disabled
-            className="mr-2 accent-[#7384ff]"
+            className="mr-2 accent-[var(--fit-color-accent)]"
           />
         ),
       },
@@ -229,7 +247,7 @@ function getMarkdownOptions(
           children,
           ...props
         }: React.ComponentPropsWithoutRef<"li">) => (
-          <li {...props} className="pl-1 marker:text-[#7888ff]">
+          <li {...props} className="pl-1 marker:text-[var(--fit-color-accent)]">
             {children}
           </li>
         ),
@@ -261,7 +279,7 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"pre">) => (
           <pre
             {...props}
-            className="my-3 overflow-x-auto rounded-lg border border-white/10 bg-[#06070a] p-3 text-sm text-[#dbe2ff]"
+            className="my-3 overflow-x-auto rounded-lg border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-field)] p-3 text-sm text-[var(--fit-color-text-body)]"
           >
             {children}
           </pre>
@@ -273,7 +291,7 @@ function getMarkdownOptions(
           ...props
         }: React.ComponentPropsWithoutRef<"table">) => (
           <div
-            className="my-3 overflow-x-auto rounded-lg border border-white/10"
+            className="my-3 overflow-x-auto rounded-lg border border-[var(--fit-color-border-subtle)]"
             role="region"
             aria-label="Scrollable table"
             tabIndex={0}
@@ -291,7 +309,7 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"td">) => (
           <td
             {...props}
-            className="border-t border-white/10 px-3 py-2 align-top"
+            className="border-t border-[var(--fit-color-border-subtle)] px-3 py-2 align-top"
           >
             {children}
           </td>
@@ -304,7 +322,7 @@ function getMarkdownOptions(
         }: React.ComponentPropsWithoutRef<"th">) => (
           <th
             {...props}
-            className="bg-white/[0.04] px-3 py-2 text-left font-semibold text-[#eef1ff]"
+            className="bg-[var(--fit-color-surface-soft)] px-3 py-2 text-left font-semibold text-[var(--fit-color-text-strong)]"
           >
             {children}
           </th>
@@ -346,7 +364,7 @@ export function MarkdownBody({
     <div
       id={id}
       className={cn(
-        "text-[#c4ccdc]",
+        "text-[var(--fit-color-text-body)]",
         fitType.body,
         communityStyles.wrapAnywhere,
         className,

@@ -2,6 +2,7 @@ import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceW
 import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import NewspaperRoundedIcon from "@mui/icons-material/NewspaperRounded";
+import { fitColors } from "@/styles/themeTokens";
 import type {
   HomeExperiencePoint,
   HomeFooterGroup,
@@ -11,7 +12,7 @@ import type {
 export const homeMetadata = {
   description:
     "Portfolio analysis, market context, and guided explanations for students and newer investors.",
-  themeColor: "#000000",
+  themeColor: fitColors.page,
   title: "FIT | Financial Investment Tool",
 } as const;
 

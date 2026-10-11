@@ -65,7 +65,7 @@ export function MarketNewsCategoryNav({
                   fitType.badge,
                   active
                     ? "border-[var(--fit-nav-active-border)] bg-[var(--fit-nav-active-bg)] text-[var(--fit-color-accent-strong)]"
-                    : "border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] text-[#a5adbf] hover:border-[#5367ff]/40 hover:text-white",
+                    : "border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] text-[var(--fit-color-text-muted)] hover:border-[var(--fit-color-accent)] hover:text-[var(--fit-color-text-strong)]",
                   FIT_FOCUS_VISIBLE,
                 )}
               >

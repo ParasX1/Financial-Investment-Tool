@@ -63,18 +63,21 @@ export function CommunityTickerField({
       </legend>
 
       {normalizedTickers.length ? (
-        <ul className="mt-1 flex min-h-8 flex-wrap gap-1.5" aria-label="Selected tickers">
+        <ul
+          className="mt-1 flex min-h-8 flex-wrap gap-1.5"
+          aria-label="Selected tickers"
+        >
           {normalizedTickers.map((ticker, index) => (
             <li
               key={ticker}
               className={cn(
-                "inline-flex min-w-0 items-center gap-1 rounded-md border border-[#2c5d4a]/70 bg-[#0c1c17] px-2 py-1 text-[#9ff0c8]",
+                "inline-flex min-w-0 items-center gap-1 rounded-md border border-[var(--fit-color-success)] bg-[var(--fit-color-field)] px-2 py-1 text-[var(--fit-color-success)]",
                 fitType.badge,
               )}
             >
               <span className={communityStyles.wrapAnywhere}>${ticker}</span>
               {index === 0 ? (
-                <span className="rounded bg-white/[0.07] px-1 text-[#b8c2d4]">
+                <span className="rounded bg-[var(--fit-color-surface-soft)] px-1 text-[var(--fit-color-text-body)]">
                   Primary
                 </span>
               ) : null}
@@ -88,7 +91,7 @@ export function CommunityTickerField({
                   )
                 }
                 className={cn(
-                  "grid h-5 w-5 shrink-0 place-items-center rounded text-[#7fbca8] hover:bg-white/[0.08] hover:text-white",
+                  "grid h-5 w-5 shrink-0 place-items-center rounded text-[var(--fit-color-success)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
                   FOCUS_VISIBLE,
                 )}
               >
@@ -130,7 +133,7 @@ export function CommunityTickerField({
           aria-label="Add ticker"
           onClick={() => addTickerValues(input)}
           className={cn(
-            "inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-[#343846] bg-[#171923] px-3 text-[#c7cfdf] hover:border-[#4a5266] hover:text-white disabled:cursor-not-allowed disabled:opacity-45",
+            "inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-[var(--fit-color-border-control)] bg-[var(--fit-color-surface)] px-3 text-[var(--fit-color-text-body)] hover:border-[var(--fit-color-border-control)] hover:text-[var(--fit-color-text-strong)] disabled:cursor-not-allowed disabled:opacity-45",
             fitType.control,
             FOCUS_VISIBLE,
           )}
@@ -142,7 +145,9 @@ export function CommunityTickerField({
 
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
         <p id={helpId} className={cn(fitType.caption, fitText.label)}>
-          <span>{normalizedTickers.length}/{MAX_COMMUNITY_TICKERS} tickers selected</span>
+          <span>
+            {normalizedTickers.length}/{MAX_COMMUNITY_TICKERS} tickers selected
+          </span>
           {normalizedTickers.length ? " · First ticker is primary." : ""}
         </p>
         {availableSuggestions.map((ticker) => (
@@ -152,7 +157,7 @@ export function CommunityTickerField({
             disabled={disabled || atLimit}
             onClick={() => addTickerValues(ticker, false)}
             className={cn(
-              "rounded-md px-1.5 py-0.5 text-[#8fa1ff] hover:bg-white/[0.04] hover:text-[#cbd4ff]",
+              "rounded-md px-1.5 py-0.5 text-[var(--fit-color-accent)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-body)]",
               fitType.caption,
               FOCUS_VISIBLE,
             )}
@@ -162,7 +167,11 @@ export function CommunityTickerField({
         ))}
       </div>
       {error ? (
-        <p id={errorId} role="alert" className={cn("mt-1 text-[#ff9eb3]", fitType.caption)}>
+        <p
+          id={errorId}
+          role="alert"
+          className={cn("mt-1 text-[var(--fit-color-danger)]", fitType.caption)}
+        >
           {error}
         </p>
       ) : null}

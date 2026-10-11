@@ -16,7 +16,7 @@ import styles from "../styles/marketNews.module.css";
 
 const toneClass = {
   negative: "text-[var(--market-news-negative)]",
-  neutral: "text-[#b9c1d0]",
+  neutral: "text-[var(--fit-color-text-muted)]",
   positive: "text-[var(--market-news-positive)]",
 } as const;
 
@@ -436,10 +436,7 @@ export function MarketNewsTickerStrip({
             disabled={!canScrollForward}
             onClick={() => scrollTickerStrip("forward")}
           >
-            <ChevronRightRoundedIcon
-              sx={{ fontSize: 20 }}
-              aria-hidden="true"
-            />
+            <ChevronRightRoundedIcon sx={{ fontSize: 20 }} aria-hidden="true" />
           </button>
         </div>
       </div>

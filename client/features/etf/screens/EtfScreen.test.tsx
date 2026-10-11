@@ -118,6 +118,7 @@ describe("EtfScreen request ownership", () => {
     expect(pending).not.toContain("Updated");
     expect(pending).toContain("Loading ETF preview for Day (1D)");
     expect(pending).toContain("hardcoded preview");
+    expect(renderer.root.findByType("main").props["aria-busy"]).toBe(true);
     await act(async () => day.reject(new Error("offline")));
     expect(textOf(renderer)).not.toContain("YEAR");
     expect(textOf(renderer)).not.toContain("Updated");
@@ -142,6 +143,7 @@ describe("EtfScreen request ownership", () => {
       "1D",
       "1D",
     ]);
+    expect(renderer.root.findByType("main").props["aria-busy"]).toBe(false);
   });
 
   it.each(["success", "error", "abort"] as const)(

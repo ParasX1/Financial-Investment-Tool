@@ -122,6 +122,16 @@ The root `package.json` is not the frontend install boundary. Run application np
 
 Do not promote a feature component into `client/components` until it has a stable, feature-neutral contract and more than one consumer.
 
+The shared FIT presentation foundation lives in `client/styles/themeTokens.ts`.
+`ThemeFoundation` emits those static tokens before client effects; `theme.ts`
+adapts them to installed MUI and global CSS carries typography/native controls.
+Use semantic roles for surfaces, text, actions and financial feedback rather than
+adding feature-specific brand palettes. `FitPageContent` owns the sidebar offset,
+page width and main landmark; `FitPageHeader` owns headings and optional actions.
+Keep feature orchestration outside these presentation components. The small
+`dialogFocus` helper handles visible Tab edges only; the installed modal retains
+initial focus, Escape and restoration.
+
 #### Feature ownership
 
 | Feature        | Owns                                                         |
@@ -174,12 +184,12 @@ Code in `client/lib` must not depend on a feature's private implementation.
 | `server/src/server.py`            | app factory and dependency composition root              |
 | `server/src/routes/`              | thin Flask blueprints: validate, call, serialize         |
 | `server/src/analytics/`           | metric contracts, calculator registry and metric service |
-| `server/src/top_picks/`           | Top Picks contracts, repository, analytics and service   |
+| `server/src/top_picks/`           | Top Picks contracts, configuration, snapshot cache, repository, analytics and service |
 | `server/src/composition/`         | construction of domain dependencies                      |
 | `server/src/compat/`              | explicitly isolated legacy compatibility                 |
 | `server/src/metrics.py`           | financial metric implementations                         |
 | `server/src/market_primitives.py` | shared market-series primitives                          |
-| `server/src/stocks.py`            | stock behavior used by current and legacy routes         |
+| `server/src/stocks.py`            | retained legacy helper, tested separately; current routes use domain services |
 | `server/src/supabase_client.py`   | backend Supabase client construction                     |
 | `server/src/utils.py`             | small backend-neutral helpers                            |
 | `server/tests/api/`               | Flask endpoint and response-contract tests               |

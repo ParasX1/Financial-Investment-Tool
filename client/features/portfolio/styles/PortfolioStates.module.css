@@ -25,7 +25,7 @@
   width: 36px;
   height: 36px;
   margin-bottom: 18px;
-  border: 2px solid rgba(101, 160, 253, 0.2);
+  border: 2px solid var(--fit-color-accent-soft);
   border-top-color: var(--portfolio-accent);
   border-radius: 50%;
   animation: portfolio-spin 900ms linear infinite;
@@ -34,7 +34,7 @@
 .stateEyebrow {
   margin: 0 0 8px;
   color: var(--portfolio-accent) !important;
-  font-size: 0.68rem !important;
+  font-size: 0.75rem !important;
   font-weight: 740;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -50,7 +50,7 @@
   max-width: 470px;
   margin: 10px 0 0;
   color: var(--portfolio-muted);
-  font-size: 0.83rem;
+  font-size: 0.9375rem;
   line-height: 1.6;
 }
 
@@ -58,9 +58,9 @@
   min-height: 38px;
   margin-top: 18px;
   padding: 0 16px;
-  border: 1px solid rgba(101, 160, 253, 0.45);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 9px;
-  color: #eaf3ff;
+  color: var(--fit-color-text-strong);
   background: var(--portfolio-accent-soft);
   font: inherit;
   font-size: 0.8rem;
@@ -69,9 +69,9 @@
 }
 
 .stateError .stateMarker {
-  border-color: rgba(255, 110, 129, 0.4);
-  color: #ff9eaa;
-  background: rgba(255, 110, 129, 0.09);
+  border-color: var(--fit-color-danger);
+  color: var(--fit-color-danger);
+  background: var(--fit-color-danger-soft);
 }
 
 @keyframes portfolio-spin {
