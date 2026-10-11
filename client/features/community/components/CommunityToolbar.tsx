@@ -28,7 +28,7 @@ export function CommunityToolbar({
   return (
     <section
       className={cn(
-        "fixed right-0 top-0 z-[850] border-b border-[#202230] bg-black/95 px-3 backdrop-blur-md sm:px-5 lg:px-6 xl:px-7",
+        "rounded-[var(--fit-radius-panel)] border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface)] p-3 sm:p-4",
         communityStyles.toolbar,
       )}
       data-community-toolbar
@@ -49,7 +49,7 @@ export function CommunityToolbar({
             Search discussions
           </label>
           <SearchRoundedIcon
-            className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[#7f8798]"
+            className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--fit-color-text-muted)]"
             sx={{ fontSize: 20 }}
             aria-hidden="true"
           />
@@ -74,7 +74,7 @@ export function CommunityToolbar({
           href={actionHref}
           onClick={onActionClick}
           className={cn(
-            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 text-white no-underline transition-colors hover:no-underline sm:px-4",
+            "inline-flex shrink-0 touch-manipulation items-center gap-2 rounded-lg px-3 no-underline transition-colors hover:no-underline sm:px-4",
             fitType.control,
             communityStyles.toolbarControl,
             actionType === "create" ? fitButton.primary : fitButton.secondary,

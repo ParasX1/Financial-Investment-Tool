@@ -3,13 +3,17 @@ import Modal from "react-bootstrap/Modal";
 import ModalBody from "react-bootstrap/ModalBody";
 import { useRouter } from "next/router";
 import { FitLogo } from "@/components/shared/FitLogo";
+import { wrapDialogTabBoundary } from "@/components/shared/dialogFocus";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage } from "../lib/authErrors";
 import {
   DEFAULT_AUTH_REDIRECT_PATH,
   getSafeAuthRedirectPath,
 } from "../lib/authRedirect";
-import { validateAuthForm } from "../lib/authValidation";
+import {
+  NEW_PASSWORD_HELPER_TEXT,
+  validateAuthForm,
+} from "../lib/authValidation";
 import type { AuthFieldErrors, AuthMode } from "../types";
 import styles from "../styles/authDialog.module.css";
 
@@ -38,7 +42,11 @@ export function AuthDialog({
   const [fieldErrors, setFieldErrors] = React.useState<AuthFieldErrors>({});
   const [error, setError] = React.useState<string | null>(null);
   const [info, setInfo] = React.useState<string | null>(null);
-  const [pending, setPending] = React.useState(false);
+  const [pendingAction, setPendingAction] = React.useState<
+    "email" | "google" | null
+  >(null);
+  const [passwordVisible, setPasswordVisible] = React.useState(false);
+  const pending = pendingAction !== null;
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
 
@@ -51,7 +59,8 @@ export function AuthDialog({
     setFieldErrors({});
     setError(null);
     setInfo(null);
-    setPending(false);
+    setPendingAction(null);
+    setPasswordVisible(false);
   }, [initialMode, show]);
 
   const updateField = (field: keyof typeof draft, value: string) => {
@@ -65,6 +74,7 @@ export function AuthDialog({
     if (pending || nextMode === mode) return;
     setMode(nextMode);
     setDraft((current) => ({ ...current, password: "" }));
+    setPasswordVisible(false);
     setFieldErrors({});
     setError(null);
     setInfo(null);
@@ -72,13 +82,14 @@ export function AuthDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (pending) return;
     const result = validateAuthForm(mode, draft);
     setFieldErrors(result.errors);
     setError(null);
     setInfo(null);
     if (Object.keys(result.errors).length > 0) return;
 
-    setPending(true);
+    setPendingAction("email");
     try {
       if (mode === "sign-in") {
         await signIn(result.values.email, result.values.password);
@@ -99,7 +110,10 @@ export function AuthDialog({
       );
       if (status === "verify-email") {
         setDraft((current) => ({ ...current, password: "" }));
-        setInfo("Check your inbox for a confirmation link, then return to continue.");
+        setPasswordVisible(false);
+        setInfo(
+          "Check your inbox for a confirmation link, then return to continue.",
+        );
         return;
       }
       onHide();
@@ -107,19 +121,20 @@ export function AuthDialog({
     } catch (authError) {
       setError(getAuthErrorMessage(authError, mode));
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    if (pending) return;
     setError(null);
     setInfo(null);
-    setPending(true);
+    setPendingAction("google");
     try {
       await signInWithGoogle(getSafeAuthRedirectPath(redirectTo));
     } catch (authError) {
       setError(getAuthErrorMessage(authError, "oauth"));
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
@@ -133,6 +148,8 @@ export function AuthDialog({
     <Modal
       show={show}
       onHide={pending ? undefined : onHide}
+      keyboard={!pending}
+      backdrop={pending ? "static" : true}
       centered
       restoreFocus
       aria-labelledby="auth-dialog-title"
@@ -142,7 +159,7 @@ export function AuthDialog({
       backdropClassName={styles.authBackdrop}
       animation={false}
     >
-      <ModalBody className={styles.authBody}>
+      <ModalBody className={styles.authBody} onKeyDown={wrapDialogTabBoundary}>
         <button
           type="button"
           className={styles.closeButton}
@@ -150,103 +167,200 @@ export function AuthDialog({
           disabled={pending}
           onClick={onHide}
         >
-          <span aria-hidden="true">x</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
-        <FitLogo className={styles.authLogo} showWordmark size="small" />
+        <aside className={styles.contextPanel} aria-label="Your FIT workspace">
+          <FitLogo className={styles.authLogo} showWordmark size="small" />
+          <div className={styles.contextIntro}>
+            <p className={styles.eyebrow}>
+              Research. Perspective. Possibility.
+            </p>
+            <p className={styles.contextTitle}>
+              A clearer view of your next idea.
+            </p>
+            <p className={styles.contextDescription}>
+              Bring your market research, watchlists and portfolios into one
+              workspace.
+            </p>
+          </div>
+          <ol className={styles.contextList}>
+            <li>
+              <span aria-hidden="true">01</span>
+              <div>
+                <strong>Follow the market</strong>
+                <p>Quotes, news and company research.</p>
+              </div>
+            </li>
+            <li>
+              <span aria-hidden="true">02</span>
+              <div>
+                <strong>Keep your perspective</strong>
+                <p>Your watchlists and portfolios, together.</p>
+              </div>
+            </li>
+            <li>
+              <span aria-hidden="true">03</span>
+              <div>
+                <strong>Explore your next move</strong>
+                <p>A place to compare and develop your ideas.</p>
+              </div>
+            </li>
+          </ol>
+          <p className={styles.contextFooter}>Financial Investment Tool</p>
+        </aside>
 
-        <div className={styles.modeTabs} role="group" aria-label="Account access">
-          <button
-            type="button"
-            className={styles.modeTab}
-            aria-pressed={!isSignUp}
-            disabled={pending}
-            onClick={() => selectMode("sign-in")}
+        <section className={styles.formPanel}>
+          <div
+            className={styles.modeTabs}
+            role="group"
+            aria-label="Account access"
           >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className={styles.modeTab}
-            aria-pressed={isSignUp}
-            disabled={pending}
-            onClick={() => selectMode("sign-up")}
+            <button
+              type="button"
+              className={styles.modeTab}
+              aria-pressed={!isSignUp}
+              disabled={pending}
+              onClick={() => selectMode("sign-in")}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={styles.modeTab}
+              aria-pressed={isSignUp}
+              disabled={pending}
+              onClick={() => selectMode("sign-up")}
+            >
+              Create account
+            </button>
+          </div>
+
+          <header className={styles.intro}>
+            <p className={styles.eyebrow}>
+              {isSignUp ? "Get started" : "Your workspace"}
+            </p>
+            <h2 id="auth-dialog-title" className={styles.title}>
+              {title}
+            </h2>
+            <p id="auth-dialog-description" className={styles.subtitle}>
+              {subtitle}
+            </p>
+          </header>
+
+          <form
+            key={mode}
+            onSubmit={handleSubmit}
+            noValidate
+            aria-busy={pending}
           >
-            Create account
-          </button>
-        </div>
+            {isSignUp ? (
+              <div className={styles.nameGrid}>
+                <AuthField
+                  autoComplete="given-name"
+                  autoFocus
+                  error={fieldErrors.firstName}
+                  disabled={pending}
+                  id="auth-first-name"
+                  label="First name"
+                  maxLength={80}
+                  value={draft.firstName}
+                  onChange={(value) => updateField("firstName", value)}
+                />
+                <AuthField
+                  autoComplete="family-name"
+                  error={fieldErrors.lastName}
+                  disabled={pending}
+                  id="auth-last-name"
+                  label="Last name"
+                  maxLength={80}
+                  value={draft.lastName}
+                  onChange={(value) => updateField("lastName", value)}
+                />
+              </div>
+            ) : null}
 
-        <header className={styles.intro}>
-          <h2 id="auth-dialog-title" className={styles.title}>{title}</h2>
-          <p id="auth-dialog-description" className={styles.subtitle}>{subtitle}</p>
-        </header>
+            <AuthField
+              autoComplete="email"
+              autoFocus={!isSignUp}
+              error={fieldErrors.email}
+              disabled={pending}
+              id="auth-email"
+              label="Email address"
+              maxLength={254}
+              type="email"
+              value={draft.email}
+              onChange={(value) => updateField("email", value)}
+            />
+            <AuthField
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+              description={isSignUp ? NEW_PASSWORD_HELPER_TEXT : undefined}
+              disabled={pending}
+              error={fieldErrors.password}
+              id="auth-password"
+              label="Password"
+              maxLength={128}
+              type="password"
+              passwordVisible={passwordVisible}
+              onTogglePassword={() => setPasswordVisible((current) => !current)}
+              value={draft.password}
+              onChange={(value) => updateField("password", value)}
+            />
 
-        <form onSubmit={handleSubmit} noValidate>
-          {isSignUp ? (
-            <div className={styles.nameGrid}>
-              <AuthField
-                autoComplete="given-name"
-                autoFocus
-                error={fieldErrors.firstName}
-                id="auth-first-name"
-                label="First name"
-                maxLength={80}
-                value={draft.firstName}
-                onChange={(value) => updateField("firstName", value)}
-              />
-              <AuthField
-                autoComplete="family-name"
-                error={fieldErrors.lastName}
-                id="auth-last-name"
-                label="Last name"
-                maxLength={80}
-                value={draft.lastName}
-                onChange={(value) => updateField("lastName", value)}
-              />
+            {error ? (
+              <p className={styles.errorMessage} role="alert">
+                {error}
+              </p>
+            ) : null}
+            {info ? (
+              <div className={styles.confirmationMessage}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M3 5h18v14H3zM3 5l9 7 9-7" />
+                </svg>
+                <div>
+                  <h3>Confirm your email</h3>
+                  <p className={styles.successMessage} role="status">
+                    {info}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={pending}
+            >
+              {pendingAction === "email"
+                ? isSignUp
+                  ? "Creating account..."
+                  : "Signing in..."
+                : isSignUp
+                  ? "Create account"
+                  : "Sign in"}
+            </button>
+            <div className={styles.divider} aria-hidden="true">
+              <span>or</span>
             </div>
+            <button
+              type="button"
+              className={styles.googleButton}
+              disabled={pending}
+              onClick={handleGoogleSignIn}
+            >
+              <GoogleIcon />
+              {pendingAction === "google"
+                ? "Connecting to Google..."
+                : "Continue with Google"}
+            </button>
+          </form>
+          {pendingAction === "google" ? (
+            <p className={styles.pendingMessage} role="status">
+              Opening Google sign-in. Complete the next step to continue.
+            </p>
           ) : null}
-
-          <AuthField
-            autoComplete="email"
-            autoFocus={!isSignUp}
-            error={fieldErrors.email}
-            id="auth-email"
-            label="Email address"
-            maxLength={254}
-            type="email"
-            value={draft.email}
-            onChange={(value) => updateField("email", value)}
-          />
-          <AuthField
-            autoComplete={isSignUp ? "new-password" : "current-password"}
-            description={isSignUp ? "Use at least 8 characters." : undefined}
-            error={fieldErrors.password}
-            id="auth-password"
-            label="Password"
-            maxLength={128}
-            type="password"
-            value={draft.password}
-            onChange={(value) => updateField("password", value)}
-          />
-
-          {error ? <p className={styles.errorMessage} role="alert">{error}</p> : null}
-          {info ? <p className={styles.successMessage} role="status">{info}</p> : null}
-
-          <button type="submit" className={styles.primaryButton} disabled={pending}>
-            {pending
-              ? isSignUp ? "Creating account..." : "Signing in..."
-              : isSignUp ? "Create account" : "Sign in"}
-          </button>
-          <div className={styles.divider} aria-hidden="true"><span>or</span></div>
-          <button
-            type="button"
-            className={styles.googleButton}
-            disabled={pending}
-            onClick={handleGoogleSignIn}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-        </form>
+        </section>
       </ModalBody>
     </Modal>
   );
@@ -256,53 +370,93 @@ function AuthField({
   autoComplete,
   autoFocus,
   description,
+  disabled,
   error,
   id,
   label,
   maxLength,
   onChange,
+  onTogglePassword,
+  passwordVisible,
   type = "text",
   value,
 }: {
   autoComplete: string;
   autoFocus?: boolean;
   description?: string;
+  disabled: boolean;
   error?: string;
   id: string;
   label: string;
   maxLength: number;
   onChange: (value: string) => void;
+  onTogglePassword?: () => void;
+  passwordVisible?: boolean;
   type?: React.HTMLInputTypeAttribute;
   value: string;
 }) {
   const descriptionId = description ? `${id}-description` : undefined;
   const errorId = error ? `${id}-error` : undefined;
-  const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
+  const describedBy =
+    [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={styles.fieldGroup}>
-      <label className={styles.label} htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        type={type}
-        className={styles.input}
-        autoComplete={autoComplete}
-        autoFocus={autoFocus}
-        aria-describedby={describedBy}
-        aria-invalid={Boolean(error)}
-        maxLength={maxLength}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-      {description ? <p id={descriptionId} className={styles.fieldHint}>{description}</p> : null}
-      {error ? <p id={errorId} className={styles.fieldError}>{error}</p> : null}
+      <label className={styles.label} htmlFor={id}>
+        {label}
+      </label>
+      <div className={styles.inputWrap}>
+        <input
+          id={id}
+          name={id.replace("auth-", "")}
+          type={type === "password" && passwordVisible ? "text" : type}
+          className={`${styles.input} ${type === "password" ? styles.passwordInput : ""}`}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
+          disabled={disabled}
+          required
+          aria-describedby={describedBy}
+          aria-invalid={Boolean(error)}
+          maxLength={maxLength}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        {type === "password" && onTogglePassword ? (
+          <button
+            type="button"
+            className={styles.passwordToggle}
+            aria-label={passwordVisible ? "Hide password" : "Show password"}
+            aria-controls={id}
+            aria-pressed={Boolean(passwordVisible)}
+            disabled={disabled}
+            onClick={onTogglePassword}
+          >
+            {passwordVisible ? "Hide" : "Show"}
+          </button>
+        ) : null}
+      </div>
+      {description ? (
+        <p id={descriptionId} className={styles.fieldHint}>
+          {description}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={errorId} className={styles.fieldError}>
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 function GoogleIcon() {
   return (
-    <svg aria-hidden="true" className={styles.googleIcon} viewBox="0 0 24 24" focusable="false">
+    <svg
+      aria-hidden="true"
+      className={styles.googleIcon}
+      viewBox="0 0 24 24"
+      focusable="false"
+    >
       <path
         fill="currentColor"
         d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"

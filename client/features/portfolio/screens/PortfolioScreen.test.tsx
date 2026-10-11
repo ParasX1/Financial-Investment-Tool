@@ -5,6 +5,9 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/features/auth";
+import { FitPageContent } from "@/components/shared/FitPageContent";
+import { FitPageHeader } from "@/components/shared/FitPageHeader";
+import { FitPageShell } from "@/components/shared/FitPageShell";
 import { PortfolioMetricCard } from "../components/PortfolioMetricCard";
 import { PortfolioObservation } from "../components/PortfolioObservation";
 import { usePortfolioWorkspaceController } from "../hooks/usePortfolioWorkspaceController";
@@ -35,6 +38,7 @@ type TestElement = ReactElement<{
   "aria-pressed"?: boolean;
   card?: { id: string };
   children?: ReactNode;
+  actions?: ReactNode;
   onClick?: () => void;
   role?: string;
   variant?: string;
@@ -46,6 +50,7 @@ const collectElements = (node: ReactNode): TestElement[] => {
   return [
     element,
     ...Children.toArray(element.props.children).flatMap(collectElements),
+    ...Children.toArray(element.props.actions).flatMap(collectElements),
   ];
 };
 
@@ -201,8 +206,21 @@ describe("PortfolioScreen", () => {
       "frontier",
     ]);
     expect(controller.getCardProps).toHaveBeenCalledTimes(5);
-    expect(collectText(tree)).toContain("Portfolio research desk");
-    expect(collectText(tree)).toContain("Scan broadly. Investigate deeply.");
+    expect(tree.type).toBe(FitPageShell);
+    expect(tree.props).toMatchObject({
+      skipLabel: "Skip to Portfolio",
+      skipTargetId: "main-content",
+    });
+    expect(
+      elements.find((element) => element.type === FitPageContent)?.props,
+    ).toMatchObject({ density: "data" });
+    expect(
+      elements.find((element) => element.type === FitPageHeader)?.props,
+    ).toMatchObject({
+      title: "Portfolio",
+      eyebrow: "Portfolio research desk",
+      subtitle: "Scan broadly. Investigate deeply.",
+    });
 
     elements
       .find((element) => collectText(element) === "Focus")

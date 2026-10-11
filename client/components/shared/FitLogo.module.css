@@ -3,7 +3,7 @@
   min-width: 0;
   align-items: center;
   gap: 0.62rem;
-  color: #f7f9ff;
+  color: var(--fit-color-text-strong);
   font-family: var(--fit-font-family);
   font-synthesis-weight: none;
   line-height: 1;
@@ -15,23 +15,21 @@
   min-width: 2.85rem;
   min-height: 2rem;
   place-items: center;
-  background: var(--fit-logo-gradient);
-  background-clip: text;
-  color: transparent;
+  border: 1px solid var(--fit-color-accent);
+  border-radius: var(--fit-radius-control);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-accent);
   font-size: var(--fit-logo-mark-size-medium);
   font-weight: var(--fit-type-weight-bold);
   letter-spacing: 0;
   line-height: 1;
-  text-shadow: 0 0 20px var(--fit-logo-glow);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .wordmark {
   display: grid;
   min-width: 0;
   gap: 0.12rem;
-  color: #f7f9ff;
+  color: var(--fit-color-text-strong);
 }
 
 .wordmarkMain,

@@ -75,14 +75,14 @@ export function DeleteConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[1200] grid place-items-center bg-black/70 px-4"
+      className="fixed inset-0 z-[1200] grid place-items-center overflow-y-auto bg-black/70 px-4 py-4"
       role="presentation"
       onKeyDown={handleKeyDown}
     >
       <div
         ref={dialogRef}
         className={cn(
-          "w-full max-w-[420px] rounded-xl bg-[#09090b] p-5 text-white shadow-2xl",
+          "w-full max-w-[420px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[var(--fit-radius-panel)] bg-[var(--fit-color-surface)] p-5 text-[var(--fit-color-text-strong)] shadow-2xl",
           communityStyles.panelBorder,
         )}
         role="dialog"
@@ -95,7 +95,10 @@ export function DeleteConfirmDialog({
         </h2>
         <p
           id={descriptionId}
-          className={cn("mt-2 text-[#c4ccdc]", fitType.bodySm)}
+          className={cn(
+            "mt-2 text-[var(--fit-color-text-body)]",
+            fitType.bodySm,
+          )}
         >
           {pending.message}
         </p>
@@ -107,7 +110,7 @@ export function DeleteConfirmDialog({
             onClick={onCancel}
             disabled={busy}
             className={cn(
-              "rounded-lg px-4 py-2 text-[#c4ccdc] transition-colors hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-50",
+              "rounded-lg px-4 py-2 text-[var(--fit-color-text-body)] transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)] disabled:cursor-not-allowed disabled:opacity-50",
               fitType.control,
               FOCUS_VISIBLE,
             )}
@@ -119,7 +122,7 @@ export function DeleteConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
             className={cn(
-              "rounded-lg bg-[#ff3d68] px-4 py-2 text-white transition-colors hover:bg-[#ff5b7c] disabled:cursor-not-allowed disabled:opacity-50",
+              "rounded-lg bg-[var(--fit-color-danger)] px-4 py-2 text-[var(--fit-color-action-ink)] transition-colors hover:bg-[var(--fit-color-danger)] disabled:cursor-not-allowed disabled:opacity-50",
               fitType.control,
               FOCUS_VISIBLE,
             )}

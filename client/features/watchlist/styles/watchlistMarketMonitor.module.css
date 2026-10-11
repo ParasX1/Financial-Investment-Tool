@@ -2,9 +2,9 @@
   margin-top: 1.5rem;
   overflow: hidden;
   border: 1px solid var(--fit-color-border-subtle);
-  border-radius: 0.75rem;
+  border-radius: var(--fit-radius-panel);
   background:
-    linear-gradient(135deg, rgba(83, 103, 255, 0.08), transparent 38%),
+    linear-gradient(135deg, var(--fit-color-accent-soft), transparent 38%),
     var(--fit-color-surface);
 }
 
@@ -19,7 +19,7 @@
 
 .monitorTitle {
   margin: 0;
-  color: #fff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-xl);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -32,7 +32,6 @@
   font-size: var(--fit-type-size-body-sm);
   line-height: var(--fit-type-leading-body);
 }
-
 
 .monitorActions {
   display: flex;
@@ -68,7 +67,7 @@
 .monitorPrice {
   display: block;
   margin-top: 0.45rem;
-  color: #f2f5ff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-2xl);
   font-variant-numeric: tabular-nums;
   line-height: var(--fit-type-leading-tight);
@@ -107,10 +106,18 @@
   background: var(--fit-color-text-label);
 }
 
-.monitorStateOpen { background: #53dec7; }
-.monitorStateExtended { background: #f1be6a; }
-.monitorStateClosed { background: var(--fit-color-text-label); }
-.monitorStateUnknown { background: #ff9bb0; }
+.monitorStateOpen {
+  background: var(--fit-color-success);
+}
+.monitorStateExtended {
+  background: var(--fit-color-warning);
+}
+.monitorStateClosed {
+  background: var(--fit-color-text-label);
+}
+.monitorStateUnknown {
+  background: var(--fit-color-danger);
+}
 
 .monitorNewsLink {
   display: inline-flex;
@@ -125,7 +132,7 @@
 }
 
 .monitorNewsLink:hover {
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
 }
 
 .monitorChartCard {
@@ -150,7 +157,7 @@
 }
 
 .monitorChartHeading span:first-child {
-  color: #fff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-semibold);
 }
@@ -188,13 +195,13 @@
 
 .rangeButton:hover {
   color: var(--fit-color-text-body);
-  background: rgba(123, 140, 255, 0.09);
+  background: var(--fit-color-accent-soft);
 }
 
 .rangeButtonActive {
-  border-color: rgba(123, 140, 255, 0.42);
-  background: rgba(123, 140, 255, 0.17);
-  color: #fff;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-strong);
 }
 
 .comparisonSummaries {
@@ -228,7 +235,7 @@
 }
 
 .comparisonSummary strong {
-  color: #f2f5ff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-body-sm);
   font-variant-numeric: tabular-nums;
 }
@@ -262,10 +269,11 @@
 .partialWarning {
   margin: 0.75rem 0;
   padding: 0.65rem 0.75rem;
-  border: 1px solid rgba(241, 190, 106, 0.32);
+  border: 1px solid
+    color-mix(in srgb, var(--fit-color-warning) 32%, transparent);
   border-radius: 0.5rem;
-  background: rgba(241, 190, 106, 0.08);
-  color: #f6d79f;
+  background: color-mix(in srgb, var(--fit-color-warning) 8%, transparent);
+  color: var(--fit-color-warning);
   font-size: var(--fit-type-size-caption);
 }
 
@@ -280,13 +288,12 @@
 }
 
 .monitorChartLoading {
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(123, 140, 255, 0.08),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--fit-color-accent-soft),
+    transparent
+  );
   animation: watchlistMonitorPulse 1.6s ease-in-out infinite;
 }
 

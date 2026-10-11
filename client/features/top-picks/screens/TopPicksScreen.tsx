@@ -1,13 +1,10 @@
-import Sidebar from "@/components/sidebar";
+import { FitPageContent } from "@/components/shared/FitPageContent";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
-import { Box } from "@mui/material";
+import { FitPageShell } from "@/components/shared/FitPageShell";
 import { buildTopPicksCsv } from "../lib/topPicksCsv";
 import { TopPicksColumnsDialog } from "../components/TopPicksColumnsDialog";
 import { TopPicksTable } from "../components/TopPicksTable";
-import {
-  TopPicksStatus,
-  TopPicksToolbar,
-} from "../components/TopPicksToolbar";
+import { TopPicksStatus, TopPicksToolbar } from "../components/TopPicksToolbar";
 import { useTopPicksController } from "../hooks/useTopPicksController";
 
 export function TopPicksScreen() {
@@ -31,35 +28,13 @@ export function TopPicksScreen() {
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        bgcolor: "var(--fit-color-page-bg, #000000)",
-        color: "#fff",
-        colorScheme: "dark",
-        fontFamily: "var(--fit-font-family)",
-      }}
-    >
-      <Sidebar />
-      <Box
-        component="main"
-        id="main-content"
-        tabIndex={-1}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          pl: "var(--app-sidebar-width, 64px)",
-          background: "var(--fit-page-background)",
-          transition: "padding-left 200ms ease",
-        }}
-      >
-        <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2.5, sm: 3 } }}>
-          <FitPageHeader
-            title="Top Picks"
-            subtitle="Ranked stocks based on risk-adjusted performance metrics"
-          />
-        </Box>
+    <FitPageShell skipLabel="Skip to Top Picks" skipTargetId="main-content">
+      <FitPageContent density="data" aria-busy={controller.loading}>
+        <FitPageHeader
+          title="Top Picks"
+          subtitle="Ranked stocks based on risk-adjusted performance metrics"
+          eyebrow="Stock research"
+        />
 
         <TopPicksToolbar
           loading={controller.loading}
@@ -110,7 +85,7 @@ export function TopPicksScreen() {
           onClose={() => controller.setColumnsOpen(false)}
           onVisibleKeysChange={controller.setVisibleKeys}
         />
-      </Box>
-    </Box>
+      </FitPageContent>
+    </FitPageShell>
   );
 }

@@ -4,7 +4,18 @@ Tracking #268. This continues the original owner request to improve the actual
 FIT Supabase project, beyond the completed source/local development phase.
 Hosted updates were explicitly requested on 10 October 2026.
 
-## Current hosted status, 10 October 2026
+## Current hosted checkpoint
+
+The fresh UI/structure audit reconfirmed 19 ledger entries, production Edge v6
+with the unchanged approved bundle, owner/RLS/grant boundaries and an active
+five-minute cleanup schedule. At `2026-10-11T14:20:02.456118Z`, cron had 337
+recorded successes and zero non-successes. Read-only aggregate checks found no
+changes during this review and zero cleanup backlog/errors. This round did not
+repeat the historical real Auth/Storage mutations. See
+[the fresh review](stage-readiness/UI-STRUCTURE-REVIEW.md) for the exact recipe,
+scope, historical preference change and remaining #268 operational gates.
+
+## Historical deployment status, 10 October 2026
 
 The requested hosted schema alignment, Auth/Storage acceptance and protected
 cleanup deployment are complete on `egjnhetinyoyrhbetbxi` (PostgreSQL 17.6).

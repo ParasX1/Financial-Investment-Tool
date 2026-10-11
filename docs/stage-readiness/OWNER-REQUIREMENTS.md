@@ -9,6 +9,24 @@ research/comparison basis, and revise it when actual evidence changes a decision
 
 ## Intended outcome
 
+### Unified UI and whole-structure amendment
+
+The owner requested another fresh architecture and hosted Supabase review,
+including component reuse, shared methods and directory responsibilities across
+every layer. A substantial visual redesign is authorized. Every page, account
+dialog and feedback state should share a coherent theme; prioritize the previously
+poor sign-in/sign-up presentation. The latest explicit color requirement is to
+retain **dark/black with purple accents**. Typography and composition may improve
+while preserving financial meanings, account ownership and existing behavior.
+
+Compare alternatives and refine actual implementation using primary guidance,
+fresh reviewers, meaningful tests and native browser evidence. Technical/model
+comparisons are not human preference trials. Keep the earlier basically-usable
+scope, avoid speculative abstractions and excessive defensive code, integrate
+reviewed green PRs into DevBranch without asking again, keep main held, reconcile
+issues truthfully and open the resulting app for the owner to try. The current
+section evidence is [UI-STRUCTURE-REVIEW.md](UI-STRUCTURE-REVIEW.md).
+
 ### Second review requested on 10 October 2026
 
 The owner requested a fresh whole-product and hosted Supabase confirmation after

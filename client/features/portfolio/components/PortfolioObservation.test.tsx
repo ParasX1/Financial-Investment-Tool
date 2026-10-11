@@ -526,6 +526,7 @@ describe("PortfolioObservation", () => {
       focus: jest.fn(),
     };
     const currentTarget = {
+      ownerDocument: { activeElement: first as typeof first | typeof last },
       querySelectorAll: () => [
         first,
         disabled,
@@ -546,12 +547,14 @@ describe("PortfolioObservation", () => {
     act(() => dialog.props.onKeyDown(event));
     expect(last.focus).toHaveBeenCalledTimes(1);
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    currentTarget.ownerDocument.activeElement = last;
     act(() =>
       dialog.props.onKeyDown({ ...event, target: last, shiftKey: false }),
     );
     expect(first.focus).toHaveBeenCalledTimes(1);
     expect(event.preventDefault).toHaveBeenCalledTimes(2);
 
+    currentTarget.ownerDocument.activeElement = first;
     act(() =>
       dialog.props.onKeyDown({ ...event, target: first, shiftKey: false }),
     );

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
+import { FitPageContent } from "@/components/shared/FitPageContent";
 import { cn } from "@/components/shared/uiPrimitives";
 import { MARKET_NEWS_NAV_GROUPS } from "../data/marketNewsConfig";
 import {
@@ -39,8 +40,6 @@ import { MarketNewsSearchBar } from "./MarketNewsSearchBar";
 import { MarketNewsTickerStrip } from "./MarketNewsTickerStrip";
 import { MarketNewsViewConsole } from "./MarketNewsViewConsole";
 import styles from "../styles/marketNews.module.css";
-
-const MARKET_NEWS_CONTENT_MAX_WIDTH_PX = 1920;
 
 export function MarketNewsMain({
   onQuoteLookup,
@@ -250,129 +249,125 @@ export function MarketNewsMain({
       skipLabel="Skip to market news"
       skipTargetId="market-news-main"
     >
-      <main id="market-news-main" tabIndex={-1} className={styles.page}>
-        <div
-          className={styles.pageInner}
-          style={{ maxWidth: MARKET_NEWS_CONTENT_MAX_WIDTH_PX }}
+      <FitPageContent id="market-news-main" density="data" aria-busy={loading}>
+        <FitPageHeader
+          title="Market News"
+          eyebrow="Research / Market briefing"
+          subtitle="Scan market-moving headlines, check linked tickers, and open the original source before acting."
+          subtitleClassName="max-w-[46rem]"
+        />
+
+        <section
+          className={styles.commandPanel}
+          aria-label="Search and news categories"
         >
-          <FitPageHeader
-            title="Market News"
-            subtitle="Scan market-moving headlines, check linked tickers, and open the original source before acting."
-            subtitleClassName="max-w-[46rem]"
+          <MarketNewsSearchBar
+            draft={searchDraft}
+            searchQuery={searchQuery}
+            onClear={handleSearchClear}
+            onDraftChange={setSearchDraft}
+            onRefresh={handleRefresh}
+            onSubmit={handleSearchSubmit}
           />
 
+          <MarketNewsCategoryNav
+            activeTopicId={activeTopic.id}
+            groups={MARKET_NEWS_NAV_GROUPS}
+            onTopicChange={handleTopicChange}
+          />
+        </section>
+
+        <section className={styles.marketPanel} aria-label="Market movers">
+          <MarketNewsTickerStrip
+            dataSource={marketMovers.source}
+            loading={marketMovers.loading}
+            marketScope={activeMarketScope}
+            marketScopes={MARKET_NEWS_MARKET_SCOPES}
+            providerLabel={marketMovers.providerLabel}
+            tickers={marketMovers.tickers}
+            updatedAt={marketMovers.updatedAt}
+            warnings={marketMovers.warnings}
+            onMarketScopeChange={handleMarketScopeChange}
+          />
+        </section>
+
+        <MarketNewsViewConsole
+          activeLensLabel={activeLens.label}
+          activeSortLabel={activeSortOption.label}
+          eyebrow={displayState.eyebrow}
+          notice={displayState.coverageNotice}
+          summary={displayState.summary}
+          title={displayState.title}
+        >
+          <MarketNewsScanOrderBar
+            activeSortId={activeSortId}
+            options={MARKET_NEWS_SORT_OPTIONS}
+            onSortChange={handleSortChange}
+          />
+
+          <MarketNewsLensBar
+            activeLensId={activeLens.id}
+            options={lensOptions}
+            onLensChange={handleLensChange}
+          />
+        </MarketNewsViewConsole>
+
+        <div className={styles.mainGrid}>
           <section
-            className={styles.commandPanel}
-            aria-label="Search and news categories"
+            className="min-w-0"
+            aria-label={`${request.title} stories`}
+            aria-busy={loading || loadingOlder}
           >
-            <MarketNewsSearchBar
-              draft={searchDraft}
-              searchQuery={searchQuery}
-              onClear={handleSearchClear}
-              onDraftChange={setSearchDraft}
-              onRefresh={handleRefresh}
-              onSubmit={handleSearchSubmit}
-            />
-
-            <MarketNewsCategoryNav
-              activeTopicId={activeTopic.id}
-              groups={MARKET_NEWS_NAV_GROUPS}
-              onTopicChange={handleTopicChange}
+            <MarketNewsArticleLayout
+              articles={displayedArticles}
+              emptyState={displayState.emptyState}
+              error={error}
+              feedStatus={shownStatusValue}
+              loading={loading}
+              pagination={{
+                canLoadOlder: Boolean(meta?.hasMore && meta.nextCursor),
+                hasNextPage: pageWindow.hasNextPage,
+                hasPreviousPage: pageWindow.hasPreviousPage,
+                loading,
+                loadingOlder,
+                olderError,
+                olderNotice: olderFilterNotice,
+                pageIndex: pageWindow.pageIndex,
+                pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
+                reachedEnd: Boolean(meta && !meta.hasMore),
+                totalLoaded: visibleArticles.length,
+                onLoadOlder: handleLoadOlder,
+                onNextPage: () => handleNextPage(pageWindow.hasNextPage),
+                onPreviousPage: handlePreviousPage,
+              }}
+              providerWarning={displayState.providerWarning}
+              title={displayState.title}
             />
           </section>
 
-          <section className={styles.marketPanel} aria-label="Market movers">
-            <MarketNewsTickerStrip
-              dataSource={marketMovers.source}
-              loading={marketMovers.loading}
-              marketScope={activeMarketScope}
-              marketScopes={MARKET_NEWS_MARKET_SCOPES}
-              providerLabel={marketMovers.providerLabel}
-              tickers={marketMovers.tickers}
-              updatedAt={marketMovers.updatedAt}
-              warnings={marketMovers.warnings}
-              onMarketScopeChange={handleMarketScopeChange}
+          <div className={cn(styles.rightRail, "min-w-0")}>
+            <MarketNewsRightRail
+              authenticated={watchlist.authenticated}
+              lookupDraft={lookupDraft}
+              quoteLoading={
+                selectedScopeTicker
+                  ? marketMovers.loading
+                  : selectedLookup.loading
+              }
+              railSummary={railSummary}
+              selectedTicker={
+                quoteReferenceVisible ? selectedQuoteTicker : null
+              }
+              watchlistError={watchlist.error}
+              watchlistLoading={watchlist.loading}
+              watchlistSymbols={watchlist.symbols}
+              onLookupDraftChange={setLookupDraft}
+              onQuoteReferenceChange={handleQuoteReferenceChange}
+              onTickerNewsRequest={handleTickerNewsRequest}
             />
-          </section>
-
-          <MarketNewsViewConsole
-            activeLensLabel={activeLens.label}
-            activeSortLabel={activeSortOption.label}
-            eyebrow={displayState.eyebrow}
-            notice={displayState.coverageNotice}
-            summary={displayState.summary}
-            title={displayState.title}
-          >
-            <MarketNewsScanOrderBar
-              activeSortId={activeSortId}
-              options={MARKET_NEWS_SORT_OPTIONS}
-              onSortChange={handleSortChange}
-            />
-
-            <MarketNewsLensBar
-              activeLensId={activeLens.id}
-              options={lensOptions}
-              onLensChange={handleLensChange}
-            />
-          </MarketNewsViewConsole>
-
-          <div className={styles.mainGrid}>
-            <section
-              className="min-w-0"
-              aria-label={`${request.title} stories`}
-              aria-busy={loading || loadingOlder}
-            >
-              <MarketNewsArticleLayout
-                articles={displayedArticles}
-                emptyState={displayState.emptyState}
-                error={error}
-                feedStatus={shownStatusValue}
-                loading={loading}
-                pagination={{
-                  canLoadOlder: Boolean(meta?.hasMore && meta.nextCursor),
-                  hasNextPage: pageWindow.hasNextPage,
-                  hasPreviousPage: pageWindow.hasPreviousPage,
-                  loading,
-                  loadingOlder,
-                  olderError,
-                  olderNotice: olderFilterNotice,
-                  pageIndex: pageWindow.pageIndex,
-                  pageSize: MARKET_NEWS_TOPIC_PAGE_SIZE,
-                  reachedEnd: Boolean(meta && !meta.hasMore),
-                  totalLoaded: visibleArticles.length,
-                  onLoadOlder: handleLoadOlder,
-                  onNextPage: () => handleNextPage(pageWindow.hasNextPage),
-                  onPreviousPage: handlePreviousPage,
-                }}
-                providerWarning={displayState.providerWarning}
-                title={displayState.title}
-              />
-            </section>
-
-            <div className={cn(styles.rightRail, "min-w-0")}>
-              <MarketNewsRightRail
-                authenticated={watchlist.authenticated}
-                lookupDraft={lookupDraft}
-                quoteLoading={
-                  selectedScopeTicker
-                    ? marketMovers.loading
-                    : selectedLookup.loading
-                }
-                railSummary={railSummary}
-                selectedTicker={
-                  quoteReferenceVisible ? selectedQuoteTicker : null
-                }
-                watchlistError={watchlist.error}
-                watchlistLoading={watchlist.loading}
-                watchlistSymbols={watchlist.symbols}
-                onLookupDraftChange={setLookupDraft}
-                onQuoteReferenceChange={handleQuoteReferenceChange}
-                onTickerNewsRequest={handleTickerNewsRequest}
-              />
-            </div>
           </div>
         </div>
-      </main>
+      </FitPageContent>
     </FitPageShell>
   );
 }

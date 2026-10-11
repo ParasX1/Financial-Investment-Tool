@@ -1,38 +1,22 @@
 .shell {
-  --market-news-positive: #38d996;
-  --market-news-negative: #ff5b7c;
-  --market-news-line: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
-  --market-news-panel: var(--fit-color-surface, #09090b);
-  --market-news-panel-soft: var(--fit-color-surface-soft, #111114);
-  --market-news-text: #dce4ff;
-  --market-news-muted: #8f98aa;
-  --market-news-label-size: var(--fit-type-size-2xs);
+  --market-news-positive: var(--fit-color-success);
+  --market-news-negative: var(--fit-color-danger);
+  --market-news-line: var(--fit-color-border-subtle);
+  --market-news-panel: var(--fit-color-surface);
+  --market-news-panel-soft: var(--fit-color-surface-soft);
+  --market-news-text: var(--fit-color-text-body);
+  --market-news-muted: var(--fit-color-text-muted);
+  --market-news-label-size: var(--fit-type-size-caption);
   --market-news-copy-size: var(--fit-type-size-sm);
   --market-news-title-size: var(--fit-type-size-lg);
-}
-
-.page {
-  margin-left: var(--app-sidebar-width, 64px);
-  min-height: 100vh;
-  overflow-x: hidden;
-  background: transparent;
-  padding: 2rem clamp(0.5rem, 1vw, 1rem) 2rem;
-  color: #ffffff;
-  transition: margin-left 200ms ease-out;
-}
-
-.pageInner {
-  width: 100%;
-  min-width: 0;
-  margin: 0 auto;
 }
 
 .commandPanel,
 .marketPanel,
 .viewConsole {
   min-width: 0;
-  border: 1px solid var(--fit-color-border-panel, #27272a);
-  border-radius: 0.75rem;
+  border: 1px solid var(--fit-color-border-panel);
+  border-radius: var(--fit-radius-panel);
   background: var(--market-news-panel);
 }
 
@@ -72,11 +56,11 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.65rem;
   background: var(--market-news-panel-soft);
   padding: 0.55rem 0.65rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   text-align: left;
   transition:
     background-color 150ms ease,
@@ -85,8 +69,8 @@
 }
 
 .scopeSelectButton:hover {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: #171820;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-surface);
 }
 
 .scopeIcon {
@@ -95,10 +79,10 @@
   height: 1.7rem;
   flex-shrink: 0;
   place-items: center;
-  border: 1px solid rgba(83, 103, 255, 0.3);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 999px;
-  background: rgba(83, 103, 255, 0.1);
-  color: var(--fit-color-accent-strong, #65a0fd);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-accent-strong);
 }
 
 .scopeChevronOpen {
@@ -108,7 +92,7 @@
 .scopeShortLabel {
   display: block;
   overflow: hidden;
-  color: #8fc7ff;
+  color: var(--fit-color-accent);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -122,7 +106,7 @@
   display: block;
   overflow: hidden;
   margin-top: 0.15rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-copy-size);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -139,9 +123,9 @@
   width: min(16rem, calc(100vw - 2rem));
   max-height: min(22rem, 70vh);
   overflow-y: auto;
-  border: 1px solid var(--fit-color-border-panel, #27272a);
+  border: 1px solid var(--fit-color-border-panel);
   border-radius: 0.65rem;
-  background: #111114;
+  background: var(--fit-color-surface);
   box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
   padding: 0.35rem;
 }
@@ -156,18 +140,18 @@
   border-radius: 0.5rem;
   background: transparent;
   padding: 0.55rem 0.65rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   text-align: left;
 }
 
 .scopeMenuItem:hover,
 .scopeMenuItemActive {
-  background: rgba(83, 103, 255, 0.14);
-  color: #ffffff;
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-strong);
 }
 
 .scopeMenuShort {
-  color: #8fc7ff;
+  color: var(--fit-color-accent);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -206,10 +190,10 @@
   width: 2rem;
   height: 4.8rem;
   place-items: center;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: #dce4ff;
+  background: var(--fit-color-surface-soft);
+  color: var(--fit-color-text-body);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -218,9 +202,9 @@
 }
 
 .tickerScrollButton:hover:not(:disabled) {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: rgba(83, 103, 255, 0.12);
-  color: #ffffff;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-strong);
 }
 
 .tickerScrollButton:disabled {
@@ -236,7 +220,7 @@
   scroll-behavior: smooth;
   scroll-padding-inline: 0.35rem;
   padding: 0.05rem 0 0.35rem;
-  scrollbar-color: rgba(132, 146, 176, 0.36) transparent;
+  scrollbar-color: var(--fit-color-border-subtle) transparent;
   scrollbar-width: thin;
 }
 
@@ -250,7 +234,7 @@
 
 .tickerScroller::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(132, 146, 176, 0.36);
+  background: var(--fit-color-border-subtle);
 }
 
 .tickerCard {
@@ -261,9 +245,9 @@
   grid-template-columns: minmax(7rem, 1fr) 5.5rem;
   align-items: center;
   gap: 0.65rem;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fit-color-surface-soft);
   padding: 0.55rem 0.65rem;
 }
 
@@ -287,7 +271,7 @@
 
 .tickerLabel {
   min-width: 0;
-  color: #8fc7ff;
+  color: var(--fit-color-accent);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -298,7 +282,7 @@
 }
 
 .tickerSymbol {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -308,11 +292,11 @@
 
 .tickerSignalBadge {
   flex-shrink: 0;
-  border: 1px solid rgba(56, 217, 150, 0.28);
+  border: 1px solid var(--fit-color-success);
   border-radius: 0.35rem;
-  background: rgba(56, 217, 150, 0.1);
+  background: var(--fit-color-success-soft);
   padding: 0.04rem 0.28rem;
-  color: #dffbea;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-2xs);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -322,11 +306,11 @@
 
 .tickerStateBadge {
   flex-shrink: 0;
-  border: 1px solid rgba(143, 152, 170, 0.22);
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.35rem;
-  background: rgba(143, 152, 170, 0.08);
+  background: var(--fit-color-surface-soft);
   padding: 0.04rem 0.28rem;
-  color: #b9c1d0;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-2xs);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -336,7 +320,7 @@
 
 .tickerValue {
   margin-top: 0.12rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-title-size);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-tight);
@@ -363,34 +347,34 @@
   min-width: 0;
   align-items: center;
   justify-self: end;
-  color: var(--fit-color-text-muted, #8f98aa);
+  color: var(--fit-color-text-muted);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
 }
 
 .marketMoverStatusTime {
-  color: var(--fit-color-text-muted, #8f98aa);
+  color: var(--fit-color-text-muted);
   white-space: nowrap;
 }
 
 .providerPill {
   align-self: flex-start;
   white-space: nowrap;
-  border: 1px solid rgba(83, 103, 255, 0.3);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 0.5rem;
-  background: rgba(83, 103, 255, 0.1);
+  background: var(--fit-color-accent-soft);
   padding: 0.4rem 0.6rem;
-  color: #dbe4ff;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
 }
 
 .providerPillLoading {
-  border-color: rgba(246, 200, 95, 0.3);
-  background: rgba(246, 200, 95, 0.1);
-  color: #ffe7a3;
+  border-color: color-mix(in srgb, var(--fit-color-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--fit-color-warning) 10%, transparent);
+  color: var(--fit-color-warning);
 }
 
 .viewConsole {
@@ -415,11 +399,12 @@
 .viewNotice {
   margin-top: 0.85rem;
   max-width: 48rem;
-  border: 1px solid rgba(246, 200, 95, 0.28);
+  border: 1px solid
+    color-mix(in srgb, var(--fit-color-warning) 28%, transparent);
   border-radius: 0.65rem;
-  background: rgba(246, 200, 95, 0.08);
+  background: color-mix(in srgb, var(--fit-color-warning) 8%, transparent);
   padding: 0.65rem 0.75rem;
-  color: #ffe7a3;
+  color: var(--fit-color-warning);
   font-size: var(--market-news-copy-size);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -432,11 +417,11 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.65rem;
   background: var(--market-news-panel-soft);
   padding: 0.55rem 0.7rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   list-style: none;
   transition:
     background-color 150ms ease,
@@ -448,12 +433,12 @@
 }
 
 .feedControlsSummary:hover {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: #171820;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-surface);
 }
 
 .feedControlsTitle {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-copy-size);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -473,9 +458,9 @@
   align-items: center;
   gap: 0.32rem;
   border-radius: 999px;
-  background: rgba(83, 103, 255, 0.1);
+  background: var(--fit-color-accent-soft);
   padding: 0.25rem 0.46rem;
-  color: var(--fit-color-text-muted, #8f98aa);
+  color: var(--fit-color-text-muted);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
@@ -484,7 +469,7 @@
 .feedControlsChips strong {
   min-width: 0;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-semibold);
   text-overflow: ellipsis;
@@ -492,7 +477,7 @@
 }
 
 .feedControlsChevron {
-  color: var(--fit-color-text-muted, #8f98aa);
+  color: var(--fit-color-text-muted);
   transition: transform 150ms ease;
 }
 
@@ -536,11 +521,11 @@
 
 .scanButton {
   min-height: 2.35rem;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.6rem;
   background: var(--market-news-panel-soft);
   padding: 0.5rem 0.7rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -550,18 +535,18 @@
 }
 
 .scanButton:hover {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: #171820;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-surface);
 }
 
 .scanButtonActive {
-  border-color: rgba(83, 103, 255, 0.62);
-  background: rgba(83, 103, 255, 0.12);
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
 }
 
 .modeDescription {
   margin-top: -0.15rem;
-  color: var(--fit-color-text-muted, #8f98aa);
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-regular);
   line-height: var(--fit-type-leading-body);
@@ -581,11 +566,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.65rem;
   background: var(--market-news-panel-soft);
   padding: 0.55rem 0.65rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   text-align: left;
   transition:
     background-color 150ms ease,
@@ -594,14 +579,14 @@
 }
 
 .lensButton:hover {
-  border-color: rgba(83, 103, 255, 0.45);
-  background: #171820;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-surface);
 }
 
 .lensButtonActive {
-  border-color: rgba(83, 103, 255, 0.62);
-  background: rgba(83, 103, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--fit-color-accent-soft);
 }
 
 .lensButtonDisabled {
@@ -610,7 +595,7 @@
 }
 
 .lensButtonDisabled:hover {
-  border-color: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-color: var(--fit-color-border-subtle);
   background: var(--market-news-panel-soft);
 }
 
@@ -629,7 +614,7 @@
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.26);
   padding: 0.1rem 0.45rem;
-  color: #dbe4ff;
+  color: var(--fit-color-text-body);
   font-size: var(--market-news-label-size);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
@@ -646,16 +631,17 @@
 .rightRailPanel {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--fit-color-border-panel, #27272a);
-  border-radius: 0.75rem;
+  border: 1px solid var(--fit-color-border-panel);
+  border-radius: var(--fit-radius-panel);
   background: var(--market-news-panel);
 }
 
 .topicFeedWarning {
-  border-bottom: 1px solid rgba(246, 200, 95, 0.24);
-  background: rgba(246, 200, 95, 0.08);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--fit-color-warning) 24%, transparent);
+  background: color-mix(in srgb, var(--fit-color-warning) 8%, transparent);
   padding: 0.75rem 1rem;
-  color: #ffe7a3;
+  color: var(--fit-color-warning);
   font-size: var(--market-news-copy-size);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -673,7 +659,7 @@
 }
 
 .topicFeedTitle {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-copy-size);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -701,7 +687,7 @@
   min-width: 0;
   gap: 0.9rem;
   padding: 0.9rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   text-decoration: none;
   transition:
     background-color 150ms ease,
@@ -709,8 +695,8 @@
 }
 
 .topicArticleLink:hover {
-  background: rgba(255, 255, 255, 0.035);
-  color: #dbe4ff;
+  background: var(--fit-color-surface-soft);
+  color: var(--fit-color-text-body);
   text-decoration: none;
 }
 
@@ -730,7 +716,7 @@
 }
 
 .topicArticleTitle {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--market-news-title-size);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-heading);
@@ -747,29 +733,29 @@
 }
 
 .articleChip {
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.35rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fit-color-surface-soft);
   padding: 0.12rem 0.38rem;
-  color: #dce4ff;
+  color: var(--fit-color-text-body);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
 }
 
 .articleChip_ticker {
-  border-color: rgba(83, 103, 255, 0.3);
-  background: rgba(83, 103, 255, 0.1);
-  color: #dbe4ff;
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-body);
 }
 
 .articleChip_signal {
-  border-color: rgba(56, 217, 150, 0.25);
-  background: rgba(56, 217, 150, 0.1);
-  color: #dffbea;
+  border-color: var(--fit-color-success);
+  background: var(--fit-color-success-soft);
+  color: var(--fit-color-text-body);
 }
 
 .articleChip_neutral {
-  border-color: var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border-color: var(--fit-color-border-subtle);
 }
 
 .topicPager {
@@ -798,11 +784,11 @@
 
 .topicPagerButton {
   min-height: 2.35rem;
-  border: 1px solid rgba(132, 146, 176, 0.22);
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fit-color-surface-soft);
   padding: 0.5rem 0.8rem;
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
   font-size: var(--fit-type-size-xs);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -813,8 +799,8 @@
 }
 
 .topicPagerButton:hover:not(:disabled) {
-  border-color: rgba(83, 103, 255, 0.55);
-  background: rgba(83, 103, 255, 0.14);
+  border-color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
 }
 
 .topicPagerButton:disabled {
@@ -864,9 +850,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(83, 103, 255, 0.16),
-    rgba(255, 255, 255, 0.05)
+    var(--fit-color-surface-soft),
+    var(--fit-color-accent-soft),
+    var(--fit-color-surface-soft)
   );
   background-size: 200% 100%;
   animation: marketNewsSkeleton 1.2s ease-in-out infinite;
@@ -933,13 +919,6 @@
 }
 
 @media (min-width: 640px) {
-  .page {
-    padding-top: 2.5rem;
-    padding-right: clamp(0.75rem, 1.2vw, 1.25rem);
-    padding-bottom: 2.5rem;
-    padding-left: clamp(0.75rem, 1.2vw, 1.25rem);
-  }
-
   .commandPanel,
   .marketPanel {
     padding: 1rem;
@@ -969,10 +948,6 @@
 }
 
 @media (min-width: 1024px) {
-  .page {
-    padding-right: clamp(0.75rem, 1.1vw, 1.35rem);
-    padding-left: clamp(0.75rem, 1.1vw, 1.35rem);
-  }
 }
 
 @media (min-width: 900px) {

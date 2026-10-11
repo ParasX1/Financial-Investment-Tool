@@ -146,11 +146,11 @@ export function CommunitySidebar({
       className={cn(
         drawerOpen
           ? cn(
-              "fixed bottom-0 top-0 z-[900] overflow-y-auto bg-[#07080a] px-3 py-4 shadow-[24px_0_60px_rgba(0,0,0,0.45)]",
+              "fixed bottom-0 top-0 z-[900] overflow-y-auto bg-[var(--fit-color-surface)] px-3 py-4 shadow-[24px_0_60px_rgba(0,0,0,0.45)]",
               communityStyles.sidebarDrawer,
             )
           : compact && collapsed
-            ? cn("fixed z-[900]", communityStyles.sidebarCompactToggle)
+            ? cn("relative mb-3", communityStyles.sidebarCompactToggle)
             : "min-w-0",
         drawerOpen ? communityStyles.drawerIn : "",
         communityStyles.sidebarShell,
@@ -168,7 +168,7 @@ export function CommunitySidebar({
         aria-expanded={!collapsed}
         aria-controls="community-feed-navigation"
         className={cn(
-          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[#101014] text-[#dce4ff] transition-colors hover:bg-[#171b4a]",
+          "mb-3 flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-[var(--fit-color-surface)] text-[var(--fit-color-text-body)] transition-colors hover:bg-[var(--fit-color-surface-soft)]",
           fitType.control,
           communityStyles.sidebarToggle,
           compact && collapsed
@@ -188,7 +188,9 @@ export function CommunitySidebar({
           />
         )}
         <span className={cn(collapsed ? "sr-only" : "")}>
-          {collapsed ? "Expand navigation" : "Collapse navigation"}
+          {collapsed
+            ? "Expand community navigation"
+            : "Collapse community navigation"}
         </span>
       </button>
 
@@ -368,11 +370,11 @@ export function CommunitySidebar({
                 key={label}
                 aria-label={`${label} coming soon`}
                 className={cn(
-                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-[#697185]",
+                  "flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-[var(--fit-color-text-muted)]",
                   fitType.control,
                   drawerOpen
                     ? "bg-transparent"
-                    : "bg-white/[0.02] lg:bg-transparent",
+                    : "bg-[var(--fit-color-surface-soft)] lg:bg-transparent",
                 )}
               >
                 <Icon sx={{ fontSize: 17 }} aria-hidden="true" />

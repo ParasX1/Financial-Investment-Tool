@@ -87,14 +87,14 @@ export function ReportPostDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[1200] grid place-items-center bg-black/70 px-4"
+      className="fixed inset-0 z-[1200] grid place-items-center overflow-y-auto bg-black/70 px-4 py-4"
       role="presentation"
       onKeyDown={handleKeyDown}
     >
       <div
         ref={dialogRef}
         className={cn(
-          "w-full max-w-[480px] rounded-xl bg-[#09090b] p-5 text-white shadow-2xl",
+          "w-full max-w-[480px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[var(--fit-radius-panel)] bg-[var(--fit-color-surface)] p-5 text-[var(--fit-color-text-strong)] shadow-2xl",
           communityStyles.panelBorder,
         )}
         role="dialog"
@@ -107,14 +107,22 @@ export function ReportPostDialog({
         </h2>
         <p
           id={descriptionId}
-          className={cn("mt-2 text-[#aeb7c8]", fitType.bodySm)}
+          className={cn(
+            "mt-2 text-[var(--fit-color-text-muted)]",
+            fitType.bodySm,
+          )}
         >
           Only moderators can review the report. It will not appear publicly on
           the discussion.
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <label className={cn("block text-[#cbd3e2]", fitType.bodySm)}>
+          <label
+            className={cn(
+              "block text-[var(--fit-color-text-body)]",
+              fitType.bodySm,
+            )}
+          >
             Report reason
             <select
               ref={reasonRef}
@@ -140,7 +148,12 @@ export function ReportPostDialog({
             </select>
           </label>
 
-          <label className={cn("block text-[#cbd3e2]", fitType.bodySm)}>
+          <label
+            className={cn(
+              "block text-[var(--fit-color-text-body)]",
+              fitType.bodySm,
+            )}
+          >
             Additional details (optional)
             <textarea
               value={details}
@@ -156,7 +169,7 @@ export function ReportPostDialog({
               )}
               placeholder="Briefly explain what moderators should review."
             />
-            <span className="mt-1 block text-right text-[#7f899c]">
+            <span className="mt-1 block text-right text-[var(--fit-color-text-muted)]">
               {details.length}/500
             </span>
           </label>
@@ -167,7 +180,7 @@ export function ReportPostDialog({
               onClick={onCancel}
               disabled={busy}
               className={cn(
-                "rounded-lg px-4 py-2 text-[#c4ccdc] transition-colors hover:bg-white/[0.04] hover:text-white disabled:opacity-50",
+                "rounded-lg px-4 py-2 text-[var(--fit-color-text-body)] transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)] disabled:opacity-50",
                 fitType.control,
                 FOCUS_VISIBLE,
               )}
@@ -178,7 +191,7 @@ export function ReportPostDialog({
               type="submit"
               disabled={!reason || busy}
               className={cn(
-                "rounded-lg bg-[#5268ff] px-4 py-2 text-white transition-colors hover:bg-[#6679ff] disabled:cursor-not-allowed disabled:opacity-50",
+                "rounded-lg bg-[var(--fit-color-accent)] px-4 py-2 text-[var(--fit-color-action-ink)] transition-colors hover:bg-[var(--fit-color-action-hover)] disabled:cursor-not-allowed disabled:opacity-50",
                 fitType.control,
                 FOCUS_VISIBLE,
               )}

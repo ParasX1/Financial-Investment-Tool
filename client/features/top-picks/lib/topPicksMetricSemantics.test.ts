@@ -17,8 +17,8 @@ describe("Top Picks metric semantics", () => {
   });
 
   it("uses metric meaning rather than magnitude for visual semantics", () => {
-    expect(valueColor("ret1y", 0.02)).toBe("#38d996");
-    expect(valueColor("alpha", -0.01)).toBe("#ff5b7c");
+    expect(valueColor("ret1y", 0.02)).toBe("var(--fit-color-success)");
+    expect(valueColor("alpha", -0.01)).toBe("var(--fit-color-danger)");
     expect(valueColor("volatility", 0.2)).toContain("--fit-color-text-body");
     expect(valueColor("beta", null)).toContain("--fit-color-text-muted");
   });

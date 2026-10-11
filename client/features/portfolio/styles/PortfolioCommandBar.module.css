@@ -4,9 +4,7 @@
   z-index: 5;
   border: 1px solid var(--portfolio-border);
   border-radius: 14px;
-  background:
-    linear-gradient(105deg, rgba(101, 160, 253, 0.05), transparent 45%),
-    var(--portfolio-surface);
+  background: var(--portfolio-surface);
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.2);
 }
 
@@ -32,7 +30,7 @@
   gap: 10px;
   margin-bottom: 6px;
   color: var(--portfolio-body);
-  font-size: 0.63rem;
+  font-size: 0.75rem;
   font-weight: 740;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -57,10 +55,10 @@
 }
 
 .symbolChip {
-  border: 1px solid rgba(101, 160, 253, 0.3) !important;
-  color: #dfebff !important;
-  background: rgba(101, 160, 253, 0.13) !important;
-  height: 18px !important;
+  border: 1px solid var(--fit-color-accent) !important;
+  color: var(--fit-color-text-strong) !important;
+  background: var(--fit-color-accent-soft) !important;
+  height: 26px !important;
   font-weight: 700 !important;
 }
 
@@ -77,18 +75,18 @@
   border: 1px solid var(--portfolio-border);
   border-radius: 6px;
   color: var(--portfolio-muted);
-  background: rgba(4, 7, 12, 0.48);
+  background: var(--fit-color-field);
   font: inherit;
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   font-weight: 750;
   cursor: pointer;
 }
 
 .preset:hover,
 .presetActive {
-  border-color: rgba(101, 160, 253, 0.5);
-  color: #edf5ff;
-  background: rgba(101, 160, 253, 0.12);
+  border-color: var(--fit-color-accent);
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
 }
 
 .dateRow {
@@ -104,25 +102,18 @@
   align-items: center;
   padding: 0 1px;
   color: var(--portfolio-muted);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
 }
 
 .dateRow label,
 .inlineAssumptions label {
   display: grid;
-  gap: 3px;
-  color: var(--portfolio-muted);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
-}
-
-.dateRow label,
-.inlineAssumptions label {
   gap: 2px;
-  font-size: 0.54rem;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
   letter-spacing: 0.045em;
+  text-transform: uppercase;
 }
 
 .dateRow input,
@@ -135,10 +126,10 @@
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 7px;
   color: var(--portfolio-ink);
-  background: rgba(4, 7, 12, 0.74);
+  background: var(--fit-color-field);
   color-scheme: dark;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   line-height: var(--portfolio-command-input-height);
 }
 
@@ -146,10 +137,10 @@
   align-self: end;
   min-height: 43px;
   padding: 0 16px;
-  border: 1px solid rgba(101, 160, 253, 0.6);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 9px;
-  color: #fff;
-  background: linear-gradient(135deg, #526ce8, #3e82cd);
+  color: var(--fit-color-action-ink);
+  background: var(--fit-color-accent);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 760;
@@ -160,7 +151,7 @@
 .runButton:disabled {
   border-color: var(--portfolio-border);
   color: var(--portfolio-muted);
-  background: rgba(25, 31, 43, 0.65);
+  background: var(--fit-color-surface-soft);
   cursor: default;
 }
 
@@ -176,7 +167,7 @@
 .commandHint,
 .validationError {
   margin: 0;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
 }
 
 .commandHint {
@@ -184,7 +175,7 @@
 }
 
 .validationError {
-  color: #ff9eaa;
+  color: var(--fit-color-danger);
 }
 
 .runButton:focus-visible,
@@ -223,5 +214,18 @@
   .commandFooter {
     align-items: flex-start;
   }
+}
 
+@media (max-width: 560px) {
+  .presetRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dateRow {
+    grid-template-columns: 1fr;
+  }
+
+  .dateRow > span {
+    display: none;
+  }
 }

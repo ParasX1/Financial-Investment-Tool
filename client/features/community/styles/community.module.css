@@ -1,26 +1,30 @@
+.pageContent {
+  min-width: 0;
+}
+
 /* File purpose: Styles Community-specific layout, navigation, skeletons, dividers, and text wrapping details. */
 .noticeBorder {
-  border: 1px solid rgba(111, 124, 255, 0.28);
+  border: 1px solid var(--fit-color-accent);
 }
 
 .softBorder {
-  border: 1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12));
+  border: 1px solid var(--fit-color-border-subtle);
 }
 
 .panelBorder {
-  border: 1px solid var(--fit-color-border-control, #202230);
+  border: 1px solid var(--fit-color-border-control);
 }
 
 .inputBorder {
-  border: 1px solid #2a2b35;
+  border: 1px solid var(--fit-color-border-control);
 }
 
 .tagBorder {
-  border: 1px solid rgba(85, 111, 255, 0.56);
+  border: 1px solid var(--fit-color-accent);
 }
 
 .dividerTop {
-  border-top: 1px solid rgba(132, 146, 176, 0.12);
+  border-top: 1px solid var(--fit-color-border-subtle);
 }
 
 .wrapAnywhere {
@@ -42,12 +46,30 @@
   margin-top: 2px;
 }
 
+@media (max-width: 639px) {
+  .postCardGrid {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .postIdentityColumn {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+  }
+
+  .postAuthor {
+    min-height: 40px;
+    padding-inline-start: 54px;
+  }
+}
+
 .postMetaRail {
   display: grid;
   min-width: 0;
   gap: 12px;
   grid-column: 1 / -1;
-  border-top: 1px solid rgba(132, 146, 176, 0.12);
+  border-top: 1px solid var(--fit-color-border-subtle);
   padding-top: 12px;
 }
 
@@ -67,7 +89,7 @@
 }
 
 .postRailLabel {
-  color: var(--fit-color-text-label, #7f8798);
+  color: var(--fit-color-text-label);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -77,23 +99,23 @@
 
 .postRailTitle {
   margin-top: 3px;
-  color: #e5eaff;
+  color: var(--fit-color-text-body);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
 }
 
 .postRailEmpty {
-  border: 1px dashed rgba(132, 146, 176, 0.2);
+  border: 1px dashed var(--fit-color-border-subtle);
   border-radius: 8px;
-  color: #7f8798;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-body-sm);
   line-height: var(--fit-type-leading-body);
   padding: 10px;
 }
 
 .postRailHint {
-  color: #7f8798;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-body);
@@ -123,15 +145,15 @@
 }
 
 .signalBadgeTicker {
-  background: rgba(0, 191, 166, 0.1);
-  border: 1px solid rgba(0, 191, 166, 0.42);
-  color: #53dec7;
+  background: var(--fit-color-success-soft);
+  border: 1px solid var(--fit-color-success);
+  color: var(--fit-color-success);
 }
 
 .signalBadgeTopic {
-  background: rgba(83, 103, 255, 0.12);
-  border: 1px solid rgba(85, 111, 255, 0.46);
-  color: #adbbff;
+  background: var(--fit-color-accent-soft);
+  border: 1px solid var(--fit-color-accent);
+  color: var(--fit-color-accent);
 }
 
 .postSignalGrid {
@@ -143,14 +165,14 @@
 
 .postSignalGrid > div {
   min-width: 0;
-  border: 1px solid rgba(132, 146, 176, 0.14);
+  border: 1px solid var(--fit-color-border-subtle);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fit-color-surface-soft);
   padding: 8px;
 }
 
 .postSignalGrid dt {
-  color: #798398;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-semibold);
   letter-spacing: 0;
@@ -167,24 +189,24 @@
 }
 
 .signalTonePositive {
-  color: #53dec7;
+  color: var(--fit-color-success);
 }
 
 .signalToneWarning {
-  color: #ffca6b;
+  color: var(--fit-color-warning);
 }
 
 .signalToneInfo {
-  color: #9eb2ff;
+  color: var(--fit-color-accent);
 }
 
 .signalToneNeutral {
-  color: #d3d8e8;
+  color: var(--fit-color-text-body);
 }
 
 .postSourceLine {
   margin: -2px 0 0;
-  color: #858ea1;
+  color: var(--fit-color-text-muted);
   font-size: var(--fit-type-size-caption);
   font-weight: var(--fit-type-weight-medium);
   line-height: var(--fit-type-leading-control);
@@ -206,14 +228,11 @@
 }
 
 .toolbar {
-  left: var(--community-app-rail-width);
-  padding-bottom: var(--community-toolbar-y);
-  padding-top: var(--community-toolbar-y);
+  min-width: 0;
 }
 
 .toolbarInner {
-  max-width: var(--community-content-max-width);
-  padding-left: calc(var(--community-toolbar-control-height) + 0.75rem);
+  width: 100%;
 }
 
 .toolbarControl {
@@ -246,8 +265,6 @@
 }
 
 .sidebarCompactToggle {
-  left: calc(var(--community-app-rail-width) + 0.75rem);
-  top: var(--community-toolbar-y);
   width: var(--community-toolbar-control-height);
 }
 
@@ -258,9 +275,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(111, 124, 255, 0.14),
-    rgba(255, 255, 255, 0.05)
+    var(--fit-color-surface-soft),
+    var(--fit-color-accent-soft),
+    var(--fit-color-surface-soft)
   );
   background-size: 200% 100%;
   animation: communitySkeleton 1.2s ease-in-out infinite;
@@ -323,13 +340,9 @@
     align-self: stretch;
     align-content: start;
     border-top: 0;
-    border-left: 1px solid rgba(132, 146, 176, 0.12);
+    border-left: 1px solid var(--fit-color-border-subtle);
     padding-top: 0;
     padding-left: 20px;
-  }
-
-  .toolbarInner {
-    padding-left: 0;
   }
 }
 
@@ -350,8 +363,8 @@
   top: 12px;
   z-index: 10000;
   border-radius: 8px;
-  background: #5367ff;
-  color: #ffffff;
+  background: var(--fit-color-accent);
+  color: var(--fit-color-action-ink);
   font-size: var(--fit-type-size-body-sm);
   font-weight: var(--fit-type-weight-semibold);
   line-height: var(--fit-type-leading-control);
@@ -361,7 +374,7 @@
 }
 
 .skipLink:focus-visible {
-  outline: 2px solid rgba(147, 197, 253, 0.95);
+  outline: 2px solid var(--fit-color-accent);
   outline-offset: 3px;
   transform: translateY(0);
 }

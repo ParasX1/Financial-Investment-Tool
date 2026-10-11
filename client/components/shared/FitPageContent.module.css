@@ -1,0 +1,33 @@
+.main {
+  min-width: 0;
+  width: 100%;
+  min-height: 100dvh;
+  padding-inline-start: var(--app-sidebar-width, 64px);
+  transition: padding-inline-start 160ms ease;
+}
+.content {
+  width: 100%;
+  max-width: var(--fit-content-width);
+  margin-inline: auto;
+  padding: 30px clamp(16px, 2.2vw, 34px) 48px;
+}
+.data .content {
+  padding-top: 22px;
+}
+.main:focus-visible {
+  outline: 2px solid var(--fit-color-focus-ring);
+  outline-offset: -3px;
+}
+@media (max-width: 767px) {
+  .content {
+    padding: 18px 12px 32px;
+  }
+  .data .content {
+    padding-top: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main {
+    transition: none;
+  }
+}

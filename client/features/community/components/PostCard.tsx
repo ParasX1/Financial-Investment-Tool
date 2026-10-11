@@ -110,7 +110,7 @@ export function PostCard({
       className={cn(
         communityUi.card,
         communityStyles.primaryPanelPadding,
-        "overflow-hidden transition-colors duration-200 hover:border-[#303444]",
+        "overflow-hidden transition-colors duration-200 hover:border-[var(--fit-color-accent)]",
         communityStyles.panelBorder,
       )}
     >
@@ -129,23 +129,23 @@ export function PostCard({
         </div>
 
         <div className="min-w-0">
-          <div className="min-w-0">
+          <div className={cn("min-w-0", communityStyles.postAuthor)}>
             <div
               className={cn(
                 "flex min-w-0 flex-wrap items-center gap-x-[7px] gap-y-1",
                 fitType.bodySm,
               )}
             >
-              <span className="min-w-0 truncate font-semibold text-[#f7f8ff]">
+              <span className="min-w-0 truncate font-semibold text-[var(--fit-color-text-strong)]">
                 {post.user}
               </span>
               <span
                 aria-hidden
-                className="h-[3px] w-[3px] shrink-0 rounded-full bg-[#687184]"
+                className="h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--fit-color-text-muted)]"
               />
               <span
                 className={cn(
-                  "inline-flex items-center gap-[4px] text-[#8d95a6]",
+                  "inline-flex items-center gap-[4px] text-[var(--fit-color-text-muted)]",
                   fitType.caption,
                 )}
               >
@@ -160,7 +160,7 @@ export function PostCard({
 
           <h2
             className={cn(
-              "mt-[6px] text-[#fbfbff]",
+              "mt-[6px] text-[var(--fit-color-text-strong)]",
               fitType.panelTitle,
               communityStyles.postCopyMeasure,
               communityStyles.wrapAnywhere,
@@ -174,7 +174,7 @@ export function PostCard({
           {displayImageUrl && !hasInlineImage ? (
             <div
               className={cn(
-                "mt-[12px] overflow-hidden rounded-lg bg-black/30",
+                "mt-[12px] overflow-hidden rounded-lg bg-[var(--fit-color-inner-surface)]",
                 communityStyles.softBorder,
               )}
             >
@@ -208,7 +208,7 @@ export function PostCard({
                 type="button"
                 onClick={() => onReport(post.id)}
                 className={cn(
-                  "inline-flex min-h-8 touch-manipulation items-center gap-[6px] rounded-md px-[7px] py-[4px] text-[#7f8798] transition-[background-color,color,transform] duration-150 hover:bg-white/[0.04] hover:text-[#f3f6ff] active:translate-y-px",
+                  "inline-flex min-h-8 touch-manipulation items-center gap-[6px] rounded-md px-[7px] py-[4px] text-[var(--fit-color-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)] active:translate-y-px",
                   fitType.control,
                   FOCUS_VISIBLE,
                 )}
@@ -224,7 +224,7 @@ export function PostCard({
                   onClick={() => onDeletePost(post.id)}
                   className={cn(
                     communityUi.iconButton,
-                    "h-8 w-8 shrink-0 text-[#7f8798] transition-transform duration-150 hover:bg-[#ff3d68]/10 hover:text-[#ffc4d2] active:translate-y-px",
+                    "h-8 w-8 shrink-0 text-[var(--fit-color-text-muted)] transition-transform duration-150 hover:bg-[var(--fit-color-danger-soft)] hover:text-[var(--fit-color-danger)] active:translate-y-px",
                     FOCUS_VISIBLE,
                   )}
                   title="Delete post"
@@ -272,7 +272,7 @@ export function PostCard({
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-[#8f98aa] transition-colors hover:bg-white/[0.04] hover:text-[#f3f6ff]",
+                "inline-flex min-h-8 touch-manipulation items-center gap-[8px] rounded-md px-[8px] py-[4px] text-[var(--fit-color-text-muted)] transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
                 fitType.control,
                 FOCUS_VISIBLE,
               )}

@@ -9,7 +9,7 @@ export function CommunityNotice({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        "rounded-lg bg-[#5367ff]/10 px-4 py-3 text-[#dbe4ff]",
+        "rounded-lg bg-[var(--fit-color-accent-soft)] px-4 py-3 text-[var(--fit-color-text-body)]",
         fitType.bodySm,
         communityStyles.noticeBorder,
       )}
@@ -82,7 +82,7 @@ export function FeedbackStack({
             type="button"
             onClick={() => onDismiss(item.id)}
             className={cn(
-              "grid h-7 w-7 shrink-0 place-items-center rounded-md opacity-80 transition-colors hover:bg-white/10 hover:opacity-100",
+              "grid h-7 w-7 shrink-0 place-items-center rounded-md opacity-80 transition-colors hover:bg-[var(--fit-color-surface-soft)] hover:opacity-100",
               FOCUS_VISIBLE,
             )}
             aria-label={`Dismiss ${item.title}`}

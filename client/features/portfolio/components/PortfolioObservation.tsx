@@ -1,5 +1,6 @@
 import React from "react";
 import Modal from "@mui/material/Modal";
+import { wrapDialogTabBoundary } from "@/components/shared/dialogFocus";
 import type {
   PortfolioAnalysisInputs,
   PortfolioMetricCard,
@@ -241,47 +242,7 @@ export const PortfolioObservation = ({
   const wrapVisibleTabBoundary = (
     event: React.KeyboardEvent<HTMLDivElement>,
   ) => {
-    if (event.key !== "Tab" || event.defaultPrevented) return;
-    // MUI 5's focus trap includes CSS-hidden resize controls and controls inside
-    // closed details. Wrap only the visible edges here; Modal still owns focus
-    // enforcement, restoration, Escape, and hiding the background from AT.
-    const controls = Array.from(
-      event.currentTarget.querySelectorAll<HTMLElement>(
-        "button, input, select, textarea, a[href], summary, [tabindex]",
-      ),
-    ).filter((node) => {
-      if (
-        node.tabIndex < 0 ||
-        node.matches(":disabled") ||
-        node.getClientRects().length === 0
-      ) {
-        return false;
-      }
-      // Closed details can still expose descendant layout boxes in Chromium,
-      // but only their summary participates in native keyboard focus.
-      for (
-        let details = node.closest<HTMLDetailsElement>("details:not([open])");
-        details;
-        details =
-          details.parentElement?.closest<HTMLDetailsElement>(
-            "details:not([open])",
-          ) ?? null
-      ) {
-        if (!details.querySelector(":scope > summary")?.contains(node))
-          return false;
-      }
-      return true;
-    });
-    const first = controls[0];
-    const last = controls[controls.length - 1];
-    if (
-      (event.shiftKey && event.target === first) ||
-      (!event.shiftKey && event.target === last) ||
-      event.target === event.currentTarget
-    ) {
-      event.preventDefault();
-      (event.shiftKey ? last : first)?.focus();
-    }
+    wrapDialogTabBoundary(event, { focusFromContainer: true });
   };
 
   return (
