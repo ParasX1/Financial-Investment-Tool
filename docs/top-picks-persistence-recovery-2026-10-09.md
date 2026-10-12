@@ -40,12 +40,12 @@ Executed in the pinned Python environment, one run per fixture. Counts below
 are missing previously usable bars; the basis check compares the exact series
 with the original and fully adjusted controls.
 
-| Fixture | Blind replacement | Merge | Validated replacement |
-| --- | --- | --- | --- |
-| Missing prefix | Loses 2 bars, advances reconciliation | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
-| Missing suffix | Loses 2 bars, advances reconciliation | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
-| Interior gap | Loses 1 bar, advances reconciliation | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
-| Sparse complete control | Exact new basis | Exact new basis | Exact new basis, accepted |
+| Fixture                 | Blind replacement                     | Merge                                            | Validated replacement               |
+| ----------------------- | ------------------------------------- | ------------------------------------------------ | ----------------------------------- |
+| Missing prefix          | Loses 2 bars, advances reconciliation | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
+| Missing suffix          | Loses 2 bars, advances reconciliation | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
+| Interior gap            | Loses 1 bar, advances reconciliation  | Keeps bars, mixes bases, advances reconciliation | Retains exact old basis, no advance |
+| Sparse complete control | Exact new basis                       | Exact new basis                                  | Exact new basis, accepted           |
 
 After independent review, the same comparison was rerun against the refined
 policy: identical results, and a recent-listing control with only October 1/2
@@ -58,10 +58,10 @@ both weekly and adjustment paths and process restart.
 ## Actual checks
 
 - Initial red command: `python -m pytest
-  tests/top_picks/test_snapshot_persistence_validation.py
-  tests/top_picks/test_history.py -k 'invalid or incomplete_reconciliation or
-  sparse_calendar' -q --tb=short --basetemp=.pytest_tmp_persistence_red
-  -o cache_dir=.pytest_cache_persistence`: **34 failed, 1 passed, 25 deselected**.
+tests/top_picks/test_snapshot_persistence_validation.py
+tests/top_picks/test_history.py -k 'invalid or incomplete_reconciliation or
+sparse_calendar' -q --tb=short --basetemp=.pytest_tmp_persistence_red
+-o cache_dir=.pytest_cache_persistence`: **34 failed, 1 passed, 25 deselected**.
   Failures reproduced malformed-root AttributeError, unhashable nested keys,
   malformed values reaching pagination, and all 12 truncated reconciliations.
 - Focused initial green: cache, history, context and service tests: **105 passed**.
@@ -78,8 +78,8 @@ both weekly and adjustment paths and process restart.
   backup and atomic-file-install access failures. No assertions were weakened.
 - First unsandboxed full suite: **397 passed**. After the initial extension,
   oversized-metric and lazy-HTTP tests, pre-review `python -m pytest tests -q
-  --tb=short --basetemp=.cache/persistence-full-final
-  -o cache_dir=.pytest_cache/persistence`: **403 passed**, **2 existing
+--tb=short --basetemp=.cache/persistence-full-final
+-o cache_dir=.pytest_cache/persistence`: **403 passed**, **2 existing
   dependency deprecation warnings**, **18.23 seconds**, exit **0**. Used
   justified sandbox escalation and workspace TEMP/TMP; all data was synthetic.
 - Independent review reproduced three defects: missing pending state after
@@ -98,7 +98,7 @@ both weekly and adjustment paths and process restart.
   isolated the preexisting loss of the Series name during SQLite reload. Reload
   now restores the canonical ticker name while retaining exact price/date checks.
 - Final reviewed suite: `python -m pytest tests -q --tb=short
-  --basetemp=.cache/persistence-reviewed-full -o cache_dir=.pytest_cache/persistence`:
+--basetemp=.cache/persistence-reviewed-full -o cache_dir=.pytest_cache/persistence`:
   **423 passed**, **2 existing dependency warnings**, **16.57 seconds**, exit **0**.
   Used the same pinned environment, justified sandbox escalation and workspace
   TEMP/TMP. Compileall and complete configured flake8 also reran with exit 0.
