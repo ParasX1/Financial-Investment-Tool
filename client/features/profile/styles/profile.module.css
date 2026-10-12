@@ -63,6 +63,7 @@
   position: relative;
   display: grid;
   min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   align-content: start;
   gap: 1rem;
@@ -90,6 +91,7 @@
   position: relative;
   display: grid;
   width: clamp(8rem, 16vw, 11.5rem);
+  max-width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
   place-items: center;

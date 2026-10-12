@@ -34,10 +34,18 @@ export function HomeNavigation({
           />
         </a>
 
-        <div className={styles.navActions}>
+        <div className={styles.navLinks}>
           <a href="#product" className={styles.navExplore}>
-            Explore FIT
+            Product
           </a>
+          <Link href="/Guide" className={styles.navExplore}>
+            Guide
+          </Link>
+          <Link href="/Help" className={styles.navExplore}>
+            Help
+          </Link>
+        </div>
+        <div className={styles.navActions}>
           {signedIn ? (
             <Link href="/Portfolio" className={styles.navPrimary}>
               Open portfolio

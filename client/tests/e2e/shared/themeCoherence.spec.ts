@@ -139,7 +139,7 @@ async function expectKeyboardTableScroll(page: Page, name: string) {
 }
 
 const pages = [
-  { path: "/", heading: "See your investments in perspective." },
+  { path: "/", heading: "Understand your portfolio. See the wider market." },
   { path: "/Profile", heading: "Profile" },
   { path: "/Portfolio", heading: "Portfolio" },
   { path: "/TopPicks", heading: "Top Picks" },
@@ -160,7 +160,10 @@ test("page titles follow public navigation and browser history", async ({
   await expect(page).toHaveTitle("Help Center | FIT");
   await page.getByRole("link", { name: "FIT home", exact: true }).click();
   await expect(page).toHaveTitle("FIT | Financial Investment Tool");
-  await page.getByRole("link", { name: "Guide", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Home", exact: true })
+    .getByRole("link", { name: "Guide", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/Guide$/);
   await expect(page).toHaveTitle("Guide | FIT");
   await page.goBack();

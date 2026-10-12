@@ -8,10 +8,10 @@ describe("HomePortfolioPreview", () => {
     const markup = renderToStaticMarkup(<HomePortfolioPreview />);
 
     expect(markup).toContain('aria-labelledby="home-preview-title"');
-    expect(markup).toContain("Illustrative view");
+    expect(markup).toContain("Illustration only.");
     expect(markup).toContain("No account data or calculated results.");
-    expect(markup).toContain("Rebased return");
-    expect(markup).toContain("Alpha, VaR and sampled opportunities");
+    expect(markup).toContain("Compare the path");
+    expect(markup).toContain("Value at risk");
     expect(markup).toContain("<dl");
     for (const metric of homePreviewMetrics) {
       expect(markup).toContain(`<dt>${metric.label}</dt>`);

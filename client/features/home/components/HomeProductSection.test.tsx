@@ -22,8 +22,10 @@ describe("HomeProductSection", () => {
       'aria-label="Explore community, sign in required"',
     );
     expect(markup).not.toContain('href="/Portfolio"');
-    expect(markup).toContain("More context.");
-    expect(markup).toContain("See performance and risk together.");
+    expect(markup).toContain('aria-label="Open watchlist, sign in required"');
+    expect(markup).toContain("Portfolio: return and risk.");
+    expect(markup).toContain("Follow what matters.");
+    expect(markup).toContain("Keep a research note");
     expect(markup).toContain("Look beyond the headline.");
     expect(markup).toContain("Build a considered view.");
     expect(markup).not.toContain('role="list"');
@@ -39,10 +41,14 @@ describe("HomeProductSection", () => {
       />,
     );
 
-    expect(markup.match(/disabled=""/g)).toHaveLength(3);
-    expect(markup).not.toContain('href="/Portfolio"');
-    expect(markup).not.toContain('href="/MarketNews"');
-    expect(markup).not.toContain('href="/Community"');
+    for (const route of homeRouteLinks) {
+      expect(markup).not.toContain(`href="${route.href}"`);
+    }
+    const buttons = markup.match(/<button[^>]*>/g) ?? [];
+    expect(buttons).toHaveLength(homeRouteLinks.length);
+    expect(buttons.every((button) => button.includes('disabled=""'))).toBe(
+      true,
+    );
   });
 
   it("renders product entries as links once the user is signed in", () => {
@@ -58,5 +64,6 @@ describe("HomeProductSection", () => {
     expect(markup).toContain('href="/Portfolio"');
     expect(markup).toContain('href="/MarketNews"');
     expect(markup).toContain('href="/Community"');
+    expect(markup).toContain('href="/Watchlist"');
   });
 });

@@ -23,7 +23,7 @@ export function FitPageHeader({
       <Head>
         <title>{`${title} | FIT`}</title>
       </Head>
-      <div className="min-w-0">
+      <div className={styles.copy}>
         <p className={styles.eyebrow}>{eyebrow}</p>
         <h1
           className={cn(

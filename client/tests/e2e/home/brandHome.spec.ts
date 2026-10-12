@@ -61,7 +61,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "See your investments in perspective.",
+        name: "Understand your portfolio. See the wider market.",
       }),
     ).toBeVisible();
     const hero = page.locator("#top");
@@ -83,17 +83,19 @@ for (const viewport of [
     }
     await assertNoOverflow(page);
     const preview = page.getByRole("figure", {
-      name: "Return, with the risk beside it.",
+      name: "Portfolio: return and risk.",
     });
-    await expect(preview).toContainText("Illustrative view");
+    await expect(preview).toContainText("Illustration only.");
     await expect(preview).toContainText(
       "No account data or calculated results.",
     );
     for (const label of [
-      "Rebased return",
+      "Historical return",
       "Annualised volatility",
       "Drawdown history",
       "Sharpe ratio",
+      "Alpha",
+      "Value at risk",
     ]) {
       await expect(preview.getByText(label, { exact: true })).toBeVisible();
     }
@@ -104,7 +106,7 @@ for (const viewport of [
   });
 }
 
-test("opens signup and signin distinctly from the hero and restores the opener", async ({
+test("opens hero signup and navigation signin distinctly and restores the opener", async ({
   page,
 }) => {
   await page.goto("/");
@@ -117,7 +119,10 @@ test("opens signup and signin distinctly from the hero and restores the opener",
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(start).toBeFocused();
-  await hero.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Home", exact: true })
+    .getByRole("button", { name: "Sign in", exact: true })
+    .click();
   await expect(dialog).toHaveAccessibleName("Welcome back");
   await expect(dialog.getByLabel("Email address")).toBeFocused();
 });
@@ -153,6 +158,7 @@ for (const width of [320, 390]) {
 
 for (const destination of [
   { label: "Portfolio", action: "Explore portfolio", href: "/Portfolio" },
+  { label: "Watchlist", action: "Open watchlist", href: "/Watchlist" },
   { label: "Market News", action: "Read market news", href: "/MarketNews" },
   { label: "Community", action: "Explore community", href: "/Community" },
 ]) {
@@ -162,7 +168,11 @@ for (const destination of [
     await mockPasswordSignIn(page);
     await page.goto("/");
     await page
-      .getByRole("button", { name: `${destination.action}, sign in required` })
+      .locator("#product")
+      .getByRole("button", {
+        name: `${destination.action}, sign in required`,
+        exact: true,
+      })
       .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toHaveAccessibleName("Welcome back");
@@ -191,13 +201,59 @@ test("renders direct destinations for a restored signed-in fixture", async ({
     0,
   );
   const product = page.locator("#product");
-  for (const href of ["/Portfolio", "/MarketNews", "/Community"]) {
+  for (const href of [
+    "/Portfolio",
+    "/Watchlist",
+    "/MarketNews",
+    "/Community",
+  ]) {
     await expect(product.locator(`a[href="${href}"]`)).toBeVisible();
   }
   await expect(product.getByRole("button")).toHaveCount(0);
   await hero.getByRole("link", { name: "Open portfolio" }).click();
   await expect(page).toHaveURL(/\/Portfolio$/);
   await expect(page.getByRole("dialog")).toBeHidden();
+});
+
+test("preserves Watchlist intent through auth mode changes and the dialog keyboard loop", async ({
+  page,
+}) => {
+  await mockPasswordSignIn(page);
+  await page.goto("/");
+  const opener = page.locator("#product").getByRole("button", {
+    name: "Open watchlist, sign in required",
+    exact: true,
+  });
+  await opener.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog");
+  const modes = dialog.getByRole("group", { name: "Account access" });
+  await expect(dialog.getByLabel("Email address")).toBeFocused();
+  await modes
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  await expect(dialog.getByLabel("First name")).toBeFocused();
+  await modes.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog.getByLabel("Email address")).toBeFocused();
+  await dialog.getByRole("button", { name: "Sign in with Google" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Close authentication dialog" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Sign in with Google" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  await page.keyboard.press("Enter");
+  await dialog.getByLabel("Email address").fill("home-fixture@example.invalid");
+  await dialog
+    .getByLabel("Password", { exact: true })
+    .fill("local UI fixture password");
+  await dialog.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/Watchlist$/);
 });
 
 test("locks entry during session restoration and recovers when it finishes", async ({
@@ -231,6 +287,20 @@ test("locks entry during session restoration and recovers when it finishes", asy
   await expect(
     page.getByRole("button", { name: "Explore portfolio, sign in required" }),
   ).toBeDisabled();
+  await expect(
+    page.locator("#product").getByRole("button", {
+      name: "Open watchlist, sign in required",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Explore FIT features" })
+      .getByRole("button", {
+        name: "Open Watchlist, sign in required",
+        exact: true,
+      }),
+  ).toBeDisabled();
   await expect(page.getByRole("dialog")).toBeHidden();
   release();
   await expect(
@@ -250,7 +320,7 @@ test.describe("Home without JavaScript", () => {
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "See your investments in perspective.",
+        name: "Understand your portfolio. See the wider market.",
       }),
     ).toBeVisible();
     await expect(
@@ -259,11 +329,11 @@ test.describe("Home without JavaScript", () => {
     await expect(
       page.getByText(/Enable JavaScript to sign in or create an account/),
     ).toBeVisible();
+    await expect(page.getByText(/Illustration only\./)).toBeVisible();
     await expect(
-      page.getByText("Illustrative view", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Guide", exact: true }),
+      page
+        .getByRole("navigation", { name: "Home", exact: true })
+        .getByRole("link", { name: "Guide", exact: true }),
     ).toHaveAttribute("href", "/Guide");
     await expect(
       page.getByRole("link", { name: "Help Center" }),
@@ -287,7 +357,10 @@ test.describe("Home without JavaScript", () => {
     await expect(
       page.getByText(/Topic navigation and analytics also require JavaScript/),
     ).toBeVisible();
-    await page.getByRole("link", { name: "Guide", exact: true }).click();
+    await page
+      .getByRole("navigation", { name: "Home", exact: true })
+      .getByRole("link", { name: "Guide", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/Guide$/);
     await expect(
       page.getByRole("heading", { name: "Sharpe Ratio", exact: true }),
@@ -323,7 +396,7 @@ test("honors reduced motion and the skip-link keyboard path", async ({
   await expect(page.locator("#main-content")).toBeFocused();
   expect(
     await page
-      .locator("#top figure")
+      .locator("#product figure")
       .evaluate((element) => getComputedStyle(element).animationName),
   ).toBe("none");
   expect(

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "status": "local acceptance snapshot before publication; issue346 timeline records subsequent integration",
+  "issue": 346,
+  "followupIssue": 347,
+  "branch": "feature/layout-and-logo-exploration",
+  "baselineDev": "c3e029f8f6f75612aed900a85afe86d0df6b2dee",
+  "mainHeld": "c04875ef5d18d4134554fe36320bb05679125be4",
+  "promotionPr": {
+    "number": 319,
+    "draft": true,
+    "merged": false,
+    "autoMerge": false
+  },
+  "scope": "Fluid shared frames, local reading measures, refined Home, self-hosted typography, divergent unselected logo boards. DevBranch merge only after independent review and required trusted checks.",
+  "selectedPrototype": "R3 hide-strip composition; R1/R2 frozen; both R3 alternatives independently checked",
+  "font": "Original Geist Sans variable WOFF2, 69760 bytes, original OFL retained, local loading, platform/CJK fallback. Human readability superiority not claimed.",
+  "logoBoards": {
+    "rounds": 2,
+    "candidates": 24,
+    "ownerSelection": "pending",
+    "productionLogoChanged": false
+  },
+  "technicalComparisons": "Native matched prototype/layout/font/focus checks; not real-human A/B testing",
+  "knownRefinement": "Confirmed header, Profile identity/avatar, Watchlist actions and exchange badge bounds fixed with meaningful native checks; test readiness, configurable API origin and asynchronous deletion completion corrected. Small unchanged extreme text-resize clips remain in issue257.",
+  "verification": {
+    "source": "PASS type/lint/format/diff, 253 suites and1655tests, required358research/169watchlist coverage; original font/license hashes verified",
+    "native": "158 production journeys completed:157first-pass and1retry; async completion helper refined and3queue repetitions passed with retries disabled; final real-public-config build and public captures passed",
+    "ci": "Subsequent immutable-head CI/review/merge are recorded on issue346 and its linked PR; this file is the pre-publication local snapshot",
+    "hostedSupabaseChanges": "none in this revision"
+  },
+  "trial": {
+    "frontend": "http://127.0.0.1:3113",
+    "backend": "http://127.0.0.1:8082",
+    "ready": true,
+    "realReadOnlySession": "Restored and loaded saved Watchlist; no account/data writes"
+  },
+  "integrationEvidence": "https://github.com/ParasX1/Financial-Investment-Tool/issues/346",
+  "next": "Use the issue346/linked-PR timeline for post-publication status. Logo direction remains for owner choice. Main stays held; preserve the primary lockfile edit and existing operational/future issues."
+}

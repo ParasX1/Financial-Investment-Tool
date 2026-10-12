@@ -8,7 +8,7 @@ type Props = HTMLAttributes<HTMLElement> & {
   density?: "standard" | "data";
 };
 
-/** One owner for navigation offset, page spacing and content width. */
+/** Fluid workspace with bounded gutters; reading and form measures belong to consumers. */
 export function FitPageContent({
   children,
   className,

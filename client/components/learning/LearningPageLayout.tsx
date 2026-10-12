@@ -182,7 +182,14 @@ export function LearningCard({
           {title}
         </h2>
       </div>
-      <div className={cn("text-pretty", fitType.body, fitText.body)}>
+      <div
+        className={cn(
+          styles.readingMeasure,
+          "text-pretty",
+          fitType.body,
+          fitText.body,
+        )}
+      >
         {children}
       </div>
     </section>
@@ -227,7 +234,7 @@ export function QuestionCard({
         >
           {index + 1}
         </span>
-        <div className="min-w-0">
+        <div className={cn(styles.readingMeasure, fitType.body)}>
           <h2 className={cn("text-pretty text-white", fitType.panelTitle)}>
             {question}
           </h2>
@@ -274,7 +281,8 @@ export function LearningTopicCard({
       </h2>
       <div
         className={cn(
-          "mt-3 max-w-[56rem] text-pretty",
+          "mt-3 text-pretty",
+          styles.readingMeasure,
           fitType.body,
           fitText.body,
         )}

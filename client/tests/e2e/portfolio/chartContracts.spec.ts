@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const preparePortfolio = async (page: Page, dense = false) => {
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     const url = route.request().url();
     const payload = url.includes("efficientfrontiervisualization")
       ? {
@@ -48,7 +48,10 @@ test("pointer comparison uses actual selected-date observations and preserves mi
 }) => {
   await preparePortfolio(page);
   await page.getByRole("button", { name: "Focus Cumulative return" }).click();
-  const overlay = page.locator("rect.hover-overlay");
+  const overlay = page
+    .getByRole("region", { name: "Focus mode", exact: true })
+    .locator("rect.hover-overlay");
+  await expect(overlay).toBeVisible();
   const box = await overlay.boundingBox();
   if (!box) throw new Error("Historical plot is not measurable");
   // Jan 1 is 0.025 days inside the padded 2.1-day domain.

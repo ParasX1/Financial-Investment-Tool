@@ -20,6 +20,13 @@ const communityRoute: HomeRouteLink = {
   label: "Community",
 };
 
+const watchlistRoute: HomeRouteLink = {
+  description: "Keep companies and research notes together",
+  gated: true,
+  href: "/Watchlist",
+  label: "Watchlist",
+};
+
 function renderController({
   loading = false,
   signedIn = false,
@@ -85,6 +92,33 @@ describe("useHomeEntryController", () => {
     expect(harness.latest.redirectTo).toBe("/Portfolio");
 
     act(() => harness.renderer.unmount());
+  });
+
+  it("preserves Watchlist intent through closing and switching auth entry mode", () => {
+    const harness = renderController({});
+    act(() => harness.latest.selectRoute(watchlistRoute));
+    expect(harness.latest.authDialog).toBe("login");
+    expect(harness.latest.redirectTo).toBe("/Watchlist");
+    act(() => harness.latest.closeAuthDialog());
+    act(() => harness.latest.openSignUp("/Watchlist"));
+    expect(harness.latest.authDialog).toBe("signup");
+    expect(harness.latest.redirectTo).toBe("/Watchlist");
+    expect(navigate).not.toHaveBeenCalled();
+    act(() => harness.renderer.unmount());
+  });
+
+  it("routes restored users to Watchlist and ignores Watchlist while loading", () => {
+    const loading = renderController({ loading: true });
+    act(() => loading.latest.selectRoute(watchlistRoute));
+    expect(loading.latest.authDialog).toBeNull();
+    expect(loading.latest.redirectTo).toBe("/Portfolio");
+    expect(navigate).not.toHaveBeenCalled();
+    act(() => loading.renderer.unmount());
+    const restored = renderController({ signedIn: true });
+    act(() => restored.latest.selectRoute(watchlistRoute));
+    expect(navigate).toHaveBeenCalledWith("/Watchlist");
+    expect(restored.latest.authDialog).toBeNull();
+    act(() => restored.renderer.unmount());
   });
 
   it("routes signed-in users directly to their selected destination", () => {

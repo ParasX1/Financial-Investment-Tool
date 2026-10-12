@@ -128,7 +128,7 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   page,
 }) => {
   const metricRequests: string[] = [];
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     metricRequests.push(route.request().url());
     await route.fulfill({
       status: 200,
@@ -221,7 +221,7 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
 test("keeps chart legends reachable when mobile Observation settings are expanded", async ({
   page,
 }) => {
-  await page.route("http://127.0.0.1:8080/api/metrics/**", (route) =>
+  await page.route("**/api/metrics/**", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -364,7 +364,7 @@ test("changes only one card and remains operable without horizontal overflow on 
   page,
 }) => {
   const metricRequests: string[] = [];
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     metricRequests.push(route.request().url());
     await route.fulfill({
       status: 200,

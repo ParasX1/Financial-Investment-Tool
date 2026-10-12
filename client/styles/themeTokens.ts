@@ -79,7 +79,6 @@ export const fitThemeVariables = {
   "--fit-nav-active-border": fitColors.accent,
   "--fit-radius-panel": "16px",
   "--fit-radius-control": "9px",
-  "--fit-content-width": "1680px",
   "--fit-font-display": "var(--fit-font-family)",
   "--fit-font-display-weight": "600",
   "--bs-body-bg": fitColors.page,
