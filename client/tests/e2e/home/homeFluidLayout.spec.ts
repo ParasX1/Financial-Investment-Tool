@@ -31,13 +31,15 @@ for (const viewport of [
       .locator("#top")
       .getByRole("button", { name: "Get started", exact: true });
     await expect(start).toBeEnabled();
+    await page.evaluate(() => document.fonts.ready);
     await expect(start).toBeInViewport({ ratio: 1 });
     const product = page.locator("#product");
     const plot = product.locator("svg[data-home-chart]");
     const box = await plot.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.height).toBe(
+    expect(box!.height).toBeCloseTo(
       viewport.width <= 360 ? 100 : viewport.width <= 760 ? 120 : 200,
+      2,
     );
     if (viewport.width <= 390) {
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);

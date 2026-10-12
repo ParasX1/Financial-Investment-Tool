@@ -48,7 +48,10 @@ test("pointer comparison uses actual selected-date observations and preserves mi
 }) => {
   await preparePortfolio(page);
   await page.getByRole("button", { name: "Focus Cumulative return" }).click();
-  const overlay = page.locator("rect.hover-overlay");
+  const overlay = page
+    .getByRole("region", { name: "Focus mode", exact: true })
+    .locator("rect.hover-overlay");
+  await expect(overlay).toBeVisible();
   const box = await overlay.boundingBox();
   if (!box) throw new Error("Historical plot is not measurable");
   // Jan 1 is 0.025 days inside the padded 2.1-day domain.

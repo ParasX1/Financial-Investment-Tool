@@ -236,6 +236,8 @@ for (const fontAvailable of [true, false]) {
   for (const viewport of [
     { width: 320, height: 844, enlargedText: false },
     { width: 390, height: 844, enlargedText: false },
+    { width: 320, height: 844, enlargedText: true },
+    { width: 390, height: 844, enlargedText: true },
     { width: 1440, height: 900, enlargedText: true },
   ]) {
     test(`keeps public text and dialog focus usable at ${viewport.width}px${viewport.enlargedText ? " with 200% text" : ""} ${fontAvailable ? "with" : "without"} the font`, async ({

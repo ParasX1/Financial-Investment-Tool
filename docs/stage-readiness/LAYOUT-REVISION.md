@@ -116,6 +116,48 @@ waits for the confirmation dialog to close, which occurs after the asynchronous
 repository operation succeeds. Three fresh repetitions with retries disabled
 passed (8.7 seconds total). Application mutation behavior is unchanged.
 
+The first trusted Linux CI run exposed a separate 320×568 Home boundary: the
+primary action, 8 px gap and Guide link measured 257.1875 px inside a 257 px row,
+wrapping the link and moving the first metric labels below the fold. The captured
+CI DOM, CSS and original Geist font reproduced the exact failed intersection
+ratio of 0.4288577. A matched Windows snapshot fit by less than 1 px; browser
+build and font-engine differences were not independently isolated. Compacting
+only the primary action's horizontal padding from 14 to 10 px at ≤360 px gives
+the Linux row 7.8125 px of spare width. Font sizes, 44 px control height, enlarged
+text wrapping and the full-visibility assertion remain unchanged. Native app
+checks and the latest immutable PR's trusted CI are required after this repair;
+snapshot comparisons alone do not establish application acceptance.
+
+The expanded maintained font matrix adds 320/390 px with 200% root text, both
+with Geist and with blocked-font fallback. It exposed scroll-target alignment
+at the account dialog edges: Geist's text range extended 3.03 px above the
+scrollport after scrolling to the title, while a fallback submit control's
+intersection ratio was 0.9990368 from 0.14 px fractional clipping. The retained
+screenshots did not show a visibly truncated title glyph. Compared local target
+margins with shared scroll padding; the local title/submit-only variant still
+left an email field at ratio 0.9985937. Shared `scroll-padding-block: 1rem` gives
+all dialog targets breathing room without changing font, form layout or Auth
+behavior. All four matched cells preserved strict range/control bounds, focus
+containment, reachable buttons and ≥44 px targets in the scratch prototype.
+The actual source fix retains the original assertions and requires native/CI
+verification. This is targeted text-resize evidence, not full WCAG conformance.
+
+After the source corrections, all four Home viewport/focus journeys, three
+Portfolio chart contracts and twelve typography/dialog cases passed natively
+without retries (19 total). TypeScript, affected-file ESLint and changed-file
+formatting passed. The first expanded run's five failures remain retained;
+they are not counted as successful verification. Trusted Linux CI remains the
+integration gate for the revised immutable head.
+
+Focused-chart CI also measured an overlay before asynchronous focus mounting and
+chart rendering completed. The test now waits for the visible overlay inside
+the named Focus mode region before measuring; date, value, missingness and dot
+assertions are unchanged. Home geometry allows less than 0.005 CSS px numerical
+rounding for its fixed chart height (a native reading was 120.0000305 px), while
+the metric-label full-viewport ratio remains 1. Primary references are
+[Playwright locator assertions](https://playwright.dev/docs/api/class-locatorassertions)
+and [CSS scroll padding](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scroll-padding-block).
+
 ## Reproduction and boundaries
 
 Ignored local artifacts live under `client/test-results/layout-revision/`:
