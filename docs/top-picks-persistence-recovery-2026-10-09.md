@@ -123,13 +123,30 @@ Valid persisted rankings still load as stale startup fallbacks.
 
 History retry state is saved before every full attempt, including adjustment
 detection, and remains after empty/omitted responses, exceptions or interruption.
-It is an optional flag only on unverified runtime payloads.
+It is an optional flag on history payloads requiring another full reconciliation.
 Successful entries retain the seed exporter's existing `dates`/`values` format.
-The current strict seed exporter refuses entries carrying unverified retry state,
-so a failed reconciliation cannot produce a new accepted seed package.
+At the 9 October checkpoint, the strict seed exporter refused entries carrying
+unverified retry state, preventing a new accepted seed package after failed
+reconciliation. The 12 October update below supersedes this export restriction.
 The seed callback rename preserves the same enabled/disabled conditions and
 arguments; its existing behavior tests cover the native lint repair.
 
 Independent fresh review and final combined branch verification belong to the
 parent task. Live provider correctness and deployed behavior are not established
 by synthetic fixtures.
+
+## Seed compatibility update — 12 October 2026
+
+[PR #350](https://github.com/ParasX1/Financial-Investment-Tool/pull/350) permits
+the existing optional `needs_reconciliation` field only when it is a boolean.
+Export/import preserves the pending marker instead of clearing it; an imported
+history provider still rejects an incomplete full response and retries full
+reconciliation after restart. Other payload/schema/date/price/checksum controls
+remain unchanged. Imported snapshots remain stale startup fallbacks; accepting
+pending history does not certify fresh or complete provider coverage.
+
+The change has three intended red regressions, 117 focused native passes and
+640 full native/Linux backend passes. Malformed markers are rejected on both
+export and checksum-valid import. The first native full run's snapshot-I/O
+fixture failure remains retained; its transient cause is unconfirmed. No live
+market-accuracy or deployment acceptance follows from these synthetic checks.
