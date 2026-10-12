@@ -1,7 +1,6 @@
-import type { SvgIconComponent } from "@mui/icons-material";
-
 export type HomeEntryDestination =
   | "/Portfolio"
+  | "/Watchlist"
   | "/MarketNews"
   | "/Community";
 
@@ -9,7 +8,6 @@ export type HomeRouteLink = {
   readonly description: string;
   readonly gated?: boolean;
   readonly href: HomeEntryDestination;
-  readonly icon?: SvgIconComponent;
   readonly label: string;
 };
 
@@ -23,6 +21,5 @@ export type HomeFooterGroup = {
 
 export type HomeExperiencePoint = {
   readonly description: string;
-  readonly icon: SvgIconComponent;
   readonly label: string;
 };

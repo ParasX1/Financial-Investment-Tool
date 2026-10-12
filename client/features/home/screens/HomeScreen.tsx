@@ -17,6 +17,7 @@ import { HomeExperienceSection } from "../components/HomeExperienceSection";
 import { HomeHero } from "../components/HomeHero";
 import { HomeNavigation } from "../components/HomeNavigation";
 import { HomeProductSection } from "../components/HomeProductSection";
+import { HomeRouteStrip } from "../components/HomeRouteStrip";
 import styles from "../styles/home.module.css";
 
 export type HomeScreenController = ReturnType<typeof useHomeEntryController>;
@@ -61,19 +62,28 @@ export function HomeScreenView({
               Topic navigation and analytics also require JavaScript.
             </p>
           </noscript>
-          <HomeHero
-            authLoading={authLoading}
-            signedIn={signedIn}
-            onSignIn={() => openLogin()}
-            onGetStarted={() => openSignUp()}
-          />
-          <div className={styles.content}>
+          <div className={styles.entryGrid}>
+            <div className={styles.introColumn}>
+              <HomeHero
+                authLoading={authLoading}
+                signedIn={signedIn}
+                onGetStarted={() => openSignUp()}
+              />
+              <HomeRouteStrip
+                authLoading={authLoading}
+                routes={homeRouteLinks}
+                signedIn={signedIn}
+                onRouteSelect={selectRoute}
+              />
+            </div>
             <HomeProductSection
               authLoading={authLoading}
               routes={homeRouteLinks}
               signedIn={signedIn}
               onRouteSelect={selectRoute}
             />
+          </div>
+          <div className={styles.content}>
             <HomeExperienceSection points={homeExperiencePoints} />
             <HomeCtaSection
               authLoading={authLoading}

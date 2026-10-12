@@ -115,9 +115,10 @@ describe("site-wide inherited canvas and layout contract", () => {
     expect(main).toContain("min-height: 100dvh;");
     expect(main).toContain("padding-inline-start: var(--app-sidebar-width");
     expect(main).not.toMatch(/background(?:-color)?\s*:/);
-    expect(cssBlock(styles, ".content")).toContain(
-      "max-width: var(--fit-content-width);",
-    );
+    const content = cssBlock(styles, ".content");
+    expect(content).toContain("width: 100%;");
+    expect(content).toContain("clamp(16px, 2.2vw, 34px)");
+    expect(content).not.toMatch(/max-width\s*:/);
     expect(styles).toContain("@media (max-width: 767px)");
   });
 

@@ -32,6 +32,7 @@
 }
 
 .formula {
+  overflow-wrap: normal;
   background: var(--learning-inner-bg, var(--fit-color-inner-surface, #050506));
   border: 1px solid
     var(--learning-panel-border, var(--fit-color-border-panel, #27272a));
@@ -82,4 +83,11 @@
 
 .pageContent {
   color: var(--fit-color-text-strong);
+}
+
+/* Local prose measure; navigation and outer cards follow the fluid workspace. */
+.readingMeasure {
+  min-width: 0;
+  max-width: 70ch;
+  overflow-wrap: anywhere;
 }

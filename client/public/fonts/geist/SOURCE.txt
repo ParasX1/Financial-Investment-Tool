@@ -1,0 +1,15 @@
+Geist Sans variable font, original unmodified WOFF2; weight range 100-900.
+Upstream: https://github.com/vercel/geist-font
+Verified 2026-10-12 against upstream commit 10dc7658f13c38a474cde201bb09a4617267545b.
+
+Geist-Variable.woff2
+Source: https://raw.githubusercontent.com/vercel/geist-font/10dc7658f13c38a474cde201bb09a4617267545b/packages/next/dist/fonts/geist-sans/Geist-Variable.woff2
+Bytes: 69760
+SHA256: 2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1
+
+OFL.txt (original copyright notice and SIL Open Font License 1.1)
+Source: https://raw.githubusercontent.com/vercel/geist-font/10dc7658f13c38a474cde201bb09a4617267545b/OFL.txt
+Bytes: 4383
+SHA256: c683bfbcc7e087f5d37a54ef628f10387c451a83ddc459b151403a164ac46c90
+
+Both files are copied byte-for-byte. No modification, conversion, or subsetting.

@@ -1,18 +1,15 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import Link from "next/link";
 import { homeHeroActions } from "../data/homeContent";
-import { HomePortfolioPreview } from "./HomePortfolioPreview";
 import styles from "../styles/home.module.css";
 
 export function HomeHero({
   authLoading,
   signedIn,
-  onSignIn,
   onGetStarted,
 }: {
   authLoading: boolean;
   signedIn: boolean;
-  onSignIn: () => void;
   onGetStarted: () => void;
 }) {
   return (
@@ -20,13 +17,8 @@ export function HomeHero({
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>Financial Investment Tool</p>
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          See your investments in perspective.
+          Understand your portfolio. See the wider market.
         </h1>
-        <p className={styles.heroSubtitle}>
-          Bring portfolio performance, market context and research into one
-          clear workspace.
-        </p>
-
         <div className={styles.heroActions}>
           {signedIn ? (
             <Link href="/Portfolio" className={styles.primaryButton}>
@@ -50,26 +42,21 @@ export function HomeHero({
                   aria-hidden="true"
                 />
               </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                disabled={authLoading}
-                onClick={onSignIn}
-              >
-                Sign in
-              </button>
             </>
           )}
+          <Link href="/Guide" className={styles.heroExplore}>
+            {homeHeroActions.secondary}
+            <KeyboardArrowRightRoundedIcon
+              sx={{ fontSize: 17 }}
+              aria-hidden="true"
+            />
+          </Link>
         </div>
-        <a href="#experience" className={styles.heroExplore}>
-          {homeHeroActions.secondary}
-          <KeyboardArrowRightRoundedIcon
-            sx={{ fontSize: 17 }}
-            aria-hidden="true"
-          />
-        </a>
+        <p className={styles.heroSubtitle}>
+          Read historical returns alongside risk, follow market news and compare
+          research ideas in one workspace.
+        </p>
       </div>
-      <HomePortfolioPreview />
     </section>
   );
 }

@@ -4,9 +4,9 @@ test("previews Community Markdown without leaving the create post", async ({
   page,
 }) => {
   await page.goto("/CommunityCreate");
-  await page.waitForLoadState("networkidle");
 
   const body = page.getByLabel("Discussion body");
+  await expect(body).toBeEditable();
   await body.fill(
     [
       "## Why I am watching this",

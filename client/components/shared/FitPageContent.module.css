@@ -6,9 +6,9 @@
   transition: padding-inline-start 160ms ease;
 }
 .content {
+  min-width: 0;
   width: 100%;
-  max-width: var(--fit-content-width);
-  margin-inline: auto;
+  /* Workspace width follows the available canvas; prose and forms own their measures. */
   padding: 30px clamp(16px, 2.2vw, 34px) 48px;
 }
 .data .content {

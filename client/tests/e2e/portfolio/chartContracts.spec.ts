@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const preparePortfolio = async (page: Page, dense = false) => {
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     const url = route.request().url();
     const payload = url.includes("efficientfrontiervisualization")
       ? {
