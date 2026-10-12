@@ -226,7 +226,9 @@ def _history_summary(connection):
                 or date.fromisoformat(covered_start) > date.fromisoformat(covered_end)):
             raise ValueError("Initial history record is invalid.")
         prices = json.loads(payload)
-        if not isinstance(prices, dict) or set(prices) != {"dates", "values"}:
+        if (not isinstance(prices, dict)
+                or set(prices) - {"needs_reconciliation"} != {"dates", "values"}
+                or not isinstance(prices.get("needs_reconciliation", False), bool)):
             raise ValueError("Initial history payload is invalid.")
         dates, values = prices["dates"], prices["values"]
         if (not isinstance(dates, list) or not isinstance(values, list)
