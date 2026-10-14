@@ -1,290 +1,59 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
-import json
 import logging
 import math
-import os
 import time
 from threading import Condition, RLock, Thread
-from tempfile import NamedTemporaryFile
 from time import monotonic
 
 import pandas as pd
 
-from ..market_primitives import TICKER_PATTERN, get_adjusted_close_prices
+from ..market_primitives import (
+    CALCULATION_VERSION,
+    calculate_returns,
+    get_adjusted_close_prices,
+)
 from .analytics import (
     ANNUALISATION_DAYS,
     calculate_information_ratios,
     count_return_observations,
 )
-from .events import SnapshotUpdateHub
-from .repository import MAX_TICKER_UNIVERSE, TopPicksDataSourceError
-
-
-DEFAULT_BENCHMARK_TICKER = "^AXJO"
-DEFAULT_RISK_FREE_RATE = 0.0435
-DEFAULT_RISK_FREE_RATE_SOURCE = "RBA cash rate target"
-DEFAULT_RISK_FREE_RATE_AS_OF = "2026-06-17"
-DEFAULT_UNIVERSE_LIMIT = 1000
-DEFAULT_CACHE_TTL_SECONDS = 600
-DEFAULT_STALE_CACHE_TTL_SECONDS = 86_400
-MIN_TRAILING_RETURN_OBSERVATIONS = 200
-WINDOW_METHODS = {
-    "1D": "trailing_day",
-    "1W": "trailing_week",
-    "1M": "trailing_month",
-    "1Y": "trailing_one_year",
-}
-TOP_PICKS_WINDOWS = ("1D", "1W", "1M", "1Y")
-WINDOW_MIN_OBSERVATIONS = {
-    "1D": {"ret1y": 2},
-    "1W": {"ret1y": 2, "volatility": 3, "maxDD": 2},
-    "1M": {"ret1y": 2, "volatility": 10, "maxDD": 2},
-    "1Y": {},
-}
-WINDOW_PRICE_OBSERVATIONS = {
-    "1D": 2,
-    "1W": 6,
-    "1M": 22,
-}
-METRIC_KEYS = (
-    "ret1y",
-    "sharpe",
-    "sortino",
-    "volatility",
-    "maxDD",
-    "beta",
-    "alpha",
-    "infoRatio",
+from .events import (
+    DEFAULT_MAX_SUBSCRIBERS, DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+    DEFAULT_STREAM_LIFETIME_SECONDS, SnapshotUpdateHub,
 )
-METRIC_UNITS = {
-    "ret1y": "decimal_return",
-    "sharpe": "ratio",
-    "sortino": "ratio",
-    "volatility": "decimal_annualized",
-    "maxDD": "decimal_drawdown",
-    "beta": "ratio",
-    "alpha": "decimal_annualized",
-    "infoRatio": "ratio",
-}
-WINDOW_METRIC_KEYS = {
-    "1D": ("ret1y",),
-    "1W": ("ret1y", "volatility", "maxDD"),
-    "1M": ("ret1y", "volatility", "maxDD"),
-    "1Y": METRIC_KEYS,
-}
+from .configuration import (
+    DEFAULT_BENCHMARK_TICKER,
+    DEFAULT_CACHE_TTL_SECONDS,
+    DEFAULT_REFRESH_INTERVAL_SECONDS,
+    DEFAULT_RISK_FREE_RATE,
+    DEFAULT_RISK_FREE_RATE_AS_OF,
+    DEFAULT_RISK_FREE_RATE_SOURCE,
+    DEFAULT_UNIVERSE_LIMIT,
+    METRIC_KEYS,
+    METRIC_UNITS,
+    MIN_TRAILING_RETURN_OBSERVATIONS,
+    TOP_PICKS_WINDOWS,
+    WINDOW_METHODS,
+    WINDOW_METRIC_KEYS,
+    WINDOW_MIN_OBSERVATIONS,
+    WINDOW_PRICE_OBSERVATIONS,
+    normalize_as_of,
+    normalize_benchmark,
+    normalize_cache_ttl,
+    normalize_refresh_setting,
+    normalize_risk_free_rate,
+    normalize_source,
+    normalize_universe_limit,
+)
+# Preserve public imports used by routes and existing cache clients.
+from .configuration import DEFAULT_STALE_CACHE_TTL_SECONDS  # noqa: F401
+from .configuration import TopPicksConfigurationError  # noqa: F401
+from .repository import TopPicksDataSourceError
+from .snapshot_cache import TopPicksSnapshotCache
+
+
 LOGGER = logging.getLogger(__name__)
-
-
-class TopPicksConfigurationError(ValueError):
-    pass
-
-
-class TopPicksSnapshotCache:
-    def __init__(
-        self,
-        clock=monotonic,
-        persistence_path=None,
-        stale_ttl_seconds=DEFAULT_STALE_CACHE_TTL_SECONDS,
-    ):
-        self._clock = clock
-        self._entries = {}
-        self._latest_key = None
-        self._latest_keys = {}
-        self._lock = RLock()
-        self._persistence_path = persistence_path
-        self._stale_ttl_seconds = stale_ttl_seconds
-        self._load_persisted_entries()
-
-    def get(self, key):
-        now = self._clock()
-        with self._lock:
-            entry = self._entries.get(key)
-            if entry is None:
-                return None, "miss"
-            if entry["stale_expires_at"] <= now:
-                self._entries.pop(key, None)
-                return None, "miss"
-            if entry["expires_at"] <= now:
-                return deepcopy(entry["value"]), "stale"
-            return deepcopy(entry["value"]), "hit"
-
-    def get_latest_stale(self, excluded_key=None, prefix=None):
-        with self._lock:
-            latest_key = (
-                self._latest_keys.get(prefix)
-                if prefix is not None
-                else self._latest_key
-            )
-            if latest_key is None or latest_key == excluded_key:
-                return None, "miss"
-            entry = self._entries.get(latest_key)
-            if entry is None:
-                return None, "miss"
-            return deepcopy(entry["value"]), "stale"
-
-    def set(
-        self,
-        key,
-        value,
-        ttl_seconds,
-        stale_ttl_seconds=None,
-    ):
-        if ttl_seconds <= 0:
-            return
-        now = self._clock()
-        resolved_stale_ttl = (
-            self._stale_ttl_seconds
-            if stale_ttl_seconds is None
-            else stale_ttl_seconds
-        )
-        stale_ttl = max(ttl_seconds, resolved_stale_ttl)
-        with self._lock:
-            self._entries[key] = {
-                "expires_at": now + ttl_seconds,
-                "stale_expires_at": now + stale_ttl,
-                "stale_expires_at_wall_time": time.time() + stale_ttl,
-                "value": deepcopy(value),
-            }
-            self._latest_key = key
-            self._latest_keys[self._key_prefix(key)] = key
-            retained_keys = {self._latest_key, *self._latest_keys.values()}
-            expired_keys = [
-                old_key for old_key, entry in self._entries.items()
-                if old_key not in retained_keys
-                and (entry["stale_expires_at"] <= now
-                     or math.isinf(entry["stale_expires_at"]))
-            ]
-            for old_key in expired_keys:
-                self._entries.pop(old_key)
-            self._persist_entries()
-
-    def clear(self):
-        with self._lock:
-            self._entries.clear()
-            self._latest_key = None
-            self._latest_keys.clear()
-            self._persist_entries()
-
-    @staticmethod
-    def _serialize_key(key):
-        return json.dumps(list(key), separators=(",", ":"))
-
-    @staticmethod
-    def _deserialize_key(value):
-        decoded = json.loads(value)
-        return tuple(decoded) if isinstance(decoded, list) else None
-
-    @staticmethod
-    def _key_prefix(key):
-        if len(key) >= 7 and key[0] == "top-picks-snapshot":
-            return tuple(key[:-2])
-        return tuple(key[:2]) if len(key) >= 2 else tuple(key[:1])
-
-    def _load_persisted_entries(self):
-        if not self._persistence_path or not os.path.exists(
-            self._persistence_path
-        ):
-            return
-
-        try:
-            with open(self._persistence_path, encoding="utf-8") as handle:
-                payload = json.load(handle)
-        except (OSError, ValueError, TypeError):
-            return
-
-        persisted_entries = payload.get("entries")
-        if not isinstance(persisted_entries, dict):
-            return
-        persisted_latest_key = None
-        try:
-            persisted_latest_key = self._deserialize_key(
-                payload.get("latest_key")
-            )
-        except (TypeError, ValueError):
-            persisted_latest_key = None
-
-        now = self._clock()
-        with self._lock:
-            loaded_keys = []
-            for raw_key, entry in persisted_entries.items():
-                if not isinstance(entry, dict) or "value" not in entry:
-                    continue
-                try:
-                    key = self._deserialize_key(raw_key)
-                except (TypeError, ValueError):
-                    continue
-                if key is None:
-                    continue
-                # Persisted snapshots are intentionally loaded as stale so the
-                # user sees the last complete ranking immediately while a fresh
-                # build starts in the background. They do not expire on disk:
-                # the latest successful calculation is the startup fallback
-                # even after the old stale window has passed or the date-based
-                # cache key has moved on.
-                self._entries[key] = {
-                    "expires_at": now - 1,
-                    "stale_expires_at": math.inf,
-                    "stale_expires_at_wall_time": entry.get(
-                        "stale_expires_at_wall_time"
-                    ),
-                    "value": entry["value"],
-                }
-                loaded_keys.append(key)
-            if persisted_latest_key in self._entries:
-                self._latest_key = persisted_latest_key
-            elif loaded_keys:
-                self._latest_key = loaded_keys[-1]
-            self._latest_keys = {
-                self._key_prefix(key): key for key in loaded_keys
-            }
-
-    def _persist_entries(self):
-        if not self._persistence_path:
-            return
-
-        directory = os.path.dirname(self._persistence_path)
-        temporary_path = None
-        try:
-            if directory:
-                os.makedirs(directory, exist_ok=True)
-            persisted_keys = []
-            for key in [self._latest_key, *self._latest_keys.values()]:
-                if key is not None and key in self._entries:
-                    persisted_keys.append(key)
-            persisted_keys = list(dict.fromkeys(persisted_keys))
-            payload = {
-                "latest_key": (
-                    self._serialize_key(self._latest_key)
-                    if self._latest_key is not None
-                    else None
-                ),
-                "entries": {
-                    self._serialize_key(key): {
-                        "stale_expires_at_wall_time": entry.get(
-                            "stale_expires_at_wall_time"
-                        ),
-                        "value": entry["value"],
-                    }
-                    for key in persisted_keys
-                    for entry in [self._entries[key]]
-                }
-            }
-            with NamedTemporaryFile(
-                mode="w", encoding="utf-8", dir=directory or ".",
-                prefix=".top-picks-snapshot-", delete=False,
-            ) as handle:
-                temporary_path = handle.name
-                json.dump(payload, handle, separators=(",", ":"))
-            os.replace(temporary_path, self._persistence_path)
-        except OSError:
-            return
-        finally:
-            if temporary_path is not None:
-                try:
-                    os.unlink(temporary_path)
-                except OSError:
-                    pass
 
 
 def _finite_float(value):
@@ -367,84 +136,6 @@ def _one_year_before(value):
         return value.replace(year=value.year - 1, day=28)
 
 
-def _normalize_benchmark(value):
-    if not isinstance(value, str):
-        raise TopPicksConfigurationError(
-            "Top Picks benchmark must be a ticker symbol."
-        )
-    benchmark = value.strip().upper()
-    if not TICKER_PATTERN.fullmatch(benchmark):
-        raise TopPicksConfigurationError(
-            "Top Picks benchmark must be a ticker symbol."
-        )
-    return benchmark
-
-
-def _normalize_risk_free_rate(value):
-    rate = _finite_float(value)
-    if rate is None or not -1 <= rate <= 1:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free rate is invalid."
-        )
-    return rate
-
-
-def _normalize_universe_limit(value):
-    if isinstance(value, str) and value.strip().isdecimal():
-        value = int(value.strip())
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 1 <= value <= MAX_TICKER_UNIVERSE
-    ):
-        raise TopPicksConfigurationError(
-            "Top Picks universe limit is invalid."
-        )
-    return value
-
-
-def _normalize_cache_ttl(value):
-    if isinstance(value, str) and value.strip().isdecimal():
-        value = int(value.strip())
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 0 <= value <= 86_400
-    ):
-        raise TopPicksConfigurationError(
-            "Top Picks cache TTL is invalid."
-        )
-    return value
-
-
-def _normalize_source(value):
-    if not isinstance(value, str) or not value.strip():
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free source is invalid."
-        )
-    return value.strip()[:120]
-
-
-def _normalize_as_of(value):
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        )
-    try:
-        parsed = date.fromisoformat(value)
-    except ValueError as error:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        ) from error
-    if parsed.isoformat() != value:
-        raise TopPicksConfigurationError(
-            "Top Picks risk-free as-of date is invalid."
-        )
-    return value
-
-
 def _symbol_summary(prefix, symbols):
     noun = "symbol" if len(symbols) == 1 else "symbols"
     displayed = symbols[:10]
@@ -474,16 +165,22 @@ class TopPicksService:
         today_provider=date.today,
         yearly_metrics_provider=None,
         round_complete_callback=None,
+        refresh_interval_seconds=DEFAULT_REFRESH_INTERVAL_SECONDS,
+        max_subscribers=DEFAULT_MAX_SUBSCRIBERS,
+        max_subscribers_per_client=DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+        stream_lifetime_seconds=DEFAULT_STREAM_LIFETIME_SECONDS,
+        refresh_clock=monotonic,
+        refresh_waiter=time.sleep,
     ):
         self._ticker_repository = ticker_repository
         self._calculator_provider = calculator_provider
         self._market_data_provider = market_data_provider
         self._information_ratio_provider = information_ratio_provider
         self._observation_count_provider = observation_count_provider
-        self._benchmark_ticker = _normalize_benchmark(benchmark_ticker)
-        self._risk_free_rate = _normalize_risk_free_rate(risk_free_rate)
-        normalized_source = _normalize_source(risk_free_rate_source)
-        normalized_as_of = _normalize_as_of(risk_free_rate_as_of)
+        self._benchmark_ticker = normalize_benchmark(benchmark_ticker)
+        self._risk_free_rate = normalize_risk_free_rate(risk_free_rate)
+        normalized_source = normalize_source(risk_free_rate_source)
+        normalized_as_of = normalize_as_of(risk_free_rate_as_of)
         if self._risk_free_rate != DEFAULT_RISK_FREE_RATE:
             if normalized_source == DEFAULT_RISK_FREE_RATE_SOURCE:
                 normalized_source = "Application configuration"
@@ -491,8 +188,8 @@ class TopPicksService:
                 normalized_as_of = None
         self._risk_free_rate_source = normalized_source
         self._risk_free_rate_as_of = normalized_as_of
-        self._universe_limit = _normalize_universe_limit(universe_limit)
-        self._cache_ttl_seconds = _normalize_cache_ttl(cache_ttl_seconds)
+        self._universe_limit = normalize_universe_limit(universe_limit)
+        self._cache_ttl_seconds = normalize_cache_ttl(cache_ttl_seconds)
         self._snapshot_cache = (
             TopPicksSnapshotCache()
             if snapshot_cache is None
@@ -509,13 +206,24 @@ class TopPicksService:
         self._refreshing_all_windows = False
         self._pending_force_refresh_window = None
         self._refresh_lock = RLock()
+        self._refresh_interval_seconds = normalize_refresh_setting(
+            refresh_interval_seconds, "refresh interval", 5, 3600,
+        )
+        self._refresh_clock = refresh_clock
+        self._refresh_waiter = refresh_waiter
+        self._next_refresh_at = 0
         self._snapshot_build_condition = Condition()
         self._building_snapshots = False
         self._waiting_snapshot_readers = 0
-        self._updates = SnapshotUpdateHub()
+        self._updates = SnapshotUpdateHub(
+            max_subscribers=normalize_refresh_setting(max_subscribers, "process stream limit", 1, 1024),
+            max_per_client=normalize_refresh_setting(max_subscribers_per_client, "peer stream limit", 1, 128),
+            max_lifetime_seconds=normalize_refresh_setting(stream_lifetime_seconds, "stream lifetime", 30, 3600),
+            clock=refresh_clock,
+        )
 
-    def subscribe_updates(self, window):
-        subscription = self._updates.subscribe(window)
+    def subscribe_updates(self, window, client_id=None):
+        subscription = self._updates.subscribe(window, client_id=client_id)
         try:
             self._refresh_windows_in_background(
                 window, force_refresh=True, queue_if_busy=False,
@@ -550,6 +258,7 @@ class TopPicksService:
             "sortKey": top_picks_request.sort_key,
             "sortDir": top_picks_request.sort_dir,
             "snapshotRefreshing": refreshing,
+            "refreshIntervalSeconds": self._refresh_interval_seconds,
         }
         return {
             "data": {
@@ -661,8 +370,44 @@ class TopPicksService:
         def refresh_all():
             current_priority_window = priority_window
             current_force_refresh = force_refresh
+            # Page-request work must complete once even if a stream joins and
+            # leaves while it waits. Subscriber-only work may stop on inactivity.
+            must_complete_round = queue_if_busy
 
             while True:
+                delay = max(0, self._next_refresh_at - self._refresh_clock())
+                while delay:
+                    if self._updates.has_subscribers:
+                        self._updates.wait_for_inactive(delay)
+                        with self._refresh_lock:
+                            if (not self._updates.has_subscribers
+                                    and self._pending_force_refresh_window is None
+                                    and not must_complete_round):
+                                self._refreshing_all_windows = False
+                                # Return while still owning the lock. A new
+                                # subscriber can start another worker at unlock;
+                                # its shared flag cannot revive this old worker.
+                                return
+                    else:
+                        with self._refresh_lock:
+                            if (not must_complete_round
+                                    and self._pending_force_refresh_window is None):
+                                if not self._updates.has_subscribers:
+                                    self._refreshing_all_windows = False
+                                    return
+                                # A subscriber arrived during the activity check;
+                                # use its interruptible wait rather than sleep.
+                                continue
+                        # A manual request with no stream still shares the process
+                        # cooldown; return its saved snapshot while this job waits.
+                        self._refresh_waiter(delay)
+                    delay = max(0, self._next_refresh_at - self._refresh_clock())
+                with self._refresh_lock:
+                    if self._pending_force_refresh_window is not None:
+                        current_priority_window = self._pending_force_refresh_window
+                        self._pending_force_refresh_window = None
+                        current_force_refresh = True
+                        must_complete_round = True
                 failed = False
                 try:
                     with self._snapshot_build_condition:
@@ -691,27 +436,28 @@ class TopPicksService:
                     )
                 finally:
                     with self._refresh_lock:
+                        self._next_refresh_at = self._refresh_clock() + (
+                            5 if failed else self._refresh_interval_seconds
+                        )
                         pending_window = self._pending_force_refresh_window
                         self._pending_force_refresh_window = None
                         if pending_window is None:
                             if not self._updates.has_subscribers:
                                 self._refreshing_all_windows = False
-                                break
+                                return
                             current_priority_window = self._updates.preferred_window()
+                            must_complete_round = False
                         else:
                             current_priority_window = pending_window
+                            must_complete_round = True
                         current_force_refresh = True
-                if failed and pending_window is None:
-                    # Retry after source failures without a busy loop; closing
-                    # the last browser interrupts this wait immediately.
-                    self._updates.wait_for_inactive(5)
-                    with self._refresh_lock:
-                        if (not self._updates.has_subscribers
-                                and self._pending_force_refresh_window is None):
-                            self._refreshing_all_windows = False
-                            break
 
-        Thread(target=refresh_all, daemon=True).start()
+        try:
+            Thread(target=refresh_all, daemon=True).start()
+        except Exception:
+            with self._refresh_lock:
+                self._refreshing_all_windows = False
+            raise
 
     def _refresh_window_snapshots(self, today, priority_window, force_refresh):
         """Share one universe and annual download within a background round."""
@@ -800,6 +546,7 @@ class TopPicksService:
             self._benchmark_ticker,
             self._risk_free_rate,
             self._universe_limit,
+            CALCULATION_VERSION,
         )
 
     def _snapshot_cache_key(
@@ -900,22 +647,20 @@ class TopPicksService:
                 market_data, symbols, self._benchmark_ticker,
                 self._risk_free_rate,
             )
-        observations = self._observation_count_provider(
-            market_data,
-            symbols,
-        )
-
         metric_maps = {
             key: {} for key in METRIC_KEYS
         }
+        observations = {}
 
         if window in {"1D", "1W", "1M"}:
-            metric_maps.update(self._calculate_short_window_metric_maps(
+            short_metrics, observations = self._calculate_short_window_metric_maps(
                 market_data,
                 symbols,
                 window,
-            ))
+            )
+            metric_maps.update(short_metrics)
         elif window == "1Y":
+            observations = self._observation_count_provider(market_data, symbols)
             cumulative = self._calculator_provider(
                 "calculate_cumulative_return"
             )(metric_symbols, start_date, end_date)
@@ -992,10 +737,12 @@ class TopPicksService:
             "volatility": {},
             "maxDD": {},
         }
+        observations = {}
 
         for symbol in symbols:
             if symbol not in adj_close.columns:
                 continue
+            observations[symbol] = 0
             prices = adj_close[symbol].dropna().tail(price_observations)
             if prices.shape[0] < 2:
                 continue
@@ -1007,7 +754,11 @@ class TopPicksService:
             drawdown = (prices / running_peak - 1).clip(upper=0)
             metric_maps["maxDD"][symbol] = _finite_float(drawdown.min())
 
-            returns = prices.pct_change(fill_method=None).dropna()
+            # Keep the supplied rows between the selected observed endpoints.
+            # Dropping them before pct_change would bridge missing prices.
+            sample = adj_close[[symbol]].loc[prices.index[0]:prices.index[-1]]
+            returns = calculate_returns(sample)[symbol].dropna()
+            observations[symbol] = int(returns.shape[0])
             if returns.shape[0] >= 2:
                 metric_maps["volatility"][symbol] = _finite_float(
                     returns.std() * math.sqrt(ANNUALISATION_DAYS)
@@ -1016,7 +767,7 @@ class TopPicksService:
         if window == "1D":
             metric_maps["volatility"] = {}
             metric_maps["maxDD"] = {}
-        return metric_maps
+        return metric_maps, observations
 
     @staticmethod
     def _build_row(
@@ -1143,6 +894,7 @@ class TopPicksService:
             "requestedEnd": end_date,
             "endDateInclusive": True,
             "annualisationDays": ANNUALISATION_DAYS,
+            "calculationVersion": CALCULATION_VERSION,
             "riskFreeRate": self._risk_free_rate,
             "riskFreeRateSource": self._risk_free_rate_source,
             "riskFreeRateAsOf": self._risk_free_rate_as_of,
@@ -1170,6 +922,10 @@ class TopPicksService:
                 "window": WINDOW_METHODS.get(window, "trailing_one_year"),
             },
             "methods": {
+                "volatility": (
+                    "Annualised sample standard deviation of adjacent supplied "
+                    "daily returns in the selected observed-price span."
+                ),
                 "infoRatio": (
                     "Annualised mean active return divided by annualised "
                     "sample tracking error."

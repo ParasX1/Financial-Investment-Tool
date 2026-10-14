@@ -41,6 +41,10 @@ project URL 和 browser-safe publishable key。PowerShell 不运行 `source`，�
 Flask API 地址是 `http://127.0.0.1:8080`。环境变量细节见[本地开发](#本地开发)。
 Portfolio analytics 可以在没有 Supabase 时运行，但 Top Picks 需要这两个配置值。
 
+安装好前后端依赖后，先激活 server Python 环境，再在仓库根目录运行
+`npm run dev`，即可启动两个服务。该命令不会同步 Top Picks universe。
+独立的数据库写入命令及环境变量边界见[同时启动与 universe 同步](#同时启动与-universe-同步)。
+
 ## 整体架构
 
 ```mermaid
@@ -331,6 +335,39 @@ PowerShell 改用 `.\.venv\Scripts\Activate.ps1` 激活环境，并使用
 已有的 process environment 具有更高优先级。这个 public read path 绝不能使用
 secret 或 service-role key。
 
+### 同时启动与 universe 同步
+
+在仓库根目录运行 `npm run dev` 或 `npm run dev:all`，只会启动 Flask 和
+Next。旧的 `TOP_PICKS_DEV_SYNC_*` 开关与延迟同步任务已移除。请先激活 server
+Python 环境，或在 process environment / `server/.env` 中用
+`FINANCE_DEV_SERVER_PYTHON` 指定其 Python executable。
+
+Universe 同步是独立、明确执行的 Supabase 写入操作：
+
+```bash
+npm run sync:top-picks -- --preset ASX200
+npm run sync:top-picks -- --preset SP500
+```
+
+执行前确认目标 project 和凭据。同步任务使用 server 环境，配置了
+`SUPABASE_SERVICE_ROLE_KEY` 时优先使用该 key。添加 `--dry-run` 可以准备记录而不
+写入数据库；preset 仍可能获取公开指数数据。Python 同步脚本支持的其他参数会原样传递。
+
+`server/.env` 只为 Flask 与同步任务提供默认值，已有 process environment 优先，
+launcher 将 `PYTHONPATH` 设为 `server/`。Next 继承的 process environment 会移除
+server `SUPABASE_*` 变量，并使用自己的 `client/.env.local`；不会注入 server dotenv
+值。Backend secret 应保留在 `server/.env`，绝不能使用 `NEXT_PUBLIC_` 名称。
+Launcher 不输出环境变量值，并会遮蔽转发输出中已配置的 key/token/password 值。
+
+关闭时会停止直接启动的 child process，等待输出流关闭，并在五秒后尝试强制停止。
+Node 无法保证 npm、shell 或 Python reloader 创建的后代进程也会结束；端口仍被占用时，
+请检查这些进程。`npm run test:dev` 会运行 fake-process regression 和 launcher
+coverage gate，不会启动服务、获取市场数据或访问 Supabase。
+
+不设置 `TOP_PICKS_CACHE_PATH` 时，两种启动目录都使用相同的 `server/.cache`。
+自定义 cache 请用 absolute path；旧的 `server/.cache/...` 等 relative override
+会按 working directory 解析，切换启动方式前应移除或改为 absolute path。
+
 ### Supabase
 
 Unit test 和 mocked E2E 不需要 live Supabase。已登录 integration 或 migration 工作使用：
@@ -404,22 +441,31 @@ supabase db push
 
 所有通过 `supabase-js` 使用的 public table 都需要：最小 explicit grant、RLS、按 operation 区分的 policy、必要的 ownership check，以及 update 时同时检查 `USING` 和 `WITH CHECK`。Grant 决定 Data API 能否触达 table；RLS 决定可以触达哪些 row，这两者不能互相替代。
 
+已持久化的 Community 附件通过 private database ticket 和受保护的 server worker
+清理，包括删除 discussion 时其他 comment 作者上传的图片。先部署 #288 ownership
+policy，再部署 cleanup migration。在服务端受保护环境配置 `SUPABASE_URL` 和明确的
+`SUPABASE_SERVICE_ROLE_KEY`，定期运行 `python scripts/cleanup_community_images.py --limit 100`。
+失败 batch 返回非零退出码并保留重试机会；completed reservation 必须保留，以重新清理
+删除后才完成的 upload。Origin 删除在上传结束、定时 worker 成功运行后最终完成；public
+cache 可能继续保留副本。权限、并发、local API 验证和 hosted deployment/schedule gate
+见 [cleanup runbook](docs/community-image-cleanup.md)。
+
 ## 贡献流程
 
 1. 搜索已有 issue 和 PR。在 substantive work 前创建或采用 issue，写明 problem、可复现 evidence、scope 和 acceptance criteria。
-2. Fetch 后从 `origin/DevBranch` 建 branch。使用 `<type>/<issue-number>-<description>`，例如 `fix/250-devbranch-checks`。支持 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`、`hotfix`；一个 cohesive change 可使用多个 issue number，例如 `chore/250-251-quality-gates`。
+2. Fetch 后从 `origin/DevBranch` 建 branch。使用描述清楚的 branch name，例如 `fix/quality-gates`。常见 prefix 包括 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`。可选地加入 issue number，例如 `fix/250-quality-gates` 或 `chore/250-251-quality-gates`；这只是建议，不是 CI requirement。
 3. 先用失败的 behavior 或 boundary test 复现 defect。Docs/configuration 使用 native validator，不创建 artificial application test。
 4. 实现最小 coherent change，在 focused test 保持 green 时 refactor。
 5. 运行受影响的 full-stack check 并获得 independent review；检查最终 diff 中的 secret、artifact 和无关 formatting。
-6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。`Related issue` 必须写入 branch 中的每个 issue number，同时说明 user impact、test 和 deployment/migration requirement。
+6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。说明 user impact、test 和 deployment/migration requirement；如有关联的 local issue，可在 description 任意位置引用。Template 的 `Related issue` heading 是可选的，branch number 不需要与固定 section 匹配。
 7. 解决 review finding，检查实际 GitHub run。只有获得授权的 maintainer 批准后才 merge 到 development branch。创建或 push PR 不代表获得 merge 授权。
 8. 用独立 PR 从 `DevBranch` 到 `main` release，提供 release note、关联 issue 和明确的 release approval。获得授权的 release maintainer 负责 main merge、deployment 和 remote Supabase migration。
 
 `Closes #250` 等 GitHub closing keyword 只有在 PR 的 target 是 repository default branch（`main`）且 merge 后才生效。DevBranch PR 仍应关联 issue 并写明 acceptance criteria；修复尚未 merge 或必要验证未完成时，issue 保持 open，不能因为已有 PR 就 close。若某个 work item 在 release 前已经完成，获得授权的 maintainer 可在提供 merged PR 和 verification evidence 后手动 close。
 
-紧急 production fix 仍需要 issue、`hotfix/<issue-number>-<description>` branch、test 和 reviewed PR。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner；owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查语法，不判断是否已经获得人工批准。
+紧急 production fix 仍需要 issue、`hotfix/<description>` branch、test 和 reviewed PR；branch name 中的 issue number 是可选的。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner，解释中可以使用 nested heading。Owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查是否有解释，不判断是否已经获得人工批准。
 
-`Issue and branch policy` check 读取 PR JSON event file，检查 Related issue、branch name 和 target；使用只读 `pull_request` workflow，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只验证 link syntax；reviewer 必须确认 issue 确实存在且对应本次修改。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
+`Issue and branch policy` check 读取 PR JSON event file。普通 branch name 和 description heading 不会阻止贡献；缺少 local issue link 只会产生不阻塞的提醒。它识别 prose 任意位置的 local `#number`、同一 repository 的 `owner/repo#number` 和 GitHub issue URL，忽略 comment 和 code example。它仍会阻止不支持的 target，以及既不是同一 repository 的 DevBranch promotion、也不是已写明 `hotfix/` emergency exception 的直接到 main 改动。Workflow 使用只读 `pull_request`，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只检查语法；reviewer 必须确认 issue 存在、与改动相关，并核实 release approval。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
 
 Workflow file 会生成 `Frontend quality`、`Mocked browser journeys`、`Backend quality` 和 `Issue and branch policy` check，但不会配置 branch protection。Repository administrator 必须另行配置 DevBranch 和 main 的 required check 与 review rule，并用真实 PR 验证。Contributor 的 write access 不代表有权限修改 repository setting。
 

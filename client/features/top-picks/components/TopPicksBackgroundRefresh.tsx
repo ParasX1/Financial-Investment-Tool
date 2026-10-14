@@ -16,8 +16,8 @@ export function TopPicksBackgroundRefresh() {
       return;
     }
 
-    // The shared subscription keeps the server refreshing and saving all
-    // windows across route changes. Only an open table reads the new rows.
+    // The shared transport pauses hidden/offline tabs and resumes on return.
+    // Only an open table reads the new rows across route changes.
     return subscribeToTopPicksUpdates({
       window: "1Y",
       onUpdate: ignoreNotification,

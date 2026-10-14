@@ -20,14 +20,13 @@ describe("Watchlist visual contract", () => {
     );
   });
 
-  it("moves to an explicit tablet layout before fixed columns can collide", () => {
+  it("reflows rows and actions before fixed columns can collide", () => {
     const styles = readClientSource(
       "features/watchlist/styles/watchlist.module.css",
     );
 
-    expect(styles).toContain("@media (max-width: 1100px)");
     expect(styles).toMatch(
-      /@media \(max-width: 1100px\)[\s\S]*?\.rowActions\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/,
+      /@(?:media|container(?:\s+[\w-]+)?)\s*\(max-width:[^)]+\)[\s\S]*?\.rowActions\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/,
     );
   });
   it("keeps desktop column labels available to assistive technology", () => {
@@ -39,7 +38,7 @@ describe("Watchlist visual contract", () => {
     expect(mobileLabelBlock).toContain("position: absolute");
     expect(mobileLabelBlock).not.toContain("display: none");
     expect(styles).toMatch(
-      /@media \(max-width: 1100px\)[\s\S]*?\.mobileLabel\s*\{[\s\S]*?position:\s*static;/,
+      /@(?:media|container(?:\s+[\w-]+)?)\s*\(max-width:[^)]+\)[\s\S]*?\.mobileLabel\s*\{[\s\S]*?position:\s*static;/,
     );
   });
 

@@ -7,17 +7,22 @@ from ..top_picks.batch_analytics import calculate_yearly_metrics
 from ..top_picks.bootstrap import bootstrap_top_picks_cache, create_seed_archive
 from ..top_picks.history import TopPicksHistoryProvider
 from ..top_picks.repository import SupabaseTickerRepository
-from ..top_picks.service import (
+from ..top_picks.events import (
+    DEFAULT_MAX_SUBSCRIBERS, DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+    DEFAULT_STREAM_LIFETIME_SECONDS,
+)
+from ..top_picks.configuration import (
     DEFAULT_BENCHMARK_TICKER,
     DEFAULT_CACHE_TTL_SECONDS,
+    DEFAULT_REFRESH_INTERVAL_SECONDS,
     DEFAULT_RISK_FREE_RATE,
     DEFAULT_RISK_FREE_RATE_AS_OF,
     DEFAULT_RISK_FREE_RATE_SOURCE,
     DEFAULT_UNIVERSE_LIMIT,
-    TopPicksSnapshotCache,
-    TopPicksService,
-    _normalize_cache_ttl,
+    normalize_cache_ttl,
 )
+from ..top_picks.service import TopPicksService
+from ..top_picks.snapshot_cache import TopPicksSnapshotCache
 
 
 PROJECT_ROOT = os.path.abspath(
@@ -64,6 +69,18 @@ def configure_top_picks(app, environ=None):
         TOP_PICKS_CACHE_TTL_SECONDS=environment.get(
             "TOP_PICKS_CACHE_TTL_SECONDS",
             DEFAULT_CACHE_TTL_SECONDS,
+        ),
+        TOP_PICKS_REFRESH_INTERVAL_SECONDS=environment.get(
+            "TOP_PICKS_REFRESH_INTERVAL_SECONDS", DEFAULT_REFRESH_INTERVAL_SECONDS,
+        ),
+        TOP_PICKS_MAX_SUBSCRIBERS=environment.get(
+            "TOP_PICKS_MAX_SUBSCRIBERS", DEFAULT_MAX_SUBSCRIBERS,
+        ),
+        TOP_PICKS_MAX_SUBSCRIBERS_PER_CLIENT=environment.get(
+            "TOP_PICKS_MAX_SUBSCRIBERS_PER_CLIENT", DEFAULT_MAX_SUBSCRIBERS_PER_CLIENT,
+        ),
+        TOP_PICKS_STREAM_LIFETIME_SECONDS=environment.get(
+            "TOP_PICKS_STREAM_LIFETIME_SECONDS", DEFAULT_STREAM_LIFETIME_SECONDS,
         ),
         TOP_PICKS_CACHE_PATH=environment.get(
             "TOP_PICKS_CACHE_PATH",
@@ -154,9 +171,11 @@ def create_top_picks_service_provider(
                 and _is_default_cache_path(
                     history_path, f"{DEFAULT_TOP_PICKS_CACHE_PATH}.history.sqlite3",
                 )
-                and _normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
-            def round_complete_callback():
+                and normalize_cache_ttl(app.config["TOP_PICKS_CACHE_TTL_SECONDS"]) > 0):
+            def update_seed_archive():
                 create_seed_archive(snapshot_path, history_path, DEFAULT_TOP_PICKS_SEED_PATH)
+
+            round_complete_callback = update_seed_archive
 
         service = resolved_service_factory(
             ticker_repository=resolved_repository_factory(
@@ -176,6 +195,10 @@ def create_top_picks_service_provider(
             ],
             universe_limit=app.config["TOP_PICKS_UNIVERSE_LIMIT"],
             cache_ttl_seconds=app.config["TOP_PICKS_CACHE_TTL_SECONDS"],
+            refresh_interval_seconds=app.config["TOP_PICKS_REFRESH_INTERVAL_SECONDS"],
+            max_subscribers=app.config["TOP_PICKS_MAX_SUBSCRIBERS"],
+            max_subscribers_per_client=app.config["TOP_PICKS_MAX_SUBSCRIBERS_PER_CLIENT"],
+            stream_lifetime_seconds=app.config["TOP_PICKS_STREAM_LIFETIME_SECONDS"],
             snapshot_cache=TopPicksSnapshotCache(
                 persistence_path=app.config["TOP_PICKS_CACHE_PATH"],
             ),

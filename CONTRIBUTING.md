@@ -42,6 +42,12 @@ The Flask API opens at `http://127.0.0.1:8080`. See [Local setup](#local-setup)
 for environment details. Portfolio analytics can run without Supabase, but Top
 Picks needs those two values.
 
+Once both sets of dependencies are installed, activate the server Python
+environment and run `npm run dev` from the repository root to start both services.
+This command does not sync the Top Picks universe. See
+[Combined startup and universe sync](#combined-startup-and-universe-sync) for the
+separate database-writing command and its environment boundary.
+
 ## Architecture at a glance
 
 ```mermaid
@@ -116,6 +122,16 @@ The root `package.json` is not the frontend install boundary. Run application np
 
 Do not promote a feature component into `client/components` until it has a stable, feature-neutral contract and more than one consumer.
 
+The shared FIT presentation foundation lives in `client/styles/themeTokens.ts`.
+`ThemeFoundation` emits those static tokens before client effects; `theme.ts`
+adapts them to installed MUI and global CSS carries typography/native controls.
+Use semantic roles for surfaces, text, actions and financial feedback rather than
+adding feature-specific brand palettes. `FitPageContent` owns the sidebar offset,
+page width and main landmark; `FitPageHeader` owns headings and optional actions.
+Keep feature orchestration outside these presentation components. The small
+`dialogFocus` helper handles visible Tab edges only; the installed modal retains
+initial focus, Escape and restoration.
+
 #### Feature ownership
 
 | Feature        | Owns                                                         |
@@ -168,12 +184,12 @@ Code in `client/lib` must not depend on a feature's private implementation.
 | `server/src/server.py`            | app factory and dependency composition root              |
 | `server/src/routes/`              | thin Flask blueprints: validate, call, serialize         |
 | `server/src/analytics/`           | metric contracts, calculator registry and metric service |
-| `server/src/top_picks/`           | Top Picks contracts, repository, analytics and service   |
+| `server/src/top_picks/`           | Top Picks contracts, configuration, snapshot cache, repository, analytics and service |
 | `server/src/composition/`         | construction of domain dependencies                      |
 | `server/src/compat/`              | explicitly isolated legacy compatibility                 |
 | `server/src/metrics.py`           | financial metric implementations                         |
 | `server/src/market_primitives.py` | shared market-series primitives                          |
-| `server/src/stocks.py`            | stock behavior used by current and legacy routes         |
+| `server/src/stocks.py`            | retained legacy helper, tested separately; current routes use domain services |
 | `server/src/supabase_client.py`   | backend Supabase client construction                     |
 | `server/src/utils.py`             | small backend-neutral helpers                            |
 | `server/tests/api/`               | Flask endpoint and response-contract tests               |
@@ -333,6 +349,44 @@ Replace the placeholders with the same project URL and browser-safe publishable
 key used by the frontend. Existing process environment values take precedence.
 Never use a secret or service-role key for this public read path.
 
+### Combined startup and universe sync
+
+From the repository root, `npm run dev` (or `npm run dev:all`) starts Flask and
+Next only. The legacy `TOP_PICKS_DEV_SYNC_*` switches and delayed jobs are removed.
+Activate the server Python environment first, or set `FINANCE_DEV_SERVER_PYTHON`
+to its executable in the process environment or `server/.env`.
+
+Sync is an explicit, separate write to the configured Supabase project:
+
+```bash
+npm run sync:top-picks -- --preset ASX200
+npm run sync:top-picks -- --preset SP500
+```
+
+Check the project and credentials first. The sync job uses the server environment
+and prefers `SUPABASE_SERVICE_ROLE_KEY` when configured. Add `--dry-run` to prepare
+records without database writes; presets may still fetch public index data. The
+launcher forwards the Python sync script's other arguments unchanged.
+
+`server/.env` supplies defaults only to Flask and sync. Inherited process values
+take precedence, and the launcher sets `PYTHONPATH` to `server/`. Next inherits
+process settings with server `SUPABASE_*` variables removed, then uses its own
+`client/.env.local`; server dotenv values are never injected into it. Keep backend
+secrets in `server/.env` and never use a `NEXT_PUBLIC_` name for them. The launcher
+does not log environment values and redacts configured key/token/password values
+in forwarded child output.
+
+Shutdown stops direct children, waits for their streams to close, and escalates
+after five seconds. Node cannot guarantee that npm/shell/reloader descendants
+terminate; investigate remaining processes if a port stays busy. Run
+`npm run test:dev` for fake-process regressions and the launcher coverage gate.
+These tests do not start services, fetch market data, or access Supabase.
+
+Leave `TOP_PICKS_CACHE_PATH` unset to use the same `server/.cache` location from
+either startup directory. Use an absolute path for a custom cache. Existing
+relative overrides such as `server/.cache/...` are resolved from the working
+directory and should be removed or made absolute before switching launch methods.
+
 ### Supabase
 
 Unit tests and mocked E2E journeys do not require live Supabase. For authenticated integration or migration work:
@@ -406,22 +460,33 @@ Never change the shared remote database directly in the Dashboard. Do not push m
 
 Every public table used through `supabase-js` needs minimum explicit grants, RLS, operation-specific policies, ownership checks where applicable, and both `USING` and `WITH CHECK` for ownership-preserving updates. Grants decide whether the Data API can reach a table; RLS decides which rows are reachable.
 
+Persisted Community attachment cleanup uses private database tickets and a protected
+server worker, including images belonging to other comment authors when a post is
+deleted. Deploy the #288 ownership policies before the cleanup migration. Configure
+`SUPABASE_URL` and explicit server-only `SUPABASE_SERVICE_ROLE_KEY`, then schedule
+`python scripts/cleanup_community_images.py --limit 100` in the protected server
+environment. Failed batches return a nonzero exit status and remain retryable;
+completed reservations must be retained for late upload reconciliation. Origin
+deletion is eventual after in-flight uploads finish and successful scheduled runs;
+cached public copies can remain. See [the cleanup runbook](docs/community-image-cleanup.md)
+for authority, concurrency, local API controls and hosted deployment/schedule gates.
+
 ## Contribution workflow
 
 1. Search existing issues and PRs. Create or adopt an issue with the problem, reproducible evidence, scope and acceptance criteria before substantive work.
-2. Fetch and branch from `origin/DevBranch`. Use `<type>/<issue-number>-<description>`, for example `fix/250-devbranch-checks`. Supported types are `feature`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`, `ci` and `hotfix`. A cohesive change can use multiple numbers, such as `chore/250-251-quality-gates`.
+2. Fetch and branch from `origin/DevBranch`. Use a descriptive branch name, for example `fix/quality-gates`. Conventional prefixes include `feature`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf` and `ci`. Adding issue numbers, such as `fix/250-quality-gates` or `chore/250-251-quality-gates`, is optional guidance rather than a CI requirement.
 3. Reproduce the defect with a failing behavior or boundary test. For docs/configuration use the native validator instead of artificial application tests.
 4. Implement the smallest coherent change; refactor while focused tests stay green.
 5. Run the affected full-stack checks and obtain an independent review. Inspect the final diff for secrets, artifacts and unrelated formatting.
-6. Commit coherent units as `<type>: <description>` and open a PR targeting `DevBranch`. Fill `Related issue` with every branch issue number and explain user impact, tests and deployment/migration needs.
+6. Commit coherent units as `<type>: <description>` and open a PR targeting `DevBranch`. Explain user impact, tests and deployment/migration needs. Link related local issues anywhere in the description when available; the template's `Related issue` heading is optional, and branch numbers need not match a fixed section.
 7. Address review findings and check the actual GitHub runs. Merge into the development branch only when an authorized maintainer approves the merge. Creating or pushing a PR does not authorize merging it.
 8. Release through a separate PR from `DevBranch` to `main`, with release notes, linked issues and explicit release approval. The authorized release maintainer owns the main merge, deployment and any remote Supabase migration.
 
 GitHub closing keywords such as `Closes #250` only take effect when a PR targets and merges into the repository's default branch (`main`). A DevBranch PR should still list the issue and its acceptance criteria, but the issue stays open until the fix is merged and the required validation is complete. Do not close an issue simply because a PR exists. For a work item complete before release, an authorized maintainer can close it manually with links to the merged PR and verification evidence.
 
-Emergency production fixes still require an issue, a `hotfix/<issue-number>-<description>` branch, tests and a reviewed PR. An exceptional PR directly to `main` must add `## Emergency exception` with the reason and named release owner; that owner must explicitly approve the exception and arrange a follow-up PR into DevBranch so the fix is preserved. The metadata audit checks syntax, not whether a person has approved it.
+Emergency production fixes still require an issue, a `hotfix/<description>` branch, tests and a reviewed PR. An issue number in that branch name is optional. An exceptional PR directly to `main` must add `## Emergency exception` with the reason and named release owner; nested headings can organize the explanation. That owner must explicitly approve the exception and arrange a follow-up PR into DevBranch so the fix is preserved. The metadata audit checks for an explanation, not whether a person has approved it.
 
-The `Issue and branch policy` check reads the PR JSON event file and checks the Related issue references, branch name and target. It uses a read-only `pull_request` workflow, does not interpolate PR text into shell code, and does not post comments or mutate issues. It verifies link syntax; reviewers must confirm that the linked issue exists and matches the change. To test the audit locally, run `node --test scripts/check-pr-policy.test.mjs` from the repository root.
+The `Issue and branch policy` check reads the PR JSON event file. General branch naming and description headings do not block contribution; a missing local issue link produces a nonblocking reminder. It recognizes local `#number`, same-repository `owner/repo#number` and GitHub issue URLs anywhere in prose, ignoring comments and code examples. It still blocks unsupported targets and direct-to-main changes that are neither a same-repository DevBranch promotion nor a documented `hotfix/` exception. It uses a read-only `pull_request` workflow, does not interpolate PR text into shell code, and does not post comments or mutate issues. It checks syntax only; reviewers must confirm issue existence, relevance and release approval. To test the audit locally, run `node --test scripts/check-pr-policy.test.mjs` from the repository root.
 
 Workflow files emit `Frontend quality`, `Mocked browser journeys`, `Backend quality` and `Issue and branch policy` checks. They do not configure branch protection. A repository administrator must separately configure required checks and review rules for DevBranch and main, then verify them with a real PR. Contributors with write access cannot assume they have permission to change repository settings.
 

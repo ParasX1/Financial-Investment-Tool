@@ -104,7 +104,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
       .attr("width", safeWidth)
       .attr("height", safeHeight)
       .attr("viewBox", `0 0 ${safeWidth} ${safeHeight}`)
-      .attr("role", "img")
+      .attr("role", "group")
       .attr("aria-labelledby", `${titleId} ${descriptionId}`);
 
     svg.selectAll("*").interrupt();
@@ -159,7 +159,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
           minimumDate,
         )} to ${formatDescriptionDate(maximumDate)}. Values range from ${valueFormat(
           minimumValue,
-        )} to ${valueFormat(maximumValue)}. Zero is the reference baseline.`,
+        )} to ${valueFormat(maximumValue)}. Zero is the reference baseline. Values are compared on the selected date; N/A means no observation on that date. Use arrow keys to inspect dates, Home or End to reach the first or last date, and Escape to dismiss details.`,
       );
 
     const topMargin = compact ? 12 : 24;
@@ -244,7 +244,6 @@ const LineGraph: React.FC<LineGraphProps> = ({
         .attr("stroke-linecap", "round")
         .attr("stroke-linejoin", "round")
         .attr("d", line)
-        .attr("tabindex", 0)
         .attr("role", "img")
         .attr(
           "aria-label",
@@ -368,16 +367,105 @@ const LineGraph: React.FC<LineGraphProps> = ({
       .attr("stroke", HOVER_LINE_COLOR)
       .attr("stroke-width", 1);
     const hoverDots = hoverLayer.append("g").attr("class", "hover-dots");
-    const allHoverPoints = usableData.flatMap((series) =>
-      series.values.map<HoverPoint>((point) => ({
-        ...point,
-        color: getSeriesColor(series),
-        ticker: series.ticker,
-      })),
+    const inspectionDates = Array.from(new Set(timestamps)).sort(
+      (left, right) => left - right,
     );
+    const inspectionSeries = usableData.map((series) => ({
+      ticker: series.ticker,
+      color: getSeriesColor(series),
+      values: new Map(
+        series.values.map((point) => [point.date.getTime(), point.value]),
+      ),
+    }));
     const formatTooltipDate = d3.timeFormat("%Y-%m-%d");
+    let inspectionIndex = 0;
+    const rowsAt = (index: number) =>
+      inspectionSeries.map((series) => ({
+        ticker: series.ticker,
+        color: series.color,
+        date: new Date(inspectionDates[index]),
+        value: series.values.get(inspectionDates[index]) ?? null,
+      }));
+    const rowText = (point: ReturnType<typeof rowsAt>[number]) =>
+      `${point.ticker}: ${point.value === null ? "N/A" : valueFormat(point.value)}`;
+    const valueText = (index: number) =>
+      `${formatTooltipDate(new Date(inspectionDates[index]))}. ${rowsAt(index).map(rowText).join("; ")}`;
+    const hideInspection = () => {
+      hoverLayer.style("display", "none");
+      tooltip.style("display", "none").attr("aria-hidden", "true");
+    };
+    const showInspection = (
+      index: number,
+      position: Pick<MouseEvent, "clientX" | "clientY">,
+    ) => {
+      inspectionIndex = index;
+      const rows = rowsAt(index);
+      const points = rows.filter(
+        (point): point is HoverPoint => point.value !== null,
+      );
+      const date = new Date(inspectionDates[index]);
+      const pointX = xScale(date);
+      overlay
+        .attr("aria-valuenow", index)
+        .attr("aria-valuetext", valueText(index));
+      hoverLayer.style("display", null);
+      hoverLine.attr("x1", pointX).attr("x2", pointX);
+      const dots = hoverDots
+        .selectAll<SVGCircleElement, HoverPoint>("circle")
+        .data(points, (point) => point.ticker);
+      dots
+        .enter()
+        .append("circle")
+        .attr("r", 4)
+        .attr("fill", CHART_POINT_BACKGROUND)
+        .attr("stroke-width", 2)
+        .merge(dots)
+        .attr("cx", (point) => xScale(point.date))
+        .attr("cy", (point) => yScale(point.value))
+        .attr("stroke", (point) => point.color);
+      dots.exit().remove();
 
-    svg
+      tooltip.selectAll("*").remove();
+      tooltip.append("div").text(formatTooltipDate(date));
+      rows.forEach((point) => {
+        tooltip
+          .append("div")
+          .style("color", point.color)
+          .style("margin-top", "8px")
+          .text(rowText(point));
+      });
+      const tooltipWidth = 170;
+      const tooltipHeight = 36 + rows.length * 28;
+      const gap = 12;
+      const left =
+        position.clientX + tooltipWidth + gap > window.innerWidth
+          ? position.clientX - tooltipWidth - gap
+          : position.clientX + gap;
+      const top =
+        position.clientY + tooltipHeight + gap > window.innerHeight
+          ? position.clientY - tooltipHeight - gap
+          : position.clientY + gap;
+      tooltip
+        .style("display", "block")
+        .style(
+          "left",
+          `${Math.max(0, Math.min(left, window.innerWidth - tooltipWidth))}px`,
+        )
+        .style(
+          "top",
+          `${Math.max(0, Math.min(top, window.innerHeight - tooltipHeight))}px`,
+        )
+        .attr("aria-hidden", "false");
+    };
+    const showKeyboardInspection = (element: SVGRectElement) => {
+      const bounds = element.getBoundingClientRect();
+      showInspection(inspectionIndex, {
+        clientX:
+          bounds.left + xScale(new Date(inspectionDates[inspectionIndex])),
+        clientY: bounds.top,
+      });
+    };
+    const overlay = svg
       .append("rect")
       .attr("class", "hover-overlay")
       .attr("width", graphWidth)
@@ -385,79 +473,66 @@ const LineGraph: React.FC<LineGraphProps> = ({
       .attr("transform", `translate(${leftMargin},${topMargin})`)
       .attr("fill", "none")
       .attr("pointer-events", "all")
+      .attr("tabindex", 0)
+      .attr("role", "slider")
+      .attr("aria-label", `Inspect ${chartTitle} by date`)
+      .attr("aria-describedby", descriptionId)
+      .attr("aria-valuemin", 0)
+      .attr("aria-valuemax", inspectionDates.length - 1)
+      .attr("aria-valuenow", inspectionIndex)
+      .attr("aria-valuetext", valueText(inspectionIndex))
+      .on("focus", function () {
+        overlay.attr("stroke", "#fff").attr("stroke-width", 1.5);
+        showKeyboardInspection(this);
+      })
+      .on("blur", () => {
+        overlay.attr("stroke", null);
+        hideInspection();
+      })
+      .on("keydown", function (event: KeyboardEvent) {
+        if (
+          event.defaultPrevented ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.altKey ||
+          event.isComposing
+        )
+          return;
+        const nextIndex =
+          event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? inspectionDates.length - 1
+              : event.key === "ArrowRight" || event.key === "ArrowUp"
+                ? Math.min(inspectionIndex + 1, inspectionDates.length - 1)
+                : event.key === "ArrowLeft" || event.key === "ArrowDown"
+                  ? Math.max(0, inspectionIndex - 1)
+                  : null;
+        if (nextIndex !== null) {
+          event.preventDefault();
+          event.stopPropagation();
+          inspectionIndex = nextIndex;
+          showKeyboardInspection(this);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          hideInspection();
+        }
+      })
       .on("mousemove", function (event: MouseEvent) {
         const [mouseX] = d3.pointer(event, this);
         const dateAtMouse = xScale.invert(mouseX);
-        const anchorPoint = allHoverPoints.reduce((left, right) =>
-          Math.abs(left.date.getTime() - dateAtMouse.getTime()) <
-          Math.abs(right.date.getTime() - dateAtMouse.getTime())
-            ? left
-            : right,
+        const nearestIndex = inspectionDates.reduce(
+          (best, timestamp, index) =>
+            Math.abs(timestamp - dateAtMouse.getTime()) <
+            Math.abs(inspectionDates[best] - dateAtMouse.getTime())
+              ? index
+              : best,
+          0,
         );
-        const closestPoints = usableData.map<HoverPoint>((series) => {
-          const closest = series.values.reduce((left, right) =>
-            Math.abs(left.date.getTime() - anchorPoint.date.getTime()) <
-            Math.abs(right.date.getTime() - anchorPoint.date.getTime())
-              ? left
-              : right,
-          );
-
-          return {
-            ...closest,
-            color: getSeriesColor(series),
-            ticker: series.ticker,
-          };
-        });
-        const pointX = xScale(anchorPoint.date);
-
-        hoverLayer.style("display", null);
-        hoverLine.attr("x1", pointX).attr("x2", pointX);
-        const dots = hoverDots
-          .selectAll<SVGCircleElement, HoverPoint>("circle")
-          .data(closestPoints, (point) => point.ticker);
-        dots
-          .enter()
-          .append("circle")
-          .attr("r", 4)
-          .attr("fill", CHART_POINT_BACKGROUND)
-          .attr("stroke-width", 2)
-          .merge(dots)
-          .attr("cx", (point) => xScale(point.date))
-          .attr("cy", (point) => yScale(point.value))
-          .attr("stroke", (point) => point.color);
-        dots.exit().remove();
-
-        tooltip.selectAll("*").remove();
-        tooltip.append("div").text(formatTooltipDate(anchorPoint.date));
-        closestPoints.forEach((point) => {
-          tooltip
-            .append("div")
-            .style("color", point.color)
-            .style("margin-top", "8px")
-            .text(`${point.ticker}: ${valueFormat(point.value)}`);
-        });
-
-        const tooltipWidth = 170;
-        const tooltipHeight = 36 + closestPoints.length * 28;
-        const gap = 12;
-        const left =
-          event.clientX + tooltipWidth + gap > window.innerWidth
-            ? event.clientX - tooltipWidth - gap
-            : event.clientX + gap;
-        const top =
-          event.clientY + tooltipHeight + gap > window.innerHeight
-            ? event.clientY - tooltipHeight - gap
-            : event.clientY + gap;
-        tooltip
-          .style("display", "block")
-          .style("left", `${left}px`)
-          .style("top", `${top}px`)
-          .attr("aria-hidden", "false");
+        showInspection(nearestIndex, event);
       })
-      .on("mouseout", () => {
-        hoverLayer.style("display", "none");
-        tooltip.style("display", "none").attr("aria-hidden", "true");
-      });
+      .on("mouseout", hideInspection);
 
     return () => {
       svg.interrupt();
@@ -485,7 +560,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
         focusable="false"
         height={safeHeight}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="group"
         style={{ display: "block", height: "auto", maxWidth: "100%" }}
         viewBox={`0 0 ${safeWidth} ${safeHeight}`}
         width={safeWidth}

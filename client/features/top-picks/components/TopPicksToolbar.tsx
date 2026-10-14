@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { formatTopPicksAssumptions } from "../lib/topPicksAssumptions";
 import type { TopPicksMetadata, TopPicksWindow } from "../types";
-import { secondaryActionSx } from "./topPicksSx";
+import { secondaryActionSx, windowToggleSx } from "./topPicksSx";
 
 type TopPicksToolbarProps = {
   loading: boolean;
@@ -39,7 +39,7 @@ type TopPicksStatusProps = Pick<
   | "page"
   | "totalPages"
   | "onRetry"
->;
+> & { hasRetainedResults?: boolean };
 
 export function TopPicksToolbar({
   loading,
@@ -69,7 +69,6 @@ export function TopPicksToolbar({
   return (
     <Box
       sx={{
-        px: { xs: 2, sm: 3 },
         pb: 2,
         display: "flex",
         gap: 1.25,
@@ -78,12 +77,7 @@ export function TopPicksToolbar({
         flexWrap: "wrap",
       }}
     >
-      <Stack
-        direction="row"
-        gap={1.25}
-        alignItems="center"
-        flexWrap="wrap"
-      >
+      <Stack direction="row" gap={1.25} alignItems="center" flexWrap="wrap">
         <ToggleButtonGroup
           exclusive
           size="small"
@@ -92,23 +86,7 @@ export function TopPicksToolbar({
             if (nextWindow) onWindowChange(nextWindow as TopPicksWindow);
           }}
           aria-label="Top Picks time window"
-          sx={{
-            bgcolor: "var(--fit-color-surface, #09090b)",
-            border:
-              "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
-            borderRadius: "0.75rem",
-            overflow: "hidden",
-            "& .MuiToggleButton-root": {
-              color: "var(--fit-color-text-body, #b9c1d0)",
-              border: 0,
-              px: 1.75,
-              textTransform: "none",
-            },
-            "& .MuiToggleButton-root.Mui-selected": {
-              bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.16))",
-              color: "#fff",
-            },
-          }}
+          sx={windowToggleSx}
         >
           <ToggleButton value="1D">Day</ToggleButton>
           <ToggleButton value="1W">Week</ToggleButton>
@@ -120,11 +98,12 @@ export function TopPicksToolbar({
           role="status"
           sx={{
             color: refreshingSnapshot
-              ? "var(--fit-color-info, #93c5fd)"
-              : "var(--fit-color-text-muted, #8f98aa)",
+              ? "var(--fit-color-info)"
+              : "var(--fit-color-text-muted)",
             fontWeight: 700,
             lineHeight: 1.4,
-            whiteSpace: "nowrap",
+            fontSize: "0.75rem",
+            overflowWrap: "anywhere",
           }}
         >
           {showingPreviousResults ? "Showing previous results - " : ""}
@@ -137,7 +116,7 @@ export function TopPicksToolbar({
               : "Waiting for sync"}
         </Typography>
       </Stack>
-      <Stack direction="row" gap={1.25} alignItems="center">
+      <Stack direction="row" gap={1.25} alignItems="center" flexWrap="wrap">
         <Button
           variant="contained"
           startIcon={<DownloadIcon fontSize="small" />}
@@ -163,6 +142,7 @@ export function TopPicksToolbar({
 export function TopPicksStatus({
   loading,
   error,
+  hasRetainedResults = false,
   warnings,
   metadata = {},
   total,
@@ -176,17 +156,21 @@ export function TopPicksStatus({
       ? `${total} results - Showing page ${page} of ${totalPages}`
       : "Loading..."
     : error
-      ? `Error: ${error}`
+      ? `${hasRetainedResults ? "Showing previous results. " : ""}Error: ${error}`
       : total === 0
         ? "No results"
         : `${total} results - Showing page ${page} of ${totalPages}`;
 
   return (
-    <Stack sx={{ px: { xs: 2, sm: 3 }, pb: 3 }} spacing={0.5}>
+    <Stack sx={{ pb: 3 }} spacing={0.75}>
       <Typography
         variant="body2"
         role={error ? "alert" : "status"}
-        sx={{ color: "var(--fit-color-text-muted, #8f98aa)" }}
+        sx={{
+          color: error
+            ? "var(--fit-color-danger)"
+            : "var(--fit-color-text-muted)",
+        }}
       >
         {statusText}
       </Typography>
@@ -195,7 +179,11 @@ export function TopPicksStatus({
           variant="caption"
           role="note"
           aria-label="Top Picks ranking assumptions"
-          sx={{ color: "var(--fit-color-text-label, #687184)" }}
+          sx={{
+            color: "var(--fit-color-text-label)",
+            fontSize: "0.75rem",
+            lineHeight: 1.6,
+          }}
         >
           {assumptionSummary}
         </Typography>
@@ -215,7 +203,11 @@ export function TopPicksStatus({
         <Typography
           key={`${warning}-${index}`}
           variant="caption"
-          sx={{ color: "var(--fit-color-warning, #fbbf24)" }}
+          sx={{
+            color: "var(--fit-color-warning)",
+            fontSize: "0.75rem",
+            lineHeight: 1.6,
+          }}
         >
           {warning}
         </Typography>

@@ -55,7 +55,7 @@ const installPreferences = async (page: Page) => {
       });
     }
   });
-  await page.route("http://127.0.0.1:8080/api/metrics/**", (route) =>
+  await page.route("**/api/metrics/**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
   );
   return {

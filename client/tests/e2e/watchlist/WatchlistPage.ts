@@ -8,7 +8,9 @@ export class WatchlistPage {
   constructor(page: Page) {
     this.page = page;
     this.heading = page.getByRole("heading", { level: 1, name: "Watchlist" });
-    this.symbolSearch = page.getByRole("combobox", { name: "Company or ticker" });
+    this.symbolSearch = page.getByRole("combobox", {
+      name: "Company or ticker",
+    });
   }
 
   async goto() {
@@ -18,7 +20,9 @@ export class WatchlistPage {
 
   async addCompany(query: string, symbol: string) {
     await this.symbolSearch.fill(query);
-    await this.page.getByRole("option", { name: new RegExp(symbol, "i") }).click();
+    await this.page
+      .getByRole("option", { name: new RegExp(symbol, "i") })
+      .click();
     await expect(
       this.page.getByRole("button", { name: `Edit ${symbol} research note` }),
     ).toBeVisible();
@@ -41,6 +45,7 @@ export class WatchlistPage {
       .getByRole("button", { name: `Remove ${symbol} from watchlist` })
       .click();
     await this.page.getByRole("button", { name: "Remove Item" }).click();
+    await expect(this.page.getByRole("dialog")).toBeHidden();
     await expect(
       this.page.getByRole("button", { name: `Edit ${symbol} research note` }),
     ).toHaveCount(0);

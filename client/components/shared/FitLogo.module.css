@@ -2,8 +2,8 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 0.62rem;
-  color: #f7f9ff;
+  gap: 0.625rem;
+  color: var(--fit-color-text-strong);
   font-family: var(--fit-font-family);
   font-synthesis-weight: none;
   line-height: 1;
@@ -11,27 +11,26 @@
 }
 
 .mark {
-  display: inline-grid;
-  min-width: 2.85rem;
-  min-height: 2rem;
-  place-items: center;
-  background: var(--fit-logo-gradient);
-  background-clip: text;
-  color: transparent;
-  font-size: var(--fit-logo-mark-size-medium);
-  font-weight: var(--fit-type-weight-bold);
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: 0 0 20px var(--fit-logo-glow);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--fit-color-accent);
+}
+
+.mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .wordmark {
   display: grid;
   min-width: 0;
-  gap: 0.12rem;
-  color: #f7f9ff;
+  gap: 0.25rem;
+  color: var(--fit-color-text-strong);
 }
 
 .wordmarkMain,
@@ -46,7 +45,15 @@
 .wordmarkMain {
   font-size: var(--fit-logo-wordmark-size);
   font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: -0.025em;
   line-height: var(--fit-type-leading-control);
+}
+
+.initials {
+  font-size: 1.25rem;
+  font-weight: var(--fit-type-weight-semibold);
+  letter-spacing: -0.055em;
+  line-height: 1;
 }
 
 .wordmarkSub {
@@ -57,38 +64,33 @@
 }
 
 .compact .mark {
-  min-width: 2rem;
-  min-height: 1.65rem;
-  font-size: var(--fit-logo-mark-size-compact);
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .small .mark {
-  min-width: 2.35rem;
-  min-height: 1.8rem;
-  font-size: var(--fit-logo-mark-size-small);
-}
-
-.medium .mark {
-  min-width: 2.85rem;
-  min-height: 2rem;
-  font-size: var(--fit-logo-mark-size-medium);
+  width: 2rem;
+  height: 2rem;
 }
 
 .large .mark {
-  min-width: 3.25rem;
-  min-height: 2.25rem;
-  font-size: var(--fit-logo-mark-size-large);
+  width: 2.75rem;
+  height: 2.75rem;
 }
 
 .large .wordmarkMain {
   font-size: var(--fit-type-size-lg);
 }
 
+.large .initials {
+  font-size: 1.5rem;
+}
+
 @media (forced-colors: active) {
-  .mark {
-    background: none;
+  .logo,
+  .mark,
+  .wordmark,
+  .wordmarkSub {
     color: CanvasText;
-    text-shadow: none;
-    -webkit-text-fill-color: CanvasText;
   }
 }

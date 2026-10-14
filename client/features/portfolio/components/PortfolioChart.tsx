@@ -153,11 +153,12 @@ export const PortfolioChart = ({
           const allocation = (portfolio?.asset_order ?? [])
             .map((symbol, index) => {
               const weight = point.weights?.[index];
-              return Number.isFinite(weight)
-                ? `${symbol} ${allocationWeightFormatter.format(weight!)}`
-                : null;
+              return `${symbol} ${
+                typeof weight === "number" && Number.isFinite(weight)
+                  ? allocationWeightFormatter.format(weight)
+                  : "N/A"
+              }`;
             })
-            .filter(Boolean)
             .join(" · ");
           setPinnedSelection({
             title: "Pinned sampled portfolio",

@@ -13,6 +13,7 @@ import pandas as pd     # Used for data manipulation
 from .market_primitives import (
     calculate_returns,
     get_adjusted_close_prices,
+    has_finite_correlation,
     normalize_tickers,
 )
 
@@ -22,14 +23,18 @@ STOCK_DATA_DOWNLOAD_THREADS = 96
 # not retain DataFrames indefinitely, even before the two-minute TTL expires.
 STOCK_DATA_CACHE_MAX_ENTRIES = 128
 _stock_data_cache = OrderedDict()
+_stock_data_cache_generation = 0
 _stock_data_lock = RLock()
 # yfinance shares result dictionaries and its worker pool across download calls.
 _stock_download_lock = RLock()
 
 
 def clear_stock_data_cache():
+    global _stock_data_cache_generation
     with _stock_data_lock:
         _stock_data_cache.clear()
+        # Invalidate active fills without waiting for their provider downloads.
+        _stock_data_cache_generation += 1
 
 
 def _prune_expired_stock_data(now):
@@ -147,28 +152,42 @@ def fetch_stock_data(stock_tickers, start_date, end_date, force_refresh=False):
             _stock_data_cache.move_to_end(cache_key)
             return cached["data"].copy(deep=True)
 
-    stock_data = download_stock_data(stock_tickers, start_date, end_date)
-    missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
-    retry_frames = []
+    # Serialize a complete cold fill, including retries and cache publication.
+    # The downloader reenters this RLock for Yahoo's shared worker state. A
+    # waiting request must recheck the cache after the preceding fill completes.
+    with _stock_download_lock:
+        with _stock_data_lock:
+            _prune_expired_stock_data(monotonic())
+            cached = _stock_data_cache.get(cache_key)
+            if not force_refresh and cached:
+                _stock_data_cache.move_to_end(cache_key)
+                return cached["data"].copy(deep=True)
+            fill_generation = _stock_data_cache_generation
 
-    for ticker in missing_tickers:
-        retry_frame = download_stock_data([ticker], start_date, end_date)
-        if not retry_frame.empty:
-            retry_frames.append(retry_frame)
+        stock_data = download_stock_data(stock_tickers, start_date, end_date)
+        missing_tickers = get_missing_adjusted_close_tickers(stock_data, stock_tickers)
+        retry_frames = []
 
-    if retry_frames:
-        stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+        for ticker in missing_tickers:
+            retry_frame = download_stock_data([ticker], start_date, end_date)
+            if not retry_frame.empty:
+                retry_frames.append(retry_frame)
 
-    with _stock_data_lock:
-        now = monotonic()
-        _prune_expired_stock_data(now)
-        _stock_data_cache[cache_key] = {
-            "created_at": now,
-            "data": stock_data.copy(deep=True),
-        }
-        _stock_data_cache.move_to_end(cache_key)
-        while len(_stock_data_cache) > STOCK_DATA_CACHE_MAX_ENTRIES:
-            _stock_data_cache.popitem(last=False)
+        if retry_frames:
+            stock_data = merge_stock_data_frames([stock_data, *retry_frames])
+
+        with _stock_data_lock:
+            if fill_generation != _stock_data_cache_generation:
+                return stock_data
+            now = monotonic()
+            _prune_expired_stock_data(now)
+            _stock_data_cache[cache_key] = {
+                "created_at": now,
+                "data": stock_data.copy(deep=True),
+            }
+            _stock_data_cache.move_to_end(cache_key)
+            while len(_stock_data_cache) > STOCK_DATA_CACHE_MAX_ENTRIES:
+                _stock_data_cache.popitem(last=False)
 
     return stock_data
 
@@ -212,7 +231,7 @@ def calculate_beta(stock_tickers, market_ticker, start_date, end_date):
 
     # Calculate daily returns for stocks and market
     stock_returns = calculate_returns(stock_prices)
-    market_returns = adj_close[market_ticker].pct_change(fill_method=None).dropna()
+    market_returns = calculate_returns(adj_close[[market_ticker]])[market_ticker].dropna()
 
     if stock_returns.shape[0] < 21 or market_returns.shape[0] < 21:
         return {}
@@ -277,7 +296,7 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
     
     # Calculate daily returns
     stock_returns = calculate_returns(stock_prices)
-    market_returns = adj_close[market_ticker].pct_change(fill_method=None).dropna()
+    market_returns = calculate_returns(adj_close[[market_ticker]])[market_ticker].dropna()
 
     if stock_returns.shape[0] < 21 or market_returns.shape[0] < 21:
         return {}
@@ -317,7 +336,8 @@ def calculate_alpha(stock_tickers, market_ticker, start_date, end_date, risk_fre
         # Calculate Alpha: Alpha = Actual Return - Expected Return
         alpha = stock_avg_return - expected_return
         
-        alphas[ticker] = alpha
+        if np.isfinite(alpha):
+            alphas[ticker] = float(alpha)
     
     return alphas
 
@@ -367,16 +387,12 @@ def calculate_sortino_ratio(
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = get_adjusted_close_prices(data, stock_tickers)
     stock_prices = select_available_prices(adj_close, stock_tickers)
+    stock_returns = calculate_returns(stock_prices)
     daily_target = float(risk_free_rate) / 252
 
     sortino_ratios = {}
     for ticker in stock_prices.columns:
-        returns = (
-            stock_prices[ticker]
-            .dropna()
-            .pct_change(fill_method=None)
-            .dropna()
-        )
+        returns = stock_returns[ticker].dropna()
         observations = int(returns.shape[0])
         if observations < 2:
             sortino_ratios[ticker] = {
@@ -401,17 +417,21 @@ def calculate_sortino_ratio(
                 "observations": observations,
             }
             continue
-        if downside_deviation == 0:
-            sortino_ratios[ticker] = {
-                "value": None,
-                "status": "infinite",
-                "observations": observations,
-            }
-            continue
-
         annualized_excess_return = (
             float(returns.mean()) * 252 - float(risk_free_rate)
         )
+        if downside_deviation == 0:
+            sortino_ratios[ticker] = {
+                "value": None,
+                "status": "infinite" if annualized_excess_return > 0 else "invalid",
+                "observations": observations,
+            }
+            if annualized_excess_return <= 0:
+                sortino_ratios[ticker]["reason"] = (
+                    "Zero excess return and zero downside deviation."
+                )
+            continue
+
         ratio = annualized_excess_return / downside_deviation
         sortino_ratios[ticker] = {
             "value": float(ratio) if np.isfinite(ratio) else None,
@@ -457,7 +477,10 @@ def calculate_correlation_with_market(stock_tickers, market_ticker, start_date, 
     correlations = {}
     for ticker in stock_tickers + [market_ticker]:
         if ticker in corr_matrix.columns:
-            correlations[ticker] = corr_matrix[ticker].dropna().to_dict()
+            row = corr_matrix[ticker]
+            usable = row[np.isfinite(row)].to_dict()
+            if has_finite_correlation(usable):
+                correlations[ticker] = usable
 
     return correlations
 
@@ -496,15 +519,11 @@ def calculate_volatility(stock_tickers, start_date, end_date):
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = get_adjusted_close_prices(data, stock_tickers)
     stock_prices = select_available_prices(adj_close, stock_tickers)
+    stock_returns = calculate_returns(stock_prices)
 
     volatilities = {}
     for ticker in stock_prices.columns:
-        returns = (
-            stock_prices[ticker]
-            .dropna()
-            .pct_change(fill_method=None)
-            .dropna()
-        )
+        returns = stock_returns[ticker].dropna()
         if returns.shape[0] < 2:
             continue
         volatility = returns.std() * np.sqrt(252)
@@ -523,15 +542,11 @@ def calculate_value_at_risk(
     data = fetch_stock_data(stock_tickers, start_date, end_date)
     adj_close = get_adjusted_close_prices(data, stock_tickers)
     stock_prices = select_available_prices(adj_close, stock_tickers)
+    stock_returns = calculate_returns(stock_prices)
 
     values_at_risk = {}
     for ticker in stock_prices.columns:
-        returns = (
-            stock_prices[ticker]
-            .dropna()
-            .pct_change(fill_method=None)
-            .dropna()
-        )
+        returns = stock_returns[ticker].dropna()
         if returns.shape[0] < 20:
             continue
         tail_return = np.percentile(

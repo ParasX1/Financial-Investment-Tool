@@ -6,6 +6,7 @@ import {
   deleteCommunityComment,
   deleteCommunityPost,
 } from "./communityService";
+import type { PostUI } from "../types";
 
 type QueryResult = {
   data?: unknown;
@@ -344,7 +345,111 @@ describe("Community delete image cleanup", () => {
     });
   });
 
-  it("removes a deleted comment image from storage", async () => {
+  it.each([
+    { table: "comments", comments: true, likes: false, saves: false },
+    { table: "post_likes", comments: false, likes: true, saves: false },
+    { table: "post_saves", comments: false, likes: false, saves: true },
+  ])(
+    "retries only the failed $table query with the retained post IDs",
+    async ({ table, ...details }) => {
+      const retained: PostUI = {
+        id: "post-1",
+        user: "Member",
+        initials: "ME",
+        title: "Live post",
+        body: "Notes",
+        votes: 4,
+        time: "now",
+        sortTime: 100,
+        tags: [],
+        commentCount: 0,
+        avatarGradient: "#000",
+        fromDB: true,
+      };
+      const { db, events } = createMockSupabase([
+        { table, result: { data: [], error: null } },
+      ]);
+      const result = await loadCommunityData(db, "user-1", {
+        posts: [retained],
+        ...details,
+      });
+      expect(result.posts).toEqual([retained]);
+      expect(events).toEqual([`table.${table}`]);
+      const query = db.from.mock.results[0].value;
+      expect(query.in).toHaveBeenCalledWith("post_id", [retained.id]);
+      if (table !== "comments")
+        expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(db.auth.getSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    {
+      table: "comments",
+      errorKey: "commentsError",
+      comments: true,
+      likes: false,
+      saves: false,
+    },
+    {
+      table: "post_likes",
+      errorKey: "likesError",
+      comments: false,
+      likes: true,
+      saves: false,
+    },
+    {
+      table: "post_saves",
+      errorKey: "savesError",
+      comments: false,
+      likes: false,
+      saves: true,
+    },
+  ] as const)(
+    "keeps retained posts and a stable secondary warning when $table recovery fails",
+    async ({ table, errorKey, ...details }) => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      try {
+        const retained: PostUI = {
+          id: "post-1",
+          user: "Member",
+          initials: "ME",
+          title: "Live post",
+          body: "Notes",
+          votes: 4,
+          time: "now",
+          sortTime: 100,
+          tags: [],
+          commentCount: 0,
+          avatarGradient: "#000",
+          fromDB: true,
+        };
+        const { db, events } = createMockSupabase([
+          {
+            table,
+            result: {
+              data: null,
+              error: { message: "Internal policy details" },
+            },
+          },
+        ]);
+        const result = await loadCommunityData(db, "user-1", {
+          posts: [retained],
+          ...details,
+        });
+        expect(result.posts).toEqual([retained]);
+        expect(result[errorKey]).toMatch(/Posts loaded, but/);
+        expect(result[errorKey]).not.toContain("Internal policy");
+        expect(events).toEqual([`table.${table}`]);
+      } finally {
+        consoleError.mockRestore();
+      }
+    },
+  );
+
+  it("finishes comment deletion without browser storage cleanup", async () => {
     const { db, remove } = createMockSupabase([
       {
         table: "comments",
@@ -364,7 +469,7 @@ describe("Community delete image cleanup", () => {
 
     await deleteCommunityComment(db, "comment-1", "user-1");
 
-    expect(remove).toHaveBeenCalledWith(["comments/post-1/comment.png"]);
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it("rejects deleting another user's comment even for the discussion owner", async () => {
@@ -389,7 +494,7 @@ describe("Community delete image cleanup", () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it("removes post and comment images when deleting a discussion", async () => {
+  it("finishes discussion deletion without enumerating or removing persisted attachments", async () => {
     const { db, events, remove } = createMockSupabase([
       {
         table: "posts",
@@ -402,17 +507,6 @@ describe("Community delete image cleanup", () => {
         },
       },
       {
-        table: "comments",
-        result: {
-          data: [
-            { image_path: "comments/post-1/a.png" },
-            { image_path: null },
-            { image_path: "comments/post-1/b.png" },
-          ],
-          error: null,
-        },
-      },
-      {
         table: "posts",
         result: { data: [{ id: "post-1" }], error: null },
       },
@@ -420,17 +514,8 @@ describe("Community delete image cleanup", () => {
 
     await deleteCommunityPost(db, "post-1", "user-1");
 
-    expect(events).toEqual([
-      "table.posts",
-      "table.comments",
-      "table.posts",
-      "storage.remove",
-    ]);
-    expect(remove).toHaveBeenCalledWith([
-      "posts/post.png",
-      "comments/post-1/a.png",
-      "comments/post-1/b.png",
-    ]);
+    expect(events).toEqual(["table.posts", "table.posts"]);
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it("keeps storage images when discussion row deletion fails", async () => {
@@ -446,13 +531,6 @@ describe("Community delete image cleanup", () => {
         },
       },
       {
-        table: "comments",
-        result: {
-          data: [{ image_path: "comments/post-1/a.png" }],
-          error: null,
-        },
-      },
-      {
         table: "posts",
         result: { data: null, error: new Error("delete failed") },
       },
@@ -462,6 +540,115 @@ describe("Community delete image cleanup", () => {
       "delete failed",
     );
 
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("preserves the discussion when the ownership query fails", async () => {
+    const { db, events, remove } = createMockSupabase([
+      {
+        table: "posts",
+        result: { data: null, error: new Error("ownership unavailable") },
+      },
+    ]);
+    await expect(deleteCommunityPost(db, "post-1", "user-1")).rejects.toThrow(
+      "ownership unavailable",
+    );
+    expect(events).toEqual(["table.posts"]);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("does not delete another author's discussion or attachments", async () => {
+    const { db, events, remove } = createMockSupabase([
+      {
+        table: "posts",
+        result: {
+          data: { author_id: "user-2", image_path: "posts/foreign.png" },
+          error: null,
+        },
+      },
+    ]);
+    await expect(deleteCommunityPost(db, "post-1", "user-1")).rejects.toThrow(
+      "You can only delete discussions you created.",
+    );
+    expect(events).toEqual(["table.posts"]);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("reports a discussion deletion denied after the ownership read", async () => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "posts",
+        result: { data: { author_id: "user-1" }, error: null },
+      },
+      { table: "posts", result: { data: [], error: null } },
+    ]);
+    await expect(deleteCommunityPost(db, "post-1", "user-1")).rejects.toThrow(
+      "You can only delete discussions you created.",
+    );
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, unknown, string]>([
+    [
+      "missing legacy ownership",
+      { code: "42703", message: "column comments.author_id does not exist" },
+      "Comment ownership is not available for older comments.",
+    ],
+    [
+      "ownership read failure",
+      new Error("ownership unavailable"),
+      "ownership unavailable",
+    ],
+  ])("preserves a comment after %s", async (_label, error, message) => {
+    const { db, events, remove } = createMockSupabase([
+      { table: "comments", result: { data: null, error } },
+    ]);
+    await expect(
+      deleteCommunityComment(db, "comment-1", "user-1"),
+    ).rejects.toThrow(message);
+    expect(events).toEqual(["table.comments"]);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, QueryResult, string]>([
+    [
+      "RLS denies deletion",
+      { data: [], error: null },
+      "You can only delete comments you created.",
+    ],
+    [
+      "delete request fails",
+      { data: null, error: new Error("delete unavailable") },
+      "delete unavailable",
+    ],
+    [
+      "legacy schema changed",
+      {
+        data: null,
+        error: {
+          code: "42703",
+          message: "column comments.author_id does not exist",
+        },
+      },
+      "Comment ownership is not available for older comments.",
+    ],
+  ])("reports comment failure when %s", async (_label, result, message) => {
+    const { db, remove } = createMockSupabase([
+      {
+        table: "comments",
+        result: {
+          data: {
+            author_id: "user-1",
+            image_path: "comments/post-1/image.png",
+          },
+          error: null,
+        },
+      },
+      { table: "comments", result },
+    ]);
+    await expect(
+      deleteCommunityComment(db, "comment-1", "user-1"),
+    ).rejects.toThrow(message);
     expect(remove).not.toHaveBeenCalled();
   });
 });

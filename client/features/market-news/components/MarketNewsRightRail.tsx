@@ -12,7 +12,7 @@ import styles from "../styles/marketNews.module.css";
 
 const toneClass = {
   negative: "text-[var(--market-news-negative)]",
-  neutral: "text-[#b9c1d0]",
+  neutral: "text-[var(--fit-color-text-muted)]",
   positive: "text-[var(--market-news-positive)]",
 } as const;
 
@@ -62,7 +62,7 @@ export function MarketNewsRightRail({
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <div className="relative min-w-0">
               <SearchRoundedIcon
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8f98aa]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fit-color-text-muted)]"
                 sx={{ fontSize: 20 }}
                 aria-hidden="true"
               />
@@ -82,7 +82,7 @@ export function MarketNewsRightRail({
               type="submit"
               aria-label="Look up quote"
               className={cn(
-                "grid h-11 w-11 place-items-center rounded-lg text-white",
+                "grid h-11 w-11 place-items-center rounded-lg",
                 fitButton.primary,
                 FIT_FOCUS_VISIBLE,
               )}
@@ -95,7 +95,12 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className={cn("text-white", fitType.panelTitle)}>
+          <h2
+            className={cn(
+              "text-[var(--fit-color-text-strong)]",
+              fitType.panelTitle,
+            )}
+          >
             Watchlist impact
           </h2>
           <span className={cn(fitType.caption, fitText.subtle)}>
@@ -108,7 +113,10 @@ export function MarketNewsRightRail({
           </p>
         ) : watchlistError ? (
           <p
-            className={cn("mt-3 text-[#ff9bb0]", fitType.bodySm)}
+            className={cn(
+              "mt-3 text-[var(--fit-color-danger)]",
+              fitType.bodySm,
+            )}
             role="status"
           >
             {watchlistError}
@@ -123,7 +131,12 @@ export function MarketNewsRightRail({
           </p>
         ) : railSummary.watchlistStoryCount ? (
           <>
-            <p className={cn("mt-3 text-[#dce4ff]", fitType.bodySm)}>
+            <p
+              className={cn(
+                "mt-3 text-[var(--fit-color-text-body)]",
+                fitType.bodySm,
+              )}
+            >
               {railSummary.watchlistStoryCount} shown{" "}
               {railSummary.watchlistStoryCount === 1 ? "story" : "stories"}{" "}
               mention {railSummary.watchlistHitCount} saved{" "}
@@ -136,7 +149,7 @@ export function MarketNewsRightRail({
                   type="button"
                   onClick={() => onQuoteReferenceChange(ticker.symbol)}
                   className={cn(
-                    "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-[#dbe4ff]",
+                    "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-[var(--fit-color-text-body)]",
                     fitType.control,
                     fitButton.secondary,
                     FIT_FOCUS_VISIBLE,
@@ -156,7 +169,12 @@ export function MarketNewsRightRail({
 
       <section className={railSectionClass}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className={cn("text-white", fitType.panelTitle)}>
+          <h2
+            className={cn(
+              "text-[var(--fit-color-text-strong)]",
+              fitType.panelTitle,
+            )}
+          >
             Mentioned tickers
           </h2>
           <span className={cn(fitType.caption, fitText.subtle)}>
@@ -171,7 +189,7 @@ export function MarketNewsRightRail({
                 type="button"
                 onClick={() => onQuoteReferenceChange(ticker.symbol)}
                 className={cn(
-                  "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-left transition-colors hover:text-white",
+                  "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-left transition-colors hover:text-[var(--fit-color-text-strong)]",
                   FIT_FOCUS_VISIBLE,
                 )}
                 title={`Inspect quote context for ${ticker.label}`}
@@ -179,14 +197,17 @@ export function MarketNewsRightRail({
                 <span className="min-w-0">
                   <span className="flex min-w-0 items-center gap-2">
                     <span
-                      className={cn("truncate text-[#8fc7ff]", fitType.control)}
+                      className={cn(
+                        "truncate text-[var(--fit-color-accent)]",
+                        fitType.control,
+                      )}
                     >
                       {ticker.symbol}
                     </span>
                     {ticker.inWatchlist ? (
                       <span
                         className={cn(
-                          "rounded-full bg-[#0f2b22] px-1.5 py-0.5 uppercase text-[#7dffc0]",
+                          "rounded-full bg-[var(--fit-color-surface)] px-1.5 py-0.5 uppercase text-[var(--fit-color-success)]",
                           fitType.badge,
                         )}
                       >
@@ -205,7 +226,12 @@ export function MarketNewsRightRail({
                   </span>
                 </span>
                 <span className="text-right">
-                  <span className={cn("block text-[#dce4ff]", fitType.caption)}>
+                  <span
+                    className={cn(
+                      "block text-[var(--fit-color-text-body)]",
+                      fitType.caption,
+                    )}
+                  >
                     {ticker.count} {ticker.count === 1 ? "story" : "stories"}
                   </span>
                   {ticker.value ? (
@@ -234,7 +260,12 @@ export function MarketNewsRightRail({
       {selectedTicker ? (
         <section className={railSectionClass}>
           <div className="flex items-center justify-between gap-3">
-            <h2 className={cn("text-white", fitType.panelTitle)}>
+            <h2
+              className={cn(
+                "text-[var(--fit-color-text-strong)]",
+                fitType.panelTitle,
+              )}
+            >
               Quote reference
             </h2>
             <span
@@ -243,13 +274,23 @@ export function MarketNewsRightRail({
               {quoteLoading ? "Updating" : selectedTicker.change}
             </span>
           </div>
-          <p className={cn("mt-2 text-white", fitType.metricLg)}>
+          <p
+            className={cn(
+              "mt-2 text-[var(--fit-color-text-strong)]",
+              fitType.metricLg,
+            )}
+          >
             {selectedTicker.symbol}
           </p>
           <p className={cn(fitType.caption, fitText.subtle)}>
             {selectedTicker.label}
           </p>
-          <p className={cn("mt-3 text-white", fitType.metricMd)}>
+          <p
+            className={cn(
+              "mt-3 text-[var(--fit-color-text-strong)]",
+              fitType.metricMd,
+            )}
+          >
             {selectedTicker.value}
           </p>
           <p className={cn("mt-2", fitType.caption, fitText.subtle)}>
@@ -260,7 +301,7 @@ export function MarketNewsRightRail({
             type="button"
             onClick={() => onTickerNewsRequest(selectedTicker.symbol)}
             className={cn(
-              "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-white/[0.035] px-3 py-2 text-[#dbe4ff] transition-colors hover:border-[#5367ff]/45 hover:bg-white/[0.055] hover:text-white",
+              "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] px-3 py-2 text-[var(--fit-color-text-body)] transition-colors hover:border-[var(--fit-color-accent)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
               fitType.control,
               FIT_FOCUS_VISIBLE,
             )}

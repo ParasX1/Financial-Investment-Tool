@@ -1,8 +1,33 @@
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import Link from "next/link";
-import type { HomeRouteLink } from "../types";
+import type { HomeEntryDestination, HomeRouteLink } from "../types";
+import { HomePortfolioPreview } from "./HomePortfolioPreview";
+import { HomeRouteAction } from "./HomeRouteAction";
 import styles from "../styles/home.module.css";
+
+const chapters: Record<
+  HomeEntryDestination,
+  { label: string; title: string; action: string }
+> = {
+  "/Portfolio": {
+    label: "Portfolio",
+    title: "Portfolio: return and risk.",
+    action: "Explore portfolio",
+  },
+  "/Watchlist": {
+    label: "Watchlist",
+    title: "Follow what matters.",
+    action: "Open watchlist",
+  },
+  "/MarketNews": {
+    label: "Market context",
+    title: "Look beyond the headline.",
+    action: "Read market news",
+  },
+  "/Community": {
+    label: "Research community",
+    title: "Build a considered view.",
+    action: "Explore community",
+  },
+};
 
 export function HomeProductSection({
   authLoading,
@@ -19,56 +44,65 @@ export function HomeProductSection({
     <section
       id="product"
       className={styles.productSection}
-      aria-labelledby="home-product-title"
+      aria-label="Explore FIT products"
     >
-      <div className={styles.sectionIntro}>
-        <p className={styles.eyebrow}>Explore FIT</p>
-        <h2 id="home-product-title">Start with the questions that matter.</h2>
-      </div>
-
-      <div className={styles.routeGrid}>
-        {routes.map((route) => {
-          const Icon = route.icon;
-          const locked = Boolean(route.gated && !signedIn);
-          const tileContent = (
-            <>
-              <span className={styles.routeIcon} aria-hidden="true">
-                {Icon ? <Icon sx={{ fontSize: 19 }} /> : null}
-              </span>
-              <span className={styles.routeBody}>
-                <strong>{route.label}</strong>
-                <span>{route.description}</span>
-              </span>
-              <span className={styles.routeAction} aria-hidden="true">
-                {locked ? <LockOutlinedIcon sx={{ fontSize: 15 }} /> : null}
-                <KeyboardArrowRightRoundedIcon sx={{ fontSize: 20 }} />
-              </span>
-            </>
-          );
-
-          if (!locked) {
-            return (
-              <Link
-                key={route.href}
-                href={route.href}
-                className={styles.routeTile}
-              >
-                {tileContent}
-              </Link>
-            );
-          }
-
+      <div className={styles.productGrid}>
+        {routes.map((route, index) => {
+          const chapter = chapters[route.href];
+          const portfolio = route.href === "/Portfolio";
           return (
-            <button
+            <article
               key={route.href}
-              type="button"
-              className={styles.routeTile}
-              aria-label={`${route.label} requires sign in`}
-              disabled={authLoading}
-              onClick={() => onRouteSelect(route)}
+              className={`${styles.productPanel} ${portfolio ? styles.portfolioPanel : styles.supportingPanel}`}
+              aria-labelledby={
+                portfolio ? "home-preview-title" : `home-product-${index}`
+              }
             >
-              {tileContent}
-            </button>
+              {portfolio ? (
+                <HomePortfolioPreview />
+              ) : (
+                <>
+                  <p className={styles.chapterLabel}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    {chapter.label}
+                  </p>
+                  <h2 id={`home-product-${index}`}>{chapter.title}</h2>
+                  {route.href === "/Watchlist" ? (
+                    <ul className={styles.watchlistPurposes}>
+                      <li>Follow a company</li>
+                      <li>Keep a research note</li>
+                      <li>Revisit your questions</li>
+                    </ul>
+                  ) : null}
+                  <p className={styles.chapterDescription}>
+                    {route.description}
+                  </p>
+                  {route.href === "/MarketNews" ? (
+                    <p className={styles.sourcePrompt}>
+                      Who published it? When? What does it explain?
+                    </p>
+                  ) : null}
+                  {route.href === "/Community" ? (
+                    <ul
+                      className={styles.researchPrompts}
+                      aria-label="Research prompts"
+                    >
+                      <li>Evidence</li>
+                      <li>Assumptions</li>
+                      <li>Open questions</li>
+                    </ul>
+                  ) : null}
+                </>
+              )}
+              <HomeRouteAction
+                route={route}
+                label={chapter.action}
+                className={styles.routeTile}
+                authLoading={authLoading}
+                signedIn={signedIn}
+                onRouteSelect={onRouteSelect}
+              />
+            </article>
           );
         })}
       </div>

@@ -7,10 +7,12 @@ import { AuthProvider } from "@/features/auth";
 import { TopPicksBackgroundRefresh } from "@/features/top-picks/components/TopPicksBackgroundRefresh";
 import { ToastContainer } from "react-toastify";
 import { theme } from "@/styles/theme";
+import { ThemeFoundation } from "@/styles/ThemeFoundation";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider theme={theme}>
+      <ThemeFoundation />
       <AuthProvider>
         <TopPicksBackgroundRefresh />
         <Component {...pageProps} />
@@ -24,7 +26,7 @@ export default function App({ Component, pageProps }: AppProps) {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="light"
+          theme="dark"
         />
       </AuthProvider>
     </ThemeProvider>

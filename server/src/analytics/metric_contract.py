@@ -1,7 +1,8 @@
 from datetime import date, datetime, timezone
 import math
+from numbers import Integral, Real
 
-from ..market_primitives import TICKER_PATTERN, normalize_tickers
+from ..market_primitives import TICKER_PATTERN, has_finite_correlation, normalize_tickers
 
 
 MAX_STOCK_TICKERS = 5
@@ -47,6 +48,21 @@ METRIC_METHODS = {
 
 class MetricRequestValidationError(ValueError):
     pass
+
+
+def finite_json_value(value):
+    """Normalize numerical results to strict JSON, including NumPy scalars."""
+    if isinstance(value, dict):
+        return {key: finite_json_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [finite_json_value(item) for item in value]
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, Integral):
+        return int(value)
+    if isinstance(value, Real):
+        return float(value) if math.isfinite(value) else None
+    return value
 
 
 def _validate_date(value, field_name):
@@ -171,6 +187,7 @@ def validate_metric_request(payload):
 
 
 def build_metric_response(metric_type, result, metric_request):
+    result = finite_json_value(result)
     requested = metric_request["stock_tickers"]
     if metric_type == "efficientfrontiervisualization":
         available = (
@@ -186,8 +203,13 @@ def build_metric_response(metric_type, result, metric_request):
         available = [
             symbol
             for symbol in requested
-            if isinstance(result, dict) and symbol in result
+            if isinstance(result, dict) and result.get(symbol) is not None
         ]
+        if metric_type == "marketcorrelationanalysis":
+            available = [
+                symbol for symbol in available
+                if has_finite_correlation(result[symbol])
+            ]
 
     observations = {}
     actual_dates = []
@@ -217,7 +239,11 @@ def build_metric_response(metric_type, result, metric_request):
         "observationsBySymbol": observations,
         "annualisationDays": 252,
         "priceField": (
-            "Adjusted Close, with Close fallback when unavailable"
+            "Adjusted Close, with whole-symbol Close fallback when unavailable"
+        ),
+        "dailyReturnPolicy": (
+            "Adjacent supplied observations with finite positive prices; "
+            "missing endpoints excluded without filling or calendar inference."
         ),
         "method": METRIC_METHODS.get(
             metric_type,

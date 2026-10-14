@@ -1,7 +1,4 @@
-import TestRenderer, {
-  act,
-  type ReactTestRenderer,
-} from "react-test-renderer";
+import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
 
 type D3Handler = (...args: unknown[]) => unknown;
 
@@ -16,6 +13,7 @@ const mockD3State = {
   handlers: [] as HandlerRecord[],
   styles: [] as { name: string; selection: string; value: unknown }[],
   texts: [] as { selection: string; value: string }[],
+  focusedIndices: [] as number[],
 };
 
 class FakeSelection {
@@ -77,6 +75,12 @@ class FakeSelection {
   datum(item: unknown) {
     this.dataItems = [item];
     return this;
+  }
+
+  nodes() {
+    return this.dataItems.map((_point, index) => ({
+      focus: () => mockD3State.focusedIndices.push(index),
+    }));
   }
 
   on(event: string, handler: D3Handler) {
@@ -174,9 +178,7 @@ jest.doMock("d3", () => ({
       `${(value * 100).toFixed(pattern === ".2%" ? 2 : 0)}%`,
   line: createLine,
   max: (items: unknown[], accessor: D3Handler) => {
-    const values = items.map((item, index) =>
-      Number(accessor(item, index)),
-    );
+    const values = items.map((item, index) => Number(accessor(item, index)));
     return values.length ? Math.max(...values) : undefined;
   },
   scaleLinear: createScale,
@@ -206,12 +208,15 @@ const renderChart = (
 };
 
 const handlerFor = (event: string) => {
-  const record = mockD3State.handlers.find((candidate) => candidate.event === event);
+  const record = mockD3State.handlers.find(
+    (candidate) => candidate.event === event,
+  );
   expect(record).toBeDefined();
   return record!;
 };
 
-const renderedText = () => mockD3State.texts.map(({ value }) => value).join(" ");
+const renderedText = () =>
+  mockD3State.texts.map(({ value }) => value).join(" ");
 
 describe("PortfolioFrontierChart", () => {
   beforeEach(() => {
@@ -219,6 +224,7 @@ describe("PortfolioFrontierChart", () => {
     mockD3State.handlers.length = 0;
     mockD3State.styles.length = 0;
     mockD3State.texts.length = 0;
+    mockD3State.focusedIndices.length = 0;
   });
 
   afterEach(() => {
@@ -233,9 +239,29 @@ describe("PortfolioFrontierChart", () => {
     renderChart({ width: 480, height: 300 });
 
     expect(renderedText()).toContain("Simulated portfolio opportunity set");
-    expect(renderedText()).toContain("No finite portfolio simulations are available.");
+    expect(renderedText()).toContain(
+      "No finite portfolio simulations are available.",
+    );
     expect(renderedText()).toContain("No portfolio data available");
     expect(mockD3State.handlers).toHaveLength(0);
+  });
+
+  it("has one tab stop for a dense simulation set", () => {
+    renderChart({
+      data: Array.from({ length: 1000 }, (_, index) => ({
+        risk: 0.1 + index / 10000,
+        return: 0.05 + index / 20000,
+      })),
+    });
+
+    const points = mockD3State.attributes.filter(
+      ({ name, selection }) =>
+        name === "tabindex" && selection.includes("portfolio-point"),
+    );
+    // The test double records a constant attribute once, while an accessor is
+    // evaluated for every point. A constant zero means every point is tabbable.
+    expect(points.some(({ value }) => value === -1)).toBe(true);
+    expect(points.filter(({ value }) => value === 0)).toHaveLength(1);
   });
 
   it("supports pointer and keyboard selection with bounded tooltips", () => {
@@ -265,7 +291,7 @@ describe("PortfolioFrontierChart", () => {
     const mousemove = handlerFor("mousemove");
     const mouseout = handlerFor("mouseout");
     click.handler({}, click.data[0]);
-    const ignoredKey = { key: "Escape", preventDefault: jest.fn() };
+    const ignoredKey = { key: "x", preventDefault: jest.fn() };
     const acceptedKey = { key: "Enter", preventDefault: jest.fn() };
     keydown.handler(ignoredKey, keydown.data[0]);
     keydown.handler(acceptedKey, keydown.data[1]);
@@ -327,11 +353,82 @@ describe("PortfolioFrontierChart", () => {
     const keydown = handlerFor("keydown");
     expect(() => click.handler({}, click.data[0])).not.toThrow();
     expect(() =>
-      keydown.handler(
-        { key: " ", preventDefault: jest.fn() },
-        keydown.data[0],
-      ),
+      keydown.handler({ key: " ", preventDefault: jest.fn() }, keydown.data[0]),
     ).not.toThrow();
+  });
+
+  it("inspects focused points and uses arrows, Home, End, and Escape inside the chart", () => {
+    Object.defineProperty(global, "window", {
+      configurable: true,
+      value: {
+        innerHeight: 1000,
+        innerWidth: 1000,
+      },
+    });
+    const onPointSelect = jest.fn();
+    const data = [
+      { risk: 0.1, return: 0.05, sharpe: 0.5 },
+      { risk: 0.2, return: 0.1 },
+      { risk: 0.3, return: 0.15 },
+    ];
+    renderChart({ data, onPointSelect });
+    const focus = handlerFor("focus");
+    focus.handler.call(
+      { getBoundingClientRect: () => ({ right: 30, top: 40 }) },
+      {},
+      focus.data[1],
+    );
+    expect(renderedText()).toContain("Risk:");
+    expect(mockD3State.attributes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "r", value: 8 }),
+        expect.objectContaining({ name: "stroke", value: "#fff" }),
+      ]),
+    );
+    const keydown = handlerFor("keydown");
+    const press = (key: string, pointIndex = 0, extra = {}) => {
+      const event = {
+        key,
+        preventDefault: jest.fn(),
+        stopPropagation: jest.fn(),
+        ...extra,
+      };
+      keydown.handler(event, keydown.data[pointIndex]);
+      return event;
+    };
+    for (const [key, index] of [
+      ["ArrowRight", 0],
+      ["ArrowLeft", 0],
+      ["ArrowUp", 1],
+      ["ArrowDown", 2],
+      ["Home", 2],
+      ["End", 0],
+    ] as const) {
+      expect(press(key, index).stopPropagation).toHaveBeenCalledTimes(1);
+    }
+    expect(mockD3State.focusedIndices).toEqual([1, 0, 2, 1, 0, 2]);
+    expect(press("Escape").preventDefault).toHaveBeenCalledTimes(1);
+    expect(mockD3State.styles.at(-1)).toMatchObject({
+      name: "display",
+      value: "none",
+    });
+    for (const guard of [
+      { defaultPrevented: true },
+      { ctrlKey: true },
+      { metaKey: true },
+      { altKey: true },
+      { isComposing: true },
+    ])
+      expect(press("Enter", 0, guard).preventDefault).not.toHaveBeenCalled();
+    press("Enter", 0, { repeat: true });
+    expect(onPointSelect).not.toHaveBeenCalled();
+    handlerFor("blur").handler.call({}, {});
+    expect(
+      mockD3State.attributes.filter(({ name }) => name === "stroke").at(-1),
+    ).toMatchObject({
+      name: "stroke",
+      value: null,
+    });
   });
 
   it("omits a best-Sharpe highlight when simulations have no finite ratio", () => {

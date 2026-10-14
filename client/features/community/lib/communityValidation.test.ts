@@ -3,7 +3,34 @@ import {
   MAX_COMMUNITY_POST_BODY_CHARS,
   MAX_COMMUNITY_POST_TITLE_CHARS,
 } from "../constants";
-import { validateCommunityPostContent } from "./communityValidation";
+import {
+  validateCommunityCommentContent,
+  validateCommunityPostContent,
+} from "./communityValidation";
+
+describe("validateCommunityCommentContent", () => {
+  it.each(["x", "界", "😀"])(
+    "accepts exactly 2,000 %s code points",
+    (character) => {
+      expect(
+        validateCommunityCommentContent(character.repeat(2000)),
+      ).toBeNull();
+      expect(validateCommunityCommentContent(character.repeat(2001))).toBe(
+        "Keep the comment to 2,000 characters or fewer.",
+      );
+    },
+  );
+
+  it("counts combining marks separately and preserves empty comment contracts", () => {
+    expect(validateCommunityCommentContent("e\u0301".repeat(1000))).toBeNull();
+    expect(
+      validateCommunityCommentContent("e\u0301".repeat(1000) + "x"),
+    ).not.toBeNull();
+    expect(validateCommunityCommentContent("")).toBeNull();
+    expect(validateCommunityCommentContent("  ")).toBeNull();
+    expect(validateCommunityCommentContent(" ".repeat(2001))).not.toBeNull();
+  });
+});
 
 describe("validateCommunityPostContent", () => {
   it("accepts plain text and raw Markdown within the storage limits", () => {

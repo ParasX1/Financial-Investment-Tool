@@ -12,25 +12,25 @@ import sqlite3
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
 
-from ..market_primitives import TICKER_PATTERN
-from .service import (
+from ..market_primitives import CALCULATION_VERSION, TICKER_PATTERN
+from .configuration import (
     DEFAULT_BENCHMARK_TICKER,
     DEFAULT_CACHE_TTL_SECONDS,
     DEFAULT_RISK_FREE_RATE,
     DEFAULT_UNIVERSE_LIMIT,
     METRIC_KEYS,
     TOP_PICKS_WINDOWS,
-    _normalize_benchmark,
-    _normalize_cache_ttl,
-    _normalize_risk_free_rate,
-    _normalize_universe_limit,
+    normalize_benchmark,
+    normalize_cache_ttl,
+    normalize_risk_free_rate,
+    normalize_universe_limit,
 )
 
 
 LOGGER = logging.getLogger(__name__)
 SEED_FORMAT_VERSION = 1
 # Bump when calculation rules change enough to invalidate bundled results.
-SEED_CALCULATION_VERSION = 1
+SEED_CALCULATION_VERSION = CALCULATION_VERSION
 SNAPSHOT_MEMBER = "snapshot.json"
 HISTORY_MEMBER = "history.sqlite3"
 MANIFEST_MEMBER = "manifest.json"
@@ -41,6 +41,7 @@ METADATA_FIELDS = {
     "riskFreeRateSource", "riskFreeRateAsOf", "universeLimit", "universeCount",
     "availableCount", "minimumTrailingReturnObservations", "observationsBySymbol",
     "units", "window", "windowCode", "availableMetrics", "assumptions", "methods",
+    "calculationVersion",
 }
 
 
@@ -50,16 +51,20 @@ def _json_bytes(value):
     ).encode("utf-8")
 
 
-def _prepare_snapshots(payload):
+def _prepare_snapshots(payload, calculation_version=SEED_CALCULATION_VERSION):
     if not isinstance(payload, dict) or not isinstance(payload.get("entries"), dict):
         raise ValueError("Initial snapshot entries are missing.")
     latest = {}
     for raw_key, entry in payload["entries"].items():
         key = json.loads(raw_key)
         # Old cache formats are not part of the current initial package.
-        if (not isinstance(key, list) or len(key) != 7
+        key_length = 7 if calculation_version == 1 else 8
+        if (not isinstance(key, list) or len(key) != key_length
                 or key[0] != "top-picks-snapshot" or key[1] not in TOP_PICKS_WINDOWS):
             continue
+        if calculation_version != 1 and key[5] != calculation_version:
+            continue
+        start_date, end_date = key[-2:]
         window = key[1]
         if not isinstance(entry, dict) or not isinstance(entry.get("value"), dict):
             raise ValueError("Initial snapshot value is invalid.")
@@ -76,20 +81,22 @@ def _prepare_snapshots(payload):
         if (any(not isinstance(symbol, str) or not TICKER_PATTERN.fullmatch(symbol) for symbol in symbols)
                 or len(set(symbols)) != len(symbols)):
             raise ValueError("Initial snapshot symbols must be unique.")
-        if (_normalize_benchmark(key[2]) != key[2]
-                or _normalize_risk_free_rate(key[3]) != key[3]
-                or _normalize_universe_limit(key[4]) != key[4]):
+        if (normalize_benchmark(key[2]) != key[2]
+                or normalize_risk_free_rate(key[3]) != key[3]
+                or normalize_universe_limit(key[4]) != key[4]):
             raise ValueError("Initial snapshot calculation settings are invalid.")
         if (metadata.get("windowCode") != window
                 or metadata.get("benchmark") != key[2]
                 or metadata.get("riskFreeRate") != key[3]
                 or metadata.get("universeLimit") != key[4]
                 or metadata.get("universeCount") != len(rows)
-                or metadata.get("requestedStart") != key[5]
-                or metadata.get("requestedEnd") != key[6]
+                or metadata.get("requestedStart") != start_date
+                or metadata.get("requestedEnd") != end_date
+                or (calculation_version != 1
+                    and metadata.get("calculationVersion") != calculation_version)
                 or len(rows) > key[4]):
             raise ValueError("Initial snapshot metadata does not match its key.")
-        if date.fromisoformat(key[5]) > date.fromisoformat(key[6]):
+        if date.fromisoformat(start_date) > date.fromisoformat(end_date):
             raise ValueError("Initial snapshot date range is invalid.")
         generated_at = datetime.fromisoformat(metadata["generatedAt"])
         if generated_at.tzinfo is None:
@@ -219,7 +226,9 @@ def _history_summary(connection):
                 or date.fromisoformat(covered_start) > date.fromisoformat(covered_end)):
             raise ValueError("Initial history record is invalid.")
         prices = json.loads(payload)
-        if not isinstance(prices, dict) or set(prices) != {"dates", "values"}:
+        if (not isinstance(prices, dict)
+                or set(prices) - {"needs_reconciliation"} != {"dates", "values"}
+                or not isinstance(prices.get("needs_reconciliation", False), bool)):
             raise ValueError("Initial history payload is invalid.")
         dates, values = prices["dates"], prices["values"]
         if (not isinstance(dates, list) or not isinstance(values, list)
@@ -296,14 +305,16 @@ def _read_seed(seed_path):
             raise ValueError("Initial package members are invalid.")
         manifest = json.loads(archive.read(MANIFEST_MEMBER))
         if (manifest["format_version"] != SEED_FORMAT_VERSION
-                or manifest["calculation_version"] != SEED_CALCULATION_VERSION):
+                or manifest["calculation_version"] not in {1, SEED_CALCULATION_VERSION}):
             raise ValueError("Initial package version is unsupported.")
         files = {name: archive.read(name) for name in (SNAPSHOT_MEMBER, HISTORY_MEMBER)}
     for name, data in files.items():
         expected = manifest["files"][name]
         if expected["bytes"] != len(data) or expected["sha256"] != sha256(data).hexdigest():
             raise ValueError("Initial package checksum does not match.")
-    prepared, windows, assumptions = _prepare_snapshots(json.loads(files[SNAPSHOT_MEMBER]))
+    prepared, windows, assumptions = _prepare_snapshots(
+        json.loads(files[SNAPSHOT_MEMBER]), manifest["calculation_version"],
+    )
     if windows != manifest["windows"] or assumptions != manifest["assumptions"]:
         raise ValueError("Initial package metadata does not match its snapshots.")
     if not files[HISTORY_MEMBER].startswith(b"SQLite format 3\x00"):
@@ -351,7 +362,7 @@ def bootstrap_top_picks_cache(
     """Install missing caches; existing files always belong to the running app."""
     installed = {"snapshot": False, "history": False}
     targets = {
-        "snapshot": snapshot_path if _normalize_cache_ttl(cache_ttl_seconds) > 0 else None,
+        "snapshot": snapshot_path if normalize_cache_ttl(cache_ttl_seconds) > 0 else None,
         "history": history_path,
     }
     try:
@@ -363,16 +374,19 @@ def bootstrap_top_picks_cache(
         LOGGER.warning("Top Picks initial paths unavailable; using normal refresh.")
         return installed
     expected = {
-        "benchmark": _normalize_benchmark(benchmark_ticker),
-        "riskFreeRate": _normalize_risk_free_rate(risk_free_rate),
-        "universeLimit": _normalize_universe_limit(universe_limit),
+        "benchmark": normalize_benchmark(benchmark_ticker),
+        "riskFreeRate": normalize_risk_free_rate(risk_free_rate),
+        "universeLimit": normalize_universe_limit(universe_limit),
     }
     try:
         manifest, files = _read_seed(seed_path)
     except (OSError, ValueError, TypeError, KeyError, RuntimeError, sqlite3.Error, BadZipFile):
         LOGGER.warning("Top Picks initial package unavailable; using normal refresh.")
         return installed
-    if manifest["assumptions"] != expected:
+    # Version-one raw history retains supplied missing-price rows and remains
+    # reusable. Its derived metrics must be recalculated under the new policy.
+    if (manifest["assumptions"] != expected
+            or manifest["calculation_version"] != SEED_CALCULATION_VERSION):
         targets.pop("snapshot", None)
     for name, target in targets.items():
         try:

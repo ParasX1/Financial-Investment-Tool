@@ -5,7 +5,21 @@ import {
   MAX_COMMUNITY_POST_BODY_CHARS,
   MAX_COMMUNITY_POST_TITLE_CHARS,
   MAX_COMMUNITY_IMAGE_BYTES,
+  MAX_COMMUNITY_COMMENT_BODY_CHARS,
 } from "../constants";
+
+export function countCommunityCommentCharacters(text: string) {
+  return Array.from(text).length;
+}
+
+export function validateCommunityCommentContent(text: string) {
+  if (
+    countCommunityCommentCharacters(text) > MAX_COMMUNITY_COMMENT_BODY_CHARS
+  ) {
+    return `Keep the comment to ${MAX_COMMUNITY_COMMENT_BODY_CHARS.toLocaleString("en-US")} characters or fewer.`;
+  }
+  return null;
+}
 
 export function validateCommunityPostContent(input: {
   title: string;

@@ -3,6 +3,9 @@ import styles from "./FitLogo.module.css";
 
 type FitLogoSize = "compact" | "small" | "medium" | "large";
 
+// Keep the public mark and favicon geometry in sync; asset parity is tested.
+const FIT_MARK_PATH = "M8 4H28V8H22V10H10V15H22V21H10V28H4V8A4 4 0 0 1 8 4Z";
+
 export function FitLogo({
   className,
   decorative = false,
@@ -26,7 +29,7 @@ export function FitLogo({
     ? { "aria-hidden": true }
     : showWordmark
       ? {}
-      : { "aria-label": "FIT" };
+      : { "aria-label": "FIT", role: "img" };
 
   return (
     <span
@@ -35,11 +38,25 @@ export function FitLogo({
       {...accessibilityProps}
     >
       <span className={cn(styles.mark, markClassName)} aria-hidden="true">
-        FIT
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 32 32"
+          fill="currentColor"
+        >
+          <path d={FIT_MARK_PATH} />
+        </svg>
       </span>
       {showWordmark ? (
         <span className={cn(styles.wordmark, wordmarkClassName)}>
-          <span className={styles.wordmarkMain}>{wordmark}</span>
+          <span
+            className={cn(
+              styles.wordmarkMain,
+              wordmark === "FIT" && styles.initials,
+            )}
+          >
+            {wordmark}
+          </span>
           {subtitle ? (
             <span className={styles.wordmarkSub}>{subtitle}</span>
           ) : null}

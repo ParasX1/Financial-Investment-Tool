@@ -16,10 +16,7 @@ export {
   resolveMarketNewsTickerQuoteRefreshState,
   resolveMarketNewsTickerQuoteState,
 } from "./quoteState";
-export {
-  MARKET_NEWS_TICKER_STRIP_REFRESH_MS,
-  buildMarketNewsTickerStripSnapshot,
-} from "./snapshotService";
+export { MARKET_NEWS_TICKER_STRIP_REFRESH_MS } from "./refreshPolicy";
 export type {
   MarketNewsMarketScope,
   MarketNewsMarketScopeId,

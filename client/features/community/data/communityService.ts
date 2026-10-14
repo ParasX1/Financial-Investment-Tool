@@ -5,7 +5,10 @@ import {
   validateCommunityCommentImageReference,
   validateCommunityPostImageReference,
 } from "../lib/communityImageUrls";
-import { validateCommunityPostContent } from "../lib/communityValidation";
+import {
+  validateCommunityCommentContent,
+  validateCommunityPostContent,
+} from "../lib/communityValidation";
 import { getErrorMessage } from "../lib/communityErrors";
 import { commentFromRow, postFromRow } from "../lib/communityMappers";
 import { validateCommunityResearchDraft } from "../lib/communityPostMetadata";
@@ -16,7 +19,6 @@ import {
   insertCommunityPostReportRow,
   insertCommunityPostRow,
   isMissingAuthorIdColumn,
-  loadCommentImagePathRowsForPost,
   loadCommunityCommentRows,
   loadCommunityPostRows,
   selectCommentDeleteContext,
@@ -27,7 +29,6 @@ import {
   setCommunityPostSavedValue,
   type CommentDeleteContext,
 } from "./communityRepository";
-import { removeCommunityImages, uniqueImagePaths } from "./communityStorage";
 import type {
   CommentEntry,
   CommunityReportReason,
@@ -53,9 +54,17 @@ function requireSessionUserId(uid: string | null, action: string) {
   return uid;
 }
 
+export type CommunityDetailsRetry = {
+  posts: PostUI[];
+  comments: boolean;
+  likes: boolean;
+  saves: boolean;
+};
+
 export async function loadCommunityData(
   db: SupabaseClient,
   currentUserId?: string | null,
+  retryDetails?: CommunityDetailsRetry,
 ): Promise<{
   posts: PostUI[];
   comments: CommentEntry[];
@@ -68,26 +77,31 @@ export async function loadCommunityData(
   const activeUserId =
     currentUserId === undefined ? await getSessionUserId(db) : currentUserId;
 
-  const { data: rows, error } = await loadCommunityPostRows(db);
+  let posts = retryDetails?.posts;
+  if (!posts) {
+    const { data: rows, error } = await loadCommunityPostRows(db);
+    if (error) throw error;
+    posts = (rows ?? []).map((row) => postFromRow(row, activeUserId));
+  }
 
-  if (error) throw error;
-
-  const dbPosts: PostUI[] = rows
-    ? rows.map((row) => postFromRow(row, activeUserId))
-    : [];
-  const posts: PostUI[] = dbPosts;
-
-  if (!dbPosts.length) {
+  if (!posts.length) {
     return { posts, comments: [], likedPostIds: [], savedPostIds: [] };
   }
 
-  const postIds = dbPosts.map((post) => post.id);
-  const commentsQuery = await loadCommunityCommentRows(db, postIds);
+  const postIds = posts.map((post) => post.id);
+  const commentsQuery =
+    !retryDetails || retryDetails.comments
+      ? await loadCommunityCommentRows(db, postIds)
+      : { data: [], error: null };
 
   const { data: allComments, error: commentsError } = commentsQuery;
   const [likedPostIds, savedPostIds] = await Promise.all([
-    loadLikedPostIds(db, postIds, activeUserId),
-    loadSavedPostIds(db, postIds, activeUserId),
+    !retryDetails || retryDetails.likes
+      ? loadLikedPostIds(db, postIds, activeUserId)
+      : Promise.resolve({ ids: [], error: undefined }),
+    !retryDetails || retryDetails.saves
+      ? loadSavedPostIds(db, postIds, activeUserId)
+      : Promise.resolve({ ids: [], error: undefined }),
   ]);
 
   if (commentsError) {
@@ -117,14 +131,6 @@ export async function loadCommunityData(
     likesError: likedPostIds.error,
     savesError: savedPostIds.error,
   };
-}
-
-async function loadCommentImagePathsForPost(
-  db: SupabaseClient,
-  postId: string,
-) {
-  const rows = await loadCommentImagePathRowsForPost(db, postId);
-  return uniqueImagePaths(rows.map((row) => row.image_path));
 }
 
 function canDeleteCommentFromContext(
@@ -229,11 +235,6 @@ export async function deleteCommunityPost(
     throw new Error("You can only delete discussions you created.");
   }
 
-  const imagePaths = uniqueImagePaths([
-    owner.image_path,
-    ...(await loadCommentImagePathsForPost(db, postId)),
-  ]);
-
   const { data, error } = await deleteCommunityPostRow(
     db,
     postId,
@@ -244,8 +245,6 @@ export async function deleteCommunityPost(
   if (!data?.length) {
     throw new Error("You can only delete discussions you created.");
   }
-
-  await removeCommunityImages(db, imagePaths);
 }
 
 export async function createCommunityComment({
@@ -270,6 +269,8 @@ export async function createCommunityComment({
   if (activeUserId !== authorId) {
     throw new Error("Your session changed. Please try again.");
   }
+  const contentError = validateCommunityCommentContent(text);
+  if (contentError) throw new Error(contentError);
   const imageError = validateCommunityCommentImageReference({
     imageUrl,
     imagePath,
@@ -321,16 +322,15 @@ export async function deleteCommunityComment(
   if (!data?.length) {
     throw new Error("You can only delete comments you created.");
   }
-
-  await removeCommunityImages(db, [owner.image_path]);
 }
 
 export async function setCommunityPostLike(
   db: SupabaseClient,
   postId: string,
   liked: boolean,
+  expectedUserId: string,
 ) {
-  return setCommunityPostLikeValue(db, postId, liked);
+  return setCommunityPostLikeValue(db, postId, liked, expectedUserId);
 }
 
 export async function setCommunityPostSaved(
@@ -381,5 +381,6 @@ export async function reportCommunityPost(
     postId: input.postId,
     reason: input.reason,
     details,
+    expectedUserId: input.expectedUserId,
   });
 }

@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type ProfileAuthClient = Pick<SupabaseClient["auth"], "resend" | "updateUser">;
+type ProfileAuthClient = Pick<SupabaseClient["auth"], "getSession" | "resend">;
+
+type ProfileAccountTransport = {
+  url: string;
+  publishableKey: string;
+  fetch?: typeof fetch;
+};
 
 export type ProfileVerificationKind = "email_change" | "signup";
 
@@ -10,7 +16,9 @@ export type EmailChangeResult = {
 };
 
 export interface ProfileAccountClient {
+  getEmailChangeStatus(input: { userId: string }): Promise<EmailChangeResult>;
   requestEmailChange(input: {
+    userId: string;
     email: string;
     redirectTo: string;
   }): Promise<EmailChangeResult>;
@@ -19,17 +27,18 @@ export interface ProfileAccountClient {
     kind: ProfileVerificationKind;
     redirectTo: string;
   }): Promise<void>;
-  updatePassword(password: string): Promise<void>;
+  updatePassword(input: { userId: string; password: string }): Promise<void>;
 }
 
 export class ProfileAccountError extends Error {
   readonly cause?: unknown;
-  readonly operation: "email_change" | "password_update" | "verification";
+  readonly operation:
+    | "account_load"
+    | "email_change"
+    | "password_update"
+    | "verification";
 
-  constructor(
-    operation: "email_change" | "password_update" | "verification",
-    cause?: unknown,
-  ) {
+  constructor(operation: ProfileAccountError["operation"], cause?: unknown) {
     super("Profile account request failed");
     this.name = "ProfileAccountError";
     this.operation = operation;
@@ -64,22 +73,93 @@ function requireRedirect(
 
 export function createProfileAccountClient(
   auth: ProfileAuthClient,
+  transport: ProfileAccountTransport,
 ): ProfileAccountClient {
+  async function requestOwnedUser(
+    method: "GET" | "PUT",
+    userId: string,
+    operation: "account_load" | "email_change" | "password_update",
+    attributes?: { email: string } | { password: string },
+    redirectTo?: string,
+  ) {
+    // The shared SDK's updateUser selects its session after acquiring a lock.
+    // Bind this request to the intended owner once, before network dispatch.
+    const { data, error } = await auth.getSession();
+    if (error) throw error;
+    const session = data.session;
+    if (!session?.access_token || session.user.id !== userId) {
+      throw new ProfileAccountError(operation);
+    }
+    const endpoint = new URL(
+      "auth/v1/user",
+      `${transport.url.replace(/\/$/, "")}/`,
+    );
+    if (redirectTo) endpoint.searchParams.set("redirect_to", redirectTo);
+    let response: Response;
+    try {
+      response = await (transport.fetch ?? fetch)(endpoint.toString(), {
+        method,
+        headers: {
+          apikey: transport.publishableKey,
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          "X-Supabase-Api-Version": "2024-01-01",
+        },
+        body: JSON.stringify(attributes),
+      });
+    } catch {
+      throw new ProfileAccountError(operation, {
+        name: "AuthRetryableFetchError",
+      });
+    }
+    if ([502, 503, 504].includes(response.status)) {
+      throw new ProfileAccountError(operation, {
+        name: "AuthRetryableFetchError",
+        status: response.status,
+      });
+    }
+    const result = await response.json();
+    if (!response.ok) {
+      throw new ProfileAccountError(operation, {
+        status: response.status,
+        code: result?.code ?? result?.error_code,
+      });
+    }
+    if (result?.id !== userId) throw new ProfileAccountError(operation);
+    // Never save this response into the shared SDK: a newer account may be active.
+    return result as { new_email?: string; email_change_sent_at?: string };
+  }
+
   return {
-    async requestEmailChange({ email, redirectTo }) {
+    async getEmailChangeStatus({ userId }) {
+      try {
+        const user = await requestOwnedUser("GET", userId, "account_load");
+        return {
+          pendingEmail: user.new_email ?? null,
+          sentAt: user.email_change_sent_at ?? null,
+        };
+      } catch (error) {
+        if (error instanceof ProfileAccountError) throw error;
+        throw new ProfileAccountError("account_load", error);
+      }
+    },
+
+    async requestEmailChange({ userId, email, redirectTo }) {
       const normalizedEmail = requireEmail(email, "email_change");
       const safeRedirect = requireRedirect(redirectTo, "email_change");
 
       try {
-        const { data, error } = await auth.updateUser(
+        const user = await requestOwnedUser(
+          "PUT",
+          userId,
+          "email_change",
           { email: normalizedEmail },
-          { emailRedirectTo: safeRedirect },
+          safeRedirect,
         );
-        if (error) throw error;
 
         return {
-          pendingEmail: data.user?.new_email ?? null,
-          sentAt: data.user?.email_change_sent_at ?? null,
+          pendingEmail: user.new_email ?? null,
+          sentAt: user.email_change_sent_at ?? null,
         };
       } catch (error) {
         if (error instanceof ProfileAccountError) throw error;
@@ -104,12 +184,11 @@ export function createProfileAccountClient(
       }
     },
 
-    async updatePassword(password) {
+    async updatePassword({ userId, password }) {
       if (!password) throw new ProfileAccountError("password_update");
 
       try {
-        const { error } = await auth.updateUser({ password });
-        if (error) throw error;
+        await requestOwnedUser("PUT", userId, "password_update", { password });
       } catch (error) {
         if (error instanceof ProfileAccountError) throw error;
         throw new ProfileAccountError("password_update", error);

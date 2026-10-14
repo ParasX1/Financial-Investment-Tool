@@ -2,8 +2,8 @@ import * as React from "react";
 import { fitNav } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
+import { FitPageContent } from "@/components/shared/FitPageContent";
 import {
-  FIT_CONTENT_MAX_WIDTH_PX,
   FIT_FOCUS_VISIBLE,
   cn,
   fitText,
@@ -65,97 +65,89 @@ export function LearningPageLayout({
       skipLabel={skipLabel}
       skipTargetId={mainId}
     >
-      <main
+      <FitPageContent
         id={mainId}
         tabIndex={-1}
-        className="ml-[var(--app-sidebar-width,64px)] min-h-screen overflow-x-hidden bg-transparent px-3 pb-8 pt-8 text-white transition-[margin-left] duration-200 ease-out sm:px-5 sm:pb-10 sm:pt-10 lg:px-6 xl:px-7"
+        contentClassName={styles.pageContent}
       >
-        <div
-          className="mx-auto w-full"
-          style={{ maxWidth: FIT_CONTENT_MAX_WIDTH_PX }}
-        >
-          <FitPageHeader title={title} subtitle={subtitle} />
+        <FitPageHeader title={title} subtitle={subtitle} />
 
-          <div className="grid min-w-0 gap-5 lg:grid-cols-[224px_minmax(0,1fr)] lg:items-start">
-            <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
-              <div className={cn("rounded-xl p-3", styles.navPanel)}>
-                <div
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[224px_minmax(0,1fr)] lg:items-start">
+          <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
+            <div className={cn("rounded-xl p-3", styles.navPanel)}>
+              <div
+                className={cn("mb-3 flex items-center gap-2 px-2", fitText.nav)}
+              >
+                <span
                   className={cn(
-                    "mb-3 flex items-center gap-2 px-2",
-                    fitText.nav,
+                    "grid h-8 w-8 shrink-0 place-items-center rounded-md",
+                    styles.headerIcon,
                   )}
+                  aria-hidden="true"
                 >
-                  <span
-                    className={cn(
-                      "grid h-8 w-8 shrink-0 place-items-center rounded-md",
-                      styles.headerIcon,
-                    )}
-                    aria-hidden="true"
-                  >
-                    <NavIcon sx={{ fontSize: 18 }} />
-                  </span>
-                  <span className={cn("min-w-0 truncate", fitType.navLabel)}>
-                    {navTitle}
-                  </span>
-                </div>
-
-                <nav aria-label={navTitle}>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                    {navItems.map((item) => {
-                      const active = activeId === item.id;
-                      const Icon = item.icon;
-
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleNavChange(item.id)}
-                          aria-pressed={active}
-                          className={cn(
-                            fitNav.itemBase,
-                            active ? styles.navItemActive : styles.navItemIdle,
-                            LEARNING_FOCUS_VISIBLE,
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors",
-                              styles.contentIcon,
-                              active ? styles.iconActive : styles.iconIdle,
-                            )}
-                            aria-hidden="true"
-                          >
-                            <Icon sx={{ fontSize: 18 }} />
-                          </span>
-                          <span className="min-w-0">
-                            <span
-                              className={cn("block truncate", fitType.navLabel)}
-                            >
-                              {item.label}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </nav>
+                  <NavIcon sx={{ fontSize: 18 }} />
+                </span>
+                <span className={cn("min-w-0 truncate", fitType.navLabel)}>
+                  {navTitle}
+                </span>
               </div>
-            </aside>
 
-            <section
-              ref={contentRef}
-              aria-label={`${activeLabel} content`}
-              className={cn(
-                "min-w-0 scroll-mt-6 rounded-xl",
-                LEARNING_FOCUS_VISIBLE,
-              )}
-              tabIndex={-1}
-            >
-              {children}
-            </section>
-          </div>
+              <nav aria-label={navTitle}>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  {navItems.map((item) => {
+                    const active = activeId === item.id;
+                    const Icon = item.icon;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleNavChange(item.id)}
+                        aria-pressed={active}
+                        className={cn(
+                          fitNav.itemBase,
+                          active ? styles.navItemActive : styles.navItemIdle,
+                          LEARNING_FOCUS_VISIBLE,
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors",
+                            styles.contentIcon,
+                            active ? styles.iconActive : styles.iconIdle,
+                          )}
+                          aria-hidden="true"
+                        >
+                          <Icon sx={{ fontSize: 18 }} />
+                        </span>
+                        <span className="min-w-0">
+                          <span
+                            className={cn("block truncate", fitType.navLabel)}
+                          >
+                            {item.label}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </nav>
+            </div>
+          </aside>
+
+          <section
+            ref={contentRef}
+            aria-label={`${activeLabel} content`}
+            className={cn(
+              "min-w-0 scroll-mt-6 rounded-xl",
+              LEARNING_FOCUS_VISIBLE,
+            )}
+            tabIndex={-1}
+          >
+            {children}
+          </section>
         </div>
-      </main>
+      </FitPageContent>
     </FitPageShell>
   );
 }
@@ -190,7 +182,14 @@ export function LearningCard({
           {title}
         </h2>
       </div>
-      <div className={cn("text-pretty", fitType.body, fitText.body)}>
+      <div
+        className={cn(
+          styles.readingMeasure,
+          "text-pretty",
+          fitType.body,
+          fitText.body,
+        )}
+      >
         {children}
       </div>
     </section>
@@ -235,7 +234,7 @@ export function QuestionCard({
         >
           {index + 1}
         </span>
-        <div className="min-w-0">
+        <div className={cn(styles.readingMeasure, fitType.body)}>
           <h2 className={cn("text-pretty text-white", fitType.panelTitle)}>
             {question}
           </h2>
@@ -282,7 +281,8 @@ export function LearningTopicCard({
       </h2>
       <div
         className={cn(
-          "mt-3 max-w-[56rem] text-pretty",
+          "mt-3 text-pretty",
+          styles.readingMeasure,
           fitType.body,
           fitText.body,
         )}

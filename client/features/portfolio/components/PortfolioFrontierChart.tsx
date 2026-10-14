@@ -18,7 +18,7 @@ const AXIS_PERCENT_FORMAT = d3.format(".0%");
 const TOOLTIP_PERCENT_FORMAT = d3.format(".2%");
 
 const positionTooltip = (
-  event: MouseEvent,
+  event: Pick<MouseEvent, "clientX" | "clientY">,
   tooltip: d3.Selection<HTMLDivElement | null, unknown, null, undefined>,
   itemCount = 2,
 ) => {
@@ -51,12 +51,17 @@ const positionTooltip = (
 };
 
 interface PortfolioFrontierChartProps {
-  data: { risk: number; return: number; sharpe?: number; weights?: number[] }[];
+  data: {
+    risk: number;
+    return: number;
+    sharpe?: number;
+    weights?: Array<number | null>;
+  }[];
   onPointSelect?: (point: {
     risk: number;
     return: number;
     sharpe?: number;
-    weights?: number[];
+    weights?: Array<number | null>;
   }) => void;
   width?: number;
   height?: number;
@@ -82,7 +87,7 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
       .attr("width", width)
       .attr("height", height)
       .attr("viewBox", `0 0 ${width} ${height}`)
-      .attr("role", "img")
+      .attr("role", "group")
       .attr("aria-labelledby", `${titleId} ${descriptionId}`);
 
     svg.selectAll("*").remove();
@@ -134,7 +139,8 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
     description.text(
       `Risk is plotted on the horizontal axis and annualised return on the vertical axis. ` +
         `${finitePoints.length} of ${view.sourcePointCount} simulated portfolios are shown. ` +
-        `${minimumRiskDescription} ${maximumSharpeDescription}` +
+        `${minimumRiskDescription} ${maximumSharpeDescription} ` +
+        "Use arrow keys to inspect points, Home or End to reach the first or last point, and Enter or Space to pin a portfolio. Escape dismisses details. " +
         (allReturnsNegative
           ? " All simulated portfolios have negative expected returns."
           : ""),
@@ -225,7 +231,7 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
       .style("pointer-events", "none");
 
     const showTooltip = (
-      event: MouseEvent,
+      event: Pick<MouseEvent, "clientX" | "clientY">,
       point: PortfolioPoint,
       pointLabel = "Portfolio point",
     ) => {
@@ -278,7 +284,8 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
       .attr("stroke-linejoin", "round")
       .attr("opacity", 0.9);
 
-    chart
+    let activeIndex = 0;
+    const points = chart
       .selectAll<SVGCircleElement, PortfolioPoint>("circle.portfolio-point")
       .data(finitePoints)
       .enter()
@@ -289,16 +296,65 @@ export const PortfolioFrontierChart: React.FC<PortfolioFrontierChartProps> = ({
       .attr("r", 1.7)
       .attr("fill", mainColor)
       .attr("fill-opacity", finitePoints.length > 350 ? 0.2 : 0.34)
-      .attr("tabindex", 0)
+      .attr("tabindex", (_point, index) => (index === activeIndex ? 0 : -1))
       .attr("role", "button")
       .attr(
         "aria-label",
-        (point) =>
-          `Portfolio: risk ${TOOLTIP_PERCENT_FORMAT(point.risk)}, return ${TOOLTIP_PERCENT_FORMAT(point.return)}`,
+        (point, index) =>
+          `Portfolio ${index + 1} of ${finitePoints.length}: risk ${TOOLTIP_PERCENT_FORMAT(point.risk)}, return ${TOOLTIP_PERCENT_FORMAT(point.return)}, Sharpe ${Number.isFinite(point.sharpe) ? point.sharpe!.toFixed(2) : "N/A"}`,
       )
       .on("click", (_event, point) => onPointSelect?.(point))
+      .on("focus", function (_event, point) {
+        activeIndex = finitePoints.indexOf(point);
+        points.attr("tabindex", (_point, index) =>
+          index === activeIndex ? 0 : -1,
+        );
+        // Extend past the radius-5 highlight markers drawn above the point cloud.
+        d3.select(this)
+          .attr("r", 8)
+          .attr("stroke", "#fff")
+          .attr("stroke-width", 2);
+        const bounds = this.getBoundingClientRect();
+        showTooltip({ clientX: bounds.right, clientY: bounds.top }, point);
+      })
+      .on("blur", function () {
+        d3.select(this).attr("r", 1.7).attr("stroke", null);
+        hideTooltip();
+      })
       .on("keydown", (event: KeyboardEvent, point) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
+        if (
+          event.defaultPrevented ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.altKey ||
+          event.isComposing
+        )
+          return;
+        const index = finitePoints.indexOf(point);
+        const nextIndex =
+          event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? finitePoints.length - 1
+              : event.key === "ArrowRight" || event.key === "ArrowUp"
+                ? Math.min(index + 1, finitePoints.length - 1)
+                : event.key === "ArrowLeft" || event.key === "ArrowDown"
+                  ? Math.max(0, index - 1)
+                  : null;
+        if (nextIndex !== null) {
+          event.preventDefault();
+          event.stopPropagation();
+          points.nodes()[nextIndex].focus();
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          hideTooltip();
+          return;
+        }
+        if ((event.key !== "Enter" && event.key !== " ") || event.repeat)
+          return;
         event.preventDefault();
         onPointSelect?.(point);
       })

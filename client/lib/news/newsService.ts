@@ -1,4 +1,5 @@
 import type { Article } from "@/lib/news/contracts";
+import { fetchAdmittedProviderResponse } from "@/lib/server/providerAdmission";
 import {
   dedupeArticles,
   normaliseNewsPageSize,
@@ -18,6 +19,7 @@ import { filterRelevantNewsArticles } from "./relevance";
 import type { NewsProvider, NewsProviderId, ServerNewsRequest } from "./types";
 
 const DEVELOPMENT_PROVIDER_TIMEOUT_MS = 5000;
+const MAXIMUM_PROVIDER_TIMEOUT_MS = 8000;
 
 function isProductionEnvironment(env: Record<string, string | undefined>) {
   return (env.NODE_ENV ?? "").trim().toLowerCase() === "production";
@@ -70,30 +72,21 @@ function readPositiveInteger(value: string | undefined) {
 
 function providerTimeoutMs(env: Record<string, string | undefined>) {
   const configured = readPositiveInteger(env.NEWS_PROVIDER_TIMEOUT_MS);
-  if (configured) return configured;
+  if (configured) return Math.min(configured, MAXIMUM_PROVIDER_TIMEOUT_MS);
 
-  return isProductionEnvironment(env) ? 8000 : DEVELOPMENT_PROVIDER_TIMEOUT_MS;
+  return isProductionEnvironment(env)
+    ? MAXIMUM_PROVIDER_TIMEOUT_MS
+    : DEVELOPMENT_PROVIDER_TIMEOUT_MS;
 }
 
-function withTimeout(
+function withProviderBounds(
   fetcher: typeof fetch,
   env: Record<string, string | undefined>,
 ): typeof fetch {
   const timeoutMs = providerTimeoutMs(env);
 
-  return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      return await fetcher(input, {
-        ...init,
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }) as typeof fetch;
+  return (input, init) =>
+    fetchAdmittedProviderResponse(input, init, { fetcher, timeoutMs });
 }
 
 function publishedAtMs(article: Article) {
@@ -166,7 +159,7 @@ export async function fetchMarketNewsWithProviders(
   const minimumArticleCount = pageSizeNumber;
   const normalizedRequest = { ...request, pageSize };
   const providerList = providers ?? resolveNewsProviders(env);
-  const timedFetcher = withTimeout(fetcher, env);
+  const boundedFetcher = withProviderBounds(fetcher, env);
   const configuredProviders = providerList.filter(
     (provider) =>
       provider.isConfigured(env) &&
@@ -236,7 +229,7 @@ export async function fetchMarketNewsWithProviders(
     attemptedProviders.push(...providerBatch.map((provider) => provider.id));
     const providerResults = await Promise.all(
       providerBatch.map((provider) =>
-        attemptProvider(provider, normalizedRequest, env, timedFetcher),
+        attemptProvider(provider, normalizedRequest, env, boundedFetcher),
       ),
     );
 

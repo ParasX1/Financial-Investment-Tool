@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  loadPortfolioConfig,
-  savePortfolioConfig,
-} from "../data/portfolioPrefs";
+import { loadPortfolioConfig } from "../data/portfolioPrefs";
+import { portfolioPrefsSaveQueue } from "./portfolioPrefsSaveQueue";
 import { METRIC_REGISTRY } from "../data/metricRegistry";
 import { validateAnalysisRange } from "../lib/portfolioAnalytics";
 import {
@@ -203,13 +201,17 @@ export const usePortfolioWorkspaceController = ({
     }
     let active = true;
     const timer = window.setTimeout(() => {
-      savePortfolioConfig(userId, { tags: workspace.symbols })
-        .then(() => {
-          if (active) setRemoteSaveFailed(false);
-        })
-        .catch(() => {
-          if (active) setRemoteSaveFailed(true);
-        });
+      portfolioPrefsSaveQueue.enqueue({
+        scopeKey: currentStorageKey,
+        userId,
+        prefs: { tags: workspace.symbols },
+        onSuccess: (isLatest) => {
+          if (active && isLatest) setRemoteSaveFailed(false);
+        },
+        onError: (isLatest) => {
+          if (active && isLatest) setRemoteSaveFailed(true);
+        },
+      });
     }, 500);
     return () => {
       active = false;
@@ -229,9 +231,21 @@ export const usePortfolioWorkspaceController = ({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.isComposing ||
+        event.repeat
+      )
+        return;
       const target = event.target as HTMLElement | null;
       if (
-        target?.matches("input, textarea, select, [contenteditable='true']")
+        target?.closest?.(
+          "input, textarea, select, [contenteditable]:not([contenteditable='false'])",
+        )
       ) {
         return;
       }

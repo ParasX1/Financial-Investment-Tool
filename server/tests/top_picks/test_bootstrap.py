@@ -14,13 +14,14 @@ import pytest
 
 from src.top_picks.batch_analytics import calculate_yearly_metrics
 from src.top_picks import bootstrap as bootstrap_module
-from src.top_picks import service as service_module
+from src.top_picks import snapshot_cache as snapshot_cache_module
 from src.top_picks.bootstrap import (
     bootstrap_top_picks_cache,
     create_seed_archive,
 )
 from src.top_picks.contracts import Ticker
 from src.top_picks.history import TopPicksHistoryProvider
+from src.top_picks.repository import TopPicksDataSourceError
 from src.top_picks.service import (
     TOP_PICKS_WINDOWS,
     TopPicksService,
@@ -177,6 +178,96 @@ def test_seed_import_displays_stale_snapshots_and_reuses_incremental_history(
     expected = frame.copy()
     expected.index = expected.index.strftime("%Y-%m-%d")
     pd.testing.assert_frame_equal(actual, expected)
+
+
+@pytest.mark.parametrize("needs_reconciliation", [False, True])
+def test_seed_round_trip_preserves_boolean_reconciliation_payload(
+    seed_archive, tmp_path, needs_reconciliation,
+):
+    with closing(sqlite3.connect(seed_archive["history"])) as db, db:
+        payload = json.loads(db.execute(
+            "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0])
+        payload["needs_reconciliation"] = needs_reconciliation
+        db.execute(
+            "UPDATE adjusted_history SET payload=? WHERE symbol='AAA'",
+            (json.dumps(payload),),
+        )
+        expected = dict(db.execute("SELECT symbol, payload FROM adjusted_history"))
+    source_bytes = seed_archive["history"].read_bytes()
+    seed_path = tmp_path / "reconciliation-seed.zip"
+
+    manifest = create_seed_archive(
+        str(seed_archive["snapshot"]), str(seed_archive["history"]), str(seed_path),
+    )
+    assert manifest["history"] == seed_archive["manifest"]["history"]
+    assert seed_archive["history"].read_bytes() == source_bytes
+    snapshot_path = tmp_path / "runtime" / "snapshot.json"
+    history_path = tmp_path / "runtime" / "history.sqlite3"
+    assert bootstrap_top_picks_cache(
+        str(seed_path), str(snapshot_path), str(history_path),
+    ) == {"snapshot": True, "history": True}
+    with ZipFile(seed_path) as archive:
+        assert history_path.read_bytes() == archive.read("history.sqlite3")
+    with closing(sqlite3.connect(history_path)) as db:
+        assert dict(db.execute("SELECT symbol, payload FROM adjusted_history")) == expected
+
+
+def test_imported_reconciliation_marker_retries_full_history_after_restart(
+    seed_archive, tmp_path,
+):
+    with closing(sqlite3.connect(seed_archive["history"])) as db:
+        clock = db.execute(
+            "SELECT reconciled_at FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0] + 1
+    frame = seed_archive["frame"].copy()
+    frame[("AAA", "Adj Close")] *= 0.5
+
+    def failed_correction(symbols, start, end):
+        return pd.DataFrame() if start == "2025-10-04" else frame.loc[start:end].copy()
+
+    source = TopPicksHistoryProvider(
+        failed_correction, str(seed_archive["history"]), clock=lambda: clock,
+    )
+    with pytest.raises(TopPicksDataSourceError):
+        source(["AAA"], "2025-10-04", TODAY.isoformat())
+    with closing(sqlite3.connect(seed_archive["history"])) as db:
+        pending_payload = db.execute(
+            "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0]
+    assert json.loads(pending_payload)["needs_reconciliation"] is True
+    seed_path = tmp_path / "pending-seed.zip"
+    create_seed_archive(
+        str(seed_archive["snapshot"]), str(seed_archive["history"]), str(seed_path),
+    )
+    history_path = tmp_path / "runtime" / "history.sqlite3"
+    assert bootstrap_top_picks_cache(
+        str(seed_path), None, str(history_path),
+    ) == {"snapshot": False, "history": True}
+    downloader = Mock(return_value=frame.iloc[-1:].copy())
+    imported = TopPicksHistoryProvider(downloader, str(history_path), clock=lambda: clock)
+    with pytest.raises(TopPicksDataSourceError):
+        imported(["AAA"], "2025-10-04", TODAY.isoformat())
+    assert downloader.call_args.args == (["AAA"], "2025-10-04", TODAY.isoformat())
+    with closing(sqlite3.connect(history_path)) as db:
+        assert db.execute(
+            "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0] == pending_payload
+    restarted = TopPicksHistoryProvider(downloader, str(history_path), clock=lambda: clock)
+    downloader.return_value = frame.copy()
+    downloader.reset_mock()
+
+    actual = restarted(["AAA"], "2025-10-04", TODAY.isoformat())
+
+    downloader.assert_called_once_with(["AAA"], "2025-10-04", TODAY.isoformat())
+    expected = frame.loc[:, [("AAA", "Adj Close")]].copy()
+    expected.index = expected.index.strftime("%Y-%m-%d")
+    pd.testing.assert_frame_equal(actual, expected)
+    with closing(sqlite3.connect(history_path)) as db:
+        repaired = json.loads(db.execute(
+            "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0])
+    assert "needs_reconciliation" not in repaired
 
 
 @pytest.mark.parametrize("existing", ["snapshot", "history", "both"])
@@ -398,7 +489,7 @@ def test_optional_seed_path_probe_permission_failure_preserves_normal_startup(
 def test_export_manifest_describes_verified_complete_package(seed_archive):
     manifest = seed_archive["manifest"]
     assert manifest["format_version"] == 1
-    assert manifest["calculation_version"] == 1
+    assert manifest["calculation_version"] == 2
     assert manifest["assumptions"] == {
         "benchmark": "^AXJO", "riskFreeRate": 0.0435,
         "universeLimit": 1000,
@@ -517,18 +608,28 @@ def test_export_rejects_incomplete_or_incompatible_cache_sources(
     assert not output_path.exists()
 
 
-@pytest.mark.parametrize("invalid_payload", ["unknown_field", "date", "non_finite"])
+@pytest.mark.parametrize("needs_reconciliation", [False, True])
+@pytest.mark.parametrize("invalid_payload", [
+    "unknown_field", "missing_values", "date", "coverage", "non_finite", "boolean_price",
+])
 def test_export_rejects_history_with_non_market_fields_or_invalid_prices(
-    seed_archive, tmp_path, invalid_payload,
+    seed_archive, tmp_path, invalid_payload, needs_reconciliation,
 ):
     with closing(sqlite3.connect(seed_archive["history"])) as db, db:
         payload = json.loads(db.execute(
             "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
         ).fetchone()[0])
+        payload["needs_reconciliation"] = needs_reconciliation
         if invalid_payload == "unknown_field":
             payload["account"] = "must not enter release data"
+        elif invalid_payload == "missing_values":
+            payload.pop("values")
         elif invalid_payload == "date":
             payload["dates"][-1] = "not-a-date"
+        elif invalid_payload == "coverage":
+            payload["dates"][-1] = "2026-10-05"
+        elif invalid_payload == "boolean_price":
+            payload["values"][-1] = True
         else:
             payload["values"][-1] = float("nan")
         db.execute(
@@ -543,6 +644,48 @@ def test_export_rejects_history_with_non_market_fields_or_invalid_prices(
             str(output_path),
         )
     assert not output_path.exists()
+
+
+@pytest.mark.parametrize("invalid_marker", [None, 0, 1, 0.5, "true", [], {}])
+def test_seed_rejects_non_boolean_reconciliation_marker_on_export_and_import(
+    seed_archive, tmp_path, invalid_marker,
+):
+    with closing(sqlite3.connect(seed_archive["history"])) as db, db:
+        payload = json.loads(db.execute(
+            "SELECT payload FROM adjusted_history WHERE symbol='AAA'",
+        ).fetchone()[0])
+        payload["needs_reconciliation"] = invalid_marker
+        db.execute(
+            "UPDATE adjusted_history SET payload=? WHERE symbol='AAA'",
+            (json.dumps(payload),),
+        )
+    output_path = tmp_path / "invalid-marker.zip"
+    with pytest.raises(ValueError, match="Initial history payload is invalid"):
+        create_seed_archive(
+            str(seed_archive["snapshot"]), str(seed_archive["history"]), str(output_path),
+        )
+    assert not output_path.exists()
+    # Keep checksums valid so import reaches the history payload validation.
+    with ZipFile(seed_archive["seed"]) as archive:
+        contents = {name: archive.read(name) for name in archive.namelist()}
+    contents["history.sqlite3"] = seed_archive["history"].read_bytes()
+    manifest = json.loads(contents["manifest.json"])
+    manifest["files"]["history.sqlite3"] = {
+        "bytes": len(contents["history.sqlite3"]),
+        "sha256": hashlib.sha256(contents["history.sqlite3"]).hexdigest(),
+    }
+    contents["manifest.json"] = json.dumps(manifest).encode()
+    with ZipFile(output_path, "w", compression=ZIP_DEFLATED) as archive:
+        for name, content in contents.items():
+            archive.writestr(name, content)
+    snapshot_path = tmp_path / "runtime" / "snapshot.json"
+    history_path = tmp_path / "runtime" / "history.sqlite3"
+
+    assert bootstrap_top_picks_cache(
+        str(output_path), str(snapshot_path), str(history_path),
+    ) == {"snapshot": False, "history": False}
+    assert not snapshot_path.exists()
+    assert not history_path.exists()
 
 
 @pytest.mark.parametrize("target", ["snapshot", "history", "alias"])
@@ -597,7 +740,7 @@ def test_snapshot_persistence_replaces_only_with_complete_json(monkeypatch, tmp_
     key = ("top-picks-snapshot", "1D")
     cache.set(key, {"rows": ["old"]}, 600)
     original_bytes = snapshot_path.read_bytes()
-    original_replace = service_module.os.replace
+    original_replace = snapshot_cache_module.os.replace
     replacements = []
 
     def checked_replace(source, target):
@@ -612,7 +755,7 @@ def test_snapshot_persistence_replaces_only_with_complete_json(monkeypatch, tmp_
         replacements.append(source_path)
         original_replace(source, target)
 
-    monkeypatch.setattr(service_module.os, "replace", checked_replace)
+    monkeypatch.setattr(snapshot_cache_module.os, "replace", checked_replace)
 
     cache.set(key, {"rows": ["new"]}, 600)
 
@@ -637,10 +780,10 @@ def test_failed_snapshot_persistence_preserves_old_file_and_cleans_temp(
             handle.write('{"incomplete":')
             raise OSError("Test JSON write failure.")
 
-        monkeypatch.setattr(service_module.json, "dump", failed_write)
+        monkeypatch.setattr(snapshot_cache_module.json, "dump", failed_write)
     else:
         monkeypatch.setattr(
-            service_module.os, "replace",
+            snapshot_cache_module.os, "replace",
             Mock(side_effect=OSError("Test atomic replace failure.")),
         )
 

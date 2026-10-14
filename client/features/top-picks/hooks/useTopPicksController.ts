@@ -12,6 +12,7 @@ import {
 import type { TopPicksResponse, TopPicksWindow } from "../types";
 import { useTopPicksPreferences } from "./useTopPicksPreferences";
 import { useTopPicksVisibleColumns } from "./useTopPicksVisibleColumns";
+import { useTopPicksActivity } from "./useTopPicksActivity";
 
 const isAbortError = (reason: unknown): boolean =>
   reason instanceof Error && reason.name === "AbortError";
@@ -34,6 +35,7 @@ type RankingRequestState = {
 };
 
 export function useTopPicksController() {
+  const browserActive = useTopPicksActivity();
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const {
@@ -87,6 +89,10 @@ export function useTopPicksController() {
 
   useEffect(() => {
     if (!preferenceScopeReady || preferenceScopeKey === null) return;
+    if (!browserActive) {
+      setRequestState((current) => ({ ...current, pending: false }));
+      return;
+    }
 
     const abortController = new AbortController();
     let active = true;
@@ -167,6 +173,7 @@ export function useTopPicksController() {
       abortController.abort();
     };
   }, [
+    browserActive,
     page,
     pageSize,
     preferenceScopeKey,
@@ -184,6 +191,7 @@ export function useTopPicksController() {
 
   useEffect(() => {
     if (
+      !browserActive ||
       !controllerScopeReady ||
       loadedSubscriptionScope !== subscriptionScope
     ) {
@@ -221,6 +229,7 @@ export function useTopPicksController() {
       unsubscribe();
     };
   }, [
+    browserActive,
     controllerScopeReady,
     loadedSubscriptionScope,
     selectedWindow,

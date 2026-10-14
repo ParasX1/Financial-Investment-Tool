@@ -8,11 +8,8 @@ import {
 import { fitFeedback } from "@/components/shared/fitStyles";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
 import { FitPageShell } from "@/components/shared/FitPageShell";
-import {
-  FIT_CONTENT_MAX_WIDTH_PX,
-  FIT_FOCUS_VISIBLE,
-  cn,
-} from "@/components/shared/uiPrimitives";
+import { FitPageContent } from "@/components/shared/FitPageContent";
+import { FIT_FOCUS_VISIBLE, cn } from "@/components/shared/uiPrimitives";
 import { useProfileController } from "../hooks/useProfileController";
 import type {
   ProfileEmailValues,
@@ -66,9 +63,9 @@ export function ProfileMain() {
     hasAccount && profile.profileLoading && !profile.profileSnapshot;
   const dialogIsCurrent = Boolean(
     !profile.authLoading &&
-    profile.profileSnapshot &&
-    dialogOwnerUserId &&
-    dialogOwnerUserId === profile.user?.id,
+      profile.profileSnapshot &&
+      dialogOwnerUserId &&
+      dialogOwnerUserId === profile.user?.id,
   );
 
   const resetDialogState = React.useCallback(() => {
@@ -192,123 +189,131 @@ export function ProfileMain() {
       skipLabel="Skip to profile settings"
       skipTargetId="profile-main"
     >
-      <main id="profile-main" tabIndex={-1} className={styles.page}>
-        <div
-          className={styles.pageInner}
-          style={{ maxWidth: FIT_CONTENT_MAX_WIDTH_PX }}
-        >
-          <FitPageHeader
-            className={styles.header}
-            title="Profile"
-            subtitle="Your public identity and private account settings."
-            subtitleClassName="max-w-[48rem]"
-          />
+      <FitPageContent id="profile-main" contentClassName={styles.pageInner}>
+        <FitPageHeader
+          title="Profile"
+          eyebrow="Your account"
+          subtitle="Your public identity and private account settings."
+          subtitleClassName="max-w-[48rem]"
+        />
 
-          <div className={styles.signedOutLayout}>
-            <div className={styles.contentStack}>
-              {profile.message ? (
-                <div
-                  className={cn(
-                    styles.message,
-                    messageToneClass[profile.message.tone],
-                  )}
-                  role={profile.message.tone === "error" ? "alert" : "status"}
-                  aria-live="polite"
-                >
-                  {profile.message.text}
-                </div>
-              ) : null}
+        <div className={styles.signedOutLayout}>
+          <div className={styles.contentStack}>
+            {profile.message ? (
+              <div
+                className={cn(
+                  styles.message,
+                  messageToneClass[profile.message.tone],
+                )}
+                role={profile.message.tone === "error" ? "alert" : "status"}
+                aria-live="polite"
+              >
+                {profile.message.text}
+                {hasAccount &&
+                !profile.profileSnapshot &&
+                !profile.profileLoading ? (
+                  <button
+                    type="button"
+                    className={cn(
+                      styles.button,
+                      styles.buttonSecondary,
+                      FIT_FOCUS_VISIBLE,
+                    )}
+                    onClick={profile.retryProfile}
+                  >
+                    Retry profile
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
-              {showAccountRequired ? (
-                <section className={styles.authGate}>
-                  <div className={styles.authGateVisual} aria-hidden="true">
-                    <div className={styles.authGateAvatar}>F</div>
-                  </div>
-                  <div className={styles.authGateCopy}>
-                    <h2 className={styles.authGateTitle}>
-                      Sign in to continue
-                    </h2>
-                    <p className={styles.authGateSubtitle}>
-                      Manage your profile and account settings.
-                    </p>
-                    <div className={styles.authGateActions}>
-                      <button
-                        type="button"
-                        className={cn(
-                          styles.button,
-                          styles.buttonPrimary,
-                          FIT_FOCUS_VISIBLE,
-                        )}
-                        onClick={() => authDialog.openSignIn("/Profile")}
-                      >
-                        Sign in
-                      </button>
-                      <button
-                        type="button"
-                        className={cn(
-                          styles.button,
-                          styles.buttonSecondary,
-                          FIT_FOCUS_VISIBLE,
-                        )}
-                        onClick={() => authDialog.openSignUp("/Profile")}
-                      >
-                        Create account
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              ) : !hasAccount ? (
-                <section className={styles.panel}>
-                  <div className={styles.signedOutPanel}>
-                    <p className={styles.eyebrow}>Loading</p>
-                    <h2 className={styles.panelTitle}>Loading your profile</h2>
-                    <p className={styles.panelSubtitle}>
-                      Checking your account session.
-                    </p>
-                  </div>
-                </section>
-              ) : showInitialProfileLoading ? (
-                <section className={styles.panel}>
-                  <div className={styles.signedOutPanel}>
-                    <p className={styles.eyebrow}>Loading</p>
-                    <h2 className={styles.panelTitle}>
-                      Loading your profile details
-                    </h2>
-                    <p className={styles.panelSubtitle}>
-                      Fetching saved account details.
-                    </p>
-                  </div>
-                </section>
-              ) : (
-                <div
-                  aria-busy={profile.profileLoading || profile.authLoading}
-                  className={styles.settingsStack}
-                >
-                  <ProfileSettingsPanel
-                    avatarDisplayUrl={profile.avatarDisplayUrl}
-                    displayName={profile.displayName}
-                    email={profile.email}
-                    emailVerified={profile.emailVerified}
-                    hasPendingEmailChange={profile.hasPendingEmailChange}
-                    initials={profile.initials}
-                    pendingEmail={profile.pendingEmail}
-                    phone={profile.phone}
-                    profileHandle={profile.profileHandle}
-                    savingAvatar={profile.savingAvatar}
-                    sendingVerification={profile.sendingVerification}
-                    onAvatarChange={profile.changeAvatar}
-                    onEditEmail={openEmailDialog}
-                    onEditIdentity={openIdentityDialog}
-                    onEditPassword={openPasswordDialog}
-                    onEditPhone={openPhoneDialog}
-                    onResendVerification={profile.resendVerification}
-                  />
+            {showAccountRequired ? (
+              <section className={styles.authGate}>
+                <div className={styles.authGateVisual} aria-hidden="true">
+                  <div className={styles.authGateAvatar}>F</div>
                 </div>
-              )}
-            </div>
+                <div className={styles.authGateCopy}>
+                  <h2 className={styles.authGateTitle}>Sign in to continue</h2>
+                  <p className={styles.authGateSubtitle}>
+                    Manage your profile and account settings.
+                  </p>
+                  <div className={styles.authGateActions}>
+                    <button
+                      type="button"
+                      className={cn(
+                        styles.button,
+                        styles.buttonPrimary,
+                        FIT_FOCUS_VISIBLE,
+                      )}
+                      onClick={() => authDialog.openSignIn("/Profile")}
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        styles.button,
+                        styles.buttonSecondary,
+                        FIT_FOCUS_VISIBLE,
+                      )}
+                      onClick={() => authDialog.openSignUp("/Profile")}
+                    >
+                      Create account
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ) : !hasAccount ? (
+              <section className={styles.panel}>
+                <div className={styles.signedOutPanel}>
+                  <p className={styles.eyebrow}>Loading</p>
+                  <h2 className={styles.panelTitle}>Loading your profile</h2>
+                  <p className={styles.panelSubtitle}>
+                    Checking your account session.
+                  </p>
+                </div>
+              </section>
+            ) : showInitialProfileLoading ? (
+              <section className={styles.panel}>
+                <div className={styles.signedOutPanel}>
+                  <p className={styles.eyebrow}>Loading</p>
+                  <h2 className={styles.panelTitle}>
+                    Loading your profile details
+                  </h2>
+                  <p className={styles.panelSubtitle}>
+                    Fetching saved account details.
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <div
+                aria-busy={profile.profileLoading || profile.authLoading}
+                className={styles.settingsStack}
+              >
+                <ProfileSettingsPanel
+                  avatarDisplayUrl={profile.avatarDisplayUrl}
+                  displayName={profile.displayName}
+                  email={profile.email}
+                  emailVerified={profile.emailVerified}
+                  hasPendingEmailChange={profile.hasPendingEmailChange}
+                  initials={profile.initials}
+                  pendingEmail={profile.pendingEmail}
+                  phone={profile.phone}
+                  profileHandle={profile.profileHandle}
+                  savingAvatar={profile.savingAvatar}
+                  sendingVerification={profile.sendingVerification}
+                  onAvatarChange={profile.changeAvatar}
+                  onEditEmail={openEmailDialog}
+                  onEditIdentity={openIdentityDialog}
+                  onEditPassword={openPasswordDialog}
+                  onEditPhone={openPhoneDialog}
+                  onResendVerification={profile.resendVerification}
+                />
+              </div>
+            )}
           </div>
         </div>
-      </main>
+      </FitPageContent>
 
       <ProfileEditDialog
         show={dialogIsCurrent && activeDialog === "identity"}

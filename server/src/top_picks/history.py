@@ -12,7 +12,7 @@ from time import time
 import numpy as np
 import pandas as pd
 
-from ..market_primitives import get_adjusted_close_prices, normalize_tickers
+from ..market_primitives import clean_prices, get_adjusted_close_prices, normalize_tickers
 from .repository import TopPicksDataSourceError
 
 
@@ -24,9 +24,12 @@ RECONCILE_SECONDS = 7 * 24 * 60 * 60
 @dataclass
 class HistoryEntry:
     prices: pd.Series
+    # Bounds describe the request accepted by the provider, not a trading calendar
+    # completeness guarantee. Observed dates remain explicit in prices/last_refresh.
     start: str
     end: str
     reconciled_at: float
+    needs_reconciliation: bool = False
 
 
 class TopPicksHistoryProvider:
@@ -89,14 +92,15 @@ class TopPicksHistoryProvider:
                         try:
                             record = json.loads(payload)
                             prices = pd.Series(
-                                record["values"], index=record["dates"], dtype=float)
+                                record["values"], index=record["dates"], dtype=float, name=symbol)
                             prices = self._clean_series(prices)
                             if prices.dropna().empty or start > end or not np.isfinite(reconciled_at):
                                 continue
                             pd.Timestamp(start)
                             pd.Timestamp(end)
                             self._entries[symbol] = HistoryEntry(
-                                prices, start, end, reconciled_at)
+                                prices, start, end, reconciled_at,
+                                needs_reconciliation=bool(record.get("needs_reconciliation", False)))
                         except (ValueError, TypeError, KeyError):
                             continue
         except sqlite3.Error:
@@ -112,6 +116,8 @@ class TopPicksHistoryProvider:
             for symbol, entry in entries.items():
                 rows.append((symbol, entry.start, entry.end, entry.reconciled_at,
                              json.dumps({"dates": entry.prices.index.tolist(),
+                                         **({"needs_reconciliation": True}
+                                            if entry.needs_reconciliation else {}),
                                          "values": [float(v) if pd.notna(v) else None
                                                     for v in entry.prices]}, allow_nan=False)))
             with closing(sqlite3.connect(self._path, timeout=30)) as connection, connection:
@@ -150,7 +156,8 @@ class TopPicksHistoryProvider:
             elif (len(prices) != len(entry.prices)
                     or covered_start != entry.start or covered_end != entry.end):
                 changed[symbol] = HistoryEntry(
-                    prices.copy(), covered_start, covered_end, entry.reconciled_at)
+                    prices.copy(), covered_start, covered_end, entry.reconciled_at,
+                    entry.needs_reconciliation)
         self._entries.update(changed)
         return changed, removed
 
@@ -171,8 +178,7 @@ class TopPicksHistoryProvider:
 
     @staticmethod
     def _clean_series(prices):
-        prices = pd.to_numeric(prices, errors="coerce").replace(
-            [np.inf, -np.inf], np.nan)
+        prices = clean_prices(prices)
         prices.index = pd.to_datetime(prices.index).strftime("%Y-%m-%d")
         return prices.loc[~prices.index.duplicated(keep="last")].sort_index()
 
@@ -190,11 +196,27 @@ class TopPicksHistoryProvider:
         # The last stored bar can be unfinished; updating it is normal. Earlier
         # bar changes can signal a split/dividend adjustment or a vendor revision.
         overlap = overlap[overlap < old.index[-1]]
-        overlap = overlap[old.loc[overlap].notna() &
-                          fresh.loc[overlap].notna()]
+        overlap = overlap[old.loc[overlap].notna()
+                          & fresh.loc[overlap].notna()]
         return bool(len(overlap) and not np.allclose(
             old.loc[overlap], fresh.loc[overlap], rtol=1e-7, atol=1e-8,
         ))
+
+    @staticmethod
+    def _covers_existing_history(old, fresh):
+        # Known observations are evidence of coverage; calendar days are not.
+        # This allows weekends, holidays, sparse listings and preexisting gaps.
+        return bool(fresh.reindex(old.prices.dropna().index).notna().all())
+
+    def _mark_reconciliation_pending(self, symbols):
+        pending = {}
+        for symbol in symbols:
+            old = self._entries.get(symbol)
+            if old is not None and not old.needs_reconciliation:
+                pending[symbol] = HistoryEntry(
+                    old.prices, old.start, old.end, old.reconciled_at, True)
+        self._entries.update(pending)
+        self._save(pending)
 
     def __call__(self, symbols, start_date, end_date):
         symbols = normalize_tickers(symbols)
@@ -214,6 +236,7 @@ class TopPicksHistoryProvider:
             for symbol in symbols:
                 entry = self._entries.get(symbol)
                 full = (entry is None or start_date < entry.start
+                        or entry.needs_reconciliation
                         or now - entry.reconciled_at >= RECONCILE_SECONDS
                         or now < entry.reconciled_at)
                 if full:
@@ -228,7 +251,22 @@ class TopPicksHistoryProvider:
 
             updated = {}
             corrections = []
+            rejected = []
+
+            def replace_history(symbol, fresh, download_start):
+                old = self._entries.get(symbol)
+                if old is not None and not self._covers_existing_history(old, fresh):
+                    # Keep one honest price basis and its old coverage/freshness.
+                    # Persist the retry requirement across a process restart.
+                    rejected.append(symbol)
+                    return
+                updated[symbol] = HistoryEntry(fresh, download_start, end_date, now)
+
             for (download_start, full), group in groups.items():
+                if full:
+                    # Write before downloading: empty/omitted responses, an
+                    # exception or process interruption must all retain the retry.
+                    self._mark_reconciliation_pending(group)
                 fresh_by_symbol = self._download_prices(
                     group, download_start, end_date)
                 for symbol in group:
@@ -236,11 +274,11 @@ class TopPicksHistoryProvider:
                     if fresh is None or fresh.dropna().empty:
                         continue
                     if full:
-                        updated[symbol] = HistoryEntry(
-                            fresh, download_start, end_date, now)
+                        replace_history(symbol, fresh, download_start)
                         continue
                     old = self._entries[symbol]
                     if self._revised_history(old.prices, fresh):
+                        self._mark_reconciliation_pending([symbol])
                         corrections.append(symbol)
                         continue
                     # New bars replace overlapping dates rather than accumulating
@@ -261,10 +299,20 @@ class TopPicksHistoryProvider:
                         group, correction_start, end_date)
                     for symbol, fresh in fresh_by_symbol.items():
                         if not fresh.dropna().empty:
-                            updated[symbol] = HistoryEntry(
-                                fresh, correction_start, end_date, now)
+                            replace_history(symbol, fresh, correction_start)
 
+            if rejected:
+                LOGGER.warning("Top Picks full history response lost stored observations; retaining history and retrying reconciliation.")
+
+            observed = {symbol: entry.prices.loc[start_date:end_date].dropna()
+                        for symbol, entry in updated.items()}
             self.last_refresh = {
+                "requested_start": start_date, "requested_end": end_date,
+                "observed_ranges_by_symbol": {
+                    symbol: {"start": prices.index[0], "end": prices.index[-1],
+                             "observations": len(prices)}
+                    for symbol, prices in observed.items() if not prices.empty
+                },
                 "requested_symbols": len(symbols), "full_history_symbols": len(full_symbols),
                 "incremental_symbols": len(symbols) - len(full_symbols),
                 "reconciled_symbols": corrections,

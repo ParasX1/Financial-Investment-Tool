@@ -321,18 +321,18 @@ def test_stock_data_cache_force_refresh_replaces_and_promotes_existing_range(mon
     assert (("AAPL",), "2023-02-01", "2024-01-01") not in metrics._stock_data_cache
 
 
-def test_stock_data_cache_enforces_capacity_when_downloads_finish_concurrently(monkeypatch):
+def test_stock_data_cache_enforces_capacity_for_concurrent_requests(monkeypatch):
     monkeypatch.setattr(metrics, "STOCK_DATA_CACHE_MAX_ENTRIES", 2, raising=False)
     monkeypatch.setattr(metrics, "monotonic", lambda: 0.0)
     data = adjusted_close_frame({"AAPL": rising_prices(100)})
-    downloads_started = Barrier(6)
+    requests_started = Barrier(6)
     metrics.clear_stock_data_cache()
 
     def fake_download(tickers, start_date, end_date):
-        downloads_started.wait(timeout=5)
         return data
 
     def fetch_range(month):
+        requests_started.wait(timeout=5)
         result = metrics.fetch_stock_data(
             ["AAPL"], f"2023-{month:02d}-01", "2024-01-01"
         )

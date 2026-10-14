@@ -144,7 +144,7 @@ def test_restart_keeps_latest_fallback_for_each_calculation_context(
 
 
 @pytest.mark.parametrize("force_refresh", [False, True])
-def test_existing_production_cache_key_is_a_matching_restart_fallback(
+def test_previous_calculation_cache_key_requires_recalculation(
     monkeypatch, tmp_path, force_refresh,
 ):
     monkeypatch.setattr(service_module, "Thread", DeferredThread)
@@ -177,7 +177,8 @@ def test_existing_production_cache_key_is_a_matching_restart_fallback(
         1, 25, "ret1y", "desc", force_refresh=force_refresh,
     ))
 
-    assert response["data"]["rows"][0]["symbol"] == "LEGACY"
-    assert response["metadata"]["requestedEnd"] == "2026-07-31"
-    assert response["metadata"]["cacheStatus"] == "stale"
-    assert restarted.built_windows == []
+    assert response["data"]["rows"][0]["symbol"] == "1Y-2026-08-01"
+    assert response["metadata"]["requestedEnd"] == "2026-08-01"
+    assert response["metadata"]["calculationVersion"] == 2
+    assert response["metadata"]["cacheStatus"] == "miss"
+    assert restarted.built_windows == ["1Y"]

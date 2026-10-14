@@ -16,8 +16,11 @@ describe("Home visual contract", () => {
     "utf8",
   );
 
-  it("keeps the shared brand glow visible over the landing hero", () => {
-    expect(cssBlock(source, ".heroShade")).toContain("var(--home-brand-glow)");
+  it("uses the shared accessible action and focus roles", () => {
+    expect(source).toContain("var(--fit-color-action)");
+    expect(source).toContain("var(--fit-color-on-action)");
+    expect(source).toContain("var(--fit-color-focus-ring)");
+    expect(source).not.toContain("\u0000");
   });
 
   it("shows a focus indicator when the skip link targets main content", () => {
@@ -34,5 +37,12 @@ describe("Home visual contract", () => {
     expect(source).toContain(".primaryButton:not(:disabled):hover");
     expect(source).toContain(".routeTile:not(:disabled):hover");
     expect(source).not.toMatch(/(^|\n)\.routeTile:hover \{/);
+  });
+
+  it("keeps essential content visible without a motion or observation script", () => {
+    expect(cssBlock(source, ".heroContent")).not.toMatch(/opacity:\s*0/);
+    expect(cssBlock(source, ".heroVisual")).not.toMatch(/opacity:\s*0/);
+    expect(source).not.toMatch(/infinite|visibility:\s*hidden/);
+    expect(source).toContain("prefers-reduced-motion: reduce");
   });
 });

@@ -98,6 +98,154 @@ def test_weekly_reconciliation_catches_revisions_outside_overlap(tmp_path):
     assert result.loc["2025-11-03", ("AAA", "Adj Close")] == 77
 
 
+@pytest.mark.parametrize("refresh_kind", ["weekly", "revision"])
+@pytest.mark.parametrize("truncation", ["prefix", "suffix", "interior"])
+@pytest.mark.parametrize("restart", [False, True])
+def test_incomplete_reconciliation_preserves_old_basis_and_retries_full(
+    tmp_path, refresh_kind, truncation, restart,
+):
+    provider, download, clock, frame, path = setup_provider(tmp_path)
+    provider(["AAA"], "2025-10-03", "2026-10-03")
+    old_prices = provider._entries["AAA"].prices.copy()
+    reconciled_at = provider._entries["AAA"].reconciled_at
+    frame[("AAA", "Adj Close")] *= 0.5
+    original_download = download.side_effect
+    if refresh_kind == "weekly":
+        clock[0] += RECONCILE_SECONDS
+
+    def incomplete_download(symbols, start, end):
+        result = original_download(symbols, start, end)
+        if start < "2026-09-01":
+            if truncation == "prefix":
+                return result.loc["2026-09-01":]
+            if truncation == "suffix":
+                return result.loc[:"2026-09-01"]
+            result.loc["2026-06-01", ("AAA", "Adj Close")] = np.nan
+        return result
+
+    download.side_effect = incomplete_download
+    with pytest.raises(TopPicksDataSourceError, match="No fresh market history"):
+        provider(["AAA"], "2025-10-05", "2026-10-05")
+
+    record = stored_history(path)["AAA"]
+    assert record["start"] == "2025-10-05"
+    assert record["end"] == "2026-10-03"
+    assert record["reconciled_at"] == reconciled_at
+    pd.testing.assert_series_equal(provider._entries["AAA"].prices, old_prices.loc["2025-10-05":])
+    assert provider.last_refresh["unavailable_symbols"] == ["AAA"]
+    download.side_effect = original_download
+    if restart:
+        provider = TopPicksHistoryProvider(download, path, clock=lambda: clock[0])
+    download.reset_mock()
+
+    recovered = provider(["AAA"], "2025-10-05", "2026-10-05")
+
+    assert download.call_args_list[0].args == (["AAA"], "2025-10-05", "2026-10-05")
+    assert download.call_count == 1
+    pd.testing.assert_frame_equal(recovered, frame.loc["2025-10-05":"2026-10-05", [("AAA", "Adj Close")]])
+
+
+def test_full_reconciliation_accepts_sparse_calendar_and_preexisting_missing_bars(tmp_path):
+    frame = prices(("AAA",)).iloc[::3].copy()
+    frame.loc["2026-06-01", ("AAA", "Adj Close")] = np.nan
+    frame.sort_index(inplace=True)
+    provider, download, clock, frame, _ = setup_provider(tmp_path, frame)
+    provider(["AAA"], "2025-10-03", "2026-10-03")
+    frame[("AAA", "Adj Close")] *= 0.5
+    clock[0] += RECONCILE_SECONDS
+
+    result = provider(["AAA"], "2025-10-03", "2026-10-03")
+
+    pd.testing.assert_frame_equal(result, frame.loc["2025-10-03":"2026-10-03"])
+    assert provider._entries["AAA"].reconciled_at == clock[0]
+
+
+@pytest.mark.parametrize("extension", ["prefix", "suffix"])
+def test_full_reload_accepts_known_bars_without_inventing_calendar_observations(tmp_path, extension):
+    provider, download, clock, _, path = setup_provider(tmp_path)
+    provider(["AAA"], "2026-09-01", "2026-10-03")
+    old_prices = provider._entries["AAA"].prices.copy()
+    original_download = download.side_effect
+    clock[0] += RECONCILE_SECONDS
+    download.side_effect = lambda symbols, start, end: original_download(symbols, "2026-09-01", "2026-10-03")
+
+    requested_start = "2025-10-03" if extension == "prefix" else "2026-09-01"
+    requested_end = "2026-10-05" if extension == "suffix" else "2026-10-03"
+    result = provider(["AAA"], requested_start, requested_end)
+
+    record = stored_history(path)["AAA"]
+    assert (record["start"], record["end"], record["reconciled_at"]) == (
+        requested_start, requested_end, clock[0])
+    assert provider.last_refresh["requested_start"] == requested_start
+    assert provider.last_refresh["requested_end"] == requested_end
+    assert provider.last_refresh["observed_ranges_by_symbol"]["AAA"] == {
+        "start": old_prices.dropna().index[0], "end": old_prices.dropna().index[-1],
+        "observations": len(old_prices.dropna()),
+    }
+    pd.testing.assert_series_equal(result[("AAA", "Adj Close")], old_prices, check_names=False)
+    pd.testing.assert_series_equal(provider._entries["AAA"].prices, old_prices)
+
+
+def test_recent_listing_expands_requested_window_without_losing_usable_prices(tmp_path):
+    frame = prices(("NEW",), start="2026-10-01", end="2026-10-05")
+    provider, download, _, _, _ = setup_provider(tmp_path, frame)
+    short = provider(["NEW"], "2026-09-28", "2026-10-03")
+
+    annual = provider(["NEW"], "2025-10-03", "2026-10-03")
+
+    pd.testing.assert_frame_equal(annual, short)
+    assert download.call_args.args == (["NEW"], "2025-10-03", "2026-10-03")
+    assert provider.last_refresh["observed_ranges_by_symbol"]["NEW"] == {
+        "start": "2026-10-01", "end": "2026-10-02", "observations": 2,
+    }
+
+
+@pytest.mark.parametrize("refresh_kind", ["weekly", "revision"])
+@pytest.mark.parametrize("failure", ["empty", "omitted", "exception"])
+@pytest.mark.parametrize("restart", [False, True])
+def test_failed_full_reconciliation_stays_due_and_cannot_merge_new_basis(
+    tmp_path, refresh_kind, failure, restart,
+):
+    provider, download, clock, frame, path = setup_provider(tmp_path)
+    provider(["AAA"], "2025-10-03", "2026-10-03")
+    old_prices = provider._entries["AAA"].prices.loc["2025-10-05":].copy()
+    reconciled_at = provider._entries["AAA"].reconciled_at
+    frame[("AAA", "Adj Close")] *= 0.5
+    original_download = download.side_effect
+    if refresh_kind == "weekly":
+        clock[0] += RECONCILE_SECONDS
+
+    def failed_full(symbols, start, end):
+        if start < "2026-09-01":
+            if failure == "exception":
+                raise RuntimeError("full download unavailable")
+            return pd.DataFrame() if failure == "empty" else prices(("OTHER", "ANOTHER"))
+        return original_download(symbols, start, end)
+
+    download.side_effect = failed_full
+    with pytest.raises(RuntimeError if failure == "exception" else TopPicksDataSourceError):
+        provider(["AAA"], "2025-10-05", "2026-10-05")
+
+    assert stored_history(path)["AAA"]["needs_reconciliation"] is True
+    assert stored_history(path)["AAA"]["reconciled_at"] == reconciled_at
+    pd.testing.assert_series_equal(provider._entries["AAA"].prices, old_prices)
+    if restart:
+        provider = TopPicksHistoryProvider(download, path, clock=lambda: clock[0])
+    # No old overlap is returned now. An incremental merge would silently combine
+    # the unadjusted stored series with this new adjusted closing price.
+    download.side_effect = lambda symbols, start, end: original_download(symbols, "2026-10-05", end)
+    download.reset_mock()
+    with pytest.raises(TopPicksDataSourceError):
+        provider(["AAA"], "2025-10-05", "2026-10-05")
+    assert download.call_args.args == (["AAA"], "2025-10-05", "2026-10-05")
+    pd.testing.assert_series_equal(provider._entries["AAA"].prices, old_prices)
+
+    download.side_effect = original_download
+    recovered = provider(["AAA"], "2025-10-05", "2026-10-05")
+    pd.testing.assert_frame_equal(recovered, frame.loc["2025-10-05":"2026-10-05", [("AAA", "Adj Close")]])
+    assert "needs_reconciliation" not in stored_history(path)["AAA"]
+
+
 def test_downtime_gap_is_included_in_incremental_request(tmp_path):
     provider, download, _, _, _ = setup_provider(tmp_path)
     provider(["AAA"], "2025-10-03", "2026-09-20")
@@ -145,9 +293,9 @@ def test_corrupt_database_falls_back_to_memory(tmp_path):
 def stored_history(path):
     with closing(sqlite3.connect(path)) as connection, connection:
         return {
-            symbol: {"start": start, "end": end, **json.loads(payload)}
-            for symbol, start, end, payload in connection.execute(
-                "SELECT symbol, start, end, payload FROM adjusted_history")
+            symbol: {"start": start, "end": end, "reconciled_at": reconciled_at, **json.loads(payload)}
+            for symbol, start, end, reconciled_at, payload in connection.execute(
+                "SELECT symbol, start, end, reconciled_at, payload FROM adjusted_history")
         }
 
 

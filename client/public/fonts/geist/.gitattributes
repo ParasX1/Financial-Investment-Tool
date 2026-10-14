@@ -1,0 +1,3 @@
+# Preserve the upstream font and license bytes on every checkout.
+Geist-Variable.woff2 -text
+OFL.txt -text

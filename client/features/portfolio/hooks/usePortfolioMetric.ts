@@ -17,6 +17,14 @@ type CachedMetric = {
   fetchedAt: number;
 };
 
+type MetricResult = CachedMetric & { queryKey: string };
+
+type MetricRequestState = {
+  queryKey: string | null;
+  status: PortfolioRequestStatus;
+  error: string | null;
+};
+
 const CACHE_TTL_MS = 120_000;
 const metricCache = new Map<string, CachedMetric>();
 const inFlightRequests = new Map<string, Promise<MetricsResponse>>();
@@ -103,11 +111,14 @@ export const usePortfolioMetric = ({
   settings,
   validationError,
 }: UsePortfolioMetricArgs) => {
-  const [status, setStatus] = useState<PortfolioRequestStatus>("idle");
-  const [data, setData] = useState<MetricsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [requestState, setRequestState] = useState<MetricRequestState>({
+    queryKey: null,
+    status: "idle",
+    error: null,
+  });
+  const [result, setResult] = useState<MetricResult | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
-  const dataRef = useRef<MetricsResponse | null>(null);
+  const resultRef = useRef<MetricResult | null>(null);
   const {
     benchmark,
     confidenceLevel,
@@ -134,59 +145,74 @@ export const usePortfolioMetric = ({
   const requestKey = `${baseQueryKey}:${retryVersion}`;
 
   useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
+    resultRef.current = result;
+  }, [result]);
 
   useEffect(() => {
     if (!symbols.length) {
-      setStatus("idle");
-      setData(null);
-      setError(null);
+      setRequestState({ queryKey: baseQueryKey, status: "idle", error: null });
+      setResult(null);
       return;
     }
     if (validationError) {
-      setStatus("invalid");
-      setError(validationError);
+      setRequestState({
+        queryKey: baseQueryKey,
+        status: "invalid",
+        error: validationError,
+      });
       return;
     }
 
     let active = true;
     const cached = metricCache.get(baseQueryKey);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-      setData(cached.data);
-      setError(null);
-      setStatus(
-        cached.data.metadata?.missingSymbols?.length
+      setResult({ ...cached, queryKey: baseQueryKey });
+      setRequestState({
+        queryKey: baseQueryKey,
+        error: null,
+        status: cached.data.metadata?.missingSymbols?.length
           ? "partial"
           : responseHasData(cached.data, requestSettings)
             ? "success"
             : "empty",
-      );
+      });
       return;
     }
 
-    setStatus(dataRef.current ? "stale" : "loading");
-    setError(null);
+    setRequestState({
+      queryKey: baseQueryKey,
+      status:
+        resultRef.current?.queryKey === baseQueryKey ? "stale" : "loading",
+      error: null,
+    });
     requestMetric(baseQueryKey, symbols, requestSettings)
       .then((response) => {
         if (!active) return;
-        setData(response);
-        setStatus(
-          response.metadata?.missingSymbols?.length
+        setResult({
+          queryKey: baseQueryKey,
+          data: response,
+          fetchedAt: metricCache.get(baseQueryKey)?.fetchedAt ?? Date.now(),
+        });
+        setRequestState({
+          queryKey: baseQueryKey,
+          error: null,
+          status: response.metadata?.missingSymbols?.length
             ? "partial"
             : responseHasData(response, requestSettings)
               ? "success"
               : "empty",
-        );
+        });
       })
       .catch((requestError: unknown) => {
         if (!active) return;
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Market data is temporarily unavailable.",
-        );
-        setStatus("error");
+        setRequestState({
+          queryKey: baseQueryKey,
+          status: "error",
+          error:
+            requestError instanceof Error
+              ? requestError.message
+              : "Market data is temporarily unavailable.",
+        });
       });
 
     return () => {
@@ -199,11 +225,28 @@ export const usePortfolioMetric = ({
     setRetryVersion((current) => current + 1);
   }, [baseQueryKey]);
 
+  // Effects run after render, so exclude incompatible results before they commit.
+  const currentResult =
+    symbols.length && !validationError && result?.queryKey === baseQueryKey
+      ? result
+      : null;
+  const status: PortfolioRequestStatus = !symbols.length
+    ? "idle"
+    : validationError
+      ? "invalid"
+      : requestState.queryKey === baseQueryKey
+        ? requestState.status
+        : "loading";
+  const error = !symbols.length
+    ? null
+    : (validationError ??
+      (requestState.queryKey === baseQueryKey ? requestState.error : null));
+
   return {
     status,
-    data,
+    data: currentResult?.data ?? null,
     error,
     retry,
-    lastUpdated: metricCache.get(baseQueryKey)?.fetchedAt ?? null,
+    lastUpdated: currentResult?.fetchedAt ?? null,
   };
 };

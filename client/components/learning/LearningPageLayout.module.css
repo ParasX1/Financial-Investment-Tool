@@ -2,10 +2,10 @@
   --learning-panel-bg: var(--fit-color-surface, #09090b);
   --learning-panel-border: var(--fit-color-border-panel, #27272a);
   --learning-inner-bg: var(--fit-color-inner-surface, #050506);
-  --learning-accent-bg: #07051a;
-  --learning-accent-border: #1d2a5c;
-  --learning-support-bg: #0a0818;
-  --learning-support-border: #1c2a5c;
+  --learning-accent-bg: var(--fit-color-accent-soft);
+  --learning-accent-border: var(--fit-color-border-subtle);
+  --learning-support-bg: var(--fit-color-info-soft);
+  --learning-support-border: var(--fit-color-border-subtle);
   --learning-active-bg: var(--fit-nav-active-bg, #101939);
   --learning-active-border: var(--fit-nav-active-border, #203773);
   --learning-idle-bg: var(--fit-color-field, #18181b);
@@ -20,16 +20,19 @@
 }
 
 .cardAccent {
-  background: var(--learning-accent-bg, #07051a);
-  border: 1px solid var(--learning-accent-border, #1d2a5c);
+  background: var(--learning-accent-bg, var(--fit-color-accent-soft));
+  border: 1px solid
+    var(--learning-accent-border, var(--fit-color-border-subtle));
 }
 
 .cardSupport {
-  background: var(--learning-support-bg, #0a0818);
-  border: 1px solid var(--learning-support-border, #1c2a5c);
+  background: var(--learning-support-bg, var(--fit-color-info-soft));
+  border: 1px solid
+    var(--learning-support-border, var(--fit-color-border-subtle));
 }
 
 .formula {
+  overflow-wrap: normal;
   background: var(--learning-inner-bg, var(--fit-color-inner-surface, #050506));
   border: 1px solid
     var(--learning-panel-border, var(--fit-color-border-panel, #27272a));
@@ -38,7 +41,7 @@
 .navItemActive {
   background: var(--learning-active-bg, #101939);
   box-shadow: inset 0 0 0 1px var(--learning-active-border, #203773);
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
 }
 
 .navItemIdle {
@@ -47,17 +50,17 @@
 
 .navItemIdle:hover {
   background: var(--learning-idle-bg, var(--fit-color-field, #18181b));
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
 }
 
 .headerIcon {
-  background: linear-gradient(135deg, #14182d, #151126, #0f1016);
-  box-shadow: inset 0 0 0 1px rgba(123, 140, 255, 0.16);
+  background: var(--fit-color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--fit-color-border-subtle);
   color: var(--fit-color-accent, #8ea0ff);
 }
 
 .contentIcon {
-  background: #141419;
+  background: var(--fit-color-field);
 }
 
 .iconActive {
@@ -69,11 +72,22 @@
 }
 
 .navItemIdle:hover .iconIdle {
-  color: #ffffff;
+  color: var(--fit-color-text-strong);
 }
 
 .questionBadge {
   background: var(--learning-active-bg, #101939);
   border: 1px solid var(--learning-active-border, #203773);
   color: var(--fit-color-accent-strong, #65a0fd);
+}
+
+.pageContent {
+  color: var(--fit-color-text-strong);
+}
+
+/* Local prose measure; navigation and outer cards follow the fluid workspace. */
+.readingMeasure {
+  min-width: 0;
+  max-width: 70ch;
+  overflow-wrap: anywhere;
 }

@@ -4,7 +4,6 @@ import type {
   CommunityTopTimeRange,
   SeedPost,
 } from "./types";
-import { FIT_CONTENT_MAX_WIDTH_PX } from "@/components/shared/uiPrimitives";
 
 export const COMMUNITY_PAGE_WIDTH = "100%";
 export const COMMUNITY_FEED_NAV_ITEMS: Array<{
@@ -61,7 +60,6 @@ export const COMMUNITY_TOP_TIME_RANGE_ITEMS: Array<{
   { id: "past-hour", label: "Past hour" },
 ];
 export const COMMUNITY_APP_RAIL_WIDTH_PX = 64;
-export const COMMUNITY_CONTENT_MAX_WIDTH_PX = FIT_CONTENT_MAX_WIDTH_PX;
 export const COMMUNITY_TOOLBAR_CONTROL_HEIGHT_PX = 46;
 export const COMMUNITY_TOOLBAR_VERTICAL_PADDING_PX = 12;
 export const COMMUNITY_SIDEBAR_WIDTH_PX = 224;
@@ -74,6 +72,8 @@ export const POST_BODY_PREVIEW_MAX_CHARS = 360;
 export const POST_BODY_PREVIEW_MIN_WORD_BOUNDARY = 240;
 export const MAX_COMMUNITY_POST_TITLE_CHARS = 300;
 export const MAX_COMMUNITY_POST_BODY_CHARS = 40_000;
+// Unicode code points, matching PostgreSQL char_length in the UTF-8 database.
+export const MAX_COMMUNITY_COMMENT_BODY_CHARS = 2_000;
 
 export const COMMUNITY_IMAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "comment-images";

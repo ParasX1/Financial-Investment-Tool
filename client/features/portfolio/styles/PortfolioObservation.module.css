@@ -3,22 +3,26 @@
   inset: 0;
   z-index: 1600;
   color: var(--portfolio-ink);
-  background: #05070b;
+  background: var(--fit-color-page-bg);
   font-family: var(--fit-font-family);
 }
 
 .doneButton {
   min-height: 43px;
   padding: 0 16px;
-  border: 1px solid rgba(101, 160, 253, 0.6);
+  border: 1px solid var(--fit-color-action);
   border-radius: 9px;
-  color: #fff;
-  background: linear-gradient(135deg, #526ce8, #3e82cd);
+  color: var(--fit-color-on-action);
+  background: var(--fit-color-action);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 760;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.doneButton:hover {
+  background: var(--fit-color-action-hover);
 }
 
 .observationToolbar {
@@ -29,7 +33,7 @@
   gap: 16px;
   padding: 0 14px;
   border-bottom: 1px solid var(--portfolio-border);
-  background: #0a0e15;
+  background: var(--fit-color-surface);
 }
 
 .observationToolbar > div {
@@ -45,15 +49,20 @@
 .observationToolbar p {
   margin: 0;
   color: var(--portfolio-muted);
-  font-size: 0.66rem;
+  font-size: 0.875rem;
+}
+
+.observationKeyboardHelp {
+  display: block;
+  margin-top: 3px;
 }
 
 .observationPulse {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--portfolio-green);
-  box-shadow: 0 0 0 5px rgba(88, 214, 165, 0.08);
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 0 5px var(--portfolio-accent-soft);
 }
 
 .observationActions {
@@ -67,9 +76,9 @@
   border: 1px solid var(--portfolio-border);
   border-radius: 7px;
   color: var(--portfolio-body);
-  background: rgba(20, 27, 39, 0.85);
+  background: var(--fit-color-surface-soft);
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -82,11 +91,7 @@
   position: relative;
   height: calc(100dvh - 58px);
   overflow: hidden;
-  background:
-    linear-gradient(rgba(101, 160, 253, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(101, 160, 253, 0.035) 1px, transparent 1px),
-    #05070b;
-  background-size: 28px 28px;
+  background: var(--fit-color-field);
 }
 
 .observationWindow {
@@ -98,7 +103,7 @@
   border: 1px solid var(--portfolio-border-strong);
   border-radius: 9px;
   overflow: hidden;
-  background: #090d14;
+  background: var(--fit-color-surface);
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.44);
 }
 
@@ -111,14 +116,14 @@
   padding: 0 5px 0 9px;
   border-bottom: 1px solid var(--portfolio-border);
   color: var(--portfolio-muted);
-  background: #101620;
-  font-size: 0.61rem;
+  background: var(--fit-color-surface-soft);
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: move;
   user-select: none;
 }
 
-.observationHandle button {
+.observationHide {
   width: 24px;
   height: 24px;
   border: 0;
@@ -127,6 +132,23 @@
   background: transparent;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.observationMove {
+  min-width: 0;
+  flex: 1;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: move;
+}
+
+.observationMobileLabel {
+  display: none;
 }
 
 .observationCardBody {
@@ -141,7 +163,11 @@
   width: 18px;
   height: 18px;
   border: 0;
-  background: linear-gradient(135deg, transparent 50%, #65a0fd 50%);
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--portfolio-accent) 50%
+  );
   cursor: nwse-resize;
 }
 
@@ -156,15 +182,15 @@
 
 .observationEmpty p {
   margin: 6px 0 12px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
 }
 
 .observationEmpty button {
   min-height: 35px;
-  border: 1px solid rgba(101, 160, 253, 0.35);
+  border: 1px solid var(--fit-color-accent);
   border-radius: 7px;
-  color: #dceaff;
-  background: rgba(101, 160, 253, 0.1);
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
   cursor: pointer;
 }
 
@@ -209,6 +235,14 @@
 
   .observationHandle {
     cursor: default;
+  }
+
+  .observationMove {
+    display: none;
+  }
+
+  .observationMobileLabel {
+    display: inline;
   }
 
   .observationResize {

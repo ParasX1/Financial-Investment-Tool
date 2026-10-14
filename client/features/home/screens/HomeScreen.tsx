@@ -17,6 +17,7 @@ import { HomeExperienceSection } from "../components/HomeExperienceSection";
 import { HomeHero } from "../components/HomeHero";
 import { HomeNavigation } from "../components/HomeNavigation";
 import { HomeProductSection } from "../components/HomeProductSection";
+import { HomeRouteStrip } from "../components/HomeRouteStrip";
 import styles from "../styles/home.module.css";
 
 export type HomeScreenController = ReturnType<typeof useHomeEntryController>;
@@ -50,21 +51,39 @@ export function HomeScreenView({
           loading={authLoading}
           signedIn={signedIn}
           onSignIn={() => openLogin()}
+          onGetStarted={() => openSignUp()}
         />
 
         <main id="main-content" className={styles.page} tabIndex={-1}>
-          <HomeHero
-            authLoading={authLoading}
-            signedIn={signedIn}
-            onSignIn={() => openLogin()}
-          />
-          <div className={styles.content}>
+          <noscript>
+            <p className={styles.noScriptNotice}>
+              Enable JavaScript to sign in or create an account. You can still
+              read this introduction and the first Guide and Help Center topics.
+              Topic navigation and analytics also require JavaScript.
+            </p>
+          </noscript>
+          <div className={styles.entryGrid}>
+            <div className={styles.introColumn}>
+              <HomeHero
+                authLoading={authLoading}
+                signedIn={signedIn}
+                onGetStarted={() => openSignUp()}
+              />
+              <HomeRouteStrip
+                authLoading={authLoading}
+                routes={homeRouteLinks}
+                signedIn={signedIn}
+                onRouteSelect={selectRoute}
+              />
+            </div>
             <HomeProductSection
               authLoading={authLoading}
               routes={homeRouteLinks}
               signedIn={signedIn}
               onRouteSelect={selectRoute}
             />
+          </div>
+          <div className={styles.content}>
             <HomeExperienceSection points={homeExperiencePoints} />
             <HomeCtaSection
               authLoading={authLoading}

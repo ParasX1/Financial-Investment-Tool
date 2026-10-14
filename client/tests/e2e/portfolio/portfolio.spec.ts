@@ -128,7 +128,7 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   page,
 }) => {
   const metricRequests: string[] = [];
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     metricRequests.push(route.request().url());
     await route.fulfill({
       status: 200,
@@ -142,9 +142,13 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
 
   await expect(
     page.getByRole("heading", {
-      name: "Scan broadly. Investigate deeply.",
+      name: "Portfolio",
+      exact: true,
     }),
   ).toBeVisible();
+  await expect(page.getByRole("main")).toContainText(
+    "Scan broadly. Investigate deeply.",
+  );
   // The saved six-card deck intentionally shows five Board cards; volatility is hidden.
   await expect(page.locator("section[data-card-id]")).toHaveCount(5);
   await expect.poll(() => metricRequests.length).toBe(0);
@@ -212,6 +216,53 @@ test("supports Board, Focus, and persistent Observation without losing the six-c
   await expect(page.locator('[class*="observationWindow"]')).toHaveCount(4);
   await page.getByRole("button", { name: "Restore hidden" }).click();
   await expect(page.locator('[class*="observationWindow"]')).toHaveCount(5);
+});
+
+test("keeps chart legends reachable when mobile Observation settings are expanded", async ({
+  page,
+}) => {
+  await page.route("**/api/metrics/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(responseFor(route.request().url())),
+    }),
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/Portfolio");
+  await addSymbol(page, "AAPL");
+  await addSymbol(page, "MSFT");
+  await page.getByRole("button", { name: "Run analysis" }).click();
+  await expect(page.locator("section[data-card-id] svg").first()).toBeVisible();
+  await page.getByRole("button", { name: "Observation", exact: true }).click();
+  const card = page.locator(
+    'section[data-metric="CumulativeReturnComparison"]',
+  );
+  await card
+    .locator("summary")
+    .filter({ hasText: "Override linked assumptions" })
+    .click();
+  const chart = card.locator('[class*="cardChart"]');
+  await chart.hover();
+  await page.mouse.wheel(0, 500);
+  await expect
+    .poll(() => chart.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  const legend = chart.locator(".line-legend text").filter({ hasText: "AAPL" });
+  await expect
+    .poll(async () => {
+      const [chartBox, legendBox] = await Promise.all([
+        chart.boundingBox(),
+        legend.boundingBox(),
+      ]);
+      return Boolean(
+        chartBox &&
+          legendBox &&
+          legendBox.y >= chartBox.y &&
+          legendBox.y + legendBox.height <= chartBox.y + chartBox.height + 1,
+      );
+    })
+    .toBe(true);
 });
 
 test("reflows persisted Observation windows after reopen and desktop canvas shrink", async ({
@@ -313,7 +364,7 @@ test("changes only one card and remains operable without horizontal overflow on 
   page,
 }) => {
   const metricRequests: string[] = [];
-  await page.route("http://127.0.0.1:8080/api/metrics/**", async (route) => {
+  await page.route("**/api/metrics/**", async (route) => {
     metricRequests.push(route.request().url());
     await route.fulfill({
       status: 200,
@@ -346,4 +397,130 @@ test("changes only one card and remains operable without horizontal overflow on 
     () => document.documentElement.scrollWidth > window.innerWidth + 1,
   );
   expect(hasHorizontalOverflow).toBe(false);
+});
+
+test("keeps mobile symbol search readable and selectable by keyboard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/market/symbol-search?**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        results: [
+          {
+            symbol: "AAPL",
+            name: "Apple Inc.",
+            exchange: "NASDAQ",
+            quoteType: "EQUITY",
+          },
+          {
+            symbol: "APLE",
+            name: "Apple Hospitality REIT, Inc. with a long company label to exercise mobile wrapping",
+            exchange: "NYSE",
+            quoteType: "EQUITY",
+          },
+        ],
+      }),
+    }),
+  );
+  await page.goto("/Portfolio");
+  const input = page.locator("input#portfolio-stock-select");
+  const field = page.locator(".MuiAutocomplete-root .MuiOutlinedInput-root");
+  await input.fill("AP");
+  const option = page
+    .getByRole("option")
+    .filter({ hasText: "NASDAQ - Apple Inc." });
+  await expect(option).toBeVisible();
+  const listbox = page.getByRole("listbox");
+  const [fieldBox, popupBox] = await Promise.all([
+    field.boundingBox(),
+    listbox.boundingBox(),
+  ]);
+  if (!fieldBox || !popupBox) {
+    throw new Error("Symbol field and search popup are not measurable");
+  }
+  expect(popupBox.x).toBeGreaterThanOrEqual(0);
+  expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(391);
+  expect(popupBox.width).toBeLessThanOrEqual(fieldBox.width + 2);
+  expect(
+    await input.evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(14);
+  expect(
+    await option
+      .locator("small")
+      .evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(14);
+
+  await input.press("ArrowDown");
+  await expect(input).toHaveAttribute(
+    "aria-activedescendant",
+    (await option.getAttribute("id"))!,
+  );
+  await input.press("Enter");
+  await expect(input).toHaveValue("");
+  await expect(listbox).toHaveCount(0);
+  const chip = field.locator(".MuiChip-root");
+  await expect(chip).toHaveText("AAPL");
+  const chipBox = await chip.boundingBox();
+  if (!chipBox) throw new Error("Selected symbol chip is not measurable");
+  expect(chipBox.height).toBeGreaterThanOrEqual(26);
+  expect(
+    await chip
+      .locator(".MuiChip-label")
+      .evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(14);
+  await input.press("Backspace");
+  await expect(chip).toHaveCount(0);
+  await input.fill("brk-b");
+  await input.press("Tab");
+  await expect(chip).toHaveText("BRK-B");
+});
+
+test("contains five maximum-length symbol chips in the narrow mobile field", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.route("**/api/market/symbol-search?**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ results: [] }),
+    }),
+  );
+  await page.goto("/Portfolio");
+  const input = page.locator("input#portfolio-stock-select");
+  const field = page.locator(".MuiAutocomplete-root .MuiOutlinedInput-root");
+  const symbols = [
+    "WWWWWWWWWWWWWWW",
+    "MMMMMMMMMMMMMMM",
+    "BRK-B",
+    "^GSPC",
+    "CBA.AX",
+  ];
+  for (const symbol of symbols) {
+    await input.fill(symbol);
+    await input.press("Tab");
+  }
+  const chips = field.locator(".MuiChip-root");
+  await expect(chips).toHaveCount(5);
+  const fieldBox = await field.boundingBox();
+  if (!fieldBox) throw new Error("Symbol field is not measurable");
+  for (let index = 0; index < symbols.length; index += 1) {
+    const chip = chips.nth(index);
+    await expect(chip).toHaveText(symbols[index]);
+    await expect(chip).toHaveAttribute("title", symbols[index]);
+    const box = await chip.boundingBox();
+    if (!box) throw new Error("Selected symbol chip is not measurable");
+    expect(box.x).toBeGreaterThanOrEqual(fieldBox.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(
+      fieldBox.x + fieldBox.width + 1,
+    );
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+    ),
+  ).toBe(true);
 });

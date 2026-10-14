@@ -1,8 +1,9 @@
-# Ignore everything recursively
-*
-
-# But not the .ts files
-!*.ts
-
-# Check subdirectories too
-!*/
+# Generated files and dependency artifacts; production TSX/CSS remain formatable.
+node_modules/
+.next/
+coverage/
+test-results/
+playwright-report/
+.cache/
+next-env.d.ts
+package-lock.json

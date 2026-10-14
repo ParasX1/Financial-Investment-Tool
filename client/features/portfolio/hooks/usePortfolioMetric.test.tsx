@@ -1,11 +1,5 @@
 import * as React from "react";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
 import { fetchMetrics, type MetricsResponse } from "@/lib/market-metrics";
 import type { PortfolioAnalysisSettings } from "../types";
@@ -79,10 +73,12 @@ const flushPromises = async () => {
 const renderMetric = async (initialProps: HookProps) => {
   let props = initialProps;
   let latest!: ReturnType<typeof usePortfolioMetric>;
+  const renders: ReturnType<typeof usePortfolioMetric>[] = [];
   let renderer!: ReactTestRenderer;
 
   function Probe() {
     latest = usePortfolioMetric(props);
+    renders.push(latest);
     return null;
   }
 
@@ -96,6 +92,7 @@ const renderMetric = async (initialProps: HookProps) => {
     get latest() {
       return latest;
     },
+    renders,
     update(nextProps: HookProps) {
       props = nextProps;
       act(() => renderer.update(<Probe />));
@@ -311,7 +308,10 @@ describe("usePortfolioMetric", () => {
     };
 
     const first = await renderMetric(props);
-    const second = await renderMetric({ ...props, settings: { ...DEFAULT_SETTINGS } });
+    const second = await renderMetric({
+      ...props,
+      settings: { ...DEFAULT_SETTINGS },
+    });
     expect(first.latest.status).toBe("loading");
     expect(second.latest.status).toBe("loading");
     expect(fetchMetricsMock).toHaveBeenCalledTimes(1);
@@ -324,7 +324,7 @@ describe("usePortfolioMetric", () => {
     expect(second.latest.status).toBe("success");
   });
 
-  it("keeps prior data stale while a changed query refreshes", async () => {
+  it("hides prior symbols while a changed query refreshes", async () => {
     const nextRequest = createDeferred<MetricsResponse>();
     const firstResponse = lineResponse("AAPL", 0.1);
     const nextResponse = lineResponse("MSFT", 0.2);
@@ -342,8 +342,8 @@ describe("usePortfolioMetric", () => {
       settings: DEFAULT_SETTINGS,
       validationError: null,
     });
-    expect(harness.latest.status).toBe("stale");
-    expect(harness.latest.data).toBe(firstResponse);
+    expect(harness.latest.status).toBe("loading");
+    expect(harness.latest.data).toBeNull();
 
     await act(async () => {
       nextRequest.resolve(nextResponse);
@@ -351,6 +351,155 @@ describe("usePortfolioMetric", () => {
     });
     expect(harness.latest.status).toBe("success");
     expect(harness.latest.data).toBe(nextResponse);
+  });
+
+  it.each([
+    {
+      metricType: "VolatilityAnalysis" as const,
+      patch: { metricType: "BetaAnalysis" as const },
+    },
+    {
+      metricType: "VolatilityAnalysis" as const,
+      patch: { metricType: "SharpeRatioMatrix" as const },
+    },
+    {
+      metricType: "SharpeRatioMatrix" as const,
+      patch: { startDate: "2026-01-01" },
+    },
+    {
+      metricType: "SharpeRatioMatrix" as const,
+      patch: { endDate: "2026-06-30" },
+    },
+    { metricType: "SharpeRatioMatrix" as const, patch: { riskFreeRate: 0.04 } },
+    { metricType: "BetaAnalysis" as const, patch: { benchmark: "QQQ" } },
+    {
+      metricType: "ValueAtRiskAnalysis" as const,
+      patch: { confidenceLevel: 0.01 },
+    },
+  ])(
+    "hides $metricType results for a changed effective query before effects and after failure ($patch)",
+    async ({ metricType, patch }) => {
+      const request = createDeferred<MetricsResponse>();
+      const settings = { ...DEFAULT_SETTINGS, metricType };
+      const previous = createResponse(metricType, {
+        singleValue: { AAPL: 0.23 },
+      });
+      fetchMetricsMock
+        .mockResolvedValueOnce(previous)
+        .mockReturnValueOnce(request.promise);
+      const harness = await renderMetric({
+        symbols: ["AAPL"],
+        settings,
+        validationError: null,
+      });
+      expect(harness.latest.data).toBe(previous);
+      const renderCount = harness.renders.length;
+
+      harness.update({
+        symbols: ["AAPL"],
+        settings: { ...settings, ...patch },
+        validationError: null,
+      });
+
+      expect(
+        harness.renders
+          .slice(renderCount)
+          .every((render) => render.data === null),
+      ).toBe(true);
+      expect(harness.latest).toMatchObject({
+        status: "loading",
+        data: null,
+        error: null,
+        lastUpdated: null,
+      });
+      await act(async () => {
+        request.reject(new Error("New analysis unavailable."));
+        await flushPromises();
+      });
+      expect(harness.latest).toMatchObject({
+        status: "error",
+        data: null,
+        error: "New analysis unavailable.",
+        lastUpdated: null,
+      });
+    },
+  );
+
+  it("retains the result and its timestamp for a same-query retry and failure", async () => {
+    jest.spyOn(Date, "now").mockReturnValue(1_000);
+    const request = createDeferred<MetricsResponse>();
+    const previous = lineResponse();
+    fetchMetricsMock
+      .mockResolvedValueOnce(previous)
+      .mockReturnValueOnce(request.promise);
+    const harness = await renderMetric({
+      symbols: ["AAPL"],
+      settings: DEFAULT_SETTINGS,
+      validationError: null,
+    });
+
+    act(() => harness.latest.retry());
+
+    expect(harness.latest).toMatchObject({
+      status: "stale",
+      data: previous,
+      lastUpdated: 1_000,
+    });
+    await act(async () => {
+      request.reject(new Error("Refresh unavailable."));
+      await flushPromises();
+    });
+    expect(harness.latest).toMatchObject({
+      status: "error",
+      data: previous,
+      error: "Refresh unavailable.",
+      lastUpdated: 1_000,
+    });
+  });
+
+  it("replaces a changed query with its matching cache entry", async () => {
+    const betaSettings = {
+      ...DEFAULT_SETTINGS,
+      metricType: "BetaAnalysis" as const,
+    };
+    const cachedBeta = createResponse("BetaAnalysis", {
+      singleValue: { AAPL: 1.2 },
+    });
+    const volatility = createResponse("VolatilityAnalysis", {
+      singleValue: { AAPL: 0.23 },
+    });
+    fetchMetricsMock
+      .mockResolvedValueOnce(cachedBeta)
+      .mockResolvedValueOnce(volatility);
+    const cached = await renderMetric({
+      symbols: ["AAPL"],
+      settings: betaSettings,
+      validationError: null,
+    });
+    cached.unmount();
+    const harness = await renderMetric({
+      symbols: ["AAPL"],
+      settings: { ...DEFAULT_SETTINGS, metricType: "VolatilityAnalysis" },
+      validationError: null,
+    });
+    const renderCount = harness.renders.length;
+
+    harness.update({
+      symbols: ["AAPL"],
+      settings: betaSettings,
+      validationError: null,
+    });
+
+    expect(
+      harness.renders
+        .slice(renderCount)
+        .every((render) => render.data === null || render.data === cachedBeta),
+    ).toBe(true);
+    expect(harness.latest).toMatchObject({
+      status: "success",
+      data: cachedBeta,
+    });
+    expect(fetchMetricsMock).toHaveBeenCalledTimes(2);
   });
 
   it("ignores superseded and unmounted request completions", async () => {

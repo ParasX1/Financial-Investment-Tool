@@ -26,7 +26,10 @@ export function MarketNewsViewConsole({
         <div className="min-w-0">
           <p className={cn(fitType.eyebrow, fitText.label)}>{eyebrow}</p>
           <h2
-            className={cn("mt-2 text-balance text-white", fitType.sectionTitle)}
+            className={cn(
+              "mt-2 text-balance text-[var(--fit-color-text-strong)]",
+              fitType.sectionTitle,
+            )}
           >
             {title}
           </h2>

@@ -11,13 +11,14 @@ import {
   type SelectedMarketNewsTicker,
 } from "./dynamicTickers";
 import { resolveMarketNewsTickerQuoteState } from "./quoteState";
+import { fetchAdmittedProviderResponse } from "@/lib/server/providerAdmission";
+import { MARKET_PROVIDER_TIMEOUT_MS } from "@/lib/server/marketApiGuard";
+import { MARKET_NEWS_TICKER_STRIP_REFRESH_MS } from "./refreshPolicy";
 
-export const MARKET_NEWS_TICKER_STRIP_REFRESH_MS = 60_000;
+export { MARKET_NEWS_TICKER_STRIP_REFRESH_MS } from "./refreshPolicy";
+export const MARKET_NEWS_TICKER_STRIP_TIMEOUT_MS = 8_000;
 
-type MarketNewsTickerFetch = (
-  input: string,
-  init?: RequestInit,
-) => Promise<Pick<Response, "json" | "ok">>;
+type MarketNewsTickerFetch = typeof fetch;
 
 interface YahooQuoteRow {
   currency?: string;
@@ -83,7 +84,7 @@ async function fetchJson(
     });
 
     if (!response.ok) return null;
-    return response.json();
+    return await response.json();
   } catch {
     return null;
   }
@@ -297,9 +298,15 @@ export async function buildMarketNewsTickerStripSnapshot({
   now?: () => Date;
   watchlistSymbols?: readonly string[];
 }): Promise<MarketNewsTickerStripSnapshot> {
+  const deadlineAt = Date.now() + MARKET_NEWS_TICKER_STRIP_TIMEOUT_MS;
+  const boundedFetcher: MarketNewsTickerFetch = (input, init) =>
+    fetchAdmittedProviderResponse(input, init, {
+      fetcher,
+      timeoutMs: Math.min(MARKET_PROVIDER_TIMEOUT_MS, deadlineAt - Date.now()),
+    });
   const selection = selectionForScope(marketScope);
   const officialTrendingSymbols = await fetchYahooTrendingSymbols({
-    fetcher,
+    fetcher: boundedFetcher,
     region: selection.trendingRegion,
   });
   const watchlistCandidateSymbols = uniqueSymbols(watchlistSymbols);
@@ -313,7 +320,10 @@ export async function buildMarketNewsTickerStripSnapshot({
     ...watchlistCandidateSymbols,
     ...dynamicCandidateSymbols,
   ]);
-  const quoteMap = await fetchYahooQuotes({ fetcher, symbols: quotePool });
+  const quoteMap = await fetchYahooQuotes({
+    fetcher: boundedFetcher,
+    symbols: quotePool,
+  });
   const rankedWatchlistSymbols = rankDynamicCandidates({
     candidates: watchlistCandidateSymbols,
     quoteMap,
@@ -330,7 +340,7 @@ export async function buildMarketNewsTickerStripSnapshot({
   const fallbackTickers = buildFallbackTickers(marketScope, selectedTickers);
   const sparklines = await Promise.all(
     fallbackTickers.map((ticker) =>
-      fetchYahooSparkline({ fetcher, symbol: ticker.symbol }),
+      fetchYahooSparkline({ fetcher: boundedFetcher, symbol: ticker.symbol }),
     ),
   );
   let liveCount = 0;

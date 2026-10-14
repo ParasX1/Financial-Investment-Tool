@@ -71,6 +71,7 @@ describe("watchlist repository", () => {
 
     expect(rpc).toHaveBeenCalledWith("remove_watchlist_item", {
       item_symbol: "CBA.AX",
+      p_expected_user_id: "user-1",
     });
     expect(deleteRows).not.toHaveBeenCalled();
   });
@@ -89,6 +90,7 @@ describe("watchlist repository", () => {
 
     expect(rpc).toHaveBeenCalledWith("reorder_watchlist", {
       ordered_symbols: ["BHP.AX", "CBA.AX"],
+      p_expected_user_id: "user-1",
     });
     expect(deleteRows).not.toHaveBeenCalled();
   });

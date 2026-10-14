@@ -75,10 +75,12 @@ export async function createCurrentCommunityPostWithTickers(
   db: SupabaseClient,
   postDraft: CommunityPostDraft,
   tickers: string[],
+  expectedAuthorId: string,
 ): Promise<CurrentPostCreateResult | null> {
   if (typeof db.rpc !== "function") return null;
 
   return (await db.rpc(CREATE_POST_WITH_TICKERS_RPC, {
+    p_expected_author_id: expectedAuthorId,
     p_title: postDraft.title,
     p_body: postDraft.body,
     p_tags: postDraft.tags,
@@ -166,10 +168,11 @@ export async function setCommunityPostLikeValue(
   db: SupabaseClient,
   postId: string,
   liked: boolean,
+  expectedUserId: string,
 ) {
   const { data, error } = await db.rpc(
     liked ? "like_community_post" : "unlike_community_post",
-    { target_post_id: postId },
+    { target_post_id: postId, p_expected_user_id: expectedUserId },
   );
 
   if (error) throw error;
@@ -183,7 +186,7 @@ export async function setCommunityPostSavedValue(
   saved: boolean,
 ) {
   const query = saved
-    ? db.from("post_saves").insert({ post_id: postId })
+    ? db.from("post_saves").insert({ post_id: postId, user_id: currentUserId })
     : db
         .from("post_saves")
         .delete()
@@ -195,10 +198,16 @@ export async function setCommunityPostSavedValue(
 
 export async function insertCommunityPostReportRow(
   db: SupabaseClient,
-  input: { postId: string; reason: string; details: string | null },
+  input: {
+    postId: string;
+    reason: string;
+    details: string | null;
+    expectedUserId: string;
+  },
 ) {
   const { error } = await db.from("post_reports").insert({
     post_id: input.postId,
+    reporter_id: input.expectedUserId,
     reason: input.reason,
     details: input.details,
   });

@@ -44,3 +44,19 @@ def test_top_picks_domain_does_not_depend_on_legacy_metric_layers():
         source = module.read_text(encoding="utf-8")
         assert "from ..metrics import" not in source
         assert "from ..analytics." not in source
+
+
+def test_snapshot_storage_and_bootstrap_do_not_depend_on_ranking_service():
+    for name in ("configuration.py", "snapshot_cache.py", "bootstrap.py"):
+        module = SERVER_SOURCE / "top_picks" / name
+        assert "service" not in imported_modules(module), (
+            f"{name} must be usable independently of ranking orchestration"
+        )
+
+
+def test_composition_does_not_borrow_private_ranking_helpers():
+    module = SERVER_SOURCE / "composition" / "top_picks.py"
+    tree = parse(module.read_text(encoding="utf-8"))
+    for node in walk(tree):
+        if isinstance(node, ImportFrom) and node.module == "top_picks.service":
+            assert all(not alias.name.startswith("_") for alias in node.names)

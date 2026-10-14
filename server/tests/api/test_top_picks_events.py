@@ -4,11 +4,13 @@ from queue import Empty
 import pytest
 
 from src.server import create_app
+from src.top_picks.events import SubscriptionLimitError
 from src.top_picks.service import TopPicksConfigurationError
 
 
 class FakeSubscription:
     revision = 7
+    remaining_seconds = 300
 
     def __init__(self, events=()):
         self.events = list(events)
@@ -29,10 +31,12 @@ class FakeEventsService:
     def __init__(self, events=(), error=None):
         self.subscription = FakeSubscription(events)
         self.windows = []
+        self.clients = []
         self.error = error
 
-    def subscribe_updates(self, window):
+    def subscribe_updates(self, window, client_id=None):
         self.windows.append(window)
+        self.clients.append(client_id)
         if self.error is not None:
             raise self.error
         return self.subscription
@@ -168,3 +172,47 @@ def test_unexpected_subscription_error_returns_safe_json_response():
     assert response.status_code == 500
     assert response.is_json
     assert "provider token" not in response.get_data(as_text=True)
+
+
+def test_stream_uses_server_peer_address_and_ignores_forwarding_headers():
+    service = FakeEventsService()
+    response = create_client(service).get(
+        "/api/top-picks/events", headers={"X-Forwarded-For": "attacker"},
+        environ_overrides={"REMOTE_ADDR": "192.0.2.4"}, buffered=False,
+    )
+    assert service.clients == ["192.0.2.4"]
+    response.close()
+
+
+def test_capacity_error_returns_retryable_json_before_opening_stream():
+    service = FakeEventsService(error=SubscriptionLimitError())
+    response = create_client(service).get("/api/top-picks/events")
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "5"
+    assert response.is_json
+
+
+def test_stream_lifetime_sends_reconnect_and_releases_subscription():
+    service = FakeEventsService()
+    response = create_client(service).get("/api/top-picks/events", buffered=False)
+    chunks = iter(response.response)
+    next(chunks)
+    service.subscription.remaining_seconds = 0
+    _, expired = decode_event(next(chunks))
+    assert expired["event"] == "reconnect"
+    assert expired["retry"] == "5000"
+    with pytest.raises(StopIteration):
+        next(chunks)
+    assert service.subscription.closed
+    response.close()
+
+
+def test_expiration_bounds_blocking_queue_wait():
+    service = FakeEventsService()
+    service.subscription.remaining_seconds = 2
+    response = create_client(service).get("/api/top-picks/events", buffered=False)
+    chunks = iter(response.response)
+    next(chunks)
+    next(chunks)
+    assert service.subscription.timeouts == [2]
+    response.close()

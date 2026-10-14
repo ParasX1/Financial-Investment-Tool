@@ -57,6 +57,10 @@ function user(id: string, email: string): TestUser {
 function createDependencies(): ProfileControllerDependencies {
   return {
     accountClient: {
+      getEmailChangeStatus: jest.fn<any>().mockImplementation(async () => ({
+        pendingEmail: mockAuthState.user?.new_email ?? null,
+        sentAt: mockAuthState.user?.email_change_sent_at ?? null,
+      })),
       requestEmailChange: jest.fn<any>().mockResolvedValue({
         pendingEmail: null,
         sentAt: null,
@@ -240,6 +244,47 @@ describe("useProfileController session lifecycle", () => {
     renderer!.unmount();
   });
 
+  it("restores server pending email after a profile remount with an unchanged auth user", async () => {
+    mockAuthState = {
+      loading: false,
+      user: user("user-a", "alice@example.com"),
+    };
+    const dependencies = createDependencies();
+    (
+      dependencies.accountClient.getEmailChangeStatus as jest.Mock<any>
+    ).mockResolvedValue({
+      pendingEmail: "pending@example.com",
+      sentAt: "2026-10-09",
+    });
+    let latest!: ReturnType<typeof useProfileController>;
+    function Probe() {
+      latest = useProfileController(dependencies);
+      return null;
+    }
+    let view!: ReactTestRenderer;
+    await act(async () => {
+      view = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    expect(latest).toMatchObject({
+      pendingEmail: "pending@example.com",
+      hasPendingEmailChange: true,
+    });
+    act(() => view.unmount());
+    await act(async () => {
+      view = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    expect(latest).toMatchObject({
+      pendingEmail: "pending@example.com",
+      hasPendingEmailChange: true,
+    });
+    expect(
+      dependencies.accountClient.getEmailChangeStatus,
+    ).toHaveBeenCalledTimes(2);
+    act(() => view.unmount());
+  });
+
   it("keeps the confirmed auth email separate from a pending email change", async () => {
     mockAuthState = {
       loading: false,
@@ -331,9 +376,9 @@ describe("useProfileController session lifecycle", () => {
       user: user("user-a", "alice@example.com"),
     };
     const dependencies = createDependencies();
-    (
-      dependencies.usersRepository.findByUserId as jest.Mock<any>
-    ).mockRejectedValue(new Error("postgres host and policy details"));
+    (dependencies.usersRepository.findByUserId as jest.Mock<any>)
+      .mockRejectedValueOnce(new Error("postgres host and policy details"))
+      .mockResolvedValueOnce({ firstName: "Alice", handle: "alice_01" });
     let latest: ReturnType<typeof useProfileController> | null = null;
     let renderer: ReactTestRenderer;
 
@@ -350,10 +395,79 @@ describe("useProfileController session lifecycle", () => {
     expect(latest!.profileLoading).toBe(false);
     expect(latest!.message).toEqual({
       tone: "error",
-      text: "Profile details could not be loaded. Refresh the page or sign in again.",
+      text: "Profile details could not be loaded. Please try again.",
     });
     expect(latest!.message?.text).not.toContain("postgres");
+    expect(latest!.profileSnapshot).toBeNull();
+    act(() => latest!.retryProfile());
+    expect(latest!.profileLoading).toBe(true);
+    await act(flushPromises);
+    expect(dependencies.usersRepository.findByUserId).toHaveBeenCalledTimes(2);
+    expect(latest).toMatchObject({
+      profileLoading: false,
+      firstName: "Alice",
+      message: null,
+    });
+    expect(latest!.profileSnapshot).not.toBeNull();
     renderer!.unmount();
+  });
+
+  it("discards a retry result after another account becomes current", async () => {
+    mockAuthState = {
+      loading: false,
+      user: user("user-a", "alice@example.com"),
+    };
+    const dependencies = createDependencies();
+    const retryStatus = deferred<any>();
+    (dependencies.usersRepository.findByUserId as jest.Mock<any>)
+      .mockRejectedValueOnce(new Error("fixture load failure"))
+      .mockImplementation(async (userId: string) => ({
+        firstName: userId === "user-b" ? "Bob" : "Alice",
+      }));
+    (dependencies.accountClient.getEmailChangeStatus as jest.Mock<any>)
+      .mockResolvedValueOnce({ pendingEmail: null, sentAt: null })
+      .mockImplementation((input: { userId: string }) =>
+        input.userId === "user-a"
+          ? retryStatus.promise
+          : Promise.resolve({ pendingEmail: null, sentAt: null }),
+      );
+    let latest!: ReturnType<typeof useProfileController>;
+    function Probe() {
+      latest = useProfileController(dependencies);
+      return null;
+    }
+    let view!: ReactTestRenderer;
+    await act(async () => {
+      view = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    expect(latest.profileSnapshot).toBeNull();
+    await act(async () => {
+      latest.retryProfile();
+      await flushPromises();
+    });
+    expect(latest.profileLoading).toBe(true);
+    mockAuthState = { loading: false, user: user("user-b", "bob@example.com") };
+    await act(async () => {
+      view.update(<Probe />);
+      await flushPromises();
+    });
+    expect(latest.firstName).toBe("Bob");
+    await act(async () => {
+      retryStatus.resolve({
+        pendingEmail: "old-a@example.com",
+        sentAt: "2026-10-09",
+      });
+      await flushPromises();
+    });
+    expect(latest).toMatchObject({
+      firstName: "Bob",
+      pendingEmail: "",
+      hasPendingEmailChange: false,
+      profileLoading: false,
+      message: null,
+    });
+    act(() => view.unmount());
   });
 
   it("discards a previous session mutation after the account changes", async () => {
@@ -488,6 +602,7 @@ describe("useProfileController session lifecycle", () => {
     });
     expect(emailSaved).toBe(true);
     expect(dependencies.accountClient.requestEmailChange).toHaveBeenCalledWith({
+      userId: "user-a",
       email: "next@example.com",
       redirectTo: expect.stringMatching(/\/Profile$/),
     });
@@ -776,9 +891,10 @@ describe("useProfileController session lifecycle", () => {
       expect(await latest!.changePassword("strong78", "strong78")).toBe(true);
       await latest!.resendVerification();
     });
-    expect(dependencies.accountClient.updatePassword).toHaveBeenCalledWith(
-      "strong78",
-    );
+    expect(dependencies.accountClient.updatePassword).toHaveBeenCalledWith({
+      userId: "user-a",
+      password: "strong78",
+    });
     expect(dependencies.accountClient.resendVerification).toHaveBeenCalledWith({
       email: "alice@example.com",
       kind: "signup",

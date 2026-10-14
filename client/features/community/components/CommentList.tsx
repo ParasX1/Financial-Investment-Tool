@@ -20,7 +20,7 @@ export function CommentList({
       <div
         className={cn(
           communityUi.softPanel,
-          "px-[12px] py-[10px] text-[#8f98aa]",
+          "px-[12px] py-[10px] text-[var(--fit-color-text-muted)]",
           fitType.bodySm,
           communityStyles.softBorder,
         )}
@@ -47,25 +47,25 @@ export function CommentList({
             <div className="mb-2 flex items-center justify-between gap-[12px]">
               <div
                 className={cn(
-                  "flex min-w-0 items-center gap-2 text-[#8f98aa]",
+                  "flex min-w-0 items-center gap-2 text-[var(--fit-color-text-muted)]",
                   fitType.caption,
                 )}
               >
                 <div
                   className={cn(
                     communityUi.avatar,
-                    "h-7 w-7 bg-[#1d2030] text-[#e2e7f2]",
+                    "h-7 w-7 bg-[var(--fit-color-surface)] text-[var(--fit-color-text-strong)]",
                     fitType.avatarSm,
                   )}
                 >
                   {initials(comment.user)}
                 </div>
-                <span className="min-w-0 truncate font-semibold text-[#e2e7f2]">
+                <span className="min-w-0 truncate font-semibold text-[var(--fit-color-text-strong)]">
                   {comment.user}
                 </span>
                 <span
                   aria-hidden
-                  className="h-1 w-1 shrink-0 rounded-full bg-[#687184]"
+                  className="h-1 w-1 shrink-0 rounded-full bg-[var(--fit-color-text-muted)]"
                 />
                 <time dateTime={comment.createdAt}>
                   {toRelativeTime(comment.createdAt)}
@@ -78,7 +78,7 @@ export function CommentList({
                   onClick={() => onDelete(comment.id)}
                   className={cn(
                     communityUi.iconButton,
-                    "h-8 w-8 shrink-0 text-[#7f8798] hover:bg-[#ff3d68]/10 hover:text-[#ffc4d2]",
+                    "h-8 w-8 shrink-0 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-danger-soft)] hover:text-[var(--fit-color-danger)]",
                     FOCUS_VISIBLE,
                   )}
                   title="Delete comment"
@@ -94,7 +94,7 @@ export function CommentList({
 
             <p
               className={cn(
-                "whitespace-pre-wrap text-[#d8deea]",
+                "whitespace-pre-wrap text-[var(--fit-color-text-body)]",
                 fitType.bodySm,
                 communityStyles.wrapAnywhere,
               )}
@@ -105,7 +105,7 @@ export function CommentList({
             {displayImageUrl ? (
               <div
                 className={cn(
-                  "mt-[12px] overflow-hidden rounded-md bg-black/30",
+                  "mt-[12px] overflow-hidden rounded-md bg-[var(--fit-color-inner-surface)]",
                   communityStyles.softBorder,
                 )}
               >

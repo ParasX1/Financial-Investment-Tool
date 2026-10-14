@@ -1,8 +1,8 @@
-import Sidebar from "@/components/sidebar";
+import { FitPageContent } from "@/components/shared/FitPageContent";
 import { FitPageHeader } from "@/components/shared/FitPageHeader";
+import { FitPageShell } from "@/components/shared/FitPageShell";
 import {
-  Box,
-  Chip,
+  Button,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -10,169 +10,76 @@ import {
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { fetchEtfs } from "../api/fetchEtfs";
-import { ETF_WINDOWS, type EtfRow, type EtfWindow } from "../types";
+import { EtfHighlights } from "../components/EtfHighlights";
+import { EtfTable } from "../components/EtfTable";
+import {
+  etfWindowToggleSx,
+  formatNullableRatio,
+  formatPercent,
+} from "../components/etfPresentation";
+import {
+  ETF_WINDOWS,
+  type EtfResponse,
+  type EtfRow,
+  type EtfWindow,
+} from "../types";
 
-const formatPercent = (value: number) =>
-  `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
-
-const formatRatio = (value: number) => value.toFixed(2);
-
-const formatNullableRatio = (value: number | null) =>
-  value === null ? "-" : formatRatio(value);
-
-const formatNullablePercent = (value: number | null) =>
-  value === null ? "-" : formatPercent(value);
-
-const formatAum = (value: number) =>
-  `$${(value / 1_000_000_000).toFixed(0)}B`;
-
-const metricCellSx = {
-  color: "#dce9ff",
-  fontWeight: 700,
-  textAlign: "right",
+const PREVIEW_DISCLOSURE =
+  "ETF data is a hardcoded preview and is not live market data.";
+const WINDOW_LABELS: Record<EtfWindow, string> = {
+  "1D": "Day",
+  "1W": "Week",
+  "1M": "Month",
+  "1Y": "Year",
 };
+const EMPTY_ROWS: EtfRow[] = [];
 
-function EtfTable({ rows }: { rows: EtfRow[] }) {
-  return (
-    <Box
-      sx={{
-        mx: { xs: 2, sm: 3 },
-        overflowX: "auto",
-        border: "1px solid var(--fit-color-border-subtle, rgba(132,146,176,0.16))",
-        borderRadius: "8px",
-        bgcolor: "rgba(13, 13, 17, 0.92)",
-      }}
-    >
-      <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", minWidth: 1080 }}>
-        <Box component="thead">
-          <Box component="tr" sx={{ borderBottom: "1px solid rgba(132,146,176,0.18)" }}>
-            {[
-              "Rank",
-              "Symbol",
-              "ETF",
-              "Category",
-              "Issuer",
-              "AUM",
-              "Expense",
-              "Price return",
-              "Sharpe",
-              "Volatility",
-              "Max drawdown",
-            ].map((label) => (
-              <Box
-                component="th"
-                key={label}
-                sx={{
-                  px: 2,
-                  py: 1.75,
-                  color: "#fff",
-                  fontSize: 13,
-                  textAlign:
-                    ["AUM", "Expense", "Price return", "Sharpe", "Volatility", "Max drawdown"].includes(label)
-                      ? "right"
-                      : "left",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </Box>
-            ))}
-          </Box>
-        </Box>
-        <Box component="tbody">
-          {rows.map((row) => (
-            <Box
-              component="tr"
-              key={row.symbol}
-              sx={{
-                borderBottom: "1px solid rgba(132,146,176,0.10)",
-                "&:hover": { bgcolor: "rgba(99,102,241,0.10)" },
-              }}
-            >
-              <Box component="td" sx={{ px: 2, py: 1.75, color: "#fbbf24", fontWeight: 800 }}>
-                {row.rank}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, color: "#4f8cff", fontWeight: 800 }}>
-                {row.symbol}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, color: "#bfdbfe", minWidth: 260 }}>
-                {row.name}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75 }}>
-                <Chip
-                  label={row.category}
-                  size="small"
-                  sx={{
-                    bgcolor: "rgba(79,140,255,0.14)",
-                    color: "#bfdbfe",
-                    borderRadius: "6px",
-                    fontWeight: 700,
-                  }}
-                />
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, color: "#aab6ca" }}>
-                {row.issuer}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, ...metricCellSx }}>
-                {formatAum(row.aumUsd)}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, ...metricCellSx }}>
-                {(row.expenseRatio * 100).toFixed(2)}%
-              </Box>
-              <Box
-                component="td"
-                sx={{
-                  px: 2,
-                  py: 1.75,
-                  color: row.priceReturn >= 0 ? "#38d996" : "#ff5b7c",
-                  fontWeight: 800,
-                  textAlign: "right",
-                }}
-              >
-                {formatPercent(row.priceReturn)}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, ...metricCellSx }}>
-                {formatNullableRatio(row.sharpe)}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, ...metricCellSx }}>
-                {formatNullablePercent(row.volatility).replace("+", "")}
-              </Box>
-              <Box component="td" sx={{ px: 2, py: 1.75, color: "#ff5b7c", fontWeight: 800, textAlign: "right" }}>
-                {formatNullablePercent(row.maxDrawdown)}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    </Box>
-  );
-}
+type PreviewState =
+  | { window: EtfWindow; status: "loading" | "error" }
+  | { window: EtfWindow; status: "success"; response: EtfResponse };
 
 export function EtfScreen() {
   const [selectedWindow, setSelectedWindow] = useState<EtfWindow>("1Y");
-  const [rows, setRows] = useState<EtfRow[]>([]);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [preview, setPreview] = useState<PreviewState>({
+    window: "1Y",
+    status: "loading",
+  });
+
+  // Hide any preceding window before its replacement effect starts.
+  const current = preview.window === selectedWindow;
+  const result =
+    current && preview.status === "success" ? preview.response : null;
+  const rows = result?.rows ?? EMPTY_ROWS;
+  const warnings = result?.warnings ?? [];
+  const generatedAt = result?.metadata.generatedAt;
+  const loading = !current || preview.status === "loading";
+  const error = current && preview.status === "error";
+  const windowLabel = `${WINDOW_LABELS[selectedWindow]} (${selectedWindow})`;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
+    let active = true;
+    setPreview({ window: selectedWindow, status: "loading" });
     fetchEtfs(selectedWindow, controller.signal)
       .then((response) => {
-        setRows(response.rows);
-        setWarnings(response.warnings);
-        setGeneratedAt(response.metadata.generatedAt ?? null);
-        setError(null);
+        if (!active) return;
+        setPreview({ window: selectedWindow, status: "success", response });
       })
-      .catch((reason: unknown) => {
-        if (reason instanceof Error && reason.name === "AbortError") return;
-        setError("Unable to load ETF preview.");
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [selectedWindow]);
+      .catch(() => {
+        if (!active) return;
+        setPreview({ window: selectedWindow, status: "error" });
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [selectedWindow, attempt]);
+
+  const retry = () => {
+    setPreview({ window: selectedWindow, status: "loading" });
+    setAttempt((previous) => previous + 1);
+  };
 
   const summary = useMemo(() => {
     const topRanked = rows[0];
@@ -194,151 +101,137 @@ export function EtfScreen() {
     : null;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        bgcolor: "var(--fit-color-page-bg, #000000)",
-        color: "#fff",
-        colorScheme: "dark",
-        fontFamily: "var(--fit-font-family)",
-      }}
-    >
-      <Sidebar />
-      <Box
-        component="main"
-        id="main-content"
-        tabIndex={-1}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          pl: "var(--app-sidebar-width, 64px)",
-          background: "var(--fit-page-background)",
-          transition: "padding-left 200ms ease",
-        }}
-      >
-        <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2.5, sm: 3 } }}>
-          <FitPageHeader
-            title="ETF"
-            subtitle="Preview ranking for exchange-traded funds"
-          />
-        </Box>
+    <FitPageShell skipLabel="Skip to ETF research" skipTargetId="main-content">
+      <FitPageContent density="data" aria-busy={loading}>
+        <FitPageHeader
+          title="ETF"
+          eyebrow="Fund research"
+          subtitle="Preview ranking for exchange-traded funds"
+        />
 
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          gap={1.5}
-          sx={{ px: { xs: 2, sm: 3 }, py: 2.5 }}
-        >
-          {[
-            [
-              selectedWindow === "1Y" ? "Best Sharpe" : "Top return",
-              summary.topRanked?.symbol,
-              summary.topRanked
+        <EtfHighlights
+          items={[
+            {
+              label: selectedWindow === "1Y" ? "Best Sharpe" : "Top return",
+              symbol: summary.topRanked?.symbol,
+              value: summary.topRanked
                 ? selectedWindow === "1Y"
                   ? formatNullableRatio(summary.topRanked.sharpe)
                   : formatPercent(summary.topRanked.priceReturn)
                 : "-",
-            ],
-            ["Best return", summary.bestReturn?.symbol, summary.bestReturn ? formatPercent(summary.bestReturn.priceReturn) : "-"],
-            ["Lowest cost", summary.lowestCost?.symbol, summary.lowestCost ? `${(summary.lowestCost.expenseRatio * 100).toFixed(2)}%` : "-"],
-          ].map(([label, symbol, value]) => (
-            <Box
-              key={label}
-              sx={{
-                flex: 1,
-                border: "1px solid rgba(132,146,176,0.14)",
-                borderRadius: "8px",
-                bgcolor: "rgba(13,13,17,0.72)",
-                px: 2,
-                py: 1.75,
-              }}
-            >
-              <Typography variant="caption" sx={{ color: "#8f98aa", fontWeight: 700 }}>
-                {label}
-              </Typography>
-              <Typography sx={{ color: "#fff", fontSize: 22, fontWeight: 800 }}>
-                {symbol} <Box component="span" sx={{ color: "#93c5fd" }}>{value}</Box>
-              </Typography>
-            </Box>
-          ))}
-        </Stack>
+            },
+            {
+              label: "Best return",
+              symbol: summary.bestReturn?.symbol,
+              value: summary.bestReturn
+                ? formatPercent(summary.bestReturn.priceReturn)
+                : "-",
+            },
+            {
+              label: "Lowest cost",
+              symbol: summary.lowestCost?.symbol,
+              value: summary.lowestCost
+                ? `${(summary.lowestCost.expenseRatio * 100).toFixed(2)}%`
+                : "-",
+            },
+          ]}
+        />
 
         <Stack
           direction="row"
           alignItems="center"
           gap={1.25}
-          sx={{ px: { xs: 2, sm: 3 }, pb: 2, flexWrap: "wrap" }}
+          sx={{ pb: 2, flexWrap: "wrap" }}
         >
           <ToggleButtonGroup
             exclusive
             size="small"
             value={selectedWindow}
             onChange={(_, nextWindow) => {
-              if (nextWindow) setSelectedWindow(nextWindow as EtfWindow);
+              if (ETF_WINDOWS.includes(nextWindow))
+                setSelectedWindow(nextWindow as EtfWindow);
             }}
             aria-label="ETF time window"
-            sx={{
-              bgcolor: "var(--fit-color-surface, #09090b)",
-              border:
-                "1px solid var(--fit-color-border-subtle, rgba(132, 146, 176, 0.12))",
-              borderRadius: "0.75rem",
-              overflow: "hidden",
-              "& .MuiToggleButton-root": {
-                color: "var(--fit-color-text-body, #b9c1d0)",
-                border: 0,
-                px: 1.75,
-                textTransform: "none",
-              },
-              "& .MuiToggleButton-root.Mui-selected": {
-                bgcolor: "var(--fit-color-brand-chip, rgba(123, 140, 255, 0.16))",
-                color: "#fff",
-              },
-            }}
+            sx={etfWindowToggleSx}
           >
             {ETF_WINDOWS.map((window) => (
               <ToggleButton key={window} value={window}>
-                {window === "1D"
-                  ? "Day"
-                  : window === "1W"
-                    ? "Week"
-                    : window === "1M"
-                      ? "Month"
-                      : "Year"}
+                {WINDOW_LABELS[window]}
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
         </Stack>
 
         <Stack
-          direction="row"
-          alignItems="center"
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "start", sm: "center" }}
           justifyContent="space-between"
-          sx={{ px: { xs: 2, sm: 3 }, pb: 2 }}
+          gap={1}
+          sx={{ pb: 2 }}
         >
-          <Typography variant="body2" sx={{ color: "#aab6ca", fontWeight: 700 }}>
+          <Typography
+            role={error ? "alert" : "status"}
+            aria-live={error ? "assertive" : "polite"}
+            aria-atomic="true"
+            variant="body2"
+            sx={{
+              color: error
+                ? "var(--fit-color-danger)"
+                : "var(--fit-color-text-body)",
+              fontWeight: 600,
+            }}
+          >
             {loading
-              ? "Loading ETF preview..."
+              ? `Loading ETF preview for ${windowLabel}...`
               : error
-                ? error
-                : `${rows.length} ETF results`}
+                ? `Unable to load ETF preview for ${windowLabel}.`
+                : rows.length === 0
+                  ? `No ETF preview results for ${windowLabel}.`
+                  : `${rows.length} ETF results for ${windowLabel}`}
           </Typography>
-          <Typography variant="caption" sx={{ color: "#8f98aa", fontWeight: 700 }}>
-            {updatedLabel ? `Updated ${updatedLabel}` : "Preview data"}
+          <Typography
+            variant="caption"
+            sx={{ color: "var(--fit-color-text-muted)", fontSize: "0.75rem" }}
+          >
+            {updatedLabel
+              ? `Updated ${updatedLabel}`
+              : result
+                ? "Generation time unavailable"
+                : "Waiting for preview"}
           </Typography>
         </Stack>
 
+        {!loading && (error || rows.length === 0) && (
+          <Button
+            variant="outlined"
+            aria-label="Retry loading ETF preview"
+            onClick={retry}
+            sx={{ mb: 2 }}
+          >
+            Retry
+          </Button>
+        )}
+
         <EtfTable rows={rows} />
 
-        {warnings.map((warning) => (
-          <Typography
-            key={warning}
-            variant="caption"
-            sx={{ display: "block", px: { xs: 2, sm: 3 }, py: 2, color: "#fbbf24" }}
-          >
-            {warning}
-          </Typography>
-        ))}
-      </Box>
-    </Box>
+        {Array.from(new Set([PREVIEW_DISCLOSURE, ...warnings])).map(
+          (warning) => (
+            <Typography
+              key={warning}
+              variant="caption"
+              sx={{
+                display: "block",
+                pt: 2,
+                color: "var(--fit-color-warning)",
+                fontSize: "0.8125rem",
+                lineHeight: 1.6,
+              }}
+            >
+              {warning}
+            </Typography>
+          ),
+        )}
+      </FitPageContent>
+    </FitPageShell>
   );
 }

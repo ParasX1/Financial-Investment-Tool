@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import date
 from queue import Empty
-from threading import Event
+from threading import Event, RLock
 from unittest.mock import Mock
 
 import pandas as pd
@@ -39,6 +39,8 @@ def create_live_service(monkeypatch, cache_ttl_seconds=600):
         market_data_provider=download,
         today_provider=lambda: TODAY,
         cache_ttl_seconds=cache_ttl_seconds,
+        refresh_clock=lambda: 0,
+        refresh_waiter=lambda seconds: None,
     )
 
     def build(start, end, window, **kwargs):
@@ -369,7 +371,7 @@ def test_listener_is_registered_before_an_immediately_completed_refresh(
         subscription.close()
 
 
-def test_worker_starts_next_round_on_completion_and_stops_when_viewer_leaves(
+def test_worker_paces_next_round_and_stops_when_viewer_leaves(
     monkeypatch,
 ):
     service, jobs, download = create_live_service(monkeypatch)
@@ -385,14 +387,154 @@ def test_worker_starts_next_round_on_completion_and_stops_when_viewer_leaves(
         return result
 
     monkeypatch.setattr(service, "_refresh_window_snapshots", refresh)
+    now = [0]
+    service._refresh_clock = lambda: now[0]
+    waits = Mock(side_effect=lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(service._updates, "wait_for_inactive", waits)
     try:
         jobs[0]()
         assert rounds == [("1Y", True), ("1Y", True)]
         assert download.call_count == 2
+        waits.assert_called_once_with(60)
         assert not service._refreshing_all_windows
         assert service._pending_force_refresh_window is None
     finally:
         subscription.close()
+
+
+def test_manual_force_requests_coalesce_and_reconnect_observes_process_cooldown(monkeypatch):
+    service, jobs, download = create_live_service(monkeypatch)
+    now = [0]
+    service._refresh_clock = lambda: now[0]
+    service._updates.clock = lambda: now[0]
+    waits = []
+    rounds = []
+    original = service._refresh_window_snapshots
+
+    def wait(seconds):
+        waits.append(seconds)
+        now[0] += seconds
+        return False
+
+    def refresh(today, window, force):
+        rounds.append((now[0], window))
+        result = original(today, window, force)
+        if len(rounds) == 1:
+            for _ in range(20):
+                service._refresh_windows_in_background("1M", force_refresh=True)
+        if len(rounds) == 2:
+            subscription.close()
+        return result
+
+    monkeypatch.setattr(service._updates, "wait_for_inactive", wait)
+    monkeypatch.setattr(service, "_refresh_window_snapshots", refresh)
+    subscription = service.subscribe_updates("1Y")
+    jobs.pop(0)()
+    assert rounds == [(0, "1Y"), (60, "1M")]
+    assert waits == [60]
+    assert download.call_count == 2
+    now[0] = 70
+    returning = service.subscribe_updates("1Y")
+    monkeypatch.setattr(service, "_refresh_window_snapshots", original)
+
+    def leave_during_cooldown(seconds):
+        assert seconds == 50
+        returning.close()
+        return True
+
+    monkeypatch.setattr(service._updates, "wait_for_inactive", leave_during_cooldown)
+    jobs.pop(0)()
+    assert download.call_count == 2
+    assert not service._refreshing_all_windows
+
+
+def test_thread_start_failure_releases_slot_and_allows_future_subscription(monkeypatch):
+    service, jobs, _ = create_live_service(monkeypatch)
+    original_thread = service_module.Thread
+    monkeypatch.setattr(service_module, "Thread", Mock(side_effect=RuntimeError("thread unavailable")))
+    with pytest.raises(RuntimeError):
+        service.subscribe_updates("1Y", client_id="peer")
+    assert not service._updates.has_subscribers
+    assert not service._refreshing_all_windows
+    monkeypatch.setattr(service_module, "Thread", original_thread)
+    subscription = service.subscribe_updates("1Y", client_id="peer")
+    assert jobs
+    subscription.close()
+
+
+def test_reconnecting_worker_cannot_revive_old_worker_after_cooldown_exit(monkeypatch):
+    service, jobs, download = create_live_service(monkeypatch)
+    service._next_refresh_at = 60
+    first = service.subscribe_updates("1Y")
+    returning = []
+    armed = [False]
+    lock = RLock()
+
+    class ReconnectOnExit:
+        def __enter__(self):
+            lock.acquire()
+
+        def __exit__(self, *args):
+            lock.release()
+            if armed[0] and not service._refreshing_all_windows:
+                armed[0] = False
+                returning.append(service.subscribe_updates("1M"))
+
+    service._refresh_lock = ReconnectOnExit()
+
+    def leave_during_wait(seconds):
+        first.close()
+        armed[0] = True
+        return True
+
+    monkeypatch.setattr(service._updates, "wait_for_inactive", leave_during_wait)
+    refresh = Mock(side_effect=lambda *args: [subscription.close() for subscription in returning] or True)
+    monkeypatch.setattr(service, "_refresh_window_snapshots", refresh)
+    jobs[0]()
+    try:
+        refresh.assert_not_called()
+        download.assert_not_called()
+        assert len(jobs) == 2
+        assert service._refreshing_all_windows
+    finally:
+        for subscription in returning:
+            subscription.close()
+
+
+def test_initial_manual_job_survives_stream_join_and_leave_during_cooldown(monkeypatch):
+    service, jobs, download = create_live_service(monkeypatch)
+    now = [0]
+    service._refresh_clock = lambda: now[0]
+    service._updates.clock = lambda: now[0]
+    service._next_refresh_at = 60
+    service._refresh_windows_in_background("1M", force_refresh=True)
+    subscription = service.subscribe_updates("1Y")
+    waits = []
+
+    def leave_during_wait(seconds):
+        waits.append(seconds)
+        now[0] += seconds
+        subscription.close()
+        return True
+
+    monkeypatch.setattr(service._updates, "wait_for_inactive", leave_during_wait)
+    jobs[0]()
+    assert waits == [60]
+    download.assert_called_once()
+    assert not service._refreshing_all_windows
+
+
+def test_closed_subscriber_only_job_exits_before_entering_cooldown_sleep(monkeypatch):
+    service, jobs, download = create_live_service(monkeypatch)
+    service._next_refresh_at = 60
+    subscription = service.subscribe_updates("1Y")
+    subscription.close()
+    waiter = Mock(side_effect=RuntimeError("inactive subscriber job must not sleep"))
+    service._refresh_waiter = waiter
+    jobs[0]()
+    waiter.assert_not_called()
+    download.assert_not_called()
+    assert not service._refreshing_all_windows
 
 
 @pytest.mark.parametrize("empty_universe", [False, True])

@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
-  buildMarketNewsTickerStripSnapshot,
   resolveMarketNewsMarketScope,
   type MarketNewsTickerStripSnapshot,
 } from "@/lib/news/tickerStrip";
+import { buildMarketNewsTickerStripSnapshot } from "@/lib/news/tickerStrip/snapshotService";
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
+  MARKET_API_PRIVATE_CACHE_CONTROL,
 } from "@/lib/server/marketApiGuard";
 import { normalizeYahooMarketSymbol } from "@/lib/server/yahooQuoteProvider";
 
@@ -15,7 +15,6 @@ type TickerStripResponse = MarketNewsTickerStripSnapshot | { error: string };
 
 const TICKER_STRIP_UNAVAILABLE_ERROR =
   "Market ticker snapshots are temporarily unavailable.";
-const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 const MAX_WATCHLIST_SYMBOLS = 20;
 
 function parseWatchlistBody(value: unknown): string[] | null {
@@ -35,7 +34,7 @@ function parseWatchlistBody(value: unknown): string[] | null {
 
 function getTickerStripCacheControl(watchlistSymbols: readonly string[]) {
   return watchlistSymbols.length
-    ? "private, no-store, max-age=0"
+    ? MARKET_API_PRIVATE_CACHE_CONTROL
     : "s-maxage=45, stale-while-revalidate=120";
 }
 
@@ -43,20 +42,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<TickerStripResponse>,
 ) {
-  res.setHeader("Cache-Control", PRIVATE_NO_STORE);
-
-  if (req.method !== "GET" && req.method !== "POST") {
-    res.setHeader("Allow", "GET, POST");
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
-
-  const clientKey = `market-ticker-strip:${getRequestClientKey(req)}`;
-  if (!marketApiRateLimiter.allow(clientKey)) {
-    res.setHeader("Retry-After", String(MARKET_API_RETRY_AFTER_SECONDS));
-    res.status(429).json({
-      error: "Too many market requests. Please wait a moment.",
-    });
+  if (!beginMarketApiRequest(req, res, ["GET", "POST"])) return;
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: "market-ticker-strip",
+      errorMessage: "Too many market requests. Please wait a moment.",
+    })
+  ) {
     return;
   }
 

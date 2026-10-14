@@ -14,41 +14,9 @@ export function FitPageShell({
   skipTargetId: string;
 }) {
   return (
-    <>
-      <style jsx global>{`
-        html,
-        body,
-        #__next {
-          background: var(--fit-page-background);
-          color-scheme: dark;
-          min-height: 100%;
-        }
-
-        html {
-          background-color: var(--fit-color-page-bg) !important;
-          scrollbar-gutter: stable;
-        }
-
-        body {
-          overflow-x: hidden;
-        }
-
-        *,
-        *::before,
-        *::after {
-          box-sizing: border-box;
-        }
-      `}</style>
-      <div
-        className={cn(
-          "min-h-screen overflow-x-hidden",
-          fitSurface.page,
-          className,
-        )}
-      >
-        <Sidebar skipLabel={skipLabel} skipTargetId={skipTargetId} />
-        {children}
-      </div>
-    </>
+    <div className={cn("min-h-[100dvh]", fitSurface.page, className)}>
+      <Sidebar skipLabel={skipLabel} skipTargetId={skipTargetId} />
+      {children}
+    </div>
   );
 }

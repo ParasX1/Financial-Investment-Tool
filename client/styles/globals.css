@@ -2,18 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist/Geist-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @layer components {
   .fit-page-background {
     background: var(--fit-page-background);
   }
 
   .fit-search-field {
+    --bs-border-color: var(--fit-color-border-control);
     -webkit-appearance: none;
     appearance: none;
     border: 1px solid var(--fit-color-border-control);
     border-color: var(--fit-color-border-control);
     background-color: var(--fit-color-field);
-    color: white;
+    color: var(--fit-color-text-strong);
     outline: none;
     transition:
       border-color 160ms ease,
@@ -21,17 +30,17 @@
   }
 
   .fit-search-field::placeholder {
-    color: #7f8798;
+    color: var(--fit-color-text-muted);
     opacity: 1;
   }
 
   .fit-search-field:hover {
-    border-color: rgba(83, 103, 255, 0.45);
+    border-color: var(--fit-color-accent);
   }
 
   .fit-search-field:focus-visible {
-    border-color: rgba(111, 124, 255, 0.85);
-    box-shadow: 0 0 0 2px rgba(111, 124, 255, 0.24);
+    border-color: var(--fit-color-focus-ring);
+    box-shadow: 0 0 0 2px var(--fit-color-accent-soft);
   }
 
   .fit-search-field::-webkit-search-cancel-button,
@@ -209,8 +218,8 @@
   :root {
     --app-sidebar-width: 64px;
     --fit-font-family:
-      "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
-      "Segoe UI Variable", "Segoe UI", sans-serif;
+      "Geist", "SF Pro Display", "SF Pro Text", -apple-system,
+      BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", sans-serif;
     --fit-type-size-2xs: 0.72rem;
     --fit-type-size-xs: 0.78rem;
     --fit-type-size-sm: 0.88rem;
@@ -243,70 +252,12 @@
     --fit-type-leading-body: 1.5;
     --bs-font-sans-serif: var(--fit-font-family);
     --bs-body-font-family: var(--fit-font-family);
-    --fit-color-page-bg: #000000;
-    --fit-page-background:
-      radial-gradient(
-        circle at 20% 0%,
-        rgba(83, 103, 255, 0.12),
-        transparent 34rem
-      ),
-      var(--fit-color-page-bg);
-    --fit-color-surface: #09090b;
-    --fit-color-surface-soft: #111114;
-    --fit-color-field: #18181b;
-    --fit-color-inner-surface: #050506;
-    --fit-color-border-subtle: rgba(132, 146, 176, 0.12);
-    --fit-color-border-panel: #27272a;
-    --fit-color-border-control: #202230;
-    --fit-color-text-body: #b9c1d0;
-    --fit-color-text-muted: #8f98aa;
-    --fit-color-text-label: #687184;
-    --fit-color-accent: #8ea0ff;
-    --fit-color-accent-strong: #65a0fd;
-    --fit-color-brand-start: #5367ff;
-    --fit-color-brand-mid: #6d4cff;
-    --fit-color-brand-end: #2b164f;
-    --fit-color-brand-hover-start: #6374ff;
-    --fit-color-brand-hover-mid: #7b58ff;
-    --fit-color-brand-hover-end: #3a155f;
-    --fit-color-brand-gradient: linear-gradient(
-      135deg,
-      var(--fit-color-brand-start) 0%,
-      var(--fit-color-brand-mid) 48%,
-      var(--fit-color-brand-end) 100%
-    );
-    --fit-color-brand-gradient-hover: linear-gradient(
-      135deg,
-      var(--fit-color-brand-hover-start) 0%,
-      var(--fit-color-brand-hover-mid) 48%,
-      var(--fit-color-brand-hover-end) 100%
-    );
-    --fit-color-brand-wash: linear-gradient(
-      135deg,
-      rgba(83, 103, 255, 0.1),
-      rgba(124, 58, 237, 0.12)
-    );
-    --fit-color-brand-border: #203773;
-    --fit-color-brand-border-hover: rgba(123, 140, 255, 0.44);
-    --fit-color-brand-fill-hover: rgba(123, 140, 255, 0.12);
-    --fit-color-brand-chip: rgba(123, 140, 255, 0.1);
-    --fit-color-brand-glow: rgba(83, 103, 255, 0.42);
-    --fit-logo-gradient: linear-gradient(
-      90deg,
-      var(--fit-color-brand-start) 0%,
-      var(--fit-color-brand-mid) 52%,
-      var(--fit-color-brand-hover-mid) 100%
-    );
     --fit-logo-mark-size-compact: var(--fit-type-size-lg);
     --fit-logo-mark-size-small: 1.22rem;
     --fit-logo-mark-size-medium: var(--fit-type-size-xl);
     --fit-logo-mark-size-large: var(--fit-type-size-2xl);
     --fit-logo-wordmark-size: var(--fit-type-size-body);
     --fit-logo-subtitle-size: var(--fit-type-size-2xs);
-    --fit-logo-glow: rgba(109, 76, 255, 0.45);
-    --fit-color-focus-ring: rgba(123, 140, 255, 0.82);
-    --fit-nav-active-bg: #101939;
-    --fit-nav-active-border: #203773;
   }
 
   @media (max-width: 767px) {
@@ -316,6 +267,9 @@
   }
 
   html {
+    color-scheme: dark;
+    min-height: 100%;
+    scrollbar-gutter: stable;
     background-color: var(--fit-color-page-bg);
     scrollbar-color: var(--fit-color-text-label) var(--fit-color-page-bg);
   }
@@ -335,6 +289,7 @@
   }
 
   body {
+    color: var(--fit-color-text-strong);
     background: var(--fit-page-background);
     font-family: var(--fit-font-family);
     font-synthesis-weight: none;
@@ -346,11 +301,34 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  #__next {
+    min-height: 100dvh;
+  }
+
+  .fit-type-display-title,
+  .fit-type-page-title,
+  .fit-type-feature-title {
+    font-family: var(--fit-font-display);
+    font-weight: var(--fit-font-display-weight);
+    letter-spacing: -0.025em;
+  }
+
   button,
   input,
   textarea,
   select {
     font: inherit;
+  }
+
+  input,
+  textarea,
+  select,
+  [role="combobox"] {
+    --bs-border-color: var(--fit-color-border-control);
+  }
+
+  [aria-invalid="true"] {
+    --bs-border-color: var(--fit-color-danger);
   }
 
   .two-column {

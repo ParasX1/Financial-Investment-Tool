@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
-  getRequestClientKey,
-  marketApiRateLimiter,
-  MARKET_API_RETRY_AFTER_SECONDS,
+  admitMarketApiRequest,
+  beginMarketApiRequest,
+  MARKET_API_PRIVATE_CACHE_CONTROL,
   MARKET_PROVIDER_TIMEOUT_MS,
 } from '@/lib/server/marketApiGuard';
 import {
@@ -25,26 +25,18 @@ type QuoteResp = {
 };
 
 const MARKET_DATA_UNAVAILABLE = 'Market data unavailable';
-const MARKET_DATA_ERROR_CACHE = 'private, no-store, max-age=0';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<QuoteResp | { error: string }>
 ) {
-  res.setHeader('Cache-Control', MARKET_DATA_ERROR_CACHE);
-
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: 'Method not allowed.' });
-    return;
-  }
-
-  const clientKey = `market-quote:${getRequestClientKey(req)}`;
-  if (!marketApiRateLimiter.allow(clientKey)) {
-    res.setHeader('Retry-After', String(MARKET_API_RETRY_AFTER_SECONDS));
-    res.status(429).json({
-      error: 'Too many quote requests. Please wait a moment.',
-    });
+  if (!beginMarketApiRequest(req, res)) return;
+  if (
+    !admitMarketApiRequest(req, res, {
+      namespace: 'market-quote',
+      errorMessage: 'Too many quote requests. Please wait a moment.',
+    })
+  ) {
     return;
   }
 
@@ -77,7 +69,7 @@ export default async function handler(
     });
   } catch (error: unknown) {
     console.error('Market quote error', getYahooQuoteProviderLog(error));
-    res.setHeader('Cache-Control', MARKET_DATA_ERROR_CACHE);
+    res.setHeader('Cache-Control', MARKET_API_PRIVATE_CACHE_CONTROL);
     res.status(502).json({
       error: MARKET_DATA_UNAVAILABLE,
     });

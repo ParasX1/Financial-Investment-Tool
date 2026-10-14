@@ -39,6 +39,34 @@ const originalEventSource = Object.getOwnPropertyDescriptor(
   "EventSource",
 );
 const subscriptionsToClose: (() => void)[] = [];
+const installActivity = () => {
+  const keys = ["document", "window", "navigator"] as const;
+  const previous = keys.map((key) =>
+    Object.getOwnPropertyDescriptor(globalThis, key),
+  );
+  const document = Object.assign(new EventTarget(), {
+    visibilityState: "visible",
+  });
+  const window = new EventTarget();
+  const navigator = { onLine: true };
+  [document, window, navigator].forEach((value, index) =>
+    Object.defineProperty(globalThis, keys[index], {
+      configurable: true,
+      value,
+    }),
+  );
+  return {
+    document,
+    window,
+    navigator,
+    restore: () =>
+      keys.forEach((key, index) => {
+        if (previous[index])
+          Object.defineProperty(globalThis, key, previous[index]!);
+        else Reflect.deleteProperty(globalThis, key);
+      }),
+  };
+};
 const subscribe = (
   options: Parameters<typeof subscribeToTopPicksUpdates>[0],
 ) => {
@@ -378,5 +406,87 @@ describe("subscribeToTopPicksUpdates", () => {
     nextEvents.emit("connected", { revision: 0, window: "1Y" });
     nextEvents.emit("snapshot", { revision: 1, window: "1Y" });
     expect(nextUpdate).toHaveBeenCalledTimes(2);
+  });
+
+  it("pauses hidden and offline shared streams and catches up once both recover", () => {
+    const activity = installActivity();
+    try {
+      const onUpdate = jest.fn<() => void>();
+      const onRefreshError = jest.fn<() => void>();
+      const stop = subscribe({ window: "1Y", onUpdate, onRefreshError });
+      subscribe({
+        window: "1Y",
+        onUpdate: jest.fn<() => void>(),
+        onRefreshError,
+      });
+      const first = MockEventSource.instances[0];
+      first.emit("connected", { window: "1Y", revision: 0 });
+      const obsoleteSnapshot = [...first.listeners.get("snapshot")!][0];
+      activity.document.visibilityState = "hidden";
+      activity.document.dispatchEvent(new Event("visibilitychange"));
+      expect(first.close).toHaveBeenCalledTimes(1);
+      activity.navigator.onLine = false;
+      activity.window.dispatchEvent(new Event("offline"));
+      activity.document.visibilityState = "visible";
+      activity.document.dispatchEvent(new Event("visibilitychange"));
+      expect(MockEventSource.instances).toHaveLength(1);
+      activity.navigator.onLine = true;
+      activity.window.dispatchEvent(new Event("online"));
+      expect(MockEventSource.instances).toHaveLength(2);
+      obsoleteSnapshot({
+        type: "snapshot",
+        data: JSON.stringify({ window: "1Y", revision: 5 }),
+      } as MessageEvent);
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      MockEventSource.instances[1].emit("connected", {
+        window: "1Y",
+        revision: 5,
+      });
+      expect(onUpdate).toHaveBeenCalledTimes(2);
+      expect(onRefreshError).not.toHaveBeenCalled();
+      stop();
+    } finally {
+      subscriptionsToClose.splice(0).forEach((stop) => stop());
+      activity.restore();
+    }
+  });
+
+  it("defers connections while inactive and cancels retries on pause or cleanup", () => {
+    jest.useFakeTimers();
+    const activity = installActivity();
+    try {
+      activity.navigator.onLine = false;
+      const onRefreshError = jest.fn<() => void>();
+      const stop = subscribe({
+        window: "1Y",
+        onUpdate: jest.fn<() => void>(),
+        onRefreshError,
+      });
+      expect(MockEventSource.instances).toHaveLength(0);
+      activity.navigator.onLine = true;
+      activity.window.dispatchEvent(new Event("online"));
+      const first = MockEventSource.instances[0];
+      first.emit("error", {});
+      expect(first.close).toHaveBeenCalledTimes(1);
+      expect(onRefreshError).toHaveBeenCalledTimes(1);
+      jest.advanceTimersByTime(4999);
+      expect(MockEventSource.instances).toHaveLength(1);
+      jest.advanceTimersByTime(1);
+      expect(MockEventSource.instances).toHaveLength(2);
+      MockEventSource.instances[1].emit("reconnect", {});
+      activity.document.visibilityState = "hidden";
+      activity.document.dispatchEvent(new Event("visibilitychange"));
+      jest.advanceTimersByTime(60000);
+      expect(MockEventSource.instances).toHaveLength(2);
+      stop();
+      activity.document.visibilityState = "visible";
+      activity.document.dispatchEvent(new Event("visibilitychange"));
+      jest.advanceTimersByTime(60000);
+      expect(MockEventSource.instances).toHaveLength(2);
+    } finally {
+      subscriptionsToClose.splice(0).forEach((stop) => stop());
+      activity.restore();
+      jest.useRealTimers();
+    }
   });
 });

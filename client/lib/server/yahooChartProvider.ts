@@ -7,6 +7,7 @@ import {
   type MarketChartInterval,
   type MarketChartRangeId,
 } from "@/lib/market/chartRanges";
+import { fetchAdmittedProviderResponse } from "./providerAdmission";
 
 export interface MarketChartPoint {
   timeMs: number;
@@ -119,13 +120,16 @@ export async function fetchYahooChartSnapshot(
 
   let response: Response;
   try {
-    response = await fetchImpl(url.toString(), {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": YAHOO_USER_AGENT,
+    response = await fetchAdmittedProviderResponse(
+      url.toString(),
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": YAHOO_USER_AGENT,
+        },
       },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+      { fetcher: fetchImpl, timeoutMs },
+    );
   } catch {
     throw new YahooChartProviderError("network");
   }

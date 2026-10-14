@@ -25,6 +25,13 @@ export interface MarketQuotesResponse {
   unavailableSymbols: string[];
 }
 
+export interface MarketSymbolSearchResult {
+  exchange: string | null;
+  name: string;
+  quoteType: "CRYPTOCURRENCY" | "EQUITY" | "ETF" | "INDEX";
+  symbol: string;
+}
+
 export interface MarketChartPoint {
   timeMs: number;
   value: number;

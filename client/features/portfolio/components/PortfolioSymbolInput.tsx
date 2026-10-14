@@ -146,10 +146,10 @@ export const PortfolioSymbolInput = ({
           paper: {
             sx: {
               mt: "4px",
-              color: "#f7f8fc",
-              background: "rgba(17, 20, 26, 0.98)",
-              border: "1px solid rgba(143, 164, 196, 0.28)",
-              borderRadius: "8px",
+              color: "var(--fit-color-text-strong)",
+              background: "var(--fit-color-surface)",
+              border: "1px solid var(--fit-color-border-control)",
+              borderRadius: "var(--fit-radius-control)",
               boxShadow: "0 18px 38px rgba(0, 0, 0, 0.42)",
             },
           },
@@ -165,9 +165,22 @@ export const PortfolioSymbolInput = ({
             maxHeight: 260,
             py: "4px",
             "& .MuiAutocomplete-option": {
-              minHeight: 30,
+              minHeight: 44,
               px: "10px",
-              fontSize: "0.78rem",
+              fontSize: "var(--fit-type-size-body)",
+              lineHeight: 1.4,
+              "&.Mui-focused, &[aria-selected='true']": {
+                background: "var(--fit-color-accent-soft)",
+              },
+              "&.Mui-focusVisible": {
+                outline: "2px solid var(--fit-color-focus-ring)",
+                outlineOffset: "-2px",
+              },
+              "& small": {
+                color: "var(--fit-color-text-body)",
+                fontSize: "var(--fit-type-size-body-sm)",
+                overflowWrap: "anywhere",
+              },
             },
           },
         }}
@@ -179,6 +192,7 @@ export const PortfolioSymbolInput = ({
                 {...getTagProps({ index })}
                 key={symbol}
                 label={symbol}
+                title={symbol}
                 size="small"
                 className={styles.symbolChip}
               />
@@ -193,7 +207,13 @@ export const PortfolioSymbolInput = ({
               : `${option.exchange ?? option.quoteType} - ${option.name}`;
           return (
             <li {...props} key={symbol}>
-              <span style={{ display: "flex", flexDirection: "column" }}>
+              <span
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  minWidth: 0,
+                }}
+              >
                 <strong>{symbol}</strong>
                 {detail ? <small>{detail}</small> : null}
               </span>
@@ -216,10 +236,7 @@ export const PortfolioSymbolInput = ({
                 event.currentTarget.value = "";
               },
               onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
-                if (
-                  event.key === "Enter" &&
-                  symbolSearch.results.length > 0
-                ) {
+                if (event.key === "Enter" && symbolSearch.results.length > 0) {
                   return;
                 }
                 if (event.key !== "Enter" && event.key !== "Tab") return;
@@ -240,19 +257,21 @@ export const PortfolioSymbolInput = ({
         )}
         sx={{
           "& .MuiOutlinedInput-root": {
-            minHeight: 29,
-            color: "#f7f8fc",
-            background: "rgba(8, 12, 20, 0.72)",
-            borderRadius: "6px",
-            paddingTop: "0",
-            paddingBottom: "0",
+            minHeight: 38,
+            color: "var(--fit-color-text-strong)",
+            background: "var(--fit-color-field)",
+            borderRadius: "var(--fit-radius-control)",
+            paddingTop: "4px",
+            paddingBottom: "4px",
             "& fieldset": {
-              borderColor: "rgba(143, 164, 196, 0.22)",
+              borderColor: "var(--fit-color-border-control)",
             },
             "&:hover fieldset": {
-              borderColor: "rgba(101, 160, 253, 0.58)",
+              borderColor: "var(--fit-color-accent)",
             },
-            "&.Mui-focused fieldset": { borderColor: "#65a0fd" },
+            "&.Mui-focused fieldset": {
+              borderColor: "var(--fit-color-focus-ring)",
+            },
           },
           "& .MuiAutocomplete-input": {
             padding: "0 2px !important",
@@ -260,21 +279,24 @@ export const PortfolioSymbolInput = ({
           "& .MuiChip-root": {
             margin: "2px 2px",
             width: "auto",
-            maxWidth: "none",
+            maxWidth: "calc(100% - 4px)",
           },
           "& .MuiChip-label": {
             paddingLeft: "6px",
             paddingRight: "2px",
-            fontSize: "0.62rem",
-            lineHeight: 1,
+            fontSize: "var(--fit-type-size-body-sm)",
+            lineHeight: 1.4,
           },
           "& .MuiChip-deleteIcon": {
-            width: 14,
-            height: 14,
+            width: 18,
+            height: 18,
             marginLeft: 1,
             marginRight: 2,
           },
-          "& input": { color: "#f7f8fc", fontSize: "0.68rem" },
+          "& input": {
+            color: "var(--fit-color-text-strong)",
+            fontSize: "var(--fit-type-size-body)",
+          },
         }}
       />
     </div>

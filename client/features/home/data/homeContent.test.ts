@@ -4,13 +4,30 @@ import {
   homeExperiencePoints,
   homeFooterGroups,
   homeMetadata,
+  homePreviewMetrics,
   homeRouteLinks,
 } from "./homeContent";
 
 describe("homeContent", () => {
   it("keeps the front page entry points intentionally limited", () => {
-    expect(homeRouteLinks).toHaveLength(3);
+    expect(homeRouteLinks.map((route) => route.href)).toEqual([
+      "/Portfolio",
+      "/Watchlist",
+      "/MarketNews",
+      "/Community",
+    ]);
     expect(homeExperiencePoints).toHaveLength(4);
+  });
+
+  it("describes the real analytics with classifications instead of invented results", () => {
+    expect(homePreviewMetrics).toEqual([
+      { label: "Historical return", classification: "Historical" },
+      { label: "Annualised volatility", classification: "Estimated" },
+      { label: "Drawdown history", classification: "Historical" },
+      { label: "Sharpe ratio", classification: "Estimated" },
+      { label: "Alpha", classification: "Estimated" },
+      { label: "Value at risk", classification: "Estimated" },
+    ]);
   });
 
   it("links only to real FIT routes and sections", () => {
@@ -23,6 +40,7 @@ describe("homeContent", () => {
       "/MarketNews",
       "/Profile",
       "/Portfolio",
+      "/Watchlist",
     ]);
     const allRoutes = [
       ...homeRouteLinks.map((link) => link.href),

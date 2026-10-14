@@ -1,17 +1,25 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { FitPageContent } from "@/components/shared/FitPageContent";
+import { FitPageShell } from "@/components/shared/FitPageShell";
 import { TopPicksColumnsDialog } from "../components/TopPicksColumnsDialog";
 import { TopPicksTable } from "../components/TopPicksTable";
-import {
-  TopPicksStatus,
-  TopPicksToolbar,
-} from "../components/TopPicksToolbar";
+import { TopPicksStatus, TopPicksToolbar } from "../components/TopPicksToolbar";
 import { useTopPicksController } from "../hooks/useTopPicksController";
 import { TOP_PICKS_COLUMNS } from "../lib/topPicksColumns";
 import { TopPicksScreen } from "./TopPicksScreen";
 
-jest.mock("@/components/sidebar", () => function MockSidebar() {
-  return null;
-});
+jest.mock(
+  "@/components/sidebar",
+  () =>
+    function MockSidebar() {
+      return null;
+    },
+);
 
 jest.mock("@/components/shared/FitPageHeader", () => ({
   FitPageHeader: function MockFitPageHeader() {
@@ -135,7 +143,9 @@ describe("TopPicksScreen", () => {
     (useTopPicksController as jest.Mock).mockReturnValue(controller);
     const elements = collectElements(TopPicksScreen());
     const status = elements.find((element) => element.type === TopPicksStatus);
-    const toolbar = elements.find((element) => element.type === TopPicksToolbar);
+    const toolbar = elements.find(
+      (element) => element.type === TopPicksToolbar,
+    );
     const table = elements.find((element) => element.type === TopPicksTable);
     const dialog = elements.find(
       (element) => element.type === TopPicksColumnsDialog,
@@ -182,12 +192,82 @@ describe("TopPicksScreen", () => {
     expect(controller.setColumnsOpen.mock.calls).toEqual([[true], [false]]);
   });
 
+  it("keeps the main landmark busy during refresh and supplies the shared skip target", () => {
+    (useTopPicksController as jest.Mock).mockReturnValue({
+      ...createController(),
+      loading: true,
+    });
+    const tree = TopPicksScreen();
+    expect(tree.type).toBe(FitPageShell);
+    expect(tree.props).toMatchObject({
+      skipLabel: "Skip to Top Picks",
+      skipTargetId: "main-content",
+    });
+    const content = collectElements(tree).find(
+      (element) => element.type === FitPageContent,
+    );
+    expect(content?.props).toMatchObject({
+      density: "data",
+      "aria-busy": true,
+    });
+  });
+
+  it.each([25, 100])(
+    "presents refresh recovery before a retained page of %s rows",
+    (rowCount) => {
+      const controller = {
+        ...createController(),
+        rows: Array.from({ length: rowCount }, (_, index) => ({
+          ...row,
+          symbol: `ROW${index}`,
+        })),
+        error: "Refresh unavailable",
+      };
+      (useTopPicksController as jest.Mock).mockReturnValue(controller);
+      const elements = collectElements(TopPicksScreen());
+      const statusIndex = elements.findIndex(
+        (element) => element.type === TopPicksStatus,
+      );
+      const tableIndex = elements.findIndex(
+        (element) => element.type === TopPicksTable,
+      );
+
+      expect(statusIndex).toBeLessThan(tableIndex);
+      expect(elements[statusIndex].props).toMatchObject({
+        error: "Refresh unavailable",
+        hasRetainedResults: true,
+        onRetry: controller.retry,
+      });
+      expect(elements[tableIndex].props).toMatchObject({
+        rows: controller.rows,
+        error: "Refresh unavailable",
+      });
+    },
+  );
+
+  it.each([
+    { error: null, rows: [row] },
+    { error: "Initial load unavailable", rows: [] },
+  ])("does not label other states as retained results: %j", (state) => {
+    (useTopPicksController as jest.Mock).mockReturnValue({
+      ...createController(),
+      ...state,
+    });
+    const status = collectElements(TopPicksScreen()).find(
+      (element) => element.type === TopPicksStatus,
+    );
+    expect(status?.props).toMatchObject({ hasRetainedResults: false });
+  });
+
   it("exports the current ranked page as a downloaded CSV and releases the URL", () => {
     const controller = createController();
     (useTopPicksController as jest.Mock).mockReturnValue(controller);
     const blobParts: unknown[][] = [];
     class FakeBlob {
-      constructor(parts: unknown[], public options: Record<string, unknown>) {
+      constructor(
+        parts: unknown[],
+        public options: Record<string, unknown>,
+      ) {
         blobParts.push(parts);
       }
     }

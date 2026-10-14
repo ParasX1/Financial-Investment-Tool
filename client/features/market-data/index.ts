@@ -3,6 +3,7 @@ export { MarketLineChart } from "./components/MarketLineChart";
 export { useMarketChart } from "./hooks/useMarketChart";
 export { useMarketChartComparison } from "./hooks/useMarketChartComparison";
 export { useMarketQuotes } from "./hooks/useMarketQuotes";
+export { useMarketSymbolSearch } from "./hooks/useMarketSymbolSearch";
 export {
   buildNormalizedMarketSeries,
   type NormalizedMarketSeries,
@@ -13,6 +14,7 @@ export type {
   MarketChartsResponse,
   MarketQuote,
   MarketQuotesResponse,
+  MarketSymbolSearchResult,
 } from "./types";
 export {
   MARKET_CHART_RANGE_OPTIONS,

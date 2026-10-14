@@ -91,7 +91,10 @@ describe("Community research repository", () => {
 
     expect(db.rpc).toHaveBeenCalledWith(
       "create_community_post_with_tickers",
-      expect.objectContaining({ p_tickers: ["CBA.AX", "NVDA"] }),
+      expect.objectContaining({
+        p_tickers: ["CBA.AX", "NVDA"],
+        p_expected_author_id: "user-1",
+      }),
     );
     expect(db.from).not.toHaveBeenCalled();
   });
@@ -155,13 +158,13 @@ describe("Community research repository", () => {
     ]);
   });
 
-  it("saves with database-owned identity and deletes defensively by owner", async () => {
+  it("saves with the expected account and deletes by that owner", async () => {
     const save = createClient([
       { table: "post_saves", result: { data: null, error: null } },
     ]);
     await setCommunityPostSavedValue(save.db, "post-1", "user-1", true);
     expect(save.calls).toEqual([
-      { method: "insert", value: { post_id: "post-1" } },
+      { method: "insert", value: { post_id: "post-1", user_id: "user-1" } },
     ]);
 
     const remove = createClient([
@@ -175,7 +178,7 @@ describe("Community research repository", () => {
     ]);
   });
 
-  it("reports only client-owned fields and leaves identity and status to the database", async () => {
+  it("reports with the expected account and leaves status to the database", async () => {
     const { calls, db } = createClient([
       { table: "post_reports", result: { data: null, error: null } },
     ]);
@@ -184,6 +187,7 @@ describe("Community research repository", () => {
       postId: "post-1",
       reason: "misleading_financial_claim",
       details: "The return claim has no source.",
+      expectedUserId: "user-1",
     });
 
     expect(calls).toEqual([
@@ -193,6 +197,7 @@ describe("Community research repository", () => {
           post_id: "post-1",
           reason: "misleading_financial_claim",
           details: "The return claim has no source.",
+          reporter_id: "user-1",
         },
       },
     ]);

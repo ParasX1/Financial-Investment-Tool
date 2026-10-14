@@ -256,11 +256,12 @@ describe("useCommunityData account-scoped resource", () => {
     renderer!.unmount();
   });
 
-  it("keeps a remote load failure explicit and does not replace it with demos", async () => {
+  it("retries an initial failure without changing auth or replacing it with demos", async () => {
     const dependencies: CommunityDataDependencies = {
       load: jest
         .fn<any>()
-        .mockRejectedValue(new Error("database host and policy details")),
+        .mockRejectedValueOnce(new Error("database host and policy details"))
+        .mockResolvedValue(result([post("recovered", "user-a")])),
       subscribeToCommentInserts: jest.fn<any>(() => jest.fn()),
     };
     const supabase = {} as any;
@@ -289,6 +290,119 @@ describe("useCommunityData account-scoped resource", () => {
     expect(latest!.posts).toEqual([]);
     expect(latest!.loadError).toBe("Could not load latest community posts.");
     expect(latest!.loadError).not.toContain("database");
+    await act(async () => {
+      latest!.retryLoad();
+      latest!.retryLoad();
+      await flushPromises();
+    });
+    expect(dependencies.load).toHaveBeenCalledTimes(2);
+    expect(dependencies.load).toHaveBeenLastCalledWith(supabase, "user-a");
+    expect(latest!.posts.map((item) => item.id)).toEqual(["recovered"]);
+    expect(latest!.loadError).toBeNull();
+    renderer!.unmount();
+  });
+
+  it("discards an old account retry response and its retained retry callback", async () => {
+    const retryA = deferred<ReturnType<typeof result>>();
+    const dependencies: CommunityDataDependencies = {
+      load: jest
+        .fn<any>()
+        .mockRejectedValueOnce(new Error("temporary failure"))
+        .mockReturnValueOnce(retryA.promise)
+        .mockResolvedValue(result([post("post-b", "user-b")])),
+      subscribeToCommentInserts: jest.fn<any>(() => jest.fn()),
+    };
+    const supabase = {} as any;
+    let currentUserId = "user-a";
+    let latest: ReturnType<typeof useCommunityData> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useCommunityData(
+        {
+          authLoading: false,
+          currentUserId,
+          supabase,
+          feedView: "new",
+          query: "",
+          topTimeRange: "all-time",
+        },
+        dependencies,
+      );
+      return null;
+    }
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    const retry = latest!.retryLoad;
+    await act(async () => {
+      retry();
+      await flushPromises();
+    });
+    expect(latest!.loadingCommunity).toBe(true);
+    currentUserId = "user-b";
+    await act(async () => {
+      renderer!.update(<Probe />);
+      await flushPromises();
+    });
+    await act(async () => {
+      retry();
+      retryA.resolve(result([post("post-a", "user-a")]));
+      await flushPromises();
+    });
+    expect(dependencies.load).toHaveBeenCalledTimes(3);
+    expect(latest!.posts.map((item) => item.id)).toEqual(["post-b"]);
+    renderer!.unmount();
+  });
+
+  it("preserves cached rows and optimistic changes when their refresh fails", async () => {
+    const cached = post("cached", "user-a");
+    rememberCommunityData({
+      ownerKey: "user:user-a",
+      posts: [cached],
+      likedPostIds: [],
+      savedPostIds: [],
+      commentsState: createCommentsState([cached]),
+    });
+    const dependencies: CommunityDataDependencies = {
+      load: jest.fn<any>().mockRejectedValue(new Error("temporary failure")),
+      subscribeToCommentInserts: jest.fn<any>(() => jest.fn()),
+    };
+    const supabase = {} as any;
+    let latest: ReturnType<typeof useCommunityData> | null = null;
+    let renderer: ReactTestRenderer;
+    function Probe() {
+      latest = useCommunityData(
+        {
+          authLoading: false,
+          currentUserId: "user-a",
+          supabase,
+          feedView: "new",
+          query: "",
+          topTimeRange: "all-time",
+        },
+        dependencies,
+      );
+      return null;
+    }
+    await act(async () => {
+      renderer = TestRenderer.create(<Probe />);
+      await flushPromises();
+    });
+    await act(async () => {
+      latest!.setPosts((posts) => posts.map((item) => ({ ...item, votes: 2 })));
+      latest!.setLikedPostIds(new Set([cached.id]));
+      latest!.setSavedPostIds(new Set([cached.id]));
+    });
+    await act(async () => {
+      latest!.retryLoad();
+      await flushPromises();
+    });
+    expect(dependencies.load).toHaveBeenCalledTimes(1);
+    expect(latest!.posts[0]).toMatchObject({ id: "cached", votes: 2 });
+    expect(Array.from(latest!.likedPostIds)).toEqual(["cached"]);
+    expect(Array.from(latest!.savedPostIds)).toEqual(["cached"]);
+    expect(latest!.loadingCommunity).toBe(false);
     renderer!.unmount();
   });
 

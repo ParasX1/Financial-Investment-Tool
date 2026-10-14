@@ -24,7 +24,7 @@ function createRequest(
     headers: { "x-forwarded-for": address },
     method,
     query: { symbol },
-    socket: {},
+    socket: { remoteAddress: address },
   } as unknown as NextApiRequest;
 }
 
@@ -83,6 +83,15 @@ describe("/api/market/quote", () => {
         symbol: "CBA.AX",
       }),
     );
+    expect(JSON.parse(JSON.stringify((res.json as jest.Mock).mock.calls[0][0]))).toEqual({
+      change: 2,
+      changePct: 1.25,
+      currency: "AUD",
+      price: 162,
+      prevClose: 160,
+      shortName: "CBA",
+      symbol: "CBA.AX",
+    });
   });
 
   it("redacts upstream Yahoo quote failures from client responses", async () => {

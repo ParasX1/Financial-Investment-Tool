@@ -116,6 +116,7 @@ describe("Community research service", () => {
         post_id: "post-1",
         reason: "misleading_financial_claim",
         details: "Unsupported return claim.",
+        reporter_id: "user-1",
       },
     ]);
   });

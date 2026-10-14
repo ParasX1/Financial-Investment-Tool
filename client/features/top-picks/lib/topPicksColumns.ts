@@ -60,7 +60,8 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
     key: "sharpe",
     label: "Sharpe ratio",
     align: "right",
-    description: "Annualized Sharpe ratio versus the configured risk-free rate.",
+    description:
+      "Annualized Sharpe ratio versus the configured risk-free rate.",
     unit: "ratio",
     defaultVisible: true,
     format: (value, status) => formatMetric(value, status),
@@ -119,7 +120,8 @@ export const TOP_PICKS_COLUMNS: TopPicksColumnDef[] = [
     key: "infoRatio",
     label: "Information ratio",
     align: "right",
-    description: "Information Ratio = annualized active return / tracking error.",
+    description:
+      "Information Ratio = annualized active return / tracking error.",
     unit: "ratio",
     defaultVisible: true,
     format: (value, status) => formatMetric(value, status),
@@ -177,14 +179,14 @@ export const valueColor = (
     typeof value !== "number" ||
     !Number.isFinite(value)
   ) {
-    return "var(--fit-color-text-muted, #8f98aa)";
+    return "var(--fit-color-text-muted)";
   }
   if (key === "ret1y" || key === "alpha") {
-    return value >= 0 ? "#38d996" : "#ff5b7c";
+    return value >= 0 ? "var(--fit-color-success)" : "var(--fit-color-danger)";
   }
-  if (key === "maxDD") return "#ff5b7c";
-  if (key === "volatility") return "var(--fit-color-text-body, #b9c1d0)";
-  return "#e2e7f2";
+  if (key === "maxDD") return "var(--fit-color-danger)";
+  if (key === "volatility") return "var(--fit-color-text-body)";
+  return "var(--fit-color-text-strong)";
 };
 
 export const rankBadgeSx = (rank: number) => ({
@@ -209,7 +211,7 @@ export const rankBadgeSx = (rank: number) => ({
         ? "#cbd5e1"
         : rank === 3
           ? "#fb923c"
-          : "#94a3b8",
+          : "var(--fit-color-text-muted)",
   fontWeight: "var(--fit-type-weight-bold)",
   fontSize: "var(--fit-type-size-body)",
 });

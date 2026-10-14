@@ -10,9 +10,13 @@ import {
 import { HeadManagerContext } from "next/dist/shared/lib/head-manager-context.shared-runtime";
 import TestRenderer, { act, type ReactTestRenderer } from "react-test-renderer";
 import { homeMetadata } from "../data/homeContent";
+import { homeRouteLinks } from "../data/homeContent";
 
 let HomeScreenView: (typeof import("./HomeScreen"))["HomeScreenView"];
+let HomeScreen: (typeof import("./HomeScreen"))["HomeScreen"];
 let mockController: Record<string, any>;
+let mockAuthState: { loading: boolean; user: unknown };
+const mockRouter = { push: jest.fn() };
 
 function buildController(overrides: Record<string, unknown> = {}) {
   return {
@@ -47,27 +51,9 @@ beforeAll(async () => {
         );
       },
   );
-  jest.doMock(
-    "next/image",
-    () =>
-      function MockImage({
-        alt,
-        src,
-        ...props
-      }: {
-        alt: string;
-        src: string | { src: string };
-      }) {
-        return (
-          <img
-            alt={alt}
-            src={typeof src === "string" ? src : src.src}
-            {...props}
-          />
-        );
-      },
-  );
+  jest.doMock("next/router", () => ({ useRouter: () => mockRouter }));
   jest.doMock("@/features/auth", () => ({
+    useAuth: () => mockAuthState,
     AuthDialog: ({ initialMode, onHide, redirectTo, show }: any) =>
       show ? (
         <section
@@ -80,11 +66,13 @@ beforeAll(async () => {
       ) : null,
   }));
 
-  ({ HomeScreenView } = await import("./HomeScreen"));
+  ({ HomeScreen, HomeScreenView } = await import("./HomeScreen"));
 });
 
 beforeEach(() => {
   mockController = buildController();
+  mockAuthState = { loading: false, user: null };
+  mockRouter.push.mockClear();
 });
 
 describe("HomeScreenView", () => {
@@ -156,15 +144,25 @@ describe("HomeScreenView", () => {
     const createAccount = buttons.find((button) =>
       button.children.includes("Create an account"),
     );
+    const getStartedButtons = buttons.filter((button) =>
+      button.children.includes("Get started"),
+    );
 
-    expect(signInButtons).toHaveLength(3);
+    expect(signInButtons.length).toBeGreaterThan(0);
+    expect(getStartedButtons.length).toBeGreaterThan(0);
+    expect(createAccount).toBeDefined();
     act(() => {
       signInButtons.forEach((button) => button.props.onClick());
+      getStartedButtons.forEach((button) => button.props.onClick());
       createAccount?.props.onClick();
     });
 
-    expect(mockController.openLogin).toHaveBeenCalledTimes(3);
-    expect(mockController.openSignUp).toHaveBeenCalledTimes(1);
+    expect(mockController.openLogin).toHaveBeenCalledTimes(
+      signInButtons.length,
+    );
+    expect(mockController.openSignUp).toHaveBeenCalledTimes(
+      getStartedButtons.length + 1,
+    );
 
     act(() => renderer.unmount());
   });
@@ -178,13 +176,56 @@ describe("HomeScreenView", () => {
       );
     });
 
-    expect(renderer.root.findByProps({ "aria-label": "Auth dialog" }).props).toMatchObject({
+    expect(
+      renderer.root.findByProps({ "aria-label": "Auth dialog" }).props,
+    ).toMatchObject({
       "data-mode": "sign-up",
       "data-redirect-to": "/Portfolio",
     });
-    act(() => renderer.root.findByProps({ children: "Close auth" }).props.onClick());
+    act(() =>
+      renderer.root.findByProps({ children: "Close auth" }).props.onClick(),
+    );
     expect(mockController.closeAuthDialog).toHaveBeenCalledTimes(1);
 
+    act(() => renderer.unmount());
+  });
+
+  it("passes each gated product destination to the controller", () => {
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        <HomeScreenView controller={mockController as any} />,
+      );
+    });
+    const actions = [
+      "Explore portfolio",
+      "Open watchlist",
+      "Read market news",
+      "Explore community",
+    ];
+    for (const [index, route] of homeRouteLinks.entries()) {
+      act(() =>
+        renderer.root
+          .findByProps({ "aria-label": `${actions[index]}, sign in required` })
+          .props.onClick(),
+      );
+      expect(mockController.selectRoute).toHaveBeenLastCalledWith(route);
+    }
+    act(() => renderer.unmount());
+  });
+
+  it("adapts restored authentication into direct portfolio and product links", () => {
+    mockAuthState = { loading: false, user: { id: "fixture-user" } };
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(<HomeScreen />);
+    });
+    const links = renderer.root.findAllByType("a");
+    for (const route of homeRouteLinks) {
+      expect(links.some((link) => link.props.href === route.href)).toBe(true);
+    }
+    expect(renderer.root.findAllByType("button")).toHaveLength(0);
+    expect(mockRouter.push).not.toHaveBeenCalled();
     act(() => renderer.unmount());
   });
 
@@ -202,6 +243,7 @@ describe("HomeScreenView", () => {
       .filter(
         (button) =>
           button.children.includes("Sign in") ||
+          button.children.includes("Get started") ||
           button.children.includes("Create an account") ||
           typeof button.props["aria-label"] === "string",
       );

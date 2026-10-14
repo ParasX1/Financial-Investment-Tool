@@ -34,7 +34,7 @@ export type PortfolioSeries = {
   risks: number[];
   sharpe_ratios: number[];
   asset_order: string[];
-  weights: number[][];
+  weights: Array<Array<number | null>>;
   max_sharpe_index: number;
   min_volatility_index: number;
   sample_count?: number;

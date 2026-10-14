@@ -75,11 +75,11 @@ const TOOLBAR_ACTIONS: Array<{
 
 function modeButtonClass(active: boolean) {
   return cn(
-    "relative min-h-10 px-3 text-[#9ba5b8] transition-colors",
+    "relative min-h-10 px-3 text-[var(--fit-color-text-muted)] transition-colors",
     fitType.control,
-    "hover:text-white",
+    "hover:text-[var(--fit-color-text-strong)]",
     active &&
-      "text-white after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[#7384ff]",
+      "text-[var(--fit-color-text-strong)] after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--fit-color-accent)]",
     FOCUS_VISIBLE,
   );
 }
@@ -301,15 +301,15 @@ export function CommunityMarkdownEditor({
     <div>
       <div
         className={cn(
-          "overflow-hidden rounded-lg bg-[var(--fit-color-field)]",
+          "min-w-0 overflow-hidden rounded-lg bg-[var(--fit-color-field)]",
           communityStyles.inputBorder,
         )}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 border-b border-[var(--fit-color-border-subtle)] px-2">
           <div
             role="group"
             aria-label="Writing mode"
-            className="flex items-center"
+            className="flex shrink-0 items-center"
           >
             {(["write", "preview"] as const).map((item) => (
               <button
@@ -326,7 +326,10 @@ export function CommunityMarkdownEditor({
           </div>
 
           <span
-            className={cn("px-2 text-[#7f899c]", fitType.caption)}
+            className={cn(
+              "ml-auto shrink-0 px-2 py-2 text-[var(--fit-color-text-muted)]",
+              fitType.caption,
+            )}
             aria-label="Post body character count"
           >
             {value.length.toLocaleString("en-US")}/
@@ -339,7 +342,7 @@ export function CommunityMarkdownEditor({
             <div
               role="toolbar"
               aria-label="Discussion formatting tools"
-              className="flex flex-wrap items-center gap-1 border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))] px-2 py-2"
+              className="flex flex-wrap items-center gap-1 border-b border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] px-2 py-2"
             >
               {TOOLBAR_ACTIONS.map(
                 ({ command, icon: Icon, label, shortcut }) => (
@@ -352,7 +355,7 @@ export function CommunityMarkdownEditor({
                     onClick={() => applyCommand(command)}
                     className={cn(
                       communityUi.iconButton,
-                      "h-9 w-9 text-[#95a0b2] hover:bg-white/[0.06] hover:text-[#f3f6ff]",
+                      "h-9 w-9 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
                       communityUi.disabled,
                       FOCUS_VISIBLE,
                     )}
@@ -364,7 +367,10 @@ export function CommunityMarkdownEditor({
                 ),
               )}
 
-              <span className="mx-1 h-6 w-px bg-white/10" aria-hidden="true" />
+              <span
+                className="mx-1 h-6 w-px bg-[var(--fit-color-surface-soft)]"
+                aria-hidden="true"
+              />
 
               <button
                 type="button"
@@ -374,7 +380,7 @@ export function CommunityMarkdownEditor({
                 onClick={openLinkPanel}
                 className={cn(
                   communityUi.iconButton,
-                  "h-9 w-9 text-[#95a0b2] hover:bg-white/[0.06] hover:text-[#f3f6ff]",
+                  "h-9 w-9 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
                   communityUi.disabled,
                   FOCUS_VISIBLE,
                 )}
@@ -407,7 +413,7 @@ export function CommunityMarkdownEditor({
                 disabled={disabled || !canAttachImage}
                 className={cn(
                   communityUi.iconButton,
-                  "h-9 w-9 text-[#95a0b2] hover:bg-white/[0.06] hover:text-[#f3f6ff]",
+                  "h-9 w-9 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
                   communityUi.disabled,
                   FOCUS_VISIBLE,
                 )}
@@ -423,7 +429,7 @@ export function CommunityMarkdownEditor({
                 id="community-link-panel"
                 role="dialog"
                 aria-label="Insert link"
-                className="border-b border-white/10 bg-[#101116] px-3 py-3"
+                className="border-b border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-field)] px-3 py-3"
               >
                 <div className="grid gap-2 sm:grid-cols-2">
                   <label className={cn(fitType.eyebrow, fitText.label)}>
@@ -463,7 +469,10 @@ export function CommunityMarkdownEditor({
 
                 {linkError ? (
                   <p
-                    className={cn("mt-2 text-[#ffd9e2]", fitType.bodySm)}
+                    className={cn(
+                      "mt-2 text-[var(--fit-color-danger)]",
+                      fitType.bodySm,
+                    )}
                     role="alert"
                   >
                     {linkError}
@@ -475,7 +484,7 @@ export function CommunityMarkdownEditor({
                     type="button"
                     onClick={cancelLink}
                     className={cn(
-                      "h-9 rounded-lg px-3 text-[#aeb7c9] hover:bg-white/[0.05]",
+                      "h-9 rounded-lg px-3 text-[var(--fit-color-text-muted)] hover:bg-[var(--fit-color-surface-soft)]",
                       fitType.control,
                       FOCUS_VISIBLE,
                     )}
@@ -486,7 +495,7 @@ export function CommunityMarkdownEditor({
                     type="button"
                     onClick={saveLink}
                     className={cn(
-                      "h-9 rounded-lg bg-[#5d67ff] px-3 text-white hover:bg-[#7079ff]",
+                      "h-9 rounded-lg bg-[var(--fit-color-action)] px-3 text-[var(--fit-color-on-action)] hover:bg-[var(--fit-color-action-hover)]",
                       fitType.control,
                       FOCUS_VISIBLE,
                     )}
@@ -516,7 +525,7 @@ export function CommunityMarkdownEditor({
               placeholder="Share your thesis, evidence, and questions…"
               rows={7}
               className={cn(
-                "min-h-[190px] w-full resize-y overflow-y-auto bg-transparent px-4 py-4 text-[#e2e7f2] outline-none placeholder:text-[#7f8798]",
+                "min-h-[190px] w-full resize-y overflow-y-auto bg-transparent px-4 py-4 text-[var(--fit-color-text-strong)] outline-none placeholder:text-[var(--fit-color-text-muted)]",
                 fitType.body,
                 "disabled:cursor-not-allowed disabled:opacity-60",
               )}
@@ -533,7 +542,12 @@ export function CommunityMarkdownEditor({
                 allowedImageUrl={imagePreviewUrl}
               />
             ) : (
-              <p className={cn("text-[#7f899c]", fitType.body)}>
+              <p
+                className={cn(
+                  "text-[var(--fit-color-text-muted)]",
+                  fitType.body,
+                )}
+              >
                 Nothing to preview yet.
               </p>
             )}
@@ -553,7 +567,7 @@ export function CommunityMarkdownEditor({
             onClick={() => handleImageFile(null)}
             disabled={disabled}
             className={cn(
-              "inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-[#c8d1e5] hover:text-[#ffc4d2]",
+              "inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1 text-[var(--fit-color-text-body)] hover:text-[var(--fit-color-danger)]",
               fitType.caption,
               communityUi.disabled,
               communityStyles.softBorder,
@@ -569,7 +583,7 @@ export function CommunityMarkdownEditor({
         <details className="text-right">
           <summary
             className={cn(
-              "cursor-pointer text-[#9eb2ff] hover:text-[#dce3ff]",
+              "cursor-pointer text-[var(--fit-color-accent)] hover:text-[var(--fit-color-text-body)]",
               fitType.caption,
               FOCUS_VISIBLE,
             )}
@@ -578,7 +592,7 @@ export function CommunityMarkdownEditor({
           </summary>
           <p
             className={cn(
-              "mt-2 max-w-md text-left text-[#8f99ac]",
+              "mt-2 max-w-md text-left text-[var(--fit-color-text-muted)]",
               fitType.caption,
             )}
           >
@@ -591,7 +605,7 @@ export function CommunityMarkdownEditor({
       {attachmentError ? (
         <p
           className={cn(
-            "mt-2 rounded-md border border-[#ff5b7c]/30 bg-[#ff3d68]/10 px-3 py-2 text-[#ffd9e2]",
+            "mt-2 rounded-md border border-[var(--fit-color-danger)] bg-[var(--fit-color-danger-soft)] px-3 py-2 text-[var(--fit-color-danger)]",
             fitType.bodySm,
           )}
           role="alert"

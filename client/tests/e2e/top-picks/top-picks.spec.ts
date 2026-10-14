@@ -241,3 +241,59 @@ test("keeps one shared live stream and refreshes snapshots while visiting anothe
     await backend.dispose();
   }
 });
+
+test("pauses a hidden or offline page and catches up without losing matching rows", async ({
+  page,
+  context,
+}) => {
+  const backend = await installTopPicksMockBackend(page, {
+    persistentEvents: true,
+  });
+  try {
+    await page.goto("/TopPicks");
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    const returnCell = page
+      .locator("tbody tr")
+      .filter({ hasText: "CBA.AX" })
+      .getByRole("cell")
+      .nth(await columnIndex(page, "Price return"));
+    await expect(returnCell).toHaveText("+18.0%");
+
+    // Controlled visibility fixture, executed in the real browser. Offline
+    // state below uses the browser context's native network emulation.
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "hidden",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(backend.activeEventWindows).toEqual([]);
+    const requestsWhilePaused = backend.requests().length;
+    backend.completeRefresh();
+    await expect(returnCell).toHaveText("+18.0%");
+    await context.setOffline(true);
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(backend.activeEventWindows).toEqual([]);
+    expect(backend.requests()).toHaveLength(requestsWhilePaused);
+    backend.completeRefresh();
+    await context.setOffline(false);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    await expect(returnCell).toHaveText("+38.0%");
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+      true,
+    );
+    expect(backend.supabaseRequests()).toEqual([]);
+  } finally {
+    await context.setOffline(false);
+    await backend.dispose();
+  }
+});
