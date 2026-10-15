@@ -1,42 +1,33 @@
 import Link from "next/link";
-import type { HomeExperiencePoint } from "../types";
 import styles from "../styles/home.module.css";
 
-export function HomeExperienceSection({
-  points,
-}: {
-  points: readonly HomeExperiencePoint[];
-}) {
+export function HomeExperienceSection() {
   return (
     <section
       id="experience"
-      className={styles.experienceSection}
+      className={styles.editorialRow}
       aria-labelledby="home-experience-title"
     >
-      <div className={styles.experienceCopy}>
-        <p className={styles.eyebrow}>A little more perspective</p>
-        <h2 id="home-experience-title">Questions before conclusions.</h2>
-        <p>
-          A chart is a starting point. Read the risk beside the return, check
-          the source and compare ideas before you form a view.
+      <div className={styles.chapterIntro}>
+        <p className={styles.chapterLabel}>
+          <span>05</span>Guide
         </p>
-        <Link href="/Guide" className={styles.heroExplore}>
-          Explore the FIT guide <span aria-hidden="true">↗</span>
-        </Link>
+        <h2 id="home-experience-title">Get to know the measures.</h2>
+        <div className={styles.chapterDetail}>
+          <p className={styles.chapterDescription}>
+            New to portfolio analytics? Start with the tools and the measures,
+            with explanations you can return to as you learn.
+          </p>
+          <div className={styles.guideLinks}>
+            <Link href="/Guide" className={styles.heroExplore}>
+              Read the guide <span aria-hidden="true">↗</span>
+            </Link>
+            <Link href="/Help" className={styles.helpLink}>
+              Visit Help Center <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        </div>
       </div>
-      <ol className={styles.experienceSteps}>
-        {points.map((point, index) => (
-          <li key={point.label}>
-            <span className={styles.stepNumber} aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <div>
-              <h3>{point.label}</h3>
-              <p>{point.description}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }

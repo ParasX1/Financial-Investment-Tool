@@ -45,4 +45,14 @@ describe("Home visual contract", () => {
     expect(source).not.toMatch(/infinite|visibility:\s*hidden/);
     expect(source).toContain("prefers-reduced-motion: reduce");
   });
+
+  it("lets the original Signature field and product content use the page width", () => {
+    expect(cssBlock(source, ".signatureField")).toContain("width: 100%");
+    expect(cssBlock(source, ".signatureField")).toContain(
+      'url("/home/signature-field.svg")',
+    );
+    for (const selector of [".shell", ".page", ".content"]) {
+      expect(cssBlock(source, selector)).not.toContain("max-width");
+    }
+  });
 });

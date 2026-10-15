@@ -5,7 +5,6 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/features/auth";
 import { AuthDialog } from "@/features/auth";
 import {
-  homeExperiencePoints,
   homeFooterGroups,
   homeMetadata,
   homeRouteLinks,
@@ -17,7 +16,6 @@ import { HomeExperienceSection } from "../components/HomeExperienceSection";
 import { HomeHero } from "../components/HomeHero";
 import { HomeNavigation } from "../components/HomeNavigation";
 import { HomeProductSection } from "../components/HomeProductSection";
-import { HomeRouteStrip } from "../components/HomeRouteStrip";
 import styles from "../styles/home.module.css";
 
 export type HomeScreenController = ReturnType<typeof useHomeEntryController>;
@@ -62,29 +60,19 @@ export function HomeScreenView({
               Topic navigation and analytics also require JavaScript.
             </p>
           </noscript>
-          <div className={styles.entryGrid}>
-            <div className={styles.introColumn}>
-              <HomeHero
-                authLoading={authLoading}
-                signedIn={signedIn}
-                onGetStarted={() => openSignUp()}
-              />
-              <HomeRouteStrip
-                authLoading={authLoading}
-                routes={homeRouteLinks}
-                signedIn={signedIn}
-                onRouteSelect={selectRoute}
-              />
-            </div>
+          <HomeHero
+            authLoading={authLoading}
+            signedIn={signedIn}
+            onGetStarted={() => openSignUp()}
+          />
+          <div className={styles.content}>
             <HomeProductSection
               authLoading={authLoading}
               routes={homeRouteLinks}
               signedIn={signedIn}
               onRouteSelect={selectRoute}
             />
-          </div>
-          <div className={styles.content}>
-            <HomeExperienceSection points={homeExperiencePoints} />
+            <HomeExperienceSection />
             <HomeCtaSection
               authLoading={authLoading}
               signedIn={signedIn}

@@ -18,8 +18,3 @@ export type HomeFooterGroup = {
   }>;
   readonly title: string;
 };
-
-export type HomeExperiencePoint = {
-  readonly description: string;
-  readonly label: string;
-};

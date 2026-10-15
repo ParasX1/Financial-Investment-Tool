@@ -52,10 +52,12 @@ test("pointer comparison uses actual selected-date observations and preserves mi
     .getByRole("region", { name: "Focus mode", exact: true })
     .locator("rect.hover-overlay");
   await expect(overlay).toBeVisible();
-  const box = await overlay.boundingBox();
-  if (!box) throw new Error("Historical plot is not measurable");
+  const size = await overlay.evaluate((element) => {
+    const { width, height } = element.getBoundingClientRect();
+    return { width, height };
+  });
   // Jan 1 is 0.025 days inside the padded 2.1-day domain.
-  await page.mouse.move(box.x + box.width / 42, box.y + box.height / 2);
+  await overlay.hover({ position: { x: size.width / 42, y: size.height / 2 } });
   const tooltip = page.getByRole("tooltip");
   await expect(tooltip).toContainText("2026-01-01");
   await expect(tooltip).toContainText("AAPL: +10%");

@@ -1,61 +1,75 @@
 import { homePreviewMetrics } from "../data/homeContent";
 import styles from "../styles/home.module.css";
 
-/** A content illustration, deliberately separate from calculated account data. */
+/** An educational illustration, deliberately separate from account data. */
 export function HomePortfolioPreview() {
   return (
     <figure className={styles.heroVisual} aria-labelledby="home-preview-title">
-      <header className={styles.visualHeading}>
-        <p className={styles.chapterLabel}>
-          <span>01</span>Portfolio
-        </p>
-        <h2 id="home-preview-title">Portfolio: return and risk.</h2>
-      </header>
-      <figcaption className={styles.visualCaption}>
-        Illustration only. No account data or calculated results.
+      <figcaption className={styles.visualTopline}>
+        <span className={styles.eyebrow}>The portfolio view</span>
+        <span className={styles.visualCaption}>
+          Illustration only. No account data or calculated results.
+        </span>
       </figcaption>
+      <div className={styles.visualHeading}>
+        <h3 id="home-preview-title">
+          Read the journey, as well as the result.
+        </h3>
+        <p>
+          Two paths can finish close together and feel very different along the
+          way.
+        </p>
+      </div>
       <div className={styles.visualChart}>
-        <h3 className={styles.chartHeading}>Compare the path</h3>
+        <div className={styles.chartLegend}>
+          <span>
+            <i className={styles.returnKey} aria-hidden="true" />
+            Illustrative portfolio
+          </span>
+          <span>
+            <i className={styles.benchmarkKey} aria-hidden="true" />
+            Illustrative benchmark
+          </span>
+        </div>
         <svg
-          viewBox="0 0 760 180"
+          viewBox="0 0 1200 270"
           preserveAspectRatio="none"
           fill="none"
           className={styles.chartPlot}
           data-home-chart
           aria-hidden="true"
+          focusable="false"
         >
           <path
             className={styles.chartGrid}
-            d="M0 30H760M0 80H760M0 130H760M0 179H760"
+            d="M0 45H1200M0 120H1200M0 195H1200M0 269H1200"
+          />
+          <path
+            className={styles.chartArea}
+            d="M0 220C45 218 62 175 102 187S165 226 215 165S260 196 306 144S354 177 402 113S460 140 505 120S548 88 584 119S625 175 665 154S710 88 750 114S796 157 836 94S880 114 925 70S970 102 1015 68S1060 93 1100 50S1155 69 1200 35V270H0Z"
           />
           <path
             className={styles.chartBenchmark}
-            d="M0 142L48 139L94 126L142 133L190 111L238 116L286 98L334 108L382 92L430 85L478 94L526 79L574 83L622 63L670 70L718 58L760 61"
+            d="M0 220C100 216 170 194 235 186S340 166 410 158S510 142 585 133S700 108 770 110S870 88 945 80S1100 66 1200 46"
           />
           <path
             className={styles.chartReturn}
-            d="M0 142L48 130L94 102L142 128L190 91L238 73L286 98L334 83L382 98L430 64L478 52L526 72L574 43L622 59L670 27L718 41L760 23"
+            d="M0 220C45 218 62 175 102 187S165 226 215 165S260 196 306 144S354 177 402 113S460 140 505 120S548 88 584 119S625 175 665 154S710 88 750 114S796 157 836 94S880 114 925 70S970 102 1015 68S1060 93 1100 50S1155 69 1200 35"
           />
         </svg>
+        <div className={styles.chartTimeline} aria-hidden="true">
+          <span>Earlier</span>
+          <span>Later</span>
+        </div>
       </div>
       <dl className={styles.previewMetrics}>
         {homePreviewMetrics.map((metric) => (
           <div key={metric.label}>
             <dt>{metric.label}</dt>
-            <dd>{metric.classification}</dd>
+            <dd>{metric.description}</dd>
           </div>
         ))}
       </dl>
-      <div className={styles.chartLegend}>
-        <span>
-          <i className={styles.returnKey} aria-hidden="true" />
-          Selected assets
-        </span>
-        <span>
-          <i className={styles.benchmarkKey} aria-hidden="true" />
-          Benchmark
-        </span>
-      </div>
     </figure>
   );
 }

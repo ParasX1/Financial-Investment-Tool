@@ -51,8 +51,8 @@
 
 .initials {
   font-size: 1.25rem;
-  font-weight: var(--fit-type-weight-semibold);
-  letter-spacing: -0.055em;
+  font-weight: var(--fit-type-weight-medium);
+  letter-spacing: 0.14em;
   line-height: 1;
 }
 

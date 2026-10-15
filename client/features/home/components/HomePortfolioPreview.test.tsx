@@ -4,19 +4,21 @@ import { homePreviewMetrics } from "../data/homeContent";
 import { HomePortfolioPreview } from "./HomePortfolioPreview";
 
 describe("HomePortfolioPreview", () => {
-  it("labels the illustration and metric descriptions in server-rendered HTML", () => {
+  it("explains the illustrative chart without presenting fabricated account results", () => {
     const markup = renderToStaticMarkup(<HomePortfolioPreview />);
 
     expect(markup).toContain('aria-labelledby="home-preview-title"');
     expect(markup).toContain("Illustration only.");
     expect(markup).toContain("No account data or calculated results.");
-    expect(markup).toContain("Compare the path");
-    expect(markup).toContain("Value at risk");
+    expect(markup).toContain("Read the journey, as well as the result.");
+    expect(markup).toContain("Illustrative portfolio");
+    expect(markup).toContain("Illustrative benchmark");
     expect(markup).toContain("<dl");
     for (const metric of homePreviewMetrics) {
       expect(markup).toContain(`<dt>${metric.label}</dt>`);
-      expect(markup).toContain(`<dd>${metric.classification}</dd>`);
+      expect(markup).toContain(`<dd>${metric.description}</dd>`);
     }
+    expect(markup).not.toContain("Estimated");
   });
 
   it("keeps chart geometry decorative and labels out of SVG", () => {

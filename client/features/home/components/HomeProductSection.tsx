@@ -5,26 +5,22 @@ import styles from "../styles/home.module.css";
 
 const chapters: Record<
   HomeEntryDestination,
-  { label: string; title: string; action: string }
+  { title: string; action: string }
 > = {
   "/Portfolio": {
-    label: "Portfolio",
-    title: "Portfolio: return and risk.",
+    title: "Return is only half the story.",
     action: "Explore portfolio",
   },
   "/Watchlist": {
-    label: "Watchlist",
-    title: "Follow what matters.",
+    title: "Your companies. Your notes.",
     action: "Open watchlist",
   },
   "/MarketNews": {
-    label: "Market context",
-    title: "Look beyond the headline.",
+    title: "Market news, with context.",
     action: "Read market news",
   },
   "/Community": {
-    label: "Research community",
-    title: "Build a considered view.",
+    title: "Share a view. Hear another.",
     action: "Explore community",
   },
 };
@@ -35,8 +31,8 @@ export function HomeProductSection({
   signedIn,
   onRouteSelect,
 }: {
-  authLoading: boolean;
   routes: readonly HomeRouteLink[];
+  authLoading: boolean;
   signedIn: boolean;
   onRouteSelect: (route: HomeRouteLink) => void;
 }) {
@@ -46,66 +42,43 @@ export function HomeProductSection({
       className={styles.productSection}
       aria-label="Explore FIT products"
     >
-      <div className={styles.productGrid}>
-        {routes.map((route, index) => {
-          const chapter = chapters[route.href];
-          const portfolio = route.href === "/Portfolio";
-          return (
-            <article
-              key={route.href}
-              className={`${styles.productPanel} ${portfolio ? styles.portfolioPanel : styles.supportingPanel}`}
-              aria-labelledby={
-                portfolio ? "home-preview-title" : `home-product-${index}`
+      {routes.map((route, index) => {
+        const chapter = chapters[route.href];
+        const portfolio = route.href === "/Portfolio";
+        return (
+          <article
+            key={route.href}
+            className={
+              portfolio ? styles.portfolioChapter : styles.editorialRow
+            }
+            aria-labelledby={`home-product-${index}`}
+          >
+            <div
+              className={
+                portfolio ? styles.portfolioIntro : styles.chapterIntro
               }
             >
-              {portfolio ? (
-                <HomePortfolioPreview />
-              ) : (
-                <>
-                  <p className={styles.chapterLabel}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    {chapter.label}
-                  </p>
-                  <h2 id={`home-product-${index}`}>{chapter.title}</h2>
-                  {route.href === "/Watchlist" ? (
-                    <ul className={styles.watchlistPurposes}>
-                      <li>Follow a company</li>
-                      <li>Keep a research note</li>
-                      <li>Revisit your questions</li>
-                    </ul>
-                  ) : null}
-                  <p className={styles.chapterDescription}>
-                    {route.description}
-                  </p>
-                  {route.href === "/MarketNews" ? (
-                    <p className={styles.sourcePrompt}>
-                      Who published it? When? What does it explain?
-                    </p>
-                  ) : null}
-                  {route.href === "/Community" ? (
-                    <ul
-                      className={styles.researchPrompts}
-                      aria-label="Research prompts"
-                    >
-                      <li>Evidence</li>
-                      <li>Assumptions</li>
-                      <li>Open questions</li>
-                    </ul>
-                  ) : null}
-                </>
-              )}
-              <HomeRouteAction
-                route={route}
-                label={chapter.action}
-                className={styles.routeTile}
-                authLoading={authLoading}
-                signedIn={signedIn}
-                onRouteSelect={onRouteSelect}
-              />
-            </article>
-          );
-        })}
-      </div>
+              <p className={styles.chapterLabel}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {route.label}
+              </p>
+              <h2 id={`home-product-${index}`}>{chapter.title}</h2>
+              <div className={styles.chapterDetail}>
+                <p className={styles.chapterDescription}>{route.description}</p>
+                <HomeRouteAction
+                  route={route}
+                  label={chapter.action}
+                  className={styles.routeTile}
+                  authLoading={authLoading}
+                  signedIn={signedIn}
+                  onRouteSelect={onRouteSelect}
+                />
+              </div>
+            </div>
+            {portfolio ? <HomePortfolioPreview /> : null}
+          </article>
+        );
+      })}
     </section>
   );
 }

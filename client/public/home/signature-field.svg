@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 420" fill="none">
+<defs>
+<linearGradient id="ink" x1="0" y1="330" x2="1500" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#3630a0"/><stop offset=".35" stop-color="#6951eb"/><stop offset=".56" stop-color="#c8baff"/><stop offset=".75" stop-color="#8970ff"/><stop offset="1" stop-color="#322393"/></linearGradient>
+<path id="trajectory" d="M-50 288C225 355 522 118 741 57C1015-20 1022 130 842 217C662 304 680 355 846 320C1076 272 1255 140 1550 175"/>
+</defs>
+<g stroke="url(#ink)" stroke-width="1.5">
+<use href="#trajectory" transform="translate(0 0)" opacity="0.280"/>
+<use href="#trajectory" transform="translate(0 2.5)" opacity="0.315"/>
+<use href="#trajectory" transform="translate(0 5)" opacity="0.350"/>
+<use href="#trajectory" transform="translate(0 7.5)" opacity="0.385"/>
+<use href="#trajectory" transform="translate(0 10)" opacity="0.420"/>
+<use href="#trajectory" transform="translate(0 12.5)" opacity="0.455"/>
+<use href="#trajectory" transform="translate(0 15)" opacity="0.490"/>
+<use href="#trajectory" transform="translate(0 17.5)" opacity="0.525"/>
+<use href="#trajectory" transform="translate(0 20)" opacity="0.560"/>
+<use href="#trajectory" transform="translate(0 22.5)" opacity="0.595"/>
+<use href="#trajectory" transform="translate(0 25)" opacity="0.630"/>
+<use href="#trajectory" transform="translate(0 27.5)" opacity="0.665"/>
+<use href="#trajectory" transform="translate(0 30)" opacity="0.700"/>
+<use href="#trajectory" transform="translate(0 32.5)" opacity="0.735"/>
+<use href="#trajectory" transform="translate(0 35)" opacity="0.770"/>
+<use href="#trajectory" transform="translate(0 37.5)" opacity="0.805"/>
+<use href="#trajectory" transform="translate(0 40)" opacity="0.840"/>
+<use href="#trajectory" transform="translate(0 42.5)" opacity="0.875"/>
+<use href="#trajectory" transform="translate(0 45)" opacity="0.910"/>
+<use href="#trajectory" transform="translate(0 47.5)" opacity="0.945"/>
+</g></svg>

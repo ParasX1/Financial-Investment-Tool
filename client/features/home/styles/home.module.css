@@ -1,5 +1,5 @@
 .shell {
-  --home-gutter: clamp(1.5rem, 2.2vw, 3rem);
+  --home-gutter: clamp(1.25rem, 5.6vw, 10rem);
   --home-text: var(--fit-color-text-strong);
   --home-body: var(--fit-color-text-body);
   --home-muted: var(--fit-color-text-muted);
@@ -14,17 +14,22 @@
   overflow-wrap: anywhere;
 }
 
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
+}
+
 .navShell {
   border-bottom: 1px solid var(--home-border);
-  background: var(--fit-color-page-bg);
 }
 
 .nav {
   display: flex;
+  min-height: 6rem;
   width: 100%;
-  min-height: 5.5rem;
   align-items: center;
-  gap: 1.75rem;
+  gap: 2rem;
   padding: 1rem var(--home-gutter);
 }
 
@@ -33,27 +38,31 @@
   min-height: 2.75rem;
   flex-shrink: 0;
   align-items: center;
-  border-radius: 0.5rem;
-  color: var(--home-text);
+  border-radius: 0.25rem;
   text-decoration: none;
 }
 
 .brandWordmark {
-  --fit-logo-wordmark-size: 1.4rem;
-  font-size: 1.4rem;
-  font-weight: 600;
-  letter-spacing: -0.06em;
+  --fit-logo-wordmark-size: 1.25rem;
 }
 
 .navLinks,
 .navActions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
+  min-width: 0;
 }
 
 .navLinks {
+  margin-left: auto;
   margin-right: auto;
+}
+
+.navActions {
+  margin-left: auto;
+  gap: 0.75rem;
 }
 
 .navExplore,
@@ -63,502 +72,500 @@
   min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   border: 1px solid transparent;
-  border-radius: 0.5rem;
+  border-radius: 0.35rem;
   font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.4;
   text-decoration: none;
 }
 
 .navExplore,
 .navSecondary {
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem;
   color: var(--home-body);
   background: transparent;
 }
 
-.navSecondary {
-  padding-inline: 1rem;
-  border-color: var(--home-border);
-}
 .navPrimary {
-  padding: 0.7rem 1.25rem;
+  padding: 0.7rem 1.125rem;
   color: var(--fit-color-on-action);
   background: var(--fit-color-action);
 }
 
 .page {
   width: 100%;
-  padding: 2rem var(--home-gutter) 0;
 }
+
 .page:focus-visible {
   outline: 2px solid var(--fit-color-focus-ring);
   outline-offset: -2px;
 }
 
 .noScriptNotice {
-  margin: 0 0 1rem;
+  margin: 1rem var(--home-gutter);
   padding: 1rem;
   border: 1px solid var(--home-border);
-  border-radius: 0.5rem;
   color: var(--home-body);
-  background: var(--fit-color-surface);
   font-size: 0.875rem;
   line-height: 1.6;
 }
 
-.entryGrid {
-  display: grid;
-  grid-template-columns: minmax(20rem, 25rem) minmax(0, 1fr);
-  align-items: start;
-  gap: 1.75rem;
-}
-.introColumn {
-  min-width: 0;
-}
 .hero {
-  padding-top: 0.75rem;
-  scroll-margin-top: 1.5rem;
+  padding-top: clamp(3rem, 5.2vw, 6.5rem);
+  text-align: center;
+  scroll-margin-top: 1rem;
 }
+
 .heroContent {
   min-width: 0;
-  max-width: 25rem;
+  max-width: 100rem;
+  margin-inline: auto;
+  padding-inline: var(--home-gutter);
+  animation: homeArrive 700ms ease-out both;
 }
-.eyebrow {
-  margin: 0 0 1rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.06em;
+
+.heroLogo {
+  margin-bottom: 1.6rem;
 }
+
+.heroLogo .heroMark,
+.closingLogo .closingMark {
+  width: 6rem;
+  height: 4.1rem;
+}
+
 .heroTitle {
   margin: 0;
   font-family: var(--fit-font-display);
-  font-size: 3rem;
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.045em;
+  font-size: clamp(3.5rem, 6.2vw, 8rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.065em;
   text-wrap: balance;
 }
+
+.heroTitle > span {
+  display: block;
+  color: #b3a4da;
+}
+
+.heroSubtitle {
+  max-width: 35rem;
+  margin: 1.75rem auto 0;
+  color: var(--home-muted);
+  font-size: clamp(1rem, 1.2vw, 1.25rem);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
 .heroActions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-.heroSubtitle {
-  max-width: 38ch;
-  margin: 1.25rem 0 0;
-  color: var(--home-muted);
-  font-size: 1rem;
-  line-height: 1.65;
+  justify-content: center;
+  gap: 1.75rem;
+  margin-top: 1.875rem;
 }
 
 .primaryButton {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 3.25rem;
+  max-width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.75rem 1.125rem;
+  gap: 1.5rem;
+  padding: 0.875rem 1.5rem;
   border: 1px solid transparent;
-  border-radius: 0.5rem;
+  border-radius: 0.35rem;
   color: var(--fit-color-on-action);
   background: var(--fit-color-action);
   font-size: 0.9375rem;
   font-weight: 500;
-  line-height: 1.35;
-  text-align: center;
-  text-decoration: none;
-}
-
-.heroExplore {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  gap: 0.3rem;
-  color: var(--home-accent);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  text-decoration: none;
-}
-.routeStrip {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 1rem;
-  margin-top: 1.75rem;
-  border-top: 1px solid var(--home-border);
-}
-.stripAction {
-  display: flex;
-  min-width: 0;
-  min-height: 4.5rem;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.75rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--home-border);
-  border-radius: 0.25rem;
-  color: var(--home-accent);
-  background: transparent;
-  font-size: 0.8125rem;
-  font-weight: 500;
   line-height: 1.4;
-  text-align: left;
   text-decoration: none;
 }
-.stripAction > span {
-  flex: 1;
-  min-width: 0;
-}
-.stripAction small {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--home-muted);
-  font-size: 0.6875rem;
-  font-weight: 400;
-  line-height: 1.5;
-}
-.stripAction > svg {
-  flex-shrink: 0;
-}
 
-.productSection {
-  min-width: 0;
-  scroll-margin-top: 1.5rem;
-}
-.productGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.875rem;
-  align-items: stretch;
-}
-.productPanel {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  padding: 1.125rem;
-  border: 1px solid var(--home-border);
-  border-radius: 0.625rem;
-  background: var(--fit-color-surface);
-}
-.portfolioPanel {
-  grid-column: 1 / -1;
-}
-.productPanel h2 {
-  margin: 0;
-  font-family: var(--fit-font-display);
-  font-size: 1.375rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-}
-.chapterLabel {
-  display: flex;
-  gap: 0.5rem;
-  margin: 0 0 0.875rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.chapterLabel span {
-  color: var(--home-accent);
-  font-variant-numeric: tabular-nums;
-}
-.chapterDescription {
-  max-width: 60ch;
-  margin: 1rem 0;
-  color: var(--home-muted);
-  font-size: 0.875rem;
-  line-height: 1.7;
-}
-.watchlistPurposes {
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-.watchlistPurposes li {
-  padding: 0.625rem 0;
-  border-top: 1px solid var(--home-border);
-  color: var(--home-body);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-.sourcePrompt {
-  max-width: 40ch;
-  margin: 0 0 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--home-border);
-  color: var(--home-body);
-  font-size: 0.8125rem;
-  line-height: 1.7;
-}
-.researchPrompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
-  padding: 0;
-  list-style: none;
-}
-.researchPrompts li {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--home-border);
-  border-radius: 0.25rem;
-  color: var(--home-body);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.routeTile {
+.heroExplore,
+.routeTile,
+.helpLink {
   display: inline-flex;
   min-height: 2.75rem;
-  align-self: flex-start;
+  max-width: 100%;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: auto;
+  justify-content: flex-start;
+  gap: 0.625rem;
   padding: 0.5rem 0;
   border: 0;
-  border-radius: 0.25rem;
+  border-radius: 0.2rem;
   color: var(--home-accent);
   background: transparent;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.5;
   text-align: left;
   text-decoration: none;
 }
-.portfolioPanel > .routeTile {
-  align-self: flex-end;
-  margin-top: 0.625rem;
+
+.heroExplore > span:last-child {
+  margin-left: 0.5rem;
+  font-size: 1.2em;
 }
 
-.heroVisual {
-  min-width: 0;
-  margin: 0;
-}
-.visualHeading {
-  margin-bottom: 0.5rem;
-}
-.visualHeading .chapterLabel {
-  margin-bottom: 0.5rem;
-}
-.visualCaption {
-  max-width: 65ch;
-  margin: 0 0 1rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.chartHeading {
-  margin: 0 0 0.625rem;
+.heroActions .heroExplore {
   color: var(--home-body);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.5;
 }
-.chartPlot {
-  display: block;
+
+.signatureField {
   width: 100%;
-  height: 200px;
-  overflow: visible;
-}
-.chartGrid {
-  stroke: var(--home-border);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.chartBenchmark {
-  stroke: var(--home-muted);
-  stroke-width: 1.75;
-  stroke-dasharray: 5 6;
-  vector-effect: non-scaling-stroke;
-}
-.chartReturn {
-  stroke: var(--home-accent);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-.previewMetrics {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0;
-  margin: 0.875rem 0 0;
-  border-block: 1px solid var(--home-border);
-}
-.previewMetrics > div {
-  min-width: 0;
-  padding: 0.625rem 0.625rem 0.625rem 0;
-}
-.previewMetrics > div + div {
-  padding-left: 0.875rem;
-  border-left: 1px solid var(--home-border);
-}
-.previewMetrics dt {
-  min-height: 2.8em;
-  color: var(--home-body);
-  font-size: 0.8125rem;
-  font-weight: 400;
-  line-height: 1.4;
-}
-.previewMetrics dd {
-  margin: 0.375rem 0 0;
-  color: var(--home-accent);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.chartLegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem;
-  margin-top: 0.75rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.chartLegend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.returnKey,
-.benchmarkKey {
-  display: inline-block;
-  width: 0.875rem;
-  height: 2px;
-  background: var(--home-accent);
-}
-.benchmarkKey {
-  background: var(--home-muted);
+  height: clamp(17rem, 27vw, 32rem);
+  margin-top: 1.75rem;
+  background-image: url("/home/signature-field.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: homeArtArrive 1000ms ease-out both;
 }
 
 .content {
-  padding-bottom: 1rem;
+  padding-inline: var(--home-gutter);
 }
-.experienceSection {
+
+.productSection,
+.editorialRow {
+  scroll-margin-top: 2rem;
+}
+
+.portfolioChapter {
+  padding-top: clamp(3rem, 6vw, 7rem);
+  padding-bottom: clamp(5rem, 8vw, 10rem);
+}
+
+.portfolioIntro {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 3rem;
-  margin-top: 3rem;
-  padding-block: 2.5rem;
-  border-top: 1px solid var(--home-border);
-  scroll-margin-top: 1.5rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  column-gap: clamp(2.5rem, 8vw, 10rem);
+  row-gap: 1.5rem;
+  align-items: start;
+  padding-bottom: 3.5rem;
 }
-.experienceCopy {
-  max-width: 34rem;
-}
-.experienceCopy h2,
-.ctaCopy h2 {
+
+.chapterLabel,
+.eyebrow {
   margin: 0;
-  font-family: var(--fit-font-display);
-  font-size: clamp(1.75rem, 2.2vw, 2.75rem);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-}
-.experienceCopy > p:not(.eyebrow),
-.ctaCopy p {
-  max-width: 60ch;
-  margin: 1rem 0 0;
   color: var(--home-muted);
-  font-size: 0.9375rem;
-  line-height: 1.75;
-}
-.experienceCopy .heroExplore {
-  margin-top: 0.75rem;
-}
-.experienceSteps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.stepNumber {
-  display: block;
-  margin-bottom: 0.75rem;
-  color: var(--home-accent);
   font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chapterLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+}
+
+.chapterLabel > span {
+  color: var(--home-accent);
   font-variant-numeric: tabular-nums;
 }
-.experienceSteps h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.4;
+
+.portfolioIntro > .chapterLabel {
+  grid-column: 1 / -1;
 }
-.experienceSteps p {
-  max-width: 40ch;
+
+.portfolioIntro h2 {
+  max-width: 13ch;
   margin: 0;
+  font-size: clamp(2.75rem, 4.4vw, 5.5rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.chapterDetail {
+  min-width: 0;
+  max-width: 29rem;
+}
+
+.portfolioIntro .chapterDetail {
+  padding-top: 0.375rem;
+}
+
+.chapterDescription {
+  margin: 0 0 0.875rem;
   color: var(--home-muted);
-  font-size: 0.8125rem;
+  font-size: 1rem;
   line-height: 1.75;
 }
-.ctaSection {
+
+.heroVisual {
+  margin: 0;
+  padding: clamp(1.5rem, 3.5vw, 4.5rem);
+  border-top: 1px solid #40354f;
+  background: linear-gradient(145deg, #15111c, #0e0d12 65%);
+}
+
+.visualTopline {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+}
+
+.visualCaption {
+  max-width: 35rem;
+  color: var(--home-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.visualHeading {
+  display: flex;
   justify-content: space-between;
   gap: 2rem;
-  padding-block: 2.5rem;
+  align-items: end;
+  margin-top: 2.75rem;
+}
+
+.visualHeading h3 {
+  max-width: 20ch;
+  margin: 0;
+  font-size: clamp(1.75rem, 2.7vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.visualHeading p {
+  max-width: 29ch;
+  margin: 0;
+  color: var(--home-muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.visualChart {
+  margin-top: 2.75rem;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
+  color: var(--home-body);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.chartLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.returnKey,
+.benchmarkKey {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0;
+  border-top: 2px solid #b8a2ff;
+}
+
+.benchmarkKey {
+  border-top: 2px dashed #8b879c;
+}
+
+.chartPlot {
+  display: block;
+  width: 100%;
+  height: clamp(11rem, 20vw, 24rem);
+  margin-top: 1.5rem;
+  overflow: visible;
+}
+
+.chartGrid {
+  stroke: #c3b0f0;
+  stroke-opacity: 0.12;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartArea {
+  fill: #a78bfa;
+  fill-opacity: 0.04;
+}
+
+.chartReturn {
+  stroke: #b8a2ff;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartBenchmark {
+  stroke: #8b879c;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartTimeline {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  color: var(--home-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.previewMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 4rem);
+  margin: 2.25rem 0 0;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--home-border);
 }
-.ctaCopy {
-  max-width: 40rem;
+
+.previewMetrics dt {
+  color: var(--home-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
-.ctaSection > .primaryButton {
-  flex-shrink: 0;
+
+.previewMetrics dd {
+  max-width: 32ch;
+  margin: 0.5rem 0 0;
+  color: var(--home-muted);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.editorialRow {
+  padding-block: clamp(2.25rem, 3.6vw, 4rem);
+  border-top: 1px solid var(--home-border);
+}
+
+.chapterIntro {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.65fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3.5vw, 5rem);
+  align-items: start;
+}
+
+.chapterIntro > .chapterLabel {
+  padding-top: 0.5rem;
+}
+
+.chapterIntro h2 {
+  max-width: 15ch;
+  margin: 0;
+  font-size: clamp(1.875rem, 2.8vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.guideLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+}
+
+.helpLink {
+  color: var(--home-muted);
+  font-size: 0.875rem;
+}
+
+.ctaSection {
+  padding-block: clamp(5rem, 9vw, 11rem);
+  text-align: center;
+}
+
+.closingLogo {
+  margin-bottom: 1.5rem;
+}
+
+.ctaCopy h2 {
+  margin: 0;
+  font-size: clamp(2.75rem, 4.5vw, 5.75rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.ctaCopy p {
+  max-width: 37rem;
+  margin: 1.5rem auto 1.875rem;
+  color: var(--home-muted);
+  font-size: 1rem;
+  line-height: 1.75;
 }
 
 .footer {
   display: grid;
-  width: 100%;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 2rem;
-  padding: 2.5rem var(--home-gutter) 2rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  column-gap: 5rem;
+  row-gap: 2.5rem;
+  margin-inline: var(--home-gutter);
+  padding-block: 3rem 1.75rem;
   border-top: 1px solid var(--home-border);
 }
-.footerLogo {
-  margin-bottom: 1rem;
+
+.footerBrand {
+  max-width: 29rem;
 }
+
+.footerLogo {
+  margin-bottom: 1.25rem;
+}
+
 .footerBrand p {
-  max-width: 60ch;
   margin: 0 0 0.75rem;
   color: var(--home-muted);
   font-size: 0.8125rem;
-  line-height: 1.8;
+  line-height: 1.65;
 }
+
 .footerGroups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
+
 .footerGroups nav,
 .footerAccount {
   display: flex;
-  align-items: flex-start;
+  min-width: 0;
   flex-direction: column;
+  align-items: flex-start;
 }
+
 .footerGroups strong {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.875rem;
   color: var(--home-body);
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.5;
 }
+
 .footerLink {
   display: inline-flex;
   min-height: 2.75rem;
+  max-width: 100%;
   align-items: center;
   padding: 0.5rem 0;
   border: 0;
-  border-radius: 0.25rem;
   color: var(--home-muted);
   background: transparent;
   font-size: 0.8125rem;
@@ -566,6 +573,7 @@
   text-align: left;
   text-decoration: none;
 }
+
 .footerLegal {
   grid-column: 1 / -1;
   margin: 0;
@@ -573,321 +581,326 @@
   font-size: 0.75rem;
   line-height: 1.5;
 }
+
 .skipLink {
-  position: fixed;
+  position: absolute;
   z-index: 100;
   top: 0.75rem;
   left: var(--home-gutter);
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  color: var(--fit-color-on-action);
-  background: var(--fit-color-action);
+  border-radius: 0.25rem;
+  color: var(--fit-color-action-ink);
+  background: var(--fit-color-focus-ring);
+  font-size: 0.875rem;
   transform: translateY(-200%);
 }
-.skipLink:focus-visible {
+
+.skipLink:focus {
   transform: translateY(0);
 }
+
+.shell a,
+.shell button {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.shell button:not(:disabled) {
+  cursor: pointer;
+}
+
+.shell button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .shell a:focus-visible,
 .shell button:focus-visible {
   outline: 2px solid var(--fit-color-focus-ring);
-  outline-offset: 4px;
-}
-.shell button:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-.navPrimary,
-.primaryButton,
-.navSecondary,
-.navExplore,
-.heroExplore,
-.routeTile,
-.stripAction,
-.footerLink {
-  transition:
-    color 160ms ease,
-    background-color 160ms ease;
+  outline-offset: 5px;
 }
 
-@media (hover: hover) {
-  .navPrimary:not(:disabled):hover,
-  .primaryButton:not(:disabled):hover {
-    color: var(--fit-color-on-action);
-    background: var(--fit-color-action-hover);
-  }
-  .navSecondary:not(:disabled):hover,
-  .navExplore:hover,
-  .footerLink:not(:disabled):hover {
-    color: var(--home-text);
-  }
-  .routeTile:not(:disabled):hover,
-  .stripAction:not(:disabled):hover,
-  .heroExplore:hover {
-    color: var(--fit-color-accent-strong);
-  }
+.navPrimary:not(:disabled):hover,
+.primaryButton:not(:disabled):hover {
+  background: var(--fit-color-action-hover);
+  color: var(--fit-color-on-action);
+  transform: translateY(-2px);
 }
 
-@keyframes settle {
+.navExplore:hover,
+.navSecondary:not(:disabled):hover,
+.heroExplore:hover,
+.routeTile:not(:disabled):hover,
+.helpLink:hover,
+.footerLink:not(:disabled):hover {
+  color: var(--home-text);
+}
+
+@keyframes homeArrive {
   from {
-    transform: translateY(8px);
+    opacity: 0.6;
+    transform: translateY(12px);
   }
   to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .heroVisual {
-    animation: settle 400ms ease-out both;
+
+@keyframes homeArtArrive {
+  from {
+    opacity: 0.45;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 1500px) {
-  .productGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (min-width: 1800px) {
+  .chapterDescription {
+    font-size: 1.125rem;
   }
-  .supportingPanel:last-child {
-    grid-column: 1 / -1;
+  .chapterDetail {
+    max-width: 34rem;
   }
-  .previewMetrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .visualCaption,
+  .chartLegend,
+  .chartTimeline {
+    font-size: 0.875rem;
   }
-  .previewMetrics > div:nth-child(4) {
-    padding-left: 0;
-    border-left: 0;
+  .previewMetrics dt {
+    font-size: 1rem;
   }
-  .previewMetrics > div:nth-child(n + 4) {
-    border-top: 1px solid var(--home-border);
+  .previewMetrics dd {
+    font-size: 0.9375rem;
   }
 }
 
-@media (max-width: 1100px) {
-  .entryGrid {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 1000px) {
+  .nav {
+    gap: 1rem;
+  }
+  .navLinks {
+    gap: 0.75rem;
+  }
+  .navActions {
+    gap: 0.5rem;
+  }
+  .chapterIntro {
+    grid-template-columns: minmax(7rem, 0.6fr) minmax(0, 1fr) minmax(0, 1fr);
     gap: 1.5rem;
   }
-  .introColumn {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1.5rem;
-    align-items: start;
+  .chapterLabel {
+    gap: 0.75rem;
   }
-  .heroContent {
-    max-width: 35rem;
+  .portfolioIntro {
+    column-gap: 3rem;
   }
-  .heroTitle {
-    font-size: 2.5rem;
-  }
-  .hero {
-    padding-top: 0;
-  }
-  .routeStrip {
-    margin-top: 0;
-  }
-  .experienceSection {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
+  .footer {
+    column-gap: 3rem;
   }
 }
 
 @media (max-width: 760px) {
   .nav {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    min-height: 0;
-    gap: 0.25rem 1rem;
-    padding-block: 0.25rem;
+    min-height: 5.25rem;
   }
   .navLinks {
-    min-width: 0;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-right: 0;
-  }
-  .navActions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-    gap: 0.625rem;
-  }
-  .brandWordmark {
     display: none;
-  }
-  .navPrimary,
-  .navSecondary {
-    padding-inline: 0.875rem;
-  }
-  .page {
-    padding-top: 1rem;
-  }
-  .entryGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-  }
-  .introColumn,
-  .hero,
-  .heroContent {
-    display: contents;
-  }
-  .eyebrow {
-    font-size: 0.6875rem;
-  }
-  .heroContent > .eyebrow {
-    order: 1;
-    margin-bottom: 0;
   }
   .heroTitle {
-    order: 2;
-    max-width: 25ch;
-    font-size: 1.65rem;
-    line-height: 1.12;
-    letter-spacing: -0.035em;
+    font-size: clamp(2.75rem, 8vw, 4rem);
   }
-  .heroActions {
-    order: 3;
-    gap: 0.75rem;
-    margin-top: 0;
+  .portfolioIntro {
+    grid-template-columns: 1fr;
+    row-gap: 1.25rem;
+    padding-bottom: 2.25rem;
   }
-  .heroActions .primaryButton {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
+  .portfolioIntro h2 {
+    max-width: 15ch;
   }
-  .heroExplore {
-    font-size: 0.75rem;
+  .portfolioIntro .chapterDetail {
+    padding-top: 0.25rem;
   }
-  .productSection {
-    order: 4;
-    width: 100%;
+  .chapterIntro {
+    grid-template-columns: minmax(7rem, 0.5fr) minmax(0, 1fr);
+    row-gap: 1rem;
   }
-  .heroSubtitle {
-    order: 5;
-    max-width: 65ch;
-    margin: 0.5rem 0 0;
-    font-size: 0.9375rem;
-  }
-  .routeStrip {
-    display: none;
-  }
-  .productGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .supportingPanel:last-child {
-    grid-column: auto;
-  }
-  .productPanel {
-    padding: 0.875rem;
-  }
-  .productPanel h2 {
-    font-size: 1.125rem;
-  }
-  .visualHeading .chapterLabel {
-    display: none;
+  .chapterIntro .chapterDetail {
+    grid-column: 2;
   }
   .visualHeading {
-    margin-bottom: 0.375rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-  .visualCaption {
-    margin-bottom: 0.625rem;
-    font-size: 0.75rem;
-  }
-  .chartHeading {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-  .chartPlot {
-    height: 120px;
+  .visualHeading p {
+    max-width: 38ch;
   }
   .previewMetrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 0.625rem;
-  }
-  .previewMetrics > div {
-    padding-block: 0.625rem;
-    padding-right: 0.375rem;
-  }
-  .previewMetrics > div + div {
-    padding-left: 0.625rem;
-  }
-  .previewMetrics > div:nth-child(4) {
-    padding-left: 0;
-  }
-  .previewMetrics dt {
-    min-height: 2.6em;
-    font-size: 0.75rem;
-    line-height: 1.3;
-  }
-  .previewMetrics dd {
-    font-size: 0.75rem;
-  }
-  .chartLegend {
-    gap: 0.875rem;
-    margin-top: 0.5rem;
-    font-size: 0.6875rem;
-  }
-  .portfolioPanel > .routeTile {
-    align-self: flex-start;
-    margin-top: 0.5rem;
-  }
-  .experienceSection {
-    margin-top: 2rem;
-    padding-block: 2rem;
-  }
-  .experienceSteps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .ctaSection {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding-block: 2rem;
+    gap: 1rem;
   }
   .footer {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.5rem;
-    padding-block: 2rem;
-  }
-  .footerGroups {
-    grid-template-columns: repeat(auto-fit, minmax(min(6rem, 100%), 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 360px) {
-  .heroTitle {
-    font-size: 1.5rem;
+@media (max-width: 500px) {
+  .nav {
+    min-height: 4.75rem;
+    padding-block: 0.75rem;
+    flex-wrap: wrap;
   }
-  .entryGrid {
-    gap: 0.75rem;
+  .navSecondary + .navPrimary {
+    display: none;
+  }
+  .hero {
+    padding-top: 2.25rem;
+  }
+  .heroLogo {
+    margin-bottom: 1.25rem;
+  }
+  .heroLogo .heroMark {
+    width: 4.75rem;
+    height: 3.25rem;
+  }
+  .heroTitle {
+    font-size: clamp(2.625rem, 10.5vw, 3.25rem);
+    line-height: 1.08;
+  }
+  .heroSubtitle {
+    margin-top: 1.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.65;
   }
   .heroActions {
-    gap: 0.5rem;
+    gap: 0.5rem 1.5rem;
+    margin-top: 1.5rem;
   }
-  .heroActions .primaryButton {
-    padding-inline: 0.625rem;
-    font-size: 0.8125rem;
+  .primaryButton {
+    min-height: 3.125rem;
+    padding: 0.75rem 1.125rem;
+    gap: 0.75rem;
   }
-  .heroActions .heroExplore {
+  .heroExplore {
+    font-size: 0.875rem;
+  }
+  .signatureField {
+    height: 15rem;
+    margin-top: 1.5rem;
+    background-size: 155% 100%;
+  }
+  .portfolioChapter {
+    padding-top: 3rem;
+    padding-bottom: 4.5rem;
+  }
+  .portfolioIntro h2 {
+    font-size: 2.5rem;
+  }
+  .chapterDescription {
+    font-size: 0.9375rem;
+  }
+  .chapterIntro {
+    display: block;
+  }
+  .chapterIntro h2 {
+    max-width: 16ch;
+    margin: 1.25rem 0;
+    font-size: 2rem;
+  }
+  .chapterIntro > .chapterLabel {
+    padding-top: 0;
+  }
+  .chapterLabel,
+  .eyebrow {
     font-size: 0.75rem;
+    letter-spacing: 0.08em;
   }
-  .chartPlot {
-    height: 100px;
+  .heroVisual {
+    padding: 1.25rem;
   }
-  .productPanel {
-    padding: 0.75rem;
+  .visualTopline {
+    gap: 0.75rem;
   }
-  .navActions {
-    gap: 0.5rem;
+  .visualHeading {
+    margin-top: 2rem;
   }
-  .navPrimary,
-  .navSecondary,
-  .navExplore {
+  .visualHeading h3 {
+    max-width: 18ch;
+    font-size: 1.75rem;
+  }
+  .visualChart {
+    margin-top: 2rem;
+  }
+  .chartLegend {
+    gap: 0.625rem;
+  }
+  .previewMetrics {
+    grid-template-columns: 1fr;
+    gap: 1.125rem;
+    margin-top: 1.5rem;
+  }
+  .previewMetrics dd {
+    max-width: none;
+    margin-top: 0.25rem;
     font-size: 0.8125rem;
+  }
+  .previewMetrics dt {
+    font-size: 0.875rem;
+  }
+  .ctaSection {
+    padding-block: 5.5rem;
+  }
+  .closingLogo .closingMark {
+    width: 5rem;
+    height: 3.4rem;
+  }
+  .ctaCopy h2 {
+    font-size: 2.625rem;
+  }
+  .ctaCopy p {
+    font-size: 0.9375rem;
+  }
+  .footer {
+    gap: 2rem;
+    padding-top: 2.5rem;
   }
   .footerGroups {
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 350px) {
+  .hero {
+    padding-top: 1.5rem;
+  }
+  .heroLogo {
+    margin-bottom: 1rem;
+  }
+  .heroTitle {
+    font-size: 2.375rem;
+  }
+  .heroSubtitle {
+    font-size: 0.875rem;
+  }
+  .heroActions {
+    margin-top: 1.25rem;
+  }
+  .heroActions .primaryButton {
+    width: 100%;
+  }
+  .portfolioIntro h2 {
+    font-size: 2.25rem;
+  }
+  .navPrimary {
+    padding-inline: 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -897,6 +910,24 @@
   .shell *::after {
     animation: none !important;
     transition: none !important;
-    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .signatureField {
+    display: none;
+  }
+  .navPrimary,
+  .primaryButton {
+    border-color: ButtonText;
+  }
+  .chartReturn,
+  .chartBenchmark,
+  .chartGrid {
+    stroke: CanvasText;
+  }
+  .returnKey,
+  .benchmarkKey {
+    border-color: CanvasText;
   }
 }

@@ -3,7 +3,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Link from "next/link";
 import type { HomeRouteLink } from "../types";
 
-/** Share destination, loading and sign-in semantics across both entry surfaces. */
+/** Keep destination, session loading and sign-in semantics consistent. */
 export function HomeRouteAction({
   route,
   label,
