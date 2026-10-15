@@ -392,11 +392,17 @@ test("honors reduced motion and the skip-link keyboard path", async ({
   await expect(skip).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
-  expect(
-    await page
-      .locator("#product figure")
-      .evaluate((element) => getComputedStyle(element).animationName),
-  ).toBe("none");
+  for (const selector of [
+    '#top [class*="heroContent"]',
+    '#top [class*="signatureField"]',
+    "#product figure",
+  ]) {
+    expect(
+      await page
+        .locator(selector)
+        .evaluate((element) => getComputedStyle(element).animationName),
+    ).toBe("none");
+  }
   expect(
     await page
       .locator("#main-content")
