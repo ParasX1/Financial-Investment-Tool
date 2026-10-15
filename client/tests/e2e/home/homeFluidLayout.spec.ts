@@ -24,7 +24,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Understand your portfolio. See the wider market.",
+        name: "Your portfolio. A clearer perspective.",
       }),
     ).toBeVisible();
     const start = page
@@ -34,44 +34,13 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
     await expect(start).toBeInViewport({ ratio: 1 });
     const product = page.locator("#product");
-    const plot = product.locator("svg[data-home-chart]");
-    const box = await plot.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.height).toBeCloseTo(
-      viewport.width <= 360 ? 100 : viewport.width <= 760 ? 120 : 200,
-      2,
+    await expect(page.locator("#top")).toContainText(
+      "Explore returns and risk, keep an eye on companies, and put market news in context.",
     );
-    if (viewport.width <= 390) {
-      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
-      await expect(
-        page.getByRole("navigation", { name: "Explore FIT features" }),
-      ).toBeHidden();
-      const labels =
-        viewport.width === 320
-          ? ["Historical return", "Annualised volatility", "Drawdown history"]
-          : [
-              "Historical return",
-              "Annualised volatility",
-              "Drawdown history",
-              "Sharpe ratio",
-              "Alpha",
-              "Value at risk",
-            ];
-      for (const label of labels)
-        await expect(
-          product.locator("dt").filter({ hasText: new RegExp(`^${label}$`) }),
-        ).toBeInViewport({ ratio: 1 });
-    } else {
-      await expect(
-        page.getByRole("navigation", { name: "Explore FIT features" }),
-      ).toBeVisible();
+    if (viewport.width >= 1440) {
       const content = await product.boundingBox();
       const main = await page.locator("main").boundingBox();
-      expect(content!.x + content!.width).toBeGreaterThan(
-        main!.x + main!.width - 49,
-      );
-      const title = await page.locator("#home-hero-title").boundingBox();
-      expect(title!.width).toBeLessThanOrEqual(401);
+      expect(content!.width).toBeGreaterThan(main!.width * 0.84);
     }
     expect(
       await page.evaluate(

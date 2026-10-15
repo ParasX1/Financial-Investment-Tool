@@ -61,7 +61,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Understand your portfolio. See the wider market.",
+        name: "Your portfolio. A clearer perspective.",
       }),
     ).toBeVisible();
     const hero = page.locator("#top");
@@ -73,7 +73,10 @@ for (const viewport of [
     await expect(
       page
         .getByRole("navigation", { name: "Home", exact: true })
-        .getByRole("button", { name: "Get started", exact: true }),
+        .getByRole("button", {
+          name: viewport.width <= 500 ? "Sign in" : "Get started",
+          exact: true,
+        }),
     ).toBeInViewport({ ratio: 1 });
     if (viewport.height >= 720 || viewport.width <= 390) {
       await expect(start).toBeInViewport({ ratio: 1 });
@@ -83,20 +86,13 @@ for (const viewport of [
     }
     await assertNoOverflow(page);
     const preview = page.getByRole("figure", {
-      name: "Portfolio: return and risk.",
+      name: "Read the journey, as well as the result.",
     });
     await expect(preview).toContainText("Illustration only.");
     await expect(preview).toContainText(
       "No account data or calculated results.",
     );
-    for (const label of [
-      "Historical return",
-      "Annualised volatility",
-      "Drawdown history",
-      "Sharpe ratio",
-      "Alpha",
-      "Value at risk",
-    ]) {
+    for (const label of ["Historical return", "Volatility", "Drawdown"]) {
       await expect(preview.getByText(label, { exact: true })).toBeVisible();
     }
     await page.screenshot({
@@ -128,7 +124,7 @@ test("opens hero signup and navigation signin distinctly and restores the opener
 });
 
 for (const width of [320, 390]) {
-  test(`reflows Home navigation with enlarged text at ${width}px`, async ({
+  test(`keeps signin and signup reachable with enlarged text at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -138,7 +134,7 @@ for (const width of [320, 390]) {
       name: "Home",
       exact: true,
     });
-    const start = navigation.getByRole("button", {
+    const start = page.locator("#top").getByRole("button", {
       name: "Get started",
       exact: true,
     });
@@ -147,8 +143,9 @@ for (const width of [320, 390]) {
       exact: true,
     });
     await assertNoOverflow(page);
-    await expect(start).toBeInViewport({ ratio: 1 });
     await expect(signIn).toBeInViewport({ ratio: 1 });
+    await start.scrollIntoViewIfNeeded();
+    await expect(start).toBeInViewport({ ratio: 1 });
     await start.click();
     await expect(page.getByRole("dialog")).toHaveAccessibleName(
       "Create your FIT account",
@@ -294,12 +291,16 @@ test("locks entry during session restoration and recovers when it finishes", asy
     }),
   ).toBeDisabled();
   await expect(
-    page
-      .getByRole("navigation", { name: "Explore FIT features" })
-      .getByRole("button", {
-        name: "Open Watchlist, sign in required",
-        exact: true,
-      }),
+    page.getByRole("button", {
+      name: "Read market news, sign in required",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", {
+      name: "Explore community, sign in required",
+      exact: true,
+    }),
   ).toBeDisabled();
   await expect(page.getByRole("dialog")).toBeHidden();
   release();
@@ -320,7 +321,7 @@ test.describe("Home without JavaScript", () => {
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Understand your portfolio. See the wider market.",
+        name: "Your portfolio. A clearer perspective.",
       }),
     ).toBeVisible();
     await expect(
@@ -331,12 +332,10 @@ test.describe("Home without JavaScript", () => {
     ).toBeVisible();
     await expect(page.getByText(/Illustration only\./)).toBeVisible();
     await expect(
-      page
-        .getByRole("navigation", { name: "Home", exact: true })
-        .getByRole("link", { name: "Guide", exact: true }),
+      page.getByRole("link", { name: "Read the guide", exact: false }),
     ).toHaveAttribute("href", "/Guide");
     await expect(
-      page.getByRole("link", { name: "Help Center" }),
+      page.getByRole("link", { name: "Help Center", exact: true }),
     ).toHaveAttribute("href", "/Help");
     await page.getByRole("link", { name: "Features", exact: true }).click();
     await expect(page).toHaveURL(/#product$/);
@@ -358,8 +357,7 @@ test.describe("Home without JavaScript", () => {
       page.getByText(/Topic navigation and analytics also require JavaScript/),
     ).toBeVisible();
     await page
-      .getByRole("navigation", { name: "Home", exact: true })
-      .getByRole("link", { name: "Guide", exact: true })
+      .getByRole("link", { name: "Read the guide", exact: false })
       .click();
     await expect(page).toHaveURL(/\/Guide$/);
     await expect(

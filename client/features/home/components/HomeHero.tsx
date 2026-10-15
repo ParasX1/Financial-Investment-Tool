@@ -1,4 +1,5 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
+import { FitLogo } from "@/components/shared/FitLogo";
 import Link from "next/link";
 import { homeHeroActions } from "../data/homeContent";
 import styles from "../styles/home.module.css";
@@ -15,10 +16,18 @@ export function HomeHero({
   return (
     <section id="top" className={styles.hero} aria-labelledby="home-hero-title">
       <div className={styles.heroContent}>
-        <p className={styles.eyebrow}>Financial Investment Tool</p>
+        <FitLogo
+          decorative
+          className={styles.heroLogo}
+          markClassName={styles.heroMark}
+        />
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Understand your portfolio. See the wider market.
+          Your portfolio. <span>A clearer perspective.</span>
         </h1>
+        <p className={styles.heroSubtitle}>
+          Explore returns and risk, keep an eye on companies, and put market
+          news in context.
+        </p>
         <div className={styles.heroActions}>
           {signedIn ? (
             <Link href="/Portfolio" className={styles.primaryButton}>
@@ -29,34 +38,26 @@ export function HomeHero({
               />
             </Link>
           ) : (
-            <>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                disabled={authLoading}
-                onClick={onGetStarted}
-              >
-                {homeHeroActions.primary}
-                <KeyboardArrowRightRoundedIcon
-                  sx={{ fontSize: 18 }}
-                  aria-hidden="true"
-                />
-              </button>
-            </>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={authLoading}
+              onClick={onGetStarted}
+            >
+              {homeHeroActions.primary}
+              <KeyboardArrowRightRoundedIcon
+                sx={{ fontSize: 18 }}
+                aria-hidden="true"
+              />
+            </button>
           )}
-          <Link href="/Guide" className={styles.heroExplore}>
+          <a href="#product" className={styles.heroExplore}>
             {homeHeroActions.secondary}
-            <KeyboardArrowRightRoundedIcon
-              sx={{ fontSize: 17 }}
-              aria-hidden="true"
-            />
-          </Link>
+            <span aria-hidden="true">↓</span>
+          </a>
         </div>
-        <p className={styles.heroSubtitle}>
-          Read historical returns alongside risk, follow market news and compare
-          research ideas in one workspace.
-        </p>
       </div>
+      <div className={styles.signatureField} aria-hidden="true" />
     </section>
   );
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   homeCta,
-  homeExperiencePoints,
   homeFooterGroups,
   homeMetadata,
   homePreviewMetrics,
@@ -16,18 +15,17 @@ describe("homeContent", () => {
       "/MarketNews",
       "/Community",
     ]);
-    expect(homeExperiencePoints).toHaveLength(4);
   });
 
-  it("describes the real analytics with classifications instead of invented results", () => {
-    expect(homePreviewMetrics).toEqual([
-      { label: "Historical return", classification: "Historical" },
-      { label: "Annualised volatility", classification: "Estimated" },
-      { label: "Drawdown history", classification: "Historical" },
-      { label: "Sharpe ratio", classification: "Estimated" },
-      { label: "Alpha", classification: "Estimated" },
-      { label: "Value at risk", classification: "Estimated" },
+  it("explains the three measures shown by the portfolio illustration", () => {
+    expect(homePreviewMetrics.map((metric) => metric.label)).toEqual([
+      "Historical return",
+      "Volatility",
+      "Drawdown",
     ]);
+    expect(
+      homePreviewMetrics.every((metric) => metric.description.length > 30),
+    ).toBe(true);
   });
 
   it("links only to real FIT routes and sections", () => {
@@ -55,7 +53,6 @@ describe("homeContent", () => {
   it("uses specific, beginner-friendly language without hype or unsupported claims", () => {
     const text = JSON.stringify({
       homeCta,
-      homeExperiencePoints,
       homeFooterGroups,
       homeMetadata,
       homeRouteLinks,

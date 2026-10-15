@@ -1,9 +1,5 @@
 import { fitColors } from "@/styles/themeTokens";
-import type {
-  HomeExperiencePoint,
-  HomeFooterGroup,
-  HomeRouteLink,
-} from "../types";
+import type { HomeFooterGroup, HomeRouteLink } from "../types";
 
 export const homeMetadata = {
   description:
@@ -14,81 +10,67 @@ export const homeMetadata = {
 
 export const homeHeroActions = {
   primary: "Get started",
-  secondary: "See how FIT works",
+  secondary: "Explore the tools",
 };
 
 export const homePreviewMetrics = [
-  { label: "Historical return", classification: "Historical" },
-  { label: "Annualised volatility", classification: "Estimated" },
-  { label: "Drawdown history", classification: "Historical" },
-  { label: "Sharpe ratio", classification: "Estimated" },
-  { label: "Alpha", classification: "Estimated" },
-  { label: "Value at risk", classification: "Estimated" },
+  {
+    label: "Historical return",
+    description: "How the value changed over the selected period.",
+  },
+  {
+    label: "Volatility",
+    description: "How widely returns varied along the way.",
+  },
+  {
+    label: "Drawdown",
+    description: "How far the value fell from a previous high.",
+  },
 ] as const;
 
 export const homeCta = {
-  body: "A place to explore the evidence and develop your own view.",
+  body: "Choose the companies you want to analyse. Take a closer look at return and risk.",
   primarySignedIn: "Open portfolio",
   primarySignedOut: "Create an account",
-  title: "Make room for a clearer question.",
+  title: "Start with your portfolio.",
 } as const;
 
 export const homeRouteLinks = [
   {
     description:
-      "Read historical returns alongside volatility, drawdown and risk-adjusted performance. See what deserves a closer look.",
+      "Read historical performance alongside volatility and drawdown. Compare with a benchmark to understand how your portfolio has behaved.",
     gated: true,
     href: "/Portfolio",
     label: "Portfolio",
   },
   {
     description:
-      "Keep the companies you follow and your research notes together. Return to the questions you want to investigate.",
+      "Keep the companies you follow and your research notes together. Pick up where you left off when it is time for a closer look.",
     gated: true,
     href: "/Watchlist",
     label: "Watchlist",
   },
   {
     description:
-      "Follow companies and themes. Compare the source and publication date, then bring market news into your own questions.",
+      "Follow companies and themes, check the source and publication date, and bring the wider market into your research.",
     gated: true,
     href: "/MarketNews",
     label: "Market News",
   },
   {
     description:
-      "Compare ideas in the community, make your reasoning explicit and refine the next question as you learn.",
+      "Explore community discussions, share your reasoning and compare ideas with other people learning about investing.",
     gated: true,
     href: "/Community",
     label: "Community",
   },
 ] as const satisfies readonly HomeRouteLink[];
 
-export const homeExperiencePoints = [
-  {
-    description: "Begin with a portfolio, watchlist, or market question.",
-    label: "Observe",
-  },
-  {
-    description: "Read performance and risk together.",
-    label: "Compare",
-  },
-  {
-    description:
-      "Look past the headline and note when the information was published.",
-    label: "Check the source",
-  },
-  {
-    description: "Compare viewpoints, then decide what needs more research.",
-    label: "Reflect",
-  },
-] as const satisfies readonly HomeExperiencePoint[];
-
 export const homeFooterGroups = [
   {
     items: [
       { href: "#product", label: "Features" },
-      { href: "#experience", label: "Experience" },
+      { href: "#experience", label: "Learning" },
     ],
     title: "Product",
   },

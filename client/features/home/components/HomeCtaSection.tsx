@@ -1,4 +1,5 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
+import { FitLogo } from "@/components/shared/FitLogo";
 import Link from "next/link";
 import { homeCta } from "../data/homeContent";
 import styles from "../styles/home.module.css";
@@ -14,6 +15,11 @@ export function HomeCtaSection({
 }) {
   return (
     <section className={styles.ctaSection} aria-labelledby="home-cta-title">
+      <FitLogo
+        decorative
+        className={styles.closingLogo}
+        markClassName={styles.closingMark}
+      />
       <div className={styles.ctaCopy}>
         <h2 id="home-cta-title">{homeCta.title}</h2>
         <p>{homeCta.body}</p>

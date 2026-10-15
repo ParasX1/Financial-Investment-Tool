@@ -1,10 +1,8 @@
 import { cn } from "./uiPrimitives";
+import signature from "./fitSignatureGeometry.json";
 import styles from "./FitLogo.module.css";
 
 type FitLogoSize = "compact" | "small" | "medium" | "large";
-
-// Keep the public mark and favicon geometry in sync; asset parity is tested.
-const FIT_MARK_PATH = "M8 4H28V8H22V10H10V15H22V21H10V28H4V8A4 4 0 0 1 8 4Z";
 
 export function FitLogo({
   className,
@@ -41,10 +39,13 @@ export function FitLogo({
         <svg
           aria-hidden="true"
           focusable="false"
-          viewBox="0 0 32 32"
+          viewBox={signature.viewBox}
           fill="currentColor"
         >
-          <path d={FIT_MARK_PATH} />
+          {signature.standard.paths.map((path, index) => (
+            <path key={index} d={path} />
+          ))}
+          <circle {...signature.standard.dot} />
         </svg>
       </span>
       {showWordmark ? (

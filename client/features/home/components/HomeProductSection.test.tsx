@@ -23,11 +23,10 @@ describe("HomeProductSection", () => {
     );
     expect(markup).not.toContain('href="/Portfolio"');
     expect(markup).toContain('aria-label="Open watchlist, sign in required"');
-    expect(markup).toContain("Portfolio: return and risk.");
-    expect(markup).toContain("Follow what matters.");
-    expect(markup).toContain("Keep a research note");
-    expect(markup).toContain("Look beyond the headline.");
-    expect(markup).toContain("Build a considered view.");
+    expect(markup).toContain("Return is only half the story.");
+    expect(markup).toContain("Your companies. Your notes.");
+    expect(markup).toContain("Market news, with context.");
+    expect(markup).toContain("Share a view. Hear another.");
     expect(markup).not.toContain('role="list"');
   });
 
