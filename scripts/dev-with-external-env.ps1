@@ -52,4 +52,4 @@ Import-EnvFile (Join-Path $EnvDir ".env")
 Import-EnvFile (Join-Path $EnvDir ".env.local")
 
 Set-Location $repoRoot
-npm run dev
+npm run dev -- --with-universe-sync

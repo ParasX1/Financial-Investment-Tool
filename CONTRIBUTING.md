@@ -46,7 +46,7 @@ Once both sets of dependencies are installed, activate the server Python
 environment and run `npm run dev` from the repository root to start both services.
 This command does not sync the Top Picks universe. See
 [Combined startup and universe sync](#combined-startup-and-universe-sync) for the
-separate database-writing command and its environment boundary.
+external-env startup mode, manual sync commands, and environment boundaries.
 
 ## Architecture at a glance
 
@@ -352,21 +352,41 @@ Never use a secret or service-role key for this public read path.
 ### Combined startup and universe sync
 
 From the repository root, `npm run dev` (or `npm run dev:all`) starts Flask and
-Next only. The legacy `TOP_PICKS_DEV_SYNC_*` switches and delayed jobs are removed.
+Next only, without automatic universe sync.
 Activate the server Python environment first, or set `FINANCE_DEV_SERVER_PYTHON`
 to its executable in the process environment or `server/.env`.
 
-Sync is an explicit, separate write to the configured Supabase project:
+For external env files, use `npm run dev:env` on Windows or
+`npm run dev:env:mac` on macOS. The wrappers load `.env` followed by `.env.local`
+from the sibling `Financial-Investment-Tool-env` folder, then run
+`npm run dev -- --with-universe-sync`. A different folder can be selected with
+`npm run dev:env -- -EnvDir "D:\Their\Secret\Folder"` or
+`npm run dev:env:mac -- --env-dir "/Users/their/Secret/Folder"`.
+
+In this mode, the runner prints the project link and uses
+`FINANCE_DEV_SERVER_PYTHON` when set. Otherwise, it discovers `financeDev-server`
+through Conda and common user installation locations before falling back to
+`python`. It schedules ASX200 sync after 60 seconds and SP500 sync after 90
+seconds. Set `TOP_PICKS_DEV_SYNC_ASX200=false` or
+`TOP_PICKS_DEV_SYNC_SP500=false` to disable the respective job, and use
+`TOP_PICKS_DEV_SYNC_DELAY_MS` or `TOP_PICKS_DEV_SYNC_SP500_DELAY_MS` to change its
+delay. These switches have no effect in ordinary `dev`/`dev:all` startup.
+Background jobs write to the configured Supabase project with the server
+environment; their failures do not stop Flask or Next. The mode can also be
+selected directly with `npm run dev -- --with-universe-sync`.
+
+An immediate, separate sync also writes to the configured Supabase project:
 
 ```bash
 npm run sync:top-picks -- --preset ASX200
 npm run sync:top-picks -- --preset SP500
 ```
 
-Check the project and credentials first. The sync job uses the server environment
-and prefers `SUPABASE_SERVICE_ROLE_KEY` when configured. Add `--dry-run` to prepare
-records without database writes; presets may still fetch public index data. The
-launcher forwards the Python sync script's other arguments unchanged.
+Both background and explicit sync use the server environment and prefer
+`SUPABASE_SERVICE_ROLE_KEY` when configured. Add `--dry-run` to an explicit sync
+to prepare records without database writes; presets may still fetch public index data. The
+launcher forwards the Python sync script's other arguments unchanged. An explicit
+sync failure returns a nonzero exit status.
 
 `server/.env` supplies defaults only to Flask and sync. Inherited process values
 take precedence, and the launcher sets `PYTHONPATH` to `server/`. Next inherits
@@ -376,7 +396,8 @@ secrets in `server/.env` and never use a `NEXT_PUBLIC_` name for them. The launc
 does not log environment values and redacts configured key/token/password values
 in forwarded child output.
 
-Shutdown stops direct children, waits for their streams to close, and escalates
+Shutdown cancels pending sync timers, stops direct children including active sync
+jobs, waits for their streams to close, and escalates
 after five seconds. Node cannot guarantee that npm/shell/reloader descendants
 terminate; investigate remaining processes if a port stays busy. Run
 `npm run test:dev` for fake-process regressions and the launcher coverage gate.
