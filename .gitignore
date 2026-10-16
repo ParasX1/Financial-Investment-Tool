@@ -72,6 +72,7 @@ client/.next-dev*.log
 client/current-dev*.log
 
 # Local generated backups
+/SecondStageDev_Personal-*.zip
 supabase/migrations/backup.sql
 COMMUNITY_CHAT*_BACKUP_*.md
 what changed.md
