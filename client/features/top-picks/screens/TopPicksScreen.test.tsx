@@ -213,7 +213,7 @@ describe("TopPicksScreen", () => {
   });
 
   it.each([25, 100])(
-    "presents refresh recovery before a retained page of %s rows",
+    "presents result status and refresh recovery below a retained page of %s rows",
     (rowCount) => {
       const controller = {
         ...createController(),
@@ -232,7 +232,7 @@ describe("TopPicksScreen", () => {
         (element) => element.type === TopPicksTable,
       );
 
-      expect(statusIndex).toBeLessThan(tableIndex);
+      expect(statusIndex).toBeGreaterThan(tableIndex);
       expect(elements[statusIndex].props).toMatchObject({
         error: "Refresh unavailable",
         hasRetainedResults: true,

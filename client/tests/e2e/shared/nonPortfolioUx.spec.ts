@@ -109,7 +109,7 @@ test("Community keeps full mode labels and the start of a preview readable at 32
 });
 
 for (const rowCount of [25, 100]) {
-  test(`Top Picks exposes a failed refresh and Retry above ${rowCount} retained rows`, async ({
+  test(`Top Picks exposes a failed refresh and Retry below ${rowCount} retained rows`, async ({
     page,
     baseURL,
   }, testInfo) => {
@@ -184,11 +184,15 @@ for (const rowCount of [25, 100]) {
       await expect(
         page.getByRole("button", { name: "Export page CSV" }),
       ).toBeEnabled();
+      await retry.scrollIntoViewIfNeeded();
       const geometry = {
         alert: await alert.boundingBox(),
         retry: await retry.boundingBox(),
         table: await page
           .getByRole("table", { name: "Top Picks rankings" })
+          .boundingBox(),
+        pagination: await page
+          .getByRole("combobox", { name: "Top Picks rows per page" })
           .boundingBox(),
         scrollY: await page.evaluate(() => window.scrollY),
       };
@@ -199,13 +203,17 @@ for (const rowCount of [25, 100]) {
       await page.screenshot({
         path: testInfo.outputPath("top-picks-refresh.png"),
       });
-      expect(geometry.scrollY).toBe(0);
+      expect(geometry.table).not.toBeNull();
+      expect(geometry.pagination).not.toBeNull();
       for (const bounds of [geometry.alert, geometry.retry]) {
         expect(bounds).not.toBeNull();
         expect(bounds!.y).toBeGreaterThanOrEqual(0);
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(900);
-        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(
-          geometry.table!.y,
+        expect(bounds!.y).toBeGreaterThanOrEqual(
+          Math.max(
+            geometry.table!.y + geometry.table!.height,
+            geometry.pagination!.y + geometry.pagination!.height,
+          ),
         );
       }
       await expect(alert).toContainText("Showing previous results");

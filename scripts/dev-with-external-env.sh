@@ -96,4 +96,4 @@ import_env_file "$ENV_DIR/.env"
 import_env_file "$ENV_DIR/.env.local"
 
 cd "$REPO_ROOT"
-npm run dev
+npm run dev -- --with-universe-sync

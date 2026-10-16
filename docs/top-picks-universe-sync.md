@@ -43,11 +43,19 @@ ranked constituents from that snapshot. If the OpenASX request is blocked, the
 script falls back to the local `data/asx200.csv` snapshot so local development
 can continue without manual intervention.
 
-During local development, `npm run dev` starts the app first and then runs the
-ASX 200 and S&P 500 preset syncs in the background after short delays. Set
+During local development, `npm run dev` and `npm run dev:all` start Flask and
+Next without syncing the universe. The external-env commands `npm run dev:env`
+(Windows) and `npm run dev:env:mac` (macOS) select `--with-universe-sync`, which
+can also be enabled with `npm run dev -- --with-universe-sync`. This mode starts
+the app first, then runs ASX 200 sync after 60 seconds and S&P 500 sync after 90
+seconds in the background. These jobs write to the configured Supabase project
+using server credentials, preferring `SUPABASE_SERVICE_ROLE_KEY` when configured;
+a sync failure does not stop the app. In this mode, set
 `TOP_PICKS_DEV_SYNC_ASX200=false` or `TOP_PICKS_DEV_SYNC_SP500=false` to disable
 one of them. Set `TOP_PICKS_DEV_SYNC_DELAY_MS` or
-`TOP_PICKS_DEV_SYNC_SP500_DELAY_MS` to change the delays.
+`TOP_PICKS_DEV_SYNC_SP500_DELAY_MS` to change the delays. These settings do not
+enable sync during ordinary startup. Use `npm run sync:top-picks -- --preset ASX200`
+or `npm run sync:top-picks -- --preset SP500` for an immediate, explicit sync.
 
 Top Picks also persists the last complete ranking snapshot locally at
 `server/.cache/top-picks-snapshot-cache.json` by default. After the first full

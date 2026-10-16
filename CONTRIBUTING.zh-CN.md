@@ -43,7 +43,7 @@ Portfolio analytics 可以在没有 Supabase 时运行，但 Top Picks 需要这
 
 安装好前后端依赖后，先激活 server Python 环境，再在仓库根目录运行
 `npm run dev`，即可启动两个服务。该命令不会同步 Top Picks universe。
-独立的数据库写入命令及环境变量边界见[同时启动与 universe 同步](#同时启动与-universe-同步)。
+外部 env 启动模式、独立同步命令及环境变量边界见[同时启动与 universe 同步](#同时启动与-universe-同步)。
 
 ## 整体架构
 
@@ -338,20 +338,36 @@ secret 或 service-role key。
 ### 同时启动与 universe 同步
 
 在仓库根目录运行 `npm run dev` 或 `npm run dev:all`，只会启动 Flask 和
-Next。旧的 `TOP_PICKS_DEV_SYNC_*` 开关与延迟同步任务已移除。请先激活 server
+Next，不会自动同步 universe。请先激活 server
 Python 环境，或在 process environment / `server/.env` 中用
 `FINANCE_DEV_SERVER_PYTHON` 指定其 Python executable。
 
-Universe 同步是独立、明确执行的 Supabase 写入操作：
+外部 env 工作流在 Windows 使用 `npm run dev:env`，在 macOS 使用
+`npm run dev:env:mac`。Wrapper 按顺序加载仓库旁边
+`Financial-Investment-Tool-env` 文件夹中的 `.env` 和 `.env.local`，然后执行
+`npm run dev -- --with-universe-sync`。自定义文件夹可用
+`npm run dev:env -- -EnvDir "D:\Their\Secret\Folder"` 或
+`npm run dev:env:mac -- --env-dir "/Users/their/Secret/Folder"`。
+
+这个模式会打印项目链接，并优先使用 `FINANCE_DEV_SERVER_PYTHON`。未指定时，
+会通过 Conda 和常见用户安装位置查找 `financeDev-server` 环境，最后回退到
+`python`。默认在启动 60 秒后同步 ASX200、90 秒后同步 SP500。设置
+`TOP_PICKS_DEV_SYNC_ASX200=false` 或 `TOP_PICKS_DEV_SYNC_SP500=false` 可关闭
+对应任务；`TOP_PICKS_DEV_SYNC_DELAY_MS` 和 `TOP_PICKS_DEV_SYNC_SP500_DELAY_MS`
+可修改对应延迟。这些设置只在这个模式下生效，不影响普通 `dev` / `dev:all`。
+后台同步会使用 server 环境写入配置的 Supabase project；同步失败不会停止
+Flask 或 Next。也可直接用 `npm run dev -- --with-universe-sync` 选择这个模式。
+
+需要立即执行时，独立同步命令也会写入配置的 Supabase project：
 
 ```bash
 npm run sync:top-picks -- --preset ASX200
 npm run sync:top-picks -- --preset SP500
 ```
 
-执行前确认目标 project 和凭据。同步任务使用 server 环境，配置了
-`SUPABASE_SERVICE_ROLE_KEY` 时优先使用该 key。添加 `--dry-run` 可以准备记录而不
-写入数据库；preset 仍可能获取公开指数数据。Python 同步脚本支持的其他参数会原样传递。
+后台与独立同步都使用 server 环境，配置了 `SUPABASE_SERVICE_ROLE_KEY` 时优先使用
+该 key。独立命令添加 `--dry-run` 可以准备记录而不写入数据库；preset 仍可能获取
+公开指数数据。Python 同步脚本支持的其他参数会原样传递。独立同步失败时会返回非零退出状态。
 
 `server/.env` 只为 Flask 与同步任务提供默认值，已有 process environment 优先，
 launcher 将 `PYTHONPATH` 设为 `server/`。Next 继承的 process environment 会移除
@@ -359,7 +375,8 @@ server `SUPABASE_*` 变量，并使用自己的 `client/.env.local`；不会注�
 值。Backend secret 应保留在 `server/.env`，绝不能使用 `NEXT_PUBLIC_` 名称。
 Launcher 不输出环境变量值，并会遮蔽转发输出中已配置的 key/token/password 值。
 
-关闭时会停止直接启动的 child process，等待输出流关闭，并在五秒后尝试强制停止。
+关闭时会取消待执行的同步 timer、停止直接启动的 child process（包括正在运行的同步任务），
+等待输出流关闭，并在五秒后尝试强制停止。
 Node 无法保证 npm、shell 或 Python reloader 创建的后代进程也会结束；端口仍被占用时，
 请检查这些进程。`npm run test:dev` 会运行 fake-process regression 和 launcher
 coverage gate，不会启动服务、获取市场数据或访问 Supabase。
