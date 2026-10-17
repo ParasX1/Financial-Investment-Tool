@@ -233,22 +233,126 @@
 }
 
 .productSection,
-.editorialRow {
+.analysisChapter,
+.taskChapter {
   scroll-margin-top: 2rem;
 }
 
-.portfolioChapter {
-  padding-top: clamp(3rem, 6vw, 7rem);
-  padding-bottom: clamp(5rem, 8vw, 10rem);
+.chapterOverview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.5rem;
+  border-block: 1px solid var(--home-border);
+}
+
+.chapterJump {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.3rem 1rem;
+  align-content: center;
+  min-height: 6.5rem;
+  padding: 1.25rem clamp(1rem, 2.4vw, 3rem);
+  color: var(--home-body);
+  text-decoration: none;
+}
+
+.chapterJump:first-child {
+  padding-left: 0;
+}
+
+.chapterJump:last-child {
+  padding-right: 0;
+}
+
+.chapterJump + .chapterJump {
+  border-left: 1px solid var(--home-border);
+}
+
+.jumpNumber {
+  grid-row: 1 / 3;
+  padding-top: 0.15rem;
+  color: var(--home-accent);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jumpTitle {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.jumpTools {
+  grid-column: 2;
+  color: var(--home-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.jumpArrow {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--home-accent);
+  transition: transform 180ms ease;
+}
+
+.chapterJump:hover {
+  color: var(--home-accent);
+  background: var(--fit-color-accent-soft);
+}
+
+.chapterJump:hover .jumpArrow {
+  transform: translateY(3px);
+}
+
+.analysisChapter,
+.taskChapter {
+  padding-block: clamp(3.5rem, 6.5vw, 7.5rem);
+}
+
+.taskChapter {
+  border-top: 1px solid var(--home-border);
+}
+
+.chapterHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.25rem clamp(2.5rem, 7vw, 9rem);
+  align-items: end;
+  margin-bottom: clamp(2.75rem, 4vw, 4.5rem);
+}
+
+.chapterHeader > .chapterLabel {
+  grid-column: 1 / -1;
+}
+
+.chapterHeader h2 {
+  max-width: 17ch;
+  margin: 0;
+  font-size: clamp(2.5rem, 4vw, 5rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.chapterSummary {
+  max-width: 34rem;
+  margin: 0;
+  padding-bottom: 0.2rem;
+  color: var(--home-muted);
+  font-size: 1rem;
+  line-height: 1.75;
 }
 
 .portfolioIntro {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  column-gap: clamp(2.5rem, 8vw, 10rem);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  column-gap: clamp(2.5rem, 7vw, 9rem);
   row-gap: 1.5rem;
   align-items: start;
-  padding-bottom: 3.5rem;
+  padding-bottom: 2rem;
 }
 
 .chapterLabel,
@@ -273,18 +377,21 @@
   font-variant-numeric: tabular-nums;
 }
 
-.portfolioIntro > .chapterLabel {
-  grid-column: 1 / -1;
+.portfolioIntro h3,
+.toolEntry h3,
+.discoveryStrip h3 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
 }
 
-.portfolioIntro h2 {
-  max-width: 13ch;
-  margin: 0;
-  font-size: clamp(2.75rem, 4.4vw, 5.5rem);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.055em;
-  text-wrap: balance;
+.featureStatement {
+  margin: 0.75rem 0 0;
+  color: var(--home-body);
+  font-size: clamp(1rem, 1.5vw, 1.375rem);
+  line-height: 1.5;
 }
 
 .chapterDetail {
@@ -333,7 +440,7 @@
   margin-top: 2.75rem;
 }
 
-.visualHeading h3 {
+.visualHeading .visualTitle {
   max-width: 20ch;
   margin: 0;
   font-size: clamp(1.75rem, 2.7vw, 3.25rem);
@@ -343,7 +450,7 @@
   text-wrap: balance;
 }
 
-.visualHeading p {
+.visualHeading > p:not(.visualTitle) {
   max-width: 29ch;
   margin: 0;
   color: var(--home-muted);
@@ -449,36 +556,73 @@
   line-height: 1.65;
 }
 
-.editorialRow {
-  padding-block: clamp(2.25rem, 3.6vw, 4rem);
+.discoveryStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr) auto;
+  gap: 1.5rem clamp(2rem, 4vw, 5rem);
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
   border-top: 1px solid var(--home-border);
 }
 
-.chapterIntro {
+.discoveryStrip h3 {
+  margin-top: 0.5rem;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.discoveryStrip > .chapterDescription {
+  margin-bottom: 0;
+}
+
+.pairedTools {
   display: grid;
-  grid-template-columns: minmax(8rem, 0.65fr) minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: clamp(1.5rem, 3.5vw, 5rem);
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.chapterIntro > .chapterLabel {
-  padding-top: 0.5rem;
+.toolEntry {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  justify-items: start;
+  padding-right: clamp(2rem, 6vw, 7rem);
 }
 
-.chapterIntro h2 {
-  max-width: 15ch;
+.toolEntry + .toolEntry {
+  padding-right: 0;
+  padding-left: clamp(2rem, 6vw, 7rem);
+  border-left: 1px solid var(--home-border);
+}
+
+.toolIntent {
+  margin: 0 0 0.75rem;
+  color: var(--home-accent);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.toolEntry .chapterDescription {
+  max-width: 39ch;
+  margin-top: 1.25rem;
+}
+
+.helpRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem 2rem;
+  align-items: center;
+  padding-block: 1.5rem;
+  border-block: 1px solid var(--home-border);
+}
+
+.helpRow p {
   margin: 0;
-  font-size: clamp(1.875rem, 2.8vw, 3.5rem);
-  font-weight: 500;
-  line-height: 1.16;
-  letter-spacing: -0.045em;
-  text-wrap: balance;
+  color: var(--home-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
-.guideLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1.5rem;
+.helpRow p:first-child {
+  color: var(--home-body);
 }
 
 .helpLink {
@@ -691,15 +835,15 @@
   .navActions {
     gap: 0.5rem;
   }
-  .chapterIntro {
-    grid-template-columns: minmax(7rem, 0.6fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1.5rem;
-  }
   .chapterLabel {
     gap: 0.75rem;
   }
   .portfolioIntro {
     column-gap: 3rem;
+  }
+  .chapterJump {
+    column-gap: 0.7rem;
+    padding-inline: 1rem;
   }
   .footer {
     column-gap: 3rem;
@@ -716,23 +860,58 @@
   .heroTitle {
     font-size: clamp(2.75rem, 8vw, 4rem);
   }
+  .chapterOverview {
+    grid-template-columns: 1fr;
+  }
+  .chapterJump {
+    min-height: 5rem;
+    padding: 1rem 0;
+  }
+  .chapterJump + .chapterJump {
+    border-top: 1px solid var(--home-border);
+    border-left: 0;
+  }
+  .chapterHeader {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .chapterHeader h2 {
+    max-width: 19ch;
+  }
+  .chapterSummary {
+    max-width: 38rem;
+  }
   .portfolioIntro {
     grid-template-columns: 1fr;
     row-gap: 1.25rem;
     padding-bottom: 2.25rem;
   }
-  .portfolioIntro h2 {
-    max-width: 15ch;
-  }
   .portfolioIntro .chapterDetail {
     padding-top: 0.25rem;
   }
-  .chapterIntro {
-    grid-template-columns: minmax(7rem, 0.5fr) minmax(0, 1fr);
-    row-gap: 1rem;
+  .discoveryStrip {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 1rem 2rem;
   }
-  .chapterIntro .chapterDetail {
+  .discoveryStrip > .routeTile {
     grid-column: 2;
+  }
+  .toolEntry {
+    padding-right: 1.75rem;
+  }
+  .toolEntry + .toolEntry {
+    padding-left: 1.75rem;
+  }
+  .helpRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 1.5rem;
+  }
+  .helpRow > p:nth-child(2) {
+    grid-column: 1;
+  }
+  .helpRow > .helpLink {
+    grid-column: 2;
+    grid-row: 1 / 3;
   }
   .visualHeading {
     flex-direction: column;
@@ -795,26 +974,43 @@
     margin-top: 1.5rem;
     background-size: 155% 100%;
   }
-  .portfolioChapter {
-    padding-top: 3rem;
-    padding-bottom: 4.5rem;
-  }
-  .portfolioIntro h2 {
-    font-size: 2.5rem;
-  }
   .chapterDescription {
     font-size: 0.9375rem;
   }
-  .chapterIntro {
-    display: block;
+  .chapterHeader h2 {
+    font-size: 2.375rem;
   }
-  .chapterIntro h2 {
-    max-width: 16ch;
-    margin: 1.25rem 0;
-    font-size: 2rem;
+  .chapterSummary {
+    font-size: 0.9375rem;
   }
-  .chapterIntro > .chapterLabel {
-    padding-top: 0;
+  .discoveryStrip,
+  .pairedTools,
+  .helpRow {
+    grid-template-columns: 1fr;
+  }
+  .discoveryStrip {
+    row-gap: 1.25rem;
+  }
+  .discoveryStrip > .routeTile {
+    grid-column: 1;
+  }
+  .toolEntry {
+    padding-right: 0;
+  }
+  .toolEntry + .toolEntry {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    padding-left: 0;
+    border-top: 1px solid var(--home-border);
+    border-left: 0;
+  }
+  .toolEntry .chapterDescription {
+    max-width: none;
+  }
+  .helpRow > .helpLink {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
   }
   .chapterLabel,
   .eyebrow {
@@ -830,7 +1026,7 @@
   .visualHeading {
     margin-top: 2rem;
   }
-  .visualHeading h3 {
+  .visualHeading .visualTitle {
     max-width: 18ch;
     font-size: 1.75rem;
   }
@@ -894,9 +1090,6 @@
   }
   .heroActions .primaryButton {
     width: 100%;
-  }
-  .portfolioIntro h2 {
-    font-size: 2.25rem;
   }
   .navPrimary {
     padding-inline: 0.75rem;

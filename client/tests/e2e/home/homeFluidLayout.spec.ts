@@ -101,6 +101,7 @@ for (const viewport of [
     });
     for (const action of [
       "Explore portfolio",
+      "Explore top picks",
       "Open watchlist",
       "Read market news",
       "Explore community",

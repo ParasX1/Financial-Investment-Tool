@@ -197,20 +197,47 @@ describe("HomeScreenView", () => {
         <HomeScreenView controller={mockController as any} />,
       );
     });
-    const actions = [
-      "Explore portfolio",
-      "Open watchlist",
-      "Read market news",
-      "Explore community",
-    ];
-    for (const [index, route] of homeRouteLinks.entries()) {
+    const actions = {
+      "/Portfolio": "Explore portfolio",
+      "/TopPicks": "Explore top picks",
+      "/Watchlist": "Open watchlist",
+      "/MarketNews": "Read market news",
+      "/Community": "Explore community",
+    };
+    for (const route of homeRouteLinks) {
       act(() =>
         renderer.root
-          .findByProps({ "aria-label": `${actions[index]}, sign in required` })
+          .findByProps({
+            "aria-label": `${actions[route.href]}, sign in required`,
+          })
           .props.onClick(),
       );
       expect(mockController.selectRoute).toHaveBeenLastCalledWith(route);
     }
+    act(() => renderer.unmount());
+  });
+
+  it("keeps all tool families together at the hero exploration destination", () => {
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        <HomeScreenView controller={mockController as any} />,
+      );
+    });
+    const product = renderer.root.findByProps({ id: "product" });
+    expect(product.findByProps({ id: "analyse" })).toBeDefined();
+    expect(product.findByProps({ id: "follow" })).toBeDefined();
+    expect(product.findByProps({ id: "experience" })).toBeDefined();
+    expect(
+      product.findAllByType("h3").map((heading) => heading.children.join("")),
+    ).toEqual([
+      "Portfolio",
+      "Top Picks",
+      "Watchlist",
+      "Market News",
+      "Guide",
+      "Community",
+    ]);
     act(() => renderer.unmount());
   });
 

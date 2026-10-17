@@ -12,9 +12,9 @@ export function HomePortfolioPreview() {
         </span>
       </figcaption>
       <div className={styles.visualHeading}>
-        <h3 id="home-preview-title">
+        <p id="home-preview-title" className={styles.visualTitle}>
           Read the journey, as well as the result.
-        </h3>
+        </p>
         <p>
           Two paths can finish close together and feel very different along the
           way.

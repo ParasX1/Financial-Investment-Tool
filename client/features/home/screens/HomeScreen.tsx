@@ -4,15 +4,10 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useAuth } from "@/features/auth";
 import { AuthDialog } from "@/features/auth";
-import {
-  homeFooterGroups,
-  homeMetadata,
-  homeRouteLinks,
-} from "../data/homeContent";
+import { homeFooterGroups, homeMetadata } from "../data/homeContent";
 import { useHomeEntryController } from "../hooks/useHomeEntryController";
 import { HomeCtaSection } from "../components/HomeCtaSection";
 import { HomeFooter } from "../components/HomeFooter";
-import { HomeExperienceSection } from "../components/HomeExperienceSection";
 import { HomeHero } from "../components/HomeHero";
 import { HomeNavigation } from "../components/HomeNavigation";
 import { HomeProductSection } from "../components/HomeProductSection";
@@ -68,11 +63,9 @@ export function HomeScreenView({
           <div className={styles.content}>
             <HomeProductSection
               authLoading={authLoading}
-              routes={homeRouteLinks}
               signedIn={signedIn}
               onRouteSelect={selectRoute}
             />
-            <HomeExperienceSection />
             <HomeCtaSection
               authLoading={authLoading}
               signedIn={signedIn}

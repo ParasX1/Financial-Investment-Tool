@@ -4,11 +4,63 @@ import { homeRouteLinks } from "../data/homeContent";
 import { HomeProductSection } from "./HomeProductSection";
 
 describe("HomeProductSection", () => {
+  it("introduces three task families with named tools and native chapter links", () => {
+    const markup = renderToStaticMarkup(
+      <HomeProductSection
+        authLoading={false}
+        signedIn={false}
+        onRouteSelect={jest.fn()}
+      />,
+    );
+
+    const overview = markup.match(
+      /<nav[^>]*aria-label="Explore the tools"[\s\S]*?<\/nav>/,
+    )?.[0];
+    expect(overview).toBeDefined();
+    expect(overview).toContain('href="#analyse"');
+    expect(overview).toContain("Portfolio");
+    expect(overview).toContain("Top Picks");
+    expect(overview).toContain('href="#follow"');
+    expect(overview).toContain("Watchlist");
+    expect(overview).toContain("Market News");
+    expect(overview).toContain('href="#experience"');
+    expect(overview).toContain("Guide");
+    expect(overview).toContain("Community");
+
+    expect(markup.match(/<h2[^>]*>[\s\S]*?<\/h2>/g)).toEqual([
+      expect.stringContaining("Analyse an idea"),
+      expect.stringContaining("Follow your research"),
+      expect.stringContaining("Learn and exchange views"),
+    ]);
+    for (const label of [
+      "Portfolio",
+      "Top Picks",
+      "Watchlist",
+      "Market News",
+      "Guide",
+      "Community",
+    ]) {
+      expect(markup).toMatch(new RegExp(`<h3[^>]*>${label}</h3>`));
+    }
+    const analyse = markup.slice(
+      markup.indexOf('<section id="analyse"'),
+      markup.indexOf('<section id="follow"'),
+    );
+    expect(analyse).toContain("<figure");
+    expect(analyse).toContain("Top Picks");
+    const follow = markup.slice(
+      markup.indexOf('<section id="follow"'),
+      markup.indexOf('<section id="experience"'),
+    );
+    expect(follow).toContain("Watchlist");
+    expect(follow).toContain("Market News");
+    expect(follow).not.toContain("<figure");
+  });
+
   it("marks gated product entries before a signed-out user clicks", () => {
     const markup = renderToStaticMarkup(
       <HomeProductSection
         authLoading={false}
-        routes={homeRouteLinks}
         signedIn={false}
         onRouteSelect={jest.fn()}
       />,
@@ -34,7 +86,6 @@ describe("HomeProductSection", () => {
     const markup = renderToStaticMarkup(
       <HomeProductSection
         authLoading
-        routes={homeRouteLinks}
         signedIn={false}
         onRouteSelect={jest.fn()}
       />,
@@ -54,7 +105,6 @@ describe("HomeProductSection", () => {
     const markup = renderToStaticMarkup(
       <HomeProductSection
         authLoading={false}
-        routes={homeRouteLinks}
         signedIn
         onRouteSelect={jest.fn()}
       />,

@@ -8,13 +8,15 @@ import {
 } from "./homeContent";
 
 describe("homeContent", () => {
-  it("keeps the front page entry points intentionally limited", () => {
+  it("makes all five gated tools discoverable from the front page", () => {
     expect(homeRouteLinks.map((route) => route.href)).toEqual([
       "/Portfolio",
+      "/TopPicks",
       "/Watchlist",
       "/MarketNews",
       "/Community",
     ]);
+    expect(homeRouteLinks.every((route) => route.gated)).toBe(true);
   });
 
   it("explains the three measures shown by the portfolio illustration", () => {
@@ -38,6 +40,7 @@ describe("homeContent", () => {
       "/MarketNews",
       "/Profile",
       "/Portfolio",
+      "/TopPicks",
       "/Watchlist",
     ]);
     const allRoutes = [

@@ -155,6 +155,7 @@ for (const width of [320, 390]) {
 
 for (const destination of [
   { label: "Portfolio", action: "Explore portfolio", href: "/Portfolio" },
+  { label: "Top Picks", action: "Explore top picks", href: "/TopPicks" },
   { label: "Watchlist", action: "Open watchlist", href: "/Watchlist" },
   { label: "Market News", action: "Read market news", href: "/MarketNews" },
   { label: "Community", action: "Explore community", href: "/Community" },
@@ -200,6 +201,7 @@ test("renders direct destinations for a restored signed-in fixture", async ({
   const product = page.locator("#product");
   for (const href of [
     "/Portfolio",
+    "/TopPicks",
     "/Watchlist",
     "/MarketNews",
     "/Community",
@@ -283,6 +285,9 @@ test("locks entry during session restoration and recovers when it finishes", asy
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Explore portfolio, sign in required" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Explore top picks, sign in required" }),
   ).toBeDisabled();
   await expect(
     page.locator("#product").getByRole("button", {
