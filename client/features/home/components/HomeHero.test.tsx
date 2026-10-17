@@ -11,11 +11,9 @@ describe("HomeHero", () => {
         onGetStarted={jest.fn()}
       />,
     );
-    expect(markup).toMatch(
-      /Your portfolio\.\s*<span[^>]*>A clearer perspective\./,
-    );
+    expect(markup).toMatch(/<h1[^>]*>Make sense of investing\.<\/h1>/);
     expect(markup).toContain(
-      "Explore returns and risk, keep an eye on companies, and put market news in context.",
+      "Compare historical return and risk, keep your notes, and explore market news—with explanations that help the numbers make sense.",
     );
     expect(markup).toContain("Get started");
     expect(markup).toContain('href="#product"');

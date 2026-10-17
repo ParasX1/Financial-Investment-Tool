@@ -24,7 +24,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing.",
       }),
     ).toBeVisible();
     const start = page
@@ -35,7 +35,7 @@ for (const viewport of [
     await expect(start).toBeInViewport({ ratio: 1 });
     const product = page.locator("#product");
     await expect(page.locator("#top")).toContainText(
-      "Explore returns and risk, keep an eye on companies, and put market news in context.",
+      "Compare historical return and risk, keep your notes, and explore market news—with explanations that help the numbers make sense.",
     );
     if (viewport.width >= 1440) {
       const content = await product.boundingBox();
@@ -58,25 +58,55 @@ for (const viewport of [
     ).toBe(0);
     await page.screenshot({ path: testInfo.outputPath("first-fold.png") });
 
+    // Wait for actual chart controls before recording the native focus sequence.
+    for (const metric of ["return", "volatility", "drawdown"]) {
+      await expect(
+        page
+          .locator(
+            `[data-research-metric="${metric}"] [data-research-chart] svg path`,
+          )
+          .first(),
+      ).toBeVisible();
+    }
     const expected = await page.evaluate(() => {
       const elements = Array.from(
         document
           .querySelector("main")!
-          .parentElement!.querySelectorAll("a[href], button:not([disabled])"),
+          .parentElement!.querySelectorAll(
+            "a[href], button, input, select, textarea, summary, [tabindex]",
+          ),
       );
       return elements
-        .filter(
-          (el) => el.getClientRects().length && !el.closest('[role="dialog"]'),
-        )
+        .filter((el) => {
+          const control = el as HTMLElement;
+          if (
+            control.tabIndex < 0 ||
+            control.matches(":disabled") ||
+            !control.getClientRects().length ||
+            control.closest('[role="dialog"]')
+          )
+            return false;
+          for (
+            let details = control.closest("details:not([open])");
+            details;
+            details =
+              details.parentElement?.closest("details:not([open])") ?? null
+          ) {
+            if (!details.querySelector(":scope > summary")?.contains(control))
+              return false;
+          }
+          return true;
+        })
         .map((el) => ({
           label: el.getAttribute("aria-label") || el.textContent?.trim(),
           inMain: Boolean(el.closest("main")),
         }));
     });
     const sequence = [];
-    let previousMainTop: number | undefined;
+    const researchOrder: string[] = [];
     for (const item of expected) {
       await page.keyboard.press("Tab");
+      await expect(page.locator(":focus")).toBeInViewport();
       const focused = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
         return {
@@ -84,23 +114,41 @@ for (const viewport of [
           top: el.getBoundingClientRect().top + scrollY,
           inMain: Boolean(el.closest("main")),
           outline: getComputedStyle(el).outlineStyle,
+          outlineWidth: parseFloat(getComputedStyle(el).outlineWidth),
+          isSvg: el instanceof SVGElement,
+          stroke: getComputedStyle(el).stroke,
+          strokeWidth: parseFloat(getComputedStyle(el).strokeWidth),
+          metric: el
+            .closest("[data-research-metric]")
+            ?.getAttribute("data-research-metric"),
         };
       });
       expect(focused.label).toBe(item.label);
-      expect(focused.outline).not.toBe("none");
-      if (focused.inMain) {
-        if (previousMainTop !== undefined)
-          expect(focused.top - previousMainTop).toBeGreaterThanOrEqual(-50);
-        previousMainTop = focused.top;
+      if (focused.isSvg) {
+        // The line inspector paints a stroke; native SVG bars use Chromium's
+        // visible outline. Both are valid focus indicators, verified in view.
+        const outlineVisible =
+          focused.outline !== "none" && focused.outlineWidth > 0;
+        const strokeVisible =
+          focused.stroke !== "none" && focused.strokeWidth > 0;
+        expect(outlineVisible || strokeVisible).toBe(true);
+      } else {
+        expect(focused.outline).not.toBe("none");
       }
+      // Moving to the next card on a row legitimately moves upward. Preserve
+      // native DOM order and complete each metric before entering the next.
+      if (focused.metric && researchOrder.at(-1) !== focused.metric)
+        researchOrder.push(focused.metric);
       sequence.push(focused);
     }
+    expect(researchOrder).toEqual(["return", "volatility", "drawdown"]);
     await testInfo.attach("native-focus-sequence", {
       body: JSON.stringify(sequence, null, 2),
       contentType: "application/json",
     });
     for (const action of [
       "Explore portfolio",
+      "Explore top picks",
       "Open watchlist",
       "Read market news",
       "Explore community",

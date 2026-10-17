@@ -139,7 +139,7 @@ async function expectKeyboardTableScroll(page: Page, name: string) {
 }
 
 const pages = [
-  { path: "/", heading: "Your portfolio. A clearer perspective." },
+  { path: "/", heading: "Make sense of investing." },
   { path: "/Profile", heading: "Profile" },
   { path: "/Portfolio", heading: "Portfolio" },
   { path: "/TopPicks", heading: "Top Picks" },

@@ -52,6 +52,11 @@ beforeAll(async () => {
       },
   );
   jest.doMock("next/router", () => ({ useRouter: () => mockRouter }));
+  jest.doMock("react-bootstrap/Modal", () => ({
+    __esModule: true,
+    default: ({ children, show, ...props }: any) =>
+      show ? <section {...props}>{children}</section> : null,
+  }));
   jest.doMock("@/features/auth", () => ({
     useAuth: () => mockAuthState,
     AuthDialog: ({ initialMode, onHide, redirectTo, show }: any) =>
@@ -197,20 +202,45 @@ describe("HomeScreenView", () => {
         <HomeScreenView controller={mockController as any} />,
       );
     });
-    const actions = [
-      "Explore portfolio",
-      "Open watchlist",
-      "Read market news",
-      "Explore community",
-    ];
-    for (const [index, route] of homeRouteLinks.entries()) {
+    const actions = {
+      "/Portfolio": "Explore portfolio",
+      "/TopPicks": "Explore top picks",
+      "/Watchlist": "Open watchlist",
+      "/MarketNews": "Read market news",
+      "/Community": "Explore community",
+    };
+    for (const route of homeRouteLinks) {
       act(() =>
         renderer.root
-          .findByProps({ "aria-label": `${actions[index]}, sign in required` })
+          .findByProps({
+            "aria-label": `${actions[route.href]}, sign in required`,
+          })
           .props.onClick(),
       );
       expect(mockController.selectRoute).toHaveBeenLastCalledWith(route);
     }
+    act(() => renderer.unmount());
+  });
+
+  it("keeps all tool families together at the hero exploration destination", () => {
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        <HomeScreenView controller={mockController as any} />,
+      );
+    });
+    const product = renderer.root.findByProps({ id: "product" });
+    expect(product.findByProps({ id: "analyse" })).toBeDefined();
+    expect(product.findByProps({ id: "follow" })).toBeDefined();
+    expect(product.findByProps({ id: "experience" })).toBeDefined();
+    expect(
+      product.findAllByType("h3").map((heading) => heading.children.join("")),
+    ).toEqual([
+      "Portfolio",
+      "Find a company to research",
+      "Follow your research",
+      "Understand what you find",
+    ]);
     act(() => renderer.unmount());
   });
 
@@ -224,7 +254,11 @@ describe("HomeScreenView", () => {
     for (const route of homeRouteLinks) {
       expect(links.some((link) => link.props.href === route.href)).toBe(true);
     }
-    expect(renderer.root.findAllByType("button")).toHaveLength(0);
+    expect(
+      renderer.root
+        .findAllByType("button")
+        .map((button) => button.children.join("")),
+    ).toEqual(["Inspect return", "Inspect volatility", "Inspect drawdown"]);
     expect(mockRouter.push).not.toHaveBeenCalled();
     act(() => renderer.unmount());
   });
@@ -245,11 +279,25 @@ describe("HomeScreenView", () => {
           button.children.includes("Sign in") ||
           button.children.includes("Get started") ||
           button.children.includes("Create an account") ||
-          typeof button.props["aria-label"] === "string",
+          button.props["aria-label"]?.endsWith(", sign in required"),
       );
 
     expect(entryButtons.length).toBeGreaterThan(0);
     expect(entryButtons.every((button) => button.props.disabled)).toBe(true);
+
+    const researchControls = renderer.root
+      .findAllByType("button")
+      .filter((button) => button.props["aria-haspopup"] === "dialog");
+    expect(researchControls).toHaveLength(3);
+    expect(researchControls.every((button) => !button.props.disabled)).toBe(
+      true,
+    );
+    act(() => researchControls[0].props.onClick());
+    expect(
+      renderer.root.findByProps({ id: "home-research-dialog-title" }).children,
+    ).toEqual(["Cumulative return"]);
+    expect(mockController.openLogin).not.toHaveBeenCalled();
+    expect(mockController.openSignUp).not.toHaveBeenCalled();
 
     act(() => renderer.unmount());
   });

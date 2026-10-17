@@ -3,29 +3,19 @@ import {
   homeCta,
   homeFooterGroups,
   homeMetadata,
-  homePreviewMetrics,
   homeRouteLinks,
 } from "./homeContent";
 
 describe("homeContent", () => {
-  it("keeps the front page entry points intentionally limited", () => {
+  it("makes all five gated tools discoverable from the front page", () => {
     expect(homeRouteLinks.map((route) => route.href)).toEqual([
       "/Portfolio",
+      "/TopPicks",
       "/Watchlist",
       "/MarketNews",
       "/Community",
     ]);
-  });
-
-  it("explains the three measures shown by the portfolio illustration", () => {
-    expect(homePreviewMetrics.map((metric) => metric.label)).toEqual([
-      "Historical return",
-      "Volatility",
-      "Drawdown",
-    ]);
-    expect(
-      homePreviewMetrics.every((metric) => metric.description.length > 30),
-    ).toBe(true);
+    expect(homeRouteLinks.every((route) => route.gated)).toBe(true);
   });
 
   it("links only to real FIT routes and sections", () => {
@@ -38,6 +28,7 @@ describe("homeContent", () => {
       "/MarketNews",
       "/Profile",
       "/Portfolio",
+      "/TopPicks",
       "/Watchlist",
     ]);
     const allRoutes = [

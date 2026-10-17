@@ -1,5 +1,4 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Link from "next/link";
 import type { HomeRouteLink } from "../types";
 
@@ -21,18 +20,15 @@ export function HomeRouteAction({
   children?: React.ReactNode;
   onRouteSelect: (route: HomeRouteLink) => void;
 }) {
-  const locked = Boolean(route.gated && !signedIn);
+  const requiresSignIn = Boolean(route.gated && !signedIn);
   const content = (
     <>
       {children ?? label}
-      {locked ? (
-        <LockOutlinedIcon sx={{ fontSize: 14 }} aria-hidden="true" />
-      ) : null}
       <KeyboardArrowRightRoundedIcon sx={{ fontSize: 18 }} aria-hidden="true" />
     </>
   );
 
-  return locked ? (
+  return requiresSignIn ? (
     <button
       type="button"
       className={className}

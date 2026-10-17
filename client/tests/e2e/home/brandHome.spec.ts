@@ -61,7 +61,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing.",
       }),
     ).toBeVisible();
     const hero = page.locator("#top");
@@ -86,14 +86,17 @@ for (const viewport of [
     }
     await assertNoOverflow(page);
     const preview = page.getByRole("figure", {
-      name: "Read the journey, as well as the result.",
+      name: "Compare companies across return and risk.",
     });
-    await expect(preview).toContainText("Illustration only.");
-    await expect(preview).toContainText(
-      "No account data or calculated results.",
-    );
-    for (const label of ["Historical return", "Volatility", "Drawdown"]) {
-      await expect(preview.getByText(label, { exact: true })).toBeVisible();
+    await expect(preview).toContainText("Historical sample");
+    for (const label of [
+      "Cumulative return",
+      "Annualised volatility",
+      "Drawdown history",
+    ]) {
+      await expect(
+        preview.getByRole("heading", { name: label, exact: true }),
+      ).toBeVisible();
     }
     await page.screenshot({
       path: testInfo.outputPath("home.png"),
@@ -155,6 +158,7 @@ for (const width of [320, 390]) {
 
 for (const destination of [
   { label: "Portfolio", action: "Explore portfolio", href: "/Portfolio" },
+  { label: "Top Picks", action: "Explore top picks", href: "/TopPicks" },
   { label: "Watchlist", action: "Open watchlist", href: "/Watchlist" },
   { label: "Market News", action: "Read market news", href: "/MarketNews" },
   { label: "Community", action: "Explore community", href: "/Community" },
@@ -200,13 +204,21 @@ test("renders direct destinations for a restored signed-in fixture", async ({
   const product = page.locator("#product");
   for (const href of [
     "/Portfolio",
+    "/TopPicks",
     "/Watchlist",
     "/MarketNews",
     "/Community",
   ]) {
     await expect(product.locator(`a[href="${href}"]`)).toBeVisible();
   }
-  await expect(product.getByRole("button")).toHaveCount(0);
+  await expect(
+    product.getByRole("button", { name: /sign in required$/ }),
+  ).toHaveCount(0);
+  await expect(
+    product.getByRole("button", {
+      name: /^Inspect (return|volatility|drawdown)$/,
+    }),
+  ).toHaveCount(3);
   await hero.getByRole("link", { name: "Open portfolio" }).click();
   await expect(page).toHaveURL(/\/Portfolio$/);
   await expect(page.getByRole("dialog")).toBeHidden();
@@ -285,6 +297,9 @@ test("locks entry during session restoration and recovers when it finishes", asy
     page.getByRole("button", { name: "Explore portfolio, sign in required" }),
   ).toBeDisabled();
   await expect(
+    page.getByRole("button", { name: "Explore top picks, sign in required" }),
+  ).toBeDisabled();
+  await expect(
     page.locator("#product").getByRole("button", {
       name: "Open watchlist, sign in required",
       exact: true,
@@ -321,7 +336,7 @@ test.describe("Home without JavaScript", () => {
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing.",
       }),
     ).toBeVisible();
     await expect(
@@ -330,7 +345,7 @@ test.describe("Home without JavaScript", () => {
     await expect(
       page.getByText(/Enable JavaScript to sign in or create an account/),
     ).toBeVisible();
-    await expect(page.getByText(/Illustration only\./)).toBeVisible();
+    await expect(page.getByText(/Historical sample/).first()).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Read the guide", exact: false }),
     ).toHaveAttribute("href", "/Guide");

@@ -15,6 +15,10 @@ describe("Home visual contract", () => {
     join(process.cwd(), "features/home/styles/home.module.css"),
     "utf8",
   );
+  const navigationSource = readFileSync(
+    join(process.cwd(), "features/home/styles/HomeNavigation.module.css"),
+    "utf8",
+  );
 
   it("uses the shared accessible action and focus roles", () => {
     expect(source).toContain("var(--fit-color-action)");
@@ -32,8 +36,8 @@ describe("Home visual contract", () => {
 
   it("does not show hover affordances on disabled entry controls", () => {
     expect(source).toContain(".footerLink:not(:disabled):hover");
-    expect(source).toContain(".navPrimary:not(:disabled):hover");
-    expect(source).toContain(".navSecondary:not(:disabled):hover");
+    expect(navigationSource).toContain(".navPrimary:not(:disabled):hover");
+    expect(navigationSource).toContain(".navSecondary:not(:disabled):hover");
     expect(source).toContain(".primaryButton:not(:disabled):hover");
     expect(source).toContain(".routeTile:not(:disabled):hover");
     expect(source).not.toMatch(/(^|\n)\.routeTile:hover \{/);
@@ -41,7 +45,13 @@ describe("Home visual contract", () => {
 
   it("keeps essential content visible without a motion or observation script", () => {
     expect(cssBlock(source, ".heroContent")).not.toMatch(/opacity:\s*0/);
-    expect(cssBlock(source, ".heroVisual")).not.toMatch(/opacity:\s*0/);
+    const researchSource = readFileSync(
+      join(process.cwd(), "features/home/styles/ResearchDesk.module.css"),
+      "utf8",
+    );
+    expect(cssBlock(researchSource, ".desk")).not.toMatch(/opacity:\s*0/);
+    expect(source).not.toContain(".heroVisual");
+    expect(source).not.toContain(".previewMetrics");
     expect(source).not.toMatch(/infinite|visibility:\s*hidden/);
     expect(source).toContain("prefers-reduced-motion: reduce");
   });
