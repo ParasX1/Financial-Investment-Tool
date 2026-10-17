@@ -24,7 +24,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Make sense of investing. One company at a time.",
+        name: "Make sense of investing.",
       }),
     ).toBeVisible();
     const start = page

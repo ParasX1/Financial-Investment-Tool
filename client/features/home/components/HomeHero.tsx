@@ -22,7 +22,7 @@ export function HomeHero({
           markClassName={styles.heroMark}
         />
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Make sense of investing. <span>One company at a time.</span>
+          Make sense of investing.
         </h1>
         <p className={styles.heroSubtitle}>
           Compare historical return and risk, keep your notes, and explore

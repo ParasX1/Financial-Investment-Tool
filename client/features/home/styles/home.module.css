@@ -146,11 +146,6 @@
   text-wrap: balance;
 }
 
-.heroTitle > span {
-  display: block;
-  color: #b3a4da;
-}
-
 .heroSubtitle {
   max-width: 35rem;
   margin: 1.75rem auto 0;

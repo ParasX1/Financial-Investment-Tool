@@ -77,3 +77,18 @@ checks and final captures.
 
 No changes to financial math, hosted Supabase, live account acceptance or cloud
 deployment are inferred from these Home checks.
+
+## Owner feedback and follow-up
+
+The owner rejected the secondary excerpts as contrived and unhelpful. Prior
+model reviews and technical passes did not establish human design acceptance.
+The excerpts are pending a different direction, rather than being treated as an
+accepted design. Separate, non-production concepts compare a text-led directory,
+one actual UI crop, and task-based navigation under the same five-tool scope.
+They remain local studies, not changes to authentication or product behavior.
+
+The owner also explicitly asked to remove “One company at a time.” The hero now
+retains only “Make sense of investing.” and its concrete supporting paragraph;
+the unused span rule is removed. The Hero SSR test, six native viewport/no-JS
+checks, scoped lint/format and diff checks pass. Independent source review found
+no actionable issue. No push or merge accompanies this follow-up.

@@ -11,9 +11,7 @@ describe("HomeHero", () => {
         onGetStarted={jest.fn()}
       />,
     );
-    expect(markup).toMatch(
-      /Make sense of investing\.\s*<span[^>]*>One company at a time\./,
-    );
+    expect(markup).toMatch(/<h1[^>]*>Make sense of investing\.<\/h1>/);
     expect(markup).toContain(
       "Compare historical return and risk, keep your notes, and explore market news—with explanations that help the numbers make sense.",
     );
