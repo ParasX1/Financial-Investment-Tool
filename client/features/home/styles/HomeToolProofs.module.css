@@ -1,0 +1,94 @@
+.proof {
+  min-width: 0;
+  width: 100%;
+  margin-block: 0.25rem 1rem;
+  padding: 0.875rem 1rem;
+  border-left: 2px solid var(--fit-color-border-panel);
+  border-radius: 0 0.25rem 0.25rem 0;
+  background: var(--fit-color-accent-soft);
+  color: var(--fit-color-text-body);
+  overflow-wrap: anywhere;
+}
+
+.label {
+  margin: 0 0 0.625rem;
+  color: var(--fit-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.context,
+.term {
+  margin: 0 0 0.375rem;
+  color: var(--fit-color-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.term {
+  color: var(--fit-color-text-strong);
+}
+
+.excerpt {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.prompt {
+  margin: 0.625rem 0 0;
+  color: var(--fit-color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style-type: decimal;
+  list-style-position: inside;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.steps li {
+  min-width: 0;
+}
+
+.steps li::marker {
+  color: var(--fit-color-accent);
+}
+
+.newsContext {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.newsContext > div {
+  display: grid;
+  grid-template-columns: minmax(0, 6rem) minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+}
+
+.newsContext dt {
+  color: var(--fit-color-text-label);
+}
+
+.newsContext dd {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .newsContext > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

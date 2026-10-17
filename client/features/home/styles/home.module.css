@@ -425,7 +425,11 @@
   font-size: clamp(1.5rem, 2vw, 2rem);
 }
 
-.discoveryStrip > .chapterDescription {
+.discoveryDetail {
+  min-width: 0;
+}
+
+.discoveryDetail > :last-child {
   margin-bottom: 0;
 }
 
@@ -436,7 +440,7 @@
 
 .toolEntry {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto auto;
   justify-items: start;
   padding-right: clamp(2rem, 6vw, 7rem);
 }

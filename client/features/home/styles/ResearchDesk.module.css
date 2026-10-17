@@ -140,6 +140,7 @@
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: clamp(1.25rem, 2.2vw, 2.5rem);
 }
 

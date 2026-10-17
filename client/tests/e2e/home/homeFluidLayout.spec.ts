@@ -24,7 +24,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing. One company at a time.",
       }),
     ).toBeVisible();
     const start = page
@@ -35,7 +35,7 @@ for (const viewport of [
     await expect(start).toBeInViewport({ ratio: 1 });
     const product = page.locator("#product");
     await expect(page.locator("#top")).toContainText(
-      "Explore returns and risk, keep an eye on companies, and put market news in context.",
+      "Compare historical return and risk, keep your notes, and explore market news—with explanations that help the numbers make sense.",
     );
     if (viewport.width >= 1440) {
       const content = await product.boundingBox();

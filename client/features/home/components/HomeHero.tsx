@@ -22,11 +22,11 @@ export function HomeHero({
           markClassName={styles.heroMark}
         />
         <h1 id="home-hero-title" className={styles.heroTitle}>
-          Your portfolio. <span>A clearer perspective.</span>
+          Make sense of investing. <span>One company at a time.</span>
         </h1>
         <p className={styles.heroSubtitle}>
-          Explore returns and risk, keep an eye on companies, and put market
-          news in context.
+          Compare historical return and risk, keep your notes, and explore
+          market news—with explanations that help the numbers make sense.
         </p>
         <div className={styles.heroActions}>
           {signedIn ? (

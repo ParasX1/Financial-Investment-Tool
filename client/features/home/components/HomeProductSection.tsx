@@ -3,6 +3,11 @@ import type { HomeEntryActions } from "../types";
 import { HomeExperienceSection } from "./HomeExperienceSection";
 import { HomePortfolioPreview } from "./HomePortfolioPreview";
 import { HomeRouteAction } from "./HomeRouteAction";
+import {
+  HomeNewsProof,
+  HomeTopPicksProof,
+  HomeWatchlistProof,
+} from "./HomeToolProofs";
 import styles from "../styles/home.module.css";
 
 export function HomeProductSection(entryActions: HomeEntryActions) {
@@ -95,7 +100,10 @@ export function HomeProductSection(entryActions: HomeEntryActions) {
             <p className={styles.eyebrow}>{topPicks.tagline}</p>
             <h3 id="home-top-picks-title">{topPicks.label}</h3>
           </div>
-          <p className={styles.chapterDescription}>{topPicks.description}</p>
+          <div className={styles.discoveryDetail}>
+            <p className={styles.chapterDescription}>{topPicks.description}</p>
+            <HomeTopPicksProof />
+          </div>
           <HomeRouteAction
             {...entryActions}
             route={topPicks}
@@ -127,6 +135,7 @@ export function HomeProductSection(entryActions: HomeEntryActions) {
             <p className={styles.toolIntent}>{watchlist.tagline}</p>
             <h3 id="home-watchlist-title">{watchlist.label}</h3>
             <p className={styles.chapterDescription}>{watchlist.description}</p>
+            <HomeWatchlistProof />
             <HomeRouteAction
               {...entryActions}
               route={watchlist}
@@ -143,6 +152,7 @@ export function HomeProductSection(entryActions: HomeEntryActions) {
             <p className={styles.chapterDescription}>
               {marketNews.description}
             </p>
+            <HomeNewsProof />
             <HomeRouteAction
               {...entryActions}
               route={marketNews}

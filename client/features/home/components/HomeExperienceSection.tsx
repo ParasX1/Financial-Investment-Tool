@@ -2,6 +2,7 @@ import Link from "next/link";
 import { homeTools } from "../data/homeContent";
 import type { HomeEntryActions } from "../types";
 import { HomeRouteAction } from "./HomeRouteAction";
+import { HomeCommunityProof, HomeGuideProof } from "./HomeToolProofs";
 import styles from "../styles/home.module.css";
 
 export function HomeExperienceSection(entryActions: HomeEntryActions) {
@@ -35,6 +36,7 @@ export function HomeExperienceSection(entryActions: HomeEntryActions) {
               Start with return and risk, learn what the measures mean, and
               return to an explanation when you need it. No account needed.
             </p>
+            <HomeGuideProof />
             <Link href="/Guide" className={styles.routeTile}>
               Read the guide <span aria-hidden="true">↗</span>
             </Link>
@@ -46,6 +48,7 @@ export function HomeExperienceSection(entryActions: HomeEntryActions) {
             <p className={styles.toolIntent}>{community.tagline}</p>
             <h3 id="home-community-title">{community.label}</h3>
             <p className={styles.chapterDescription}>{community.description}</p>
+            <HomeCommunityProof />
             <HomeRouteAction
               {...entryActions}
               route={community}

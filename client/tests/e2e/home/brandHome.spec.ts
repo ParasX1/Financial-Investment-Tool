@@ -61,7 +61,7 @@ for (const viewport of [
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing. One company at a time.",
       }),
     ).toBeVisible();
     const hero = page.locator("#top");
@@ -336,7 +336,7 @@ test.describe("Home without JavaScript", () => {
     await page.goto("/");
     await expect(
       page.getByRole("heading", {
-        name: "Your portfolio. A clearer perspective.",
+        name: "Make sense of investing. One company at a time.",
       }),
     ).toBeVisible();
     await expect(

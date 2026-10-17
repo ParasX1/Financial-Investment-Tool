@@ -12,10 +12,10 @@ describe("HomeHero", () => {
       />,
     );
     expect(markup).toMatch(
-      /Your portfolio\.\s*<span[^>]*>A clearer perspective\./,
+      /Make sense of investing\.\s*<span[^>]*>One company at a time\./,
     );
     expect(markup).toContain(
-      "Explore returns and risk, keep an eye on companies, and put market news in context.",
+      "Compare historical return and risk, keep your notes, and explore market news—with explanations that help the numbers make sense.",
     );
     expect(markup).toContain("Get started");
     expect(markup).toContain('href="#product"');
