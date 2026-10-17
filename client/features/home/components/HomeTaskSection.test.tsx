@@ -15,12 +15,10 @@ const taskRoutes = [
 beforeAll(async () => {
   // The task tests use both SSR and a callback renderer. Keep decorative icons
   // independent of Emotion's renderer-specific context in this unit boundary.
-  for (const icon of ["KeyboardArrowRightRounded", "LockOutlined"]) {
-    jest.doMock(`@mui/icons-material/${icon}`, () => ({
-      __esModule: true,
-      default: () => <svg aria-hidden="true" />,
-    }));
-  }
+  jest.doMock("@mui/icons-material/KeyboardArrowRightRounded", () => ({
+    __esModule: true,
+    default: () => <svg aria-hidden="true" />,
+  }));
   jest.doMock(
     "next/link",
     () =>

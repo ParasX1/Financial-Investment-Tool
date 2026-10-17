@@ -106,3 +106,50 @@ changes to financial calculations, hosted Supabase, provider configuration,
 dependencies or authentication contracts are included. Mock sign-in checks are
 not live Auth/SMTP acceptance. Real-human preference, other browser engines and
 screen-reader/device acceptance have not been measured in this iteration.
+
+## Navbar and action refinement
+
+The owner requested removal of the padlock glyph and a clearer top navigation.
+The glyph is removed from shared homepage tool actions; sign-in requirements,
+loading states, accessible labels and destination intent are preserved.
+
+Current first-party [Linear](https://linear.app/) and [Framer](https://www.framer.com/)
+navigation informed the separation of public exploration and account entry.
+Their page content was inspected; this is not a claim of rendered visual testing
+of those sites. Two local desktop variants used the same labels, sizing and routes:
+a subtle framed group and an unframed group. Parent inspection selected the framed
+desktop version for clearer grouping, with an unframed compact mobile version.
+This is a controlled visual comparison and model judgement, not a human A/B test.
+
+The Signature logo and navigation text are larger, desktop links are centered,
+and Tools links directly to the task section. All four public destinations remain
+available on mobile. The narrowest layout was refined to keep Help on the same
+row at normal text size. Enlarged text can reflow into additional rows. Navigation
+styles now live beside the component in their own CSS module; no menu state,
+dependencies, sticky behavior or artificial active indicator was added.
+
+Evidence for this follow-up is under ignored `client/test-results/home-nav/`.
+The first browser run caught an invalid no-JavaScript geometry assertion in the
+development fixture. Installed Next 15's Pages CSS loader injects development CSS
+through JavaScript and extracts production CSS. The default no-JavaScript test
+therefore checks native destinations, disabled auth entry and Tools navigation;
+all 14 hydrated layout cases retain 44px target checks. Production no-JavaScript
+geometry is checked separately using actual extracted CSS and a root-text-only
+size override. The initial failure is retained. A local evidence-config working
+directory error and its TypeScript configuration were also corrected and retained;
+they changed no application code.
+
+Final follow-up verification passed: **258 suites / 1,677 unit and contract tests**;
+the existing **358-test research** and **169-test Watchlist** coverage gates;
+typecheck, ESLint, changed-file formatting, production build and diff checks.
+The inherited Market News image warning remains. Browser results were **16/16**
+new cases against the default development fixture and **75/75** optimized Home
+and brand cases, plus **2/2** Home theme cases. All **6/6** production no-JavaScript
+probes passed at 320/390/1440px and normal/200% text. No skips or retries were used.
+Source hashes and original failures are retained with those artifacts. Independent
+source review found no actionable implementation issues; the development versus
+production test-boundary finding was corrected before acceptance. These remain
+local Chromium and mocked-provider checks, not remote CI or live Auth acceptance.
+The normal-configuration preview was restored at port 3117 and smoke-tested at
+320/390/1440px, including absence of the removed padlock glyph. Unrelated archive
+and primary-checkout lockfile changes remain excluded.

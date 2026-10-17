@@ -20,80 +20,6 @@
   box-sizing: border-box;
 }
 
-.navShell {
-  border-bottom: 1px solid var(--home-border);
-}
-
-.nav {
-  display: flex;
-  min-height: 6rem;
-  width: 100%;
-  align-items: center;
-  gap: 2rem;
-  padding: 1rem var(--home-gutter);
-}
-
-.brandButton {
-  display: inline-flex;
-  min-height: 2.75rem;
-  flex-shrink: 0;
-  align-items: center;
-  border-radius: 0.25rem;
-  text-decoration: none;
-}
-
-.brandWordmark {
-  --fit-logo-wordmark-size: 1.25rem;
-}
-
-.navLinks,
-.navActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.5rem;
-  min-width: 0;
-}
-
-.navLinks {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.navActions {
-  margin-left: auto;
-  gap: 0.75rem;
-}
-
-.navExplore,
-.navSecondary,
-.navPrimary {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border: 1px solid transparent;
-  border-radius: 0.35rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.4;
-  text-decoration: none;
-}
-
-.navExplore,
-.navSecondary {
-  padding: 0.5rem;
-  color: var(--home-body);
-  background: transparent;
-}
-
-.navPrimary {
-  padding: 0.7rem 1.125rem;
-  color: var(--fit-color-on-action);
-  background: var(--fit-color-action);
-}
-
 .page {
   width: 100%;
 }
@@ -444,23 +370,6 @@
   line-height: 1.5;
 }
 
-.skipLink {
-  position: absolute;
-  z-index: 100;
-  top: 0.75rem;
-  left: var(--home-gutter);
-  padding: 0.75rem 1rem;
-  border-radius: 0.25rem;
-  color: var(--fit-color-action-ink);
-  background: var(--fit-color-focus-ring);
-  font-size: 0.875rem;
-  transform: translateY(-200%);
-}
-
-.skipLink:focus {
-  transform: translateY(0);
-}
-
 .shell a,
 .shell button {
   -webkit-tap-highlight-color: transparent;
@@ -485,15 +394,12 @@
   outline-offset: 5px;
 }
 
-.navPrimary:not(:disabled):hover,
 .primaryButton:not(:disabled):hover {
   background: var(--fit-color-action-hover);
   color: var(--fit-color-on-action);
   transform: translateY(-2px);
 }
 
-.navExplore:hover,
-.navSecondary:not(:disabled):hover,
 .heroExplore:hover,
 .routeTile:not(:disabled):hover,
 .helpLink:hover,
@@ -533,15 +439,6 @@
 }
 
 @media (max-width: 1000px) {
-  .nav {
-    gap: 1rem;
-  }
-  .navLinks {
-    gap: 0.75rem;
-  }
-  .navActions {
-    gap: 0.5rem;
-  }
   .chapterLabel {
     gap: 0.75rem;
   }
@@ -554,12 +451,6 @@
 }
 
 @media (max-width: 760px) {
-  .nav {
-    min-height: 5.25rem;
-  }
-  .navLinks {
-    display: none;
-  }
   .heroTitle {
     font-size: clamp(2.75rem, 8vw, 4rem);
   }
@@ -598,14 +489,6 @@
 }
 
 @media (max-width: 500px) {
-  .nav {
-    min-height: 4.75rem;
-    padding-block: 0.75rem;
-    flex-wrap: wrap;
-  }
-  .navSecondary + .navPrimary {
-    display: none;
-  }
   .hero {
     padding-top: 2.25rem;
   }
@@ -705,10 +588,6 @@
   .heroActions .primaryButton {
     width: 100%;
   }
-  .navPrimary {
-    padding-inline: 0.75rem;
-    font-size: 0.8125rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -724,7 +603,6 @@
   .signatureField {
     display: none;
   }
-  .navPrimary,
   .primaryButton {
     border-color: ButtonText;
   }

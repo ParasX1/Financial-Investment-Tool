@@ -1,7 +1,7 @@
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import { FitLogo } from "@/components/shared/FitLogo";
 import Link from "next/link";
-import styles from "../styles/home.module.css";
+import styles from "../styles/HomeNavigation.module.css";
 
 export function HomeNavigation({
   loading,
@@ -30,6 +30,7 @@ export function HomeNavigation({
             showWordmark
             size="medium"
             wordmark="FIT"
+            markClassName={styles.brandMark}
             wordmarkClassName={styles.brandWordmark}
           />
         </a>
@@ -37,6 +38,9 @@ export function HomeNavigation({
         <div className={styles.navLinks}>
           <a href="#product" className={styles.navExplore}>
             Product
+          </a>
+          <a href="#research-tasks" className={styles.navExplore}>
+            Tools
           </a>
           <Link href="/Guide" className={styles.navExplore}>
             Guide
@@ -48,7 +52,7 @@ export function HomeNavigation({
         <div className={styles.navActions}>
           {signedIn ? (
             <Link href="/Portfolio" className={styles.navPrimary}>
-              Open portfolio
+              <span>Open portfolio</span>
               <KeyboardArrowRightRoundedIcon
                 sx={{ fontSize: 17 }}
                 aria-hidden="true"
