@@ -2,6 +2,7 @@
 
 import json
 from datetime import date
+from hashlib import sha256
 from pathlib import Path
 import sqlite3
 from unittest.mock import Mock
@@ -20,6 +21,51 @@ from tests.top_picks.test_snapshot_context import DeferredThread, RecordingServi
 
 
 SEED = Path(__file__).resolve().parents[3] / "data" / "top-picks-seed.zip"
+
+
+@pytest.fixture
+def version_one_seed(tmp_path):
+    """Build legacy data independently of the current bundled calculation policy."""
+    generated_at = "2026-10-07T00:00:00+00:00"
+    assumptions = {"benchmark": "^AXJO", "riskFreeRate": 0.0435, "universeLimit": 1000}
+    starts = {
+        "1D": "2026-10-06", "1W": "2026-09-30",
+        "1M": "2026-09-07", "1Y": "2025-10-07",
+    }
+    entries = {}
+    for window, start in starts.items():
+        key = json.dumps(["top-picks-snapshot", window, "^AXJO", 0.0435, 1000,
+                          start, "2026-10-07"], separators=(",", ":"))
+        entries[key] = {"value": {
+            "rows": [{"symbol": "AAA", "volatility": 123.0}],
+            "metadata": {**assumptions, "windowCode": window, "universeCount": 1,
+                         "requestedStart": start, "requestedEnd": "2026-10-07",
+                         "generatedAt": generated_at},
+            "warnings": [],
+        }}
+    dates = pd.date_range("2025-10-07", "2026-10-07", freq="B")
+    frame = pd.DataFrame({("AAA", "Adj Close"): range(100, 100 + len(dates))}, index=dates)
+    history_path = tmp_path / "source-history.sqlite3"
+    history = TopPicksHistoryProvider(lambda *args: frame.copy(), str(history_path), clock=lambda: 100)
+    history(["AAA"], "2025-10-07", "2026-10-07")
+    files = {
+        "snapshot.json": json.dumps({"latest_key": key, "entries": entries}).encode(),
+        "history.sqlite3": history_path.read_bytes(),
+    }
+    manifest = {
+        "format_version": 1, "calculation_version": 1, "createdAt": generated_at,
+        "assumptions": assumptions,
+        "windows": {window: {"rows": 1, "generatedAt": generated_at} for window in starts},
+        "history": {"symbols": 1, "start": "2025-10-07", "end": "2026-10-07"},
+        "files": {name: {"bytes": len(data), "sha256": sha256(data).hexdigest()}
+                  for name, data in files.items()},
+    }
+    seed = tmp_path / "version-one-seed.zip"
+    with ZipFile(seed, "w") as archive:
+        for name, data in files.items():
+            archive.writestr(name, data)
+        archive.writestr("manifest.json", json.dumps(manifest))
+    return seed
 
 
 def test_old_persisted_snapshot_does_not_load_under_new_calculation_policy(tmp_path):
@@ -44,23 +90,45 @@ def test_new_snapshot_key_and_metadata_identify_calculation_policy():
     assert metadata["calculationVersion"] == 2
 
 
-def test_shipped_version_one_seed_installs_history_without_obsolete_snapshots(tmp_path):
-    with ZipFile(SEED) as archive:
+def test_version_one_seed_installs_history_without_obsolete_snapshots(tmp_path, version_one_seed):
+    with ZipFile(version_one_seed) as archive:
         assert json.loads(archive.read("manifest.json"))["calculation_version"] == 1
         expected_history = archive.read("history.sqlite3")
     snapshot = tmp_path / "snapshots.json"
     history = tmp_path / "history.sqlite3"
-    result = bootstrap_top_picks_cache(str(SEED), str(snapshot), str(history))
+    result = bootstrap_top_picks_cache(str(version_one_seed), str(snapshot), str(history))
     assert result == {"snapshot": False, "history": True}
     assert not snapshot.exists()
     assert history.read_bytes() == expected_history
 
 
-def test_export_rejects_old_results_instead_of_relabeling_as_version_two():
-    with ZipFile(SEED) as archive:
+def test_export_rejects_old_results_instead_of_relabeling_as_version_two(version_one_seed):
+    with ZipFile(version_one_seed) as archive:
         old_snapshots = json.loads(archive.read("snapshot.json"))
+    # The fixture is complete and valid for its original policy.
+    _prepare_snapshots(old_snapshots, calculation_version=1)
     with pytest.raises(ValueError):
         _prepare_snapshots(old_snapshots)
+
+
+def test_shipped_version_two_seed_installs_current_snapshots_and_history(tmp_path):
+    with ZipFile(SEED) as archive:
+        assert json.loads(archive.read("manifest.json"))["calculation_version"] == 2
+        snapshots = json.loads(archive.read("snapshot.json"))
+        expected_history = archive.read("history.sqlite3")
+    snapshot_path = tmp_path / "snapshots.json"
+    history_path = tmp_path / "history.sqlite3"
+    assert bootstrap_top_picks_cache(str(SEED), str(snapshot_path), str(history_path)) == {
+        "snapshot": True, "history": True,
+    }
+    assert history_path.read_bytes() == expected_history
+    assert {json.loads(key)[1] for key in snapshots["entries"]} == {"1D", "1W", "1M", "1Y"}
+    cache = TopPicksSnapshotCache(persistence_path=str(snapshot_path))
+    for raw_key, entry in snapshots["entries"].items():
+        key = tuple(json.loads(raw_key))
+        assert len(key) == 8 and key[5] == 2
+        assert entry["value"]["metadata"]["calculationVersion"] == 2
+        assert cache.get(key) == (entry["value"], "stale")
 
 
 def test_history_round_trip_preserves_missing_endpoints_and_cleans_old_prices(tmp_path):
