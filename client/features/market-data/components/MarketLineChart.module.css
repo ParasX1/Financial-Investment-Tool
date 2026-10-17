@@ -1,0 +1,67 @@
+.chart {
+  display: block;
+  width: 100%;
+  height: clamp(14rem, 30vw, 18rem);
+  min-height: 0;
+  overflow: visible;
+}
+
+.gridLine {
+  stroke: rgba(143, 152, 170, 0.13);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.previousClose {
+  stroke: rgba(185, 193, 208, 0.54);
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.marketLine {
+  fill: none;
+  stroke: var(--fit-color-accent-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.latestPoint {
+  fill: var(--fit-color-accent-strong);
+  stroke: #08090c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.axisLabel,
+.baselineLabel {
+  fill: var(--fit-color-text-muted);
+  font-family: var(--fit-font-family);
+  font-size: 11px;
+}
+
+.baselineLabel {
+  fill: var(--fit-color-text-label);
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.empty {
+  display: grid;
+  min-height: 14rem;
+  place-items: center;
+  color: var(--fit-color-text-muted);
+  font-size: var(--fit-type-size-body-sm);
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .chart {
+    height: 8rem;
+  }
+
+  .axisLabel,
+  .baselineLabel {
+    font-size: 28px;
+  }
+}

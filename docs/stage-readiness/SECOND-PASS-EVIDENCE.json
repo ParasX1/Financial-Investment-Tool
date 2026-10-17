@@ -1,0 +1,551 @@
+{
+  "audit_date_utc": "2026-10-10",
+  "scope": "fresh second development readiness",
+  "baseline_dev": "d108295d2048e79cb67865755d1073561bd4640c",
+  "integrated_dev": "6985151fc93d51a0b685380da385fdb4f013064c",
+  "main": "c04875ef5d18d4134554fe36320bb05679125be4",
+  "repairs": [
+    {
+      "issue": 324,
+      "pr": 331,
+      "reviewed_head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+      "tree": "84a88e499df13491496b37938492b410a44d38ad",
+      "merge": "1c30448ea1e0ba0d6b2688d7416b46d0cf23dfac",
+      "required_checks": [
+        {
+          "name": "Development launcher safety",
+          "id": 114215410404,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215410174,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215410026,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215409922,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215409876,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114215409791,
+          "head": "f26068301a1db82d4dc38e6e7ffd1dcfc1667c9d",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 325,
+      "pr": 332,
+      "reviewed_head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+      "tree": "372cd79a32e863f9110826cb649c1081aef48e0d",
+      "merge": "fe9202f90d66fe446559bebb78b2eb171ce8525a",
+      "required_checks": [
+        {
+          "name": "Development launcher safety",
+          "id": 114215451964,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215451778,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215451759,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215451721,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114215451643,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215451519,
+          "head": "f1678214e230f522db70a2ef5499dfe7422f6d29",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 326,
+      "pr": 335,
+      "reviewed_head": "2f68312737757414f9eb223a5b629456e979952e",
+      "tree": "ff8ab285ffde8aa5eaad7d6eba49c216e58d0d34",
+      "merge": "36869cb4a9ff686057e47de088895085ae66bf0a",
+      "required_checks": [
+        {
+          "name": "Development launcher safety",
+          "id": 114215579889,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215579859,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215579708,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215579506,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215579449,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114215579411,
+          "head": "2f68312737757414f9eb223a5b629456e979952e",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 327,
+      "pr": 333,
+      "reviewed_head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+      "tree": "41365f79897f3c56621cbbbb86ec319224edfed6",
+      "merge": "00e74ebcb808116891fcabc89ab73ee06614a71c",
+      "required_checks": [
+        {
+          "name": "Development launcher safety",
+          "id": 114215492042,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114215491754,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215491659,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215491657,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215491609,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215491550,
+          "head": "61ad36ede59537f7220c0117f553d449b48c8aae",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 328,
+      "pr": 334,
+      "reviewed_head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+      "tree": "bd758247f3bc2f2c118849a4d1295c1e9f5da648",
+      "merge": "b23d90415113f7d49e9bddfe94b18577ad1781ec",
+      "required_checks": [
+        {
+          "name": "Frontend quality",
+          "id": 114215533288,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215533108,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215533082,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215533070,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215532989,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        },
+        {
+          "name": "Development launcher safety",
+          "id": 114215532968,
+          "head": "54e4f29a3b826d55973ca0a0b22109a4b112186d",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 329,
+      "pr": 336,
+      "reviewed_head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+      "tree": "19c26e7fe3531c8803a6d03b2175fb0fdfd03e43",
+      "merge": "cb5c39e76d99db6bfdd60e88e13ad43f8c9752a2",
+      "required_checks": [
+        {
+          "name": "Development launcher safety",
+          "id": 114215641821,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114215641711,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114215641651,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114215641534,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Database replay and authorization",
+          "id": 114215641527,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114215641505,
+          "head": "6c0b615e546c17a1342a936633b8132443b24e1e",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "issue": 330,
+      "pr": 337,
+      "reviewed_head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+      "tree": "eb036356fea955aee7b0c7fb7c32a08c7a5b47e6",
+      "merge": "6985151fc93d51a0b685380da385fdb4f013064c",
+      "required_checks": [
+        {
+          "name": "Database replay and authorization",
+          "id": 114222720436,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        },
+        {
+          "name": "Development launcher safety",
+          "id": 114222718879,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        },
+        {
+          "name": "Backend quality",
+          "id": 114222718631,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend quality",
+          "id": 114222718608,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        },
+        {
+          "name": "Issue and branch policy",
+          "id": 114222718590,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        },
+        {
+          "name": "Mocked browser journeys",
+          "id": 114222718519,
+          "head": "0149e66583df51a920fb1326e3c5b37fbd17b689",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "hosted": {
+    "project": "egjnhetinyoyrhbetbxi",
+    "acceptance": {
+      "auth": true,
+      "issue": null,
+      "checks": 370,
+      "status": "PASS",
+      "storage": true,
+      "error_code": null,
+      "cleanup_retry": true,
+      "compatibility": true,
+      "watchlist_intent": true,
+      "teardown_failures": 0,
+      "teardown_verified": true,
+      "watchlist_cascade": true,
+      "sdk_deferred_token": true,
+      "sdk_missing_contract": true,
+      "watchlist_compatibility": true
+    },
+    "guard_migration": {
+      "source": "20261010111650_watchlist_expected_account_intent",
+      "host": "20261010124654_watchlist_expected_account_intent"
+    },
+    "temporary_gate": "20261010130447_second_pass_temporary_acceptance_gate",
+    "temporary_gate_removed_via": "Reviewed authorized Dashboard SQL after repeated connector requestState expiry; MCP independently confirmed gate null/functions0",
+    "ledger_entries": 19,
+    "edge_version": 6,
+    "edge_bundle_sha256": "c4d85371d94cade6a3fd5bbc27302b8e8cc23e0cccd881942889c63bfd8a0e69",
+    "original_relations": [
+      {
+        "name": "Users",
+        "rows": 10,
+        "fingerprint": "3ef5a367f9318ea205bd123e7b199555"
+      },
+      {
+        "name": "comments",
+        "rows": 14,
+        "fingerprint": "c26834cd5b968753edf0eee50285edf2"
+      },
+      {
+        "name": "portfolio_prefs",
+        "rows": 3,
+        "fingerprint": "39d4932db3722313aff89ef16e9234ec"
+      },
+      {
+        "name": "post_likes",
+        "rows": 6,
+        "fingerprint": "c985987edf5c26b0f5ca45238331423f"
+      },
+      {
+        "name": "post_reports",
+        "rows": 1,
+        "fingerprint": "371351b03e52dee73907d475fbd665c7"
+      },
+      {
+        "name": "post_saves",
+        "rows": 2,
+        "fingerprint": "8ca8451bfb6e1e59e859f6846bf0c34e"
+      },
+      {
+        "name": "post_tickers",
+        "rows": 4,
+        "fingerprint": "7b967dddeffb8f69cc9dbe0a2c18dcce"
+      },
+      {
+        "name": "posts",
+        "rows": 24,
+        "fingerprint": "ad24949b8e544fd0d7b9694e1fb6f08e"
+      },
+      {
+        "name": "profiles",
+        "rows": 3,
+        "fingerprint": "2169295b7abc3921726adced48d81121"
+      },
+      {
+        "name": "tickers",
+        "rows": 22,
+        "fingerprint": "af691fd4a23f0381e861e5bcb198885e"
+      },
+      {
+        "name": "top_picks_prefs",
+        "rows": 2,
+        "fingerprint": "33e778dccf655628a9e865726a202ea9"
+      },
+      {
+        "name": "top_picks_universe",
+        "rows": 708,
+        "fingerprint": "758f00cb6847cd4dd7f50da8a79a3373"
+      },
+      {
+        "name": "user_watchlist",
+        "rows": 8,
+        "fingerprint": "b0c1124888f79a6ea6799968a80e0677"
+      },
+      {
+        "name": "storage_objects",
+        "rows": 8,
+        "fingerprint": "b2d9e86a9c3c46dba3b5105d4a1b1bdf"
+      },
+      {
+        "name": "auth_users_count",
+        "rows": 10,
+        "fingerprint": null
+      },
+      {
+        "name": "cleanup_tickets",
+        "rows": 0,
+        "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    ],
+    "after_relations": [
+      {
+        "name": "Users",
+        "rows": 10,
+        "fingerprint": "3ef5a367f9318ea205bd123e7b199555"
+      },
+      {
+        "name": "comments",
+        "rows": 14,
+        "fingerprint": "c26834cd5b968753edf0eee50285edf2"
+      },
+      {
+        "name": "portfolio_prefs",
+        "rows": 3,
+        "fingerprint": "39d4932db3722313aff89ef16e9234ec"
+      },
+      {
+        "name": "post_likes",
+        "rows": 6,
+        "fingerprint": "c985987edf5c26b0f5ca45238331423f"
+      },
+      {
+        "name": "post_reports",
+        "rows": 1,
+        "fingerprint": "371351b03e52dee73907d475fbd665c7"
+      },
+      {
+        "name": "post_saves",
+        "rows": 2,
+        "fingerprint": "8ca8451bfb6e1e59e859f6846bf0c34e"
+      },
+      {
+        "name": "post_tickers",
+        "rows": 4,
+        "fingerprint": "7b967dddeffb8f69cc9dbe0a2c18dcce"
+      },
+      {
+        "name": "posts",
+        "rows": 24,
+        "fingerprint": "ad24949b8e544fd0d7b9694e1fb6f08e"
+      },
+      {
+        "name": "profiles",
+        "rows": 3,
+        "fingerprint": "2169295b7abc3921726adced48d81121"
+      },
+      {
+        "name": "tickers",
+        "rows": 22,
+        "fingerprint": "af691fd4a23f0381e861e5bcb198885e"
+      },
+      {
+        "name": "top_picks_prefs",
+        "rows": 2,
+        "fingerprint": "33e778dccf655628a9e865726a202ea9"
+      },
+      {
+        "name": "top_picks_universe",
+        "rows": 708,
+        "fingerprint": "758f00cb6847cd4dd7f50da8a79a3373"
+      },
+      {
+        "name": "user_watchlist",
+        "rows": 8,
+        "fingerprint": "b0c1124888f79a6ea6799968a80e0677"
+      },
+      {
+        "name": "storage_objects",
+        "rows": 8,
+        "fingerprint": "b2d9e86a9c3c46dba3b5105d4a1b1bdf"
+      },
+      {
+        "name": "auth_users_count",
+        "rows": 10,
+        "fingerprint": null
+      },
+      {
+        "name": "cleanup_tickets",
+        "rows": 0,
+        "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    ],
+    "relation_preservation_equal": true,
+    "cron": "fit-community-image-cleanup active */5 * * * *; automatic success2026-10-10T13:20:00.111154Z–13:20:03.471996Z; manualHTTP200; pending0"
+  },
+  "boundaries": [
+    "Mocked/synthetic browser and provider fixtures are not live market accuracy or human acceptance.",
+    "SMTP, full backup/restore, PGengine upgrade, deployment/current client cutover and admin branch enforcement remain #268.",
+    "Process-local capacity, cross-tab/device preference conflicts, liveETF and productgrowth remain #257."
+  ],
+  "final_verification": {
+    "frontend": {
+      "tests": 1491,
+      "suites": 246,
+      "exit_code": 0,
+      "runtime": "locked Node24 native Windows",
+      "first_attempt": {
+        "passed": 1489,
+        "failed": 2,
+        "cause": "CRLF source assertions"
+      }
+    },
+    "backend": {
+      "passed": 590,
+      "exit_code": 0,
+      "runtime": "pinned Python3.12.14 native with owned TEMP"
+    },
+    "browser": {
+      "passed": 47,
+      "retries": 0,
+      "exit_code": 0,
+      "runtime": "native Chromium1228",
+      "providers": "mocked"
+    },
+    "test_portability": "Normalize source-input CRLF only; fresh reviewer LF/CRLF and mutated-security controls passed",
+    "final_source_review": "6985151fc plus newline normalization; no actionable finding"
+  }
+}

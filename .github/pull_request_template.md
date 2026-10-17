@@ -1,59 +1,45 @@
-# Pull Request Details
+## Related issue
 
-## Summary
+<!-- Link related local issues when available, for example: Closes #123. References can appear anywhere in the description; this heading is optional. -->
+<!-- Descriptive branch names are welcome. Including an issue number is optional; missing issue linkage produces guidance, not a failing policy check. -->
+<!-- For a PR into DevBranch, closing keywords do not close the issue on merge. See CONTRIBUTING.md. -->
 
-A concise description of what this PR does and why.
-e.g. “Add ‘Community & Top Picks’ page prototype and integrate Supabase backend.”
+## Why
 
+Explain the user or maintainer problem and why this change is the right scope.
 
-## Related Issue
+## What changed
 
-Link any issue(s) this PR closes or addresses.
-e.g. “Closes #84”
+- Summarize behavior and architectural boundaries, not every edited file.
+- Call out financial metric/ranking semantics and assumptions when applicable.
+- Name any Supabase migration and its intended target environment.
 
+## How it was verified
 
-## Implementation Changes
-- **What**:  
-  - List high-level changes, e.g.  
-    - `feat`: New “Community & Top Picks” Figma draft under `/src/pages/community`  
-    - `fix`: Backend query bug in Supabase client  
-    - `refactor`: Extract common `<NewsCard />` styles
-   ---
-    -  **feat:** a new feature
-    -  **fix:** a bug fix
-    -  **docs:** documentation only changes
-    -  **style:** formatting, missing semi-colons, etc
-    -  **refactor:** code change that neither fixes a bug nor adds a feature
-    -  **test:** adding missing tests or correcting existing tests
-    -  **chore:** updating build tasks, package manager configs, etc
-  ---
-- **Why**:  
-  - Brief rationale for each change  
+List the exact commands and manual user journeys that passed.
 
-## UI / UX
-- **Figma Prototype**: screenshots
-  
-  (if applicable):
-  | Before | After |
-  | ------ | ----- |
-  | ![before]() | ![after]() |
-  
-## How Has This Been Tested?
+## UI evidence
 
-Please describe the tests that you ran to verify your changes.
+For UI changes, add before/after screenshots or a short recording.
+
+| Before | After |
+| ------ | ----- |
+|        |       |
+
+## Deployment notes
+
+State whether this PR needs environment variables, a database migration, provider configuration or no deployment action.
 
 ## Checklist
 
-* [ ] Code builds and runs locally without errors
-* [ ] New and existing tests pass (`npm test`)
-* [ ] Updated relevant documentation (README, API docs)
-* [ ] CI/CD checks are green
-* [ ] Figma prototype link is up to date
-* [ ] No sensitive data or secrets committed
-
-## Other Notes 
-* What will be improve in next steps?
-* Any changes will be discussed?
-* Error or data leakage considerations?
-
-
+- [ ] I read [CONTRIBUTING.md](https://github.com/ParasX1/Financial-Investment-Tool/blob/main/CONTRIBUTING.md) or the [中文贡献指南](https://github.com/ParasX1/Financial-Investment-Tool/blob/main/CONTRIBUTING.zh-CN.md).
+- [ ] The change lives in the correct feature, shared layer or backend domain.
+- [ ] New behavior or a bug fix has a regression test.
+- [ ] Financial units, direction and assumptions are explicit and tested.
+- [ ] Loading, empty, error and stale states remain usable.
+- [ ] Relevant unit, typecheck, lint, build and E2E checks pass.
+- [ ] Changed files pass Prettier without unrelated repository-wide formatting.
+- [ ] Database changes include reviewed SQL, minimum grants, RLS and contract tests.
+- [ ] No secret, service-role key, production data or generated artifact is committed.
+- [ ] Documentation changed when paths, behavior or contributor workflow changed.
+- [ ] The PR targets `DevBranch`, or this is a separately approved development-to-main release/emergency exception. A main hotfix uses `hotfix/<description>` and explains `## Emergency exception`.

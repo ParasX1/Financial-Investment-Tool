@@ -1,0 +1,315 @@
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import { fitButton } from "@/components/shared/fitStyles";
+import {
+  FIT_FOCUS_VISIBLE,
+  cn,
+  fitText,
+  fitType,
+} from "@/components/shared/uiPrimitives";
+import type { MarketNewsTicker } from "../types";
+import type { MarketNewsRailSummary } from "../lib/marketNewsRailSummary";
+import styles from "../styles/marketNews.module.css";
+
+const toneClass = {
+  negative: "text-[var(--market-news-negative)]",
+  neutral: "text-[var(--fit-color-text-muted)]",
+  positive: "text-[var(--market-news-positive)]",
+} as const;
+
+const railSectionClass = styles.rightRailSection;
+
+export function MarketNewsRightRail({
+  authenticated,
+  lookupDraft,
+  quoteLoading = false,
+  railSummary,
+  selectedTicker,
+  watchlistError,
+  watchlistLoading,
+  watchlistSymbols,
+  onLookupDraftChange,
+  onQuoteReferenceChange,
+  onTickerNewsRequest,
+}: {
+  authenticated: boolean;
+  lookupDraft: string;
+  quoteLoading?: boolean;
+  railSummary: MarketNewsRailSummary;
+  selectedTicker: MarketNewsTicker | null;
+  watchlistError: string | null;
+  watchlistLoading: boolean;
+  watchlistSymbols: readonly string[];
+  onLookupDraftChange: (value: string) => void;
+  onQuoteReferenceChange: (symbol: string) => void;
+  onTickerNewsRequest: (symbol: string) => void;
+}) {
+  return (
+    <aside
+      className={styles.rightRailPanel}
+      aria-label="Market news side panel"
+    >
+      <section className={railSectionClass}>
+        <form
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onQuoteReferenceChange(lookupDraft);
+          }}
+        >
+          <label htmlFor="market-news-quote" className="sr-only">
+            Quote lookup
+          </label>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <div className="relative min-w-0">
+              <SearchRoundedIcon
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fit-color-text-muted)]"
+                sx={{ fontSize: 20 }}
+                aria-hidden="true"
+              />
+              <input
+                id="market-news-quote"
+                type="search"
+                value={lookupDraft}
+                onChange={(event) => onLookupDraftChange(event.target.value)}
+                placeholder="Quote lookup"
+                className={cn(
+                  "fit-search-field h-11 w-full rounded-lg pl-10 pr-4",
+                  fitType.field,
+                )}
+              />
+            </div>
+            <button
+              type="submit"
+              aria-label="Look up quote"
+              className={cn(
+                "grid h-11 w-11 place-items-center rounded-lg",
+                fitButton.primary,
+                FIT_FOCUS_VISIBLE,
+              )}
+            >
+              <SearchRoundedIcon sx={{ fontSize: 20 }} aria-hidden="true" />
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className={railSectionClass}>
+        <div className="flex items-center justify-between gap-3">
+          <h2
+            className={cn(
+              "text-[var(--fit-color-text-strong)]",
+              fitType.panelTitle,
+            )}
+          >
+            Watchlist impact
+          </h2>
+          <span className={cn(fitType.caption, fitText.subtle)}>
+            {watchlistSymbols.length} saved
+          </span>
+        </div>
+        {watchlistLoading ? (
+          <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
+            Loading saved tickers…
+          </p>
+        ) : watchlistError ? (
+          <p
+            className={cn(
+              "mt-3 text-[var(--fit-color-danger)]",
+              fitType.bodySm,
+            )}
+            role="status"
+          >
+            {watchlistError}
+          </p>
+        ) : !authenticated ? (
+          <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
+            Sign in to check whether shown stories mention tickers you follow.
+          </p>
+        ) : !watchlistSymbols.length ? (
+          <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
+            No saved tickers yet. Save tickers to highlight matching stories.
+          </p>
+        ) : railSummary.watchlistStoryCount ? (
+          <>
+            <p
+              className={cn(
+                "mt-3 text-[var(--fit-color-text-body)]",
+                fitType.bodySm,
+              )}
+            >
+              {railSummary.watchlistStoryCount} shown{" "}
+              {railSummary.watchlistStoryCount === 1 ? "story" : "stories"}{" "}
+              mention {railSummary.watchlistHitCount} saved{" "}
+              {railSummary.watchlistHitCount === 1 ? "ticker" : "tickers"}.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {railSummary.watchlistTickers.map((ticker) => (
+                <button
+                  key={ticker.symbol}
+                  type="button"
+                  onClick={() => onQuoteReferenceChange(ticker.symbol)}
+                  className={cn(
+                    "rounded-md border border-[var(--fit-color-border-subtle)] px-2.5 py-1.5 text-[var(--fit-color-text-body)]",
+                    fitType.control,
+                    fitButton.secondary,
+                    FIT_FOCUS_VISIBLE,
+                  )}
+                >
+                  {ticker.symbol}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
+            No saved ticker mentions in the shown stories.
+          </p>
+        )}
+      </section>
+
+      <section className={railSectionClass}>
+        <div className="flex items-center justify-between gap-3">
+          <h2
+            className={cn(
+              "text-[var(--fit-color-text-strong)]",
+              fitType.panelTitle,
+            )}
+          >
+            Mentioned tickers
+          </h2>
+          <span className={cn(fitType.caption, fitText.subtle)}>
+            {railSummary.totalLinkedStoryCount} linked
+          </span>
+        </div>
+        {railSummary.mentionedTickers.length ? (
+          <div className="mt-3 divide-y divide-white/10">
+            {railSummary.mentionedTickers.map((ticker) => (
+              <button
+                key={ticker.symbol}
+                type="button"
+                onClick={() => onQuoteReferenceChange(ticker.symbol)}
+                className={cn(
+                  "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-left transition-colors hover:text-[var(--fit-color-text-strong)]",
+                  FIT_FOCUS_VISIBLE,
+                )}
+                title={`Inspect quote context for ${ticker.label}`}
+              >
+                <span className="min-w-0">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "truncate text-[var(--fit-color-accent)]",
+                        fitType.control,
+                      )}
+                    >
+                      {ticker.symbol}
+                    </span>
+                    {ticker.inWatchlist ? (
+                      <span
+                        className={cn(
+                          "rounded-full bg-[var(--fit-color-surface)] px-1.5 py-0.5 uppercase text-[var(--fit-color-success)]",
+                          fitType.badge,
+                        )}
+                      >
+                        Saved
+                      </span>
+                    ) : null}
+                  </span>
+                  <span
+                    className={cn(
+                      "block truncate",
+                      fitType.caption,
+                      fitText.subtle,
+                    )}
+                  >
+                    {ticker.label}
+                  </span>
+                </span>
+                <span className="text-right">
+                  <span
+                    className={cn(
+                      "block text-[var(--fit-color-text-body)]",
+                      fitType.caption,
+                    )}
+                  >
+                    {ticker.count} {ticker.count === 1 ? "story" : "stories"}
+                  </span>
+                  {ticker.value ? (
+                    <span
+                      className={cn(
+                        "block",
+                        fitType.caption,
+                        toneClass[ticker.tone ?? "neutral"],
+                      )}
+                    >
+                      {ticker.change ?? ticker.value}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="sr-only">Inspect quote</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className={cn("mt-3", fitType.bodySm, fitText.subtle)}>
+            No reliable ticker links in the shown stories yet.
+          </p>
+        )}
+      </section>
+
+      {selectedTicker ? (
+        <section className={railSectionClass}>
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              className={cn(
+                "text-[var(--fit-color-text-strong)]",
+                fitType.panelTitle,
+              )}
+            >
+              Quote reference
+            </h2>
+            <span
+              className={cn(fitType.caption, toneClass[selectedTicker.tone])}
+            >
+              {quoteLoading ? "Updating" : selectedTicker.change}
+            </span>
+          </div>
+          <p
+            className={cn(
+              "mt-2 text-[var(--fit-color-text-strong)]",
+              fitType.metricLg,
+            )}
+          >
+            {selectedTicker.symbol}
+          </p>
+          <p className={cn(fitType.caption, fitText.subtle)}>
+            {selectedTicker.label}
+          </p>
+          <p
+            className={cn(
+              "mt-3 text-[var(--fit-color-text-strong)]",
+              fitType.metricMd,
+            )}
+          >
+            {selectedTicker.value}
+          </p>
+          <p className={cn("mt-2", fitType.caption, fitText.subtle)}>
+            Quote context only. Use ticker news to run an explicit headline
+            search.
+          </p>
+          <button
+            type="button"
+            onClick={() => onTickerNewsRequest(selectedTicker.symbol)}
+            className={cn(
+              "mt-3 w-full rounded-lg border border-[var(--fit-color-border-subtle)] bg-[var(--fit-color-surface-soft)] px-3 py-2 text-[var(--fit-color-text-body)] transition-colors hover:border-[var(--fit-color-accent)] hover:bg-[var(--fit-color-surface-soft)] hover:text-[var(--fit-color-text-strong)]",
+              fitType.control,
+              FIT_FOCUS_VISIBLE,
+            )}
+          >
+            Show ticker news
+          </button>
+        </section>
+      ) : null}
+    </aside>
+  );
+}

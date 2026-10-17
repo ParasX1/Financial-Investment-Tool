@@ -1,0 +1,384 @@
+{
+  "as_of": "2026-10-04",
+  "mode": "full_universe_production_refresh",
+  "rounds": [
+    {
+      "round": 1,
+      "downloads": [
+        {
+          "kind": "bulk_download",
+          "symbol_count": 700,
+          "seconds": 31.25901239993982,
+          "start_date": "2025-10-04",
+          "end_date": "2026-10-04",
+          "rows": 257,
+          "empty": false
+        },
+        {
+          "kind": "retry_download",
+          "symbol_count": 1,
+          "seconds": 0.6541314999340102,
+          "start_date": "2025-10-04",
+          "end_date": "2026-10-04",
+          "rows": 0,
+          "empty": true,
+          "symbol": "QUB.AX"
+        }
+      ],
+      "calculations": [
+        {
+          "window": "1Y",
+          "seconds": 0.5597481000004336,
+          "rows": 699,
+          "rows_with_return": 696,
+          "warnings": [
+            "Insufficient trailing history for 2 symbols: FDXF, HONA.",
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1D",
+          "seconds": 1.4050692999735475,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1W",
+          "seconds": 1.511893399991095,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1M",
+          "seconds": 1.5512204999104142,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        }
+      ],
+      "published": [
+        {
+          "window": "1Y",
+          "save_seconds": 0.055796199943870306,
+          "elapsed_seconds": 37.13303300004918,
+          "generated_at": "2026-10-04T05:50:18.341674+00:00"
+        },
+        {
+          "window": "1D",
+          "save_seconds": 0.10133570001926273,
+          "elapsed_seconds": 38.6687209000811,
+          "generated_at": "2026-10-04T05:50:19.833669+00:00"
+        },
+        {
+          "window": "1W",
+          "save_seconds": 0.12114319996908307,
+          "elapsed_seconds": 40.33352920005564,
+          "generated_at": "2026-10-04T05:50:21.479465+00:00"
+        },
+        {
+          "window": "1M",
+          "save_seconds": 0.16194300004281104,
+          "elapsed_seconds": 42.083859300008044,
+          "generated_at": "2026-10-04T05:50:23.189349+00:00"
+        }
+      ],
+      "repository_seconds": 1.0540901999920607,
+      "universe_count": 699,
+      "market_total_seconds": 35.00268669996876,
+      "history_refresh": {
+        "requested_symbols": 700,
+        "full_history_symbols": 700,
+        "incremental_symbols": 0,
+        "reconciled_symbols": [],
+        "unavailable_symbols": [
+          "QUB.AX"
+        ]
+      },
+      "missing_after_retry": [
+        "QUB.AX"
+      ],
+      "worker_complete_seconds": 42.12640870001633,
+      "success": true
+    },
+    {
+      "round": 2,
+      "downloads": [
+        {
+          "kind": "bulk_download",
+          "symbol_count": 699,
+          "seconds": 18.014931800076738,
+          "start_date": "2026-09-27",
+          "end_date": "2026-10-04",
+          "rows": 5,
+          "empty": false
+        },
+        {
+          "kind": "retry_download",
+          "symbol_count": 1,
+          "seconds": 0.6240913999499753,
+          "start_date": "2025-10-04",
+          "end_date": "2026-10-04",
+          "rows": 0,
+          "empty": true,
+          "symbol": "QUB.AX"
+        },
+        {
+          "kind": "retry_download",
+          "symbol_count": 1,
+          "seconds": 0.5941145999822766,
+          "start_date": "2025-10-04",
+          "end_date": "2026-10-04",
+          "rows": 0,
+          "empty": true,
+          "symbol": "QUB.AX"
+        }
+      ],
+      "calculations": [
+        {
+          "window": "1Y",
+          "seconds": 0.5927993999794126,
+          "rows": 699,
+          "rows_with_return": 696,
+          "warnings": [
+            "Insufficient trailing history for 2 symbols: FDXF, HONA.",
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1D",
+          "seconds": 1.5267049999674782,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1W",
+          "seconds": 1.3549892998998985,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        },
+        {
+          "window": "1M",
+          "seconds": 1.5827612000284716,
+          "rows": 699,
+          "rows_with_return": 698,
+          "warnings": [
+            "No usable market data for 1 symbol: QUB.AX."
+          ]
+        }
+      ],
+      "published": [
+        {
+          "window": "1Y",
+          "save_seconds": 0.15524059999734163,
+          "elapsed_seconds": 25.37485869997181,
+          "generated_at": "2026-10-04T05:50:48.616501+00:00"
+        },
+        {
+          "window": "1D",
+          "save_seconds": 0.19636259996332228,
+          "elapsed_seconds": 27.12789060000796,
+          "generated_at": "2026-10-04T05:50:50.329276+00:00"
+        },
+        {
+          "window": "1W",
+          "save_seconds": 0.17991690000053495,
+          "elapsed_seconds": 28.714244100032374,
+          "generated_at": "2026-10-04T05:50:51.931338+00:00"
+        },
+        {
+          "window": "1M",
+          "save_seconds": 0.18741710006725043,
+          "elapsed_seconds": 30.522422400070354,
+          "generated_at": "2026-10-04T05:50:53.731492+00:00"
+        }
+      ],
+      "repository_seconds": 0.15250530000776052,
+      "universe_count": 699,
+      "market_total_seconds": 23.934706400032155,
+      "history_refresh": {
+        "requested_symbols": 700,
+        "full_history_symbols": 1,
+        "incremental_symbols": 699,
+        "reconciled_symbols": [],
+        "unavailable_symbols": [
+          "QUB.AX"
+        ]
+      },
+      "missing_after_retry": [
+        "QUB.AX"
+      ],
+      "worker_complete_seconds": 30.538317000027746,
+      "success": true
+    }
+  ],
+  "configured_universe_limit": 1000,
+  "benchmark": "^AXJO",
+  "measured_peak_concurrent_downloads": 96,
+  "configured_download_threads": 96,
+  "note": "Production refresh code, private history/snapshot/Yahoo cache. First round initializes history; second exercises incremental refresh.",
+  "retention_cold_runs": [
+    {
+      "as_of": "2026-10-04",
+      "mode": "full_universe_production_refresh",
+      "rounds": [
+        {
+          "round": 1,
+          "downloads": [
+            {
+              "kind": "bulk_download",
+              "symbol_count": 700,
+              "seconds": 29.209412000025623,
+              "start_date": "2025-10-04",
+              "end_date": "2026-10-04",
+              "rows": 257,
+              "empty": false
+            },
+            {
+              "kind": "retry_download",
+              "symbol_count": 1,
+              "seconds": 0.6615436000283808,
+              "start_date": "2025-10-04",
+              "end_date": "2026-10-04",
+              "rows": 0,
+              "empty": true,
+              "symbol": "QUB.AX"
+            }
+          ],
+          "calculations": [
+            {
+              "window": "1Y",
+              "seconds": 0.6113103000679985,
+              "rows": 699,
+              "rows_with_return": 696,
+              "warnings": [
+                "Insufficient trailing history for 2 symbols: FDXF, HONA.",
+                "No usable market data for 1 symbol: QUB.AX."
+              ]
+            },
+            {
+              "window": "1D",
+              "seconds": 1.6065135999815539,
+              "rows": 699,
+              "rows_with_return": 698,
+              "warnings": [
+                "No usable market data for 1 symbol: QUB.AX."
+              ]
+            },
+            {
+              "window": "1W",
+              "seconds": 1.5374431000091136,
+              "rows": 699,
+              "rows_with_return": 698,
+              "warnings": [
+                "No usable market data for 1 symbol: QUB.AX."
+              ]
+            },
+            {
+              "window": "1M",
+              "seconds": 1.5626208999892697,
+              "rows": 699,
+              "rows_with_return": 698,
+              "warnings": [
+                "No usable market data for 1 symbol: QUB.AX."
+              ]
+            }
+          ],
+          "published": [
+            {
+              "window": "1Y",
+              "save_seconds": 0.06347649998497218,
+              "elapsed_seconds": 34.78292400005739,
+              "generated_at": "2026-10-04T07:51:17.773360+00:00"
+            },
+            {
+              "window": "1D",
+              "save_seconds": 0.10449549998156726,
+              "elapsed_seconds": 36.528618399985135,
+              "generated_at": "2026-10-04T07:51:19.480240+00:00"
+            },
+            {
+              "window": "1W",
+              "save_seconds": 0.13991439994424582,
+              "elapsed_seconds": 38.24304630002007,
+              "generated_at": "2026-10-04T07:51:21.157162+00:00"
+            },
+            {
+              "window": "1M",
+              "save_seconds": 0.18010120000690222,
+              "elapsed_seconds": 40.20474890002515,
+              "generated_at": "2026-10-04T07:51:23.081583+00:00"
+            }
+          ],
+          "repository_seconds": 0.3139246000209823,
+          "universe_count": 699,
+          "market_total_seconds": 33.32923180004582,
+          "history_refresh": {
+            "requested_symbols": 700,
+            "full_history_symbols": 700,
+            "incremental_symbols": 0,
+            "reconciled_symbols": [],
+            "unavailable_symbols": [
+              "QUB.AX"
+            ]
+          },
+          "missing_after_retry": [
+            "QUB.AX"
+          ],
+          "worker_complete_seconds": 40.26577240007464,
+          "success": true
+        }
+      ],
+      "configured_universe_limit": 1000,
+      "benchmark": "^AXJO",
+      "measured_at": "2026-10-04T07:51:23.365501+00:00",
+      "validation": "cold_after_history_retention"
+    }
+  ],
+  "site_startup_runs": [
+    {
+      "measured_at": "2026-10-04T08:21:08.307Z",
+      "mode": "isolated_development_full_site_cold",
+      "browser": "Chrome headless, fresh contexts",
+      "application_startup_only": true,
+      "home": {
+        "heading_from_start_seconds": 22.385206000000004,
+        "usable_from_start_seconds": 22.724959,
+        "from_open_url_seconds": 17.6852686,
+        "navigation": {
+          "dom_content_loaded_ms": 17120.100000023842
+        }
+      },
+      "top_picks": {
+        "heading_from_open_seconds": 11.688909199999998,
+        "data_from_open_seconds": 33.961476899999994,
+        "from_services_start_seconds": 57.401862200000004,
+        "data_rows": 25,
+        "requests": [
+          {
+            "begin": 11.8175425,
+            "end": 33.8217847,
+            "status": 200
+          }
+        ]
+      },
+      "temporary_path": "D:\\Financial-Investment-Tool\\.codex-site-startup-nbTJBq",
+      "frontend_listening_seconds": 4.745724500000001,
+      "both_services_listening_seconds": 4.760943799999999,
+      "success": true
+    }
+  ]
+}

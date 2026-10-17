@@ -1,0 +1,531 @@
+.metricCard {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  border: 1px solid var(--portfolio-card-outline);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--portfolio-surface);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 14px 38px rgba(0, 0, 0, 0.28),
+    0 2px 0 var(--fit-color-accent-soft);
+}
+
+.metricCard:focus-within {
+  border-color: var(--fit-color-accent);
+  box-shadow:
+    0 0 0 1px var(--fit-color-accent),
+    0 16px 42px rgba(0, 0, 0, 0.36);
+}
+
+.metricCard_focus {
+  height: auto;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.metricCard_observer {
+  border: 0;
+  border-radius: 0;
+}
+
+.cardHeader {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 39px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--portfolio-border-strong);
+  background: var(--fit-color-surface-soft);
+}
+
+.cardIdentity,
+.cardActions,
+.cardMeta,
+.cardHeaderSettings {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.cardHeaderSettings {
+  order: 3;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 0;
+}
+
+.cardHeaderSettingsLabel {
+  flex: 0 0 auto;
+  max-width: 118px;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.cardHeaderSettings label {
+  display: grid;
+  min-width: 115px;
+  gap: 2px;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.cardHeaderSettings input,
+.cardHeaderSettings select {
+  width: 100%;
+  height: 25px;
+  padding: 0 7px;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 6px;
+  color: var(--portfolio-ink);
+  background: var(--fit-color-field);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.cardIdentity select {
+  min-width: 0;
+  max-width: 230px;
+  border: 0;
+  color: var(--portfolio-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.cardIdentity select option {
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-surface-soft);
+}
+
+.classificationBadge,
+.linkedBadge,
+.customBadge,
+.cardStatus {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border: 1px solid var(--portfolio-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 780;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.classification_historical {
+  color: var(--fit-color-info);
+  background: var(--fit-color-info-soft);
+}
+
+.classification_estimated {
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
+}
+
+.classification_simulated {
+  color: var(--fit-color-accent);
+  background: var(--fit-color-accent-soft);
+}
+
+.linkedBadge,
+.cardStatus {
+  color: var(--portfolio-muted);
+}
+
+.customBadge {
+  border-color: var(--fit-color-warning);
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
+}
+
+.cardActions > button,
+.cardMenu summary {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--portfolio-muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cardActions > button:hover,
+.cardMenu summary:hover,
+.cardMenu button:hover {
+  border-color: var(--portfolio-border);
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
+}
+
+.cardMenu {
+  position: relative;
+}
+
+.cardMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.cardMenu > div {
+  position: absolute;
+  right: 0;
+  top: 31px;
+  z-index: 30;
+  display: grid;
+  width: 150px;
+  padding: 5px;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 8px;
+  background: var(--fit-color-surface-soft);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.42);
+}
+
+.cardMenu button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--portfolio-body);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.cardMenu button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.status_success {
+  border-color: var(--fit-color-success-soft);
+  color: var(--portfolio-green);
+}
+
+.status_stale,
+.status_partial {
+  border-color: var(--fit-color-warning);
+  color: var(--fit-color-warning);
+}
+
+.status_error,
+.status_invalid {
+  border-color: var(--fit-color-danger);
+  color: var(--fit-color-danger);
+}
+
+.cardMeta {
+  min-height: 25px;
+  padding: 4px 9px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--portfolio-card-separator);
+  color: var(--portfolio-muted);
+  background: var(--fit-color-field);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.cardMeta span {
+  padding-right: 6px;
+  border-right: 1px solid var(--portfolio-border);
+}
+
+.cardMeta span:last-child {
+  border-right: 0;
+}
+
+.cardWarning {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--fit-color-warning);
+  color: var(--fit-color-warning);
+  background: var(--fit-color-accent-soft);
+  font-size: 0.75rem;
+}
+
+.cardWarning button {
+  border: 0;
+  color: var(--fit-color-warning);
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cardChart {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: var(--fit-color-field);
+}
+
+.metricCard_observer .cardChart {
+  overflow: auto;
+}
+
+.updatingBadge {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  padding: 4px 7px;
+  border: 1px solid var(--fit-color-warning);
+  border-radius: 999px;
+  color: var(--fit-color-warning);
+  background: var(--fit-color-field);
+  font-size: 0.75rem;
+}
+
+.cardInsight {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 9px;
+  border-top: 1px solid var(--portfolio-border-strong);
+  background: var(--fit-color-field);
+}
+
+.metricCard_standard .cardInsight,
+.metricCard_compact .cardInsight {
+  min-height: 22px;
+  padding: 2px 7px;
+}
+
+.metricCard_standard .cardInsight span,
+.metricCard_compact .cardInsight span {
+  font-size: 0.75rem;
+  letter-spacing: 0.045em;
+}
+
+.metricCard_standard .cardInsight strong,
+.metricCard_compact .cardInsight strong {
+  margin-top: 0;
+  font-size: 0.875rem;
+}
+
+.cardInsight span {
+  min-width: 0;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cardInsight strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--portfolio-ink);
+  font-size: 0.875rem;
+  font-weight: 620;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.cardInsight p {
+  max-width: 52%;
+  margin: 0;
+  color: var(--portfolio-body);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.cardSettings {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--portfolio-border-strong);
+  background: var(--fit-color-field);
+}
+
+.cardSettings summary {
+  padding: 5px 9px;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cardSettingsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 6px 9px 9px;
+  background: var(--fit-color-field);
+}
+
+.cardSettingsGrid label {
+  display: grid;
+  gap: 3px;
+  color: var(--portfolio-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.cardSettingsGrid input,
+.cardSettingsGrid select {
+  width: 100%;
+  min-height: 31px;
+  padding: 0 8px;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 7px;
+  color: var(--portfolio-ink);
+  background: var(--fit-color-field);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.cardSettingsGrid button {
+  min-height: 31px;
+  align-self: end;
+  border: 1px solid var(--fit-color-accent);
+  border-radius: 7px;
+  color: var(--fit-color-text-strong);
+  background: var(--fit-color-accent-soft);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.cardState {
+  display: grid;
+  min-height: 120px;
+  flex: 1;
+  place-items: center;
+  align-content: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.cardState > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 8px;
+  place-items: center;
+  border: 1px solid var(--portfolio-border-strong);
+  border-radius: 50%;
+  color: var(--portfolio-accent);
+  background: var(--fit-color-accent-soft);
+  font-size: 0.75rem;
+}
+
+.cardState strong {
+  font-size: 0.82rem;
+}
+
+.cardState p {
+  max-width: 310px;
+  margin: 6px 0 0;
+  color: var(--portfolio-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.cardState button {
+  margin-top: 9px;
+  border: 0;
+  color: var(--fit-color-accent);
+  background: transparent;
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cardSkeleton {
+  display: grid;
+  min-height: 130px;
+  flex: 1;
+  align-content: end;
+  gap: 11%;
+  padding: 18px;
+  background: var(--fit-color-surface-soft);
+  animation: pulse 1.4s ease-in-out infinite alternate;
+}
+
+.cardSkeleton span {
+  height: 2px;
+  background: var(--fit-color-border-subtle);
+}
+
+.cardHeaderSettings input:focus-visible,
+.cardHeaderSettings select:focus-visible,
+.cardActions button:focus-visible,
+.cardMenu summary:focus-visible,
+.cardIdentity select:focus-visible,
+.cardSettings summary:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 720px) {
+  .cardIdentity select {
+    max-width: 135px;
+  }
+
+  .classificationBadge {
+    display: none;
+  }
+
+  .cardSettingsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cardHeaderSettingsLabel {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .cardHeaderSettings label {
+    flex: 1 1 130px;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardSkeleton {
+    animation: none;
+  }
+}

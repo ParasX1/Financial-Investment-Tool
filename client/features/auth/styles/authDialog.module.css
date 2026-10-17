@@ -1,0 +1,429 @@
+.authDialog {
+  width: calc(100% - 2.5rem);
+  max-width: 29.5rem;
+  min-height: calc(100% - 2.5rem);
+  margin: 1.25rem auto;
+}
+
+.authContent {
+  overflow: hidden;
+  max-height: calc(100dvh - 2.5rem);
+  border: 1px solid var(--fit-color-border-panel);
+  border-radius: 1.25rem;
+  background: var(--fit-color-surface);
+  color: var(--fit-color-text-strong);
+  font-family: var(--fit-font-family);
+  box-shadow: 0 1.75rem 5rem
+    color-mix(in srgb, var(--fit-color-inner-surface) 65%, transparent);
+  animation: authSheetEnter 280ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.authBackdrop {
+  background: var(--fit-color-inner-surface);
+  backdrop-filter: blur(8px);
+}
+
+.authBody {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-padding-block: 1rem;
+  overscroll-behavior: contain;
+  padding: 0;
+}
+
+.closeButton {
+  position: absolute;
+  z-index: 1;
+  top: 0.875rem;
+  right: 0.875rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fit-color-text-muted);
+}
+
+.closeButton svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.closeButton:hover {
+  background: var(--fit-color-surface-soft);
+  color: var(--fit-color-text-strong);
+}
+
+.brandHeader {
+  display: flex;
+  justify-content: center;
+  padding: 1.75rem 4rem 0;
+}
+
+.authLogo {
+  max-width: 100%;
+}
+
+.formPanel {
+  min-width: 0;
+  padding: 1.375rem 2rem 1.75rem;
+}
+
+.modeTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  border: 1px solid var(--fit-color-border-panel);
+  border-radius: 0.75rem;
+  background: var(--fit-color-inner-surface);
+  padding: 0.25rem;
+}
+
+.modeTab {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.4rem 0.5rem;
+  color: var(--fit-color-text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fit-type-weight-medium);
+  line-height: 1.4;
+}
+
+.modeTab[aria-pressed="true"] {
+  background: var(--fit-color-surface-soft);
+  color: var(--fit-color-text-strong);
+}
+
+.modeTab:hover {
+  color: var(--fit-color-text-strong);
+}
+
+.intro {
+  margin: 1.375rem 0 1.25rem;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: var(--fit-color-text-strong);
+  font-family: var(--fit-font-display, var(--fit-font-family));
+  font-size: 1.75rem;
+  font-weight: var(--fit-font-display-weight, 600);
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.subtitle {
+  max-width: 25em;
+  margin: 0.5rem auto 0;
+  color: var(--fit-color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.nameGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.fieldGroup {
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: var(--fit-color-text-label);
+  font-size: 0.875rem;
+  font-weight: var(--fit-type-weight-medium);
+  line-height: 1.5;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  min-height: 3.125rem;
+  border: 1px solid var(--fit-color-border-control);
+  border-radius: 0.625rem;
+  background: var(--fit-color-field);
+  padding: 0.75rem 0.875rem;
+  color: var(--fit-color-text-strong);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.passwordInput {
+  padding-right: 4.3rem;
+}
+
+.input:focus {
+  border-color: var(--fit-color-focus-ring);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--fit-color-focus-ring) 18%, transparent);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--fit-color-danger);
+}
+
+.input:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.passwordToggle {
+  position: absolute;
+  inset: 2px 2px 2px auto;
+  min-width: 3.8rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0 0.65rem;
+  color: var(--fit-color-text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fit-type-weight-medium);
+}
+
+.passwordToggle:hover {
+  color: var(--fit-color-text-strong);
+}
+
+.fieldHint,
+.fieldError {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.fieldHint {
+  color: var(--fit-color-text-muted);
+}
+
+.fieldError {
+  color: var(--fit-color-danger);
+}
+
+.errorMessage,
+.confirmationMessage {
+  margin: 0.25rem 0 1.125rem;
+  border: 1px solid var(--fit-color-border-panel);
+  border-radius: 0.625rem;
+  padding: 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.errorMessage {
+  border-color: color-mix(in srgb, var(--fit-color-danger) 40%, transparent);
+  background: var(--fit-color-danger-soft);
+  color: var(--fit-color-danger);
+}
+
+.confirmationMessage {
+  display: flex;
+  gap: 0.75rem;
+  border-color: color-mix(in srgb, var(--fit-color-success) 40%, transparent);
+  background: var(--fit-color-success-soft);
+}
+
+.confirmationMessage svg {
+  flex-shrink: 0;
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: var(--fit-color-success);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.confirmationMessage h3 {
+  margin: 0 0 0.35rem;
+  color: var(--fit-color-text-strong);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fit-type-weight-semibold);
+}
+
+.successMessage {
+  margin: 0;
+  color: var(--fit-color-text-body);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.validationMessage {
+  margin: 0 0 1rem;
+  color: var(--fit-color-danger);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.primaryButton {
+  display: flex;
+  width: 100%;
+  min-height: 3.125rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.125rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  background: var(--fit-color-action);
+  padding: 0.75rem 1rem;
+  color: var(--fit-color-on-action);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: var(--fit-type-weight-semibold);
+  line-height: 1.5;
+  transition:
+    background-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.primaryButton:hover {
+  background: var(--fit-color-action-hover);
+}
+
+.googleButton {
+  display: flex;
+  width: 13.5rem;
+  max-width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  padding: 0;
+}
+
+.googleArtwork {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.875rem 0;
+  color: var(--fit-color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  background: var(--fit-color-border-panel);
+  content: "";
+}
+
+.pendingMessage {
+  margin: 0.875rem 0 0;
+  color: var(--fit-color-text-body);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.closeButton:focus-visible,
+.modeTab:focus-visible,
+.passwordToggle:focus-visible,
+.primaryButton:focus-visible,
+.googleButton:focus-visible {
+  outline: 2px solid var(--fit-color-focus-ring);
+  outline-offset: 3px;
+}
+
+.closeButton:disabled,
+.modeTab:disabled,
+.passwordToggle:disabled,
+.primaryButton:disabled,
+.googleButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@keyframes authSheetEnter {
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 575px) {
+  .authDialog {
+    width: calc(100% - 1rem);
+    min-height: calc(100% - 1rem);
+    margin: 0.5rem auto;
+  }
+
+  .authContent {
+    max-height: calc(100dvh - 1rem);
+    border-radius: 1rem;
+  }
+
+  .brandHeader {
+    padding-top: 1.5rem;
+  }
+
+  .formPanel {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .title {
+    font-size: 1.625rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .formPanel {
+    padding-right: 1.125rem;
+    padding-left: 1.125rem;
+  }
+
+  .nameGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authContent {
+    animation: none;
+  }
+
+  .input,
+  .primaryButton {
+    transition: none;
+  }
+}

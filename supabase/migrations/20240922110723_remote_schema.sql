@@ -12,6 +12,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 
+CREATE SCHEMA IF NOT EXISTS "pgsodium";
 CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
 
 
@@ -44,7 +45,15 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
 
 
-CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
+-- pgjwt is unused by FIT and unsupported on current hosted Postgres 17.
+-- Retain the old Postgres 15 effect without making new PG17 replay depend on it.
+DO $$
+BEGIN
+  IF current_setting('server_version_num')::integer < 170000 THEN
+    CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
+  END IF;
+END
+$$;
 
 
 

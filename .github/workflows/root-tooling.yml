@@ -1,0 +1,34 @@
+name: Development tooling CI
+
+on:
+  push:
+    branches: ["DevBranch", "main"]
+  pull_request:
+    branches: ["DevBranch", "main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  launcher:
+    name: Development launcher safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # Native fixtures never launch the app or receive hosted credentials.
+      - name: Check launcher syntax
+        run: node --check scripts/dev-all.mjs
+      - name: Verify isolated launcher behavior and coverage
+        run: npm run test:dev
