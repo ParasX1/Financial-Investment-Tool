@@ -1,0 +1,228 @@
+.tasks {
+  container-type: inline-size;
+  min-width: 0;
+  padding-block: clamp(3rem, 5vw, 6rem);
+  border-top: 1px solid var(--home-border);
+  scroll-margin-top: 2rem;
+}
+
+.taskHeader {
+  margin-bottom: clamp(1.5rem, 3vw, 3rem);
+}
+
+.taskHeader h2 {
+  max-width: 20ch;
+  margin: 0;
+  font-size: clamp(2.25rem, 3.1vw, 3rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.taskList {
+  border-top: 1px solid var(--home-border);
+}
+
+.taskRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.25fr) minmax(0, 1.3fr) auto;
+  gap: 1.25rem clamp(1.5rem, 3.1vw, 3.75rem);
+  align-items: start;
+  min-width: 0;
+  padding-block: clamp(1.75rem, 2.25vw, 2.5rem);
+  border-bottom: 1px solid var(--home-border);
+  scroll-margin-top: 2rem;
+}
+
+.taskRow::before {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 3rem;
+  height: 2px;
+  background: var(--home-accent);
+  content: "";
+  opacity: 0.5;
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.taskRow:hover::before,
+.taskRow:focus-within::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.taskLabel {
+  margin: 0;
+  padding-top: 0.5rem;
+  color: var(--home-accent);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.taskBody {
+  min-width: 0;
+}
+
+.taskBody h3 {
+  max-width: 24ch;
+  margin: 0;
+  font-size: clamp(1.875rem, 2.7vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.taskDescription {
+  max-width: 52ch;
+  margin: 0.875rem 0 0;
+  color: var(--home-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.taskActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: center;
+  gap: 0.625rem;
+  min-width: 0;
+  max-width: 16rem;
+}
+
+.taskRoute {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--home-border);
+  border-radius: 0.75rem;
+  color: var(--home-body);
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.taskRoute svg,
+.taskRoute > span:last-child {
+  flex-shrink: 0;
+}
+
+.taskRoute svg:last-child,
+.taskRoute > span:last-child {
+  transition: transform 180ms ease;
+}
+
+.taskRoute:not(:disabled):hover,
+.taskRoute:focus-visible {
+  border-color: var(--home-accent);
+  color: var(--home-text);
+  background: var(--fit-color-accent-soft);
+}
+
+.taskRoute:not(:disabled):hover svg:last-child,
+.taskRoute:focus-visible svg:last-child,
+.taskRoute:hover > span:last-child,
+.taskRoute:focus-visible > span:last-child {
+  transform: translateX(2px);
+}
+
+@media (min-width: 1800px) {
+  .taskList {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-bottom: 1px solid var(--home-border);
+  }
+
+  .taskRow {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2.5rem clamp(2rem, 3vw, 5rem);
+    border-bottom: 0;
+  }
+
+  .taskRow:first-child {
+    padding-left: 0;
+  }
+
+  .taskRow:last-child {
+    padding-right: 0;
+  }
+
+  .taskRow + .taskRow {
+    border-left: 1px solid var(--home-border);
+  }
+
+  .taskLabel {
+    padding-top: 0;
+  }
+
+  .taskBody {
+    flex: 1;
+  }
+
+  .taskActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-self: stretch;
+    max-width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+@container (max-width: 48rem) {
+  .taskHeader h2 {
+    font-size: 2.25rem;
+  }
+
+  .taskRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding-block: 1.5rem;
+  }
+
+  .taskLabel {
+    padding-top: 0;
+  }
+
+  .taskBody h3 {
+    font-size: clamp(1.75rem, 5.3vw, 2.125rem);
+    line-height: 1.16;
+  }
+
+  .taskDescription {
+    margin-top: 0.75rem;
+    font-size: 0.9375rem;
+  }
+
+  .taskActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-self: start;
+    max-width: 100%;
+    margin-top: 0.375rem;
+  }
+}

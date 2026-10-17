@@ -1,120 +1,95 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { renderToStaticMarkup } from "react-dom/server";
-import { homeRouteLinks } from "../data/homeContent";
+import { homeRouteLinks, homeTools } from "../data/homeContent";
 import { HomeProductSection } from "./HomeProductSection";
 
-describe("HomeProductSection", () => {
-  it("introduces three task families with named tools and native chapter links", () => {
-    const markup = renderToStaticMarkup(
-      <HomeProductSection
-        authLoading={false}
-        signedIn={false}
-        onRouteSelect={jest.fn()}
-      />,
-    );
+function renderProduct({ authLoading = false, signedIn = false } = {}) {
+  return renderToStaticMarkup(
+    <HomeProductSection
+      authLoading={authLoading}
+      signedIn={signedIn}
+      onRouteSelect={jest.fn()}
+    />,
+  );
+}
 
-    const overview = markup.match(
-      /<nav[^>]*aria-label="Explore the tools"[\s\S]*?<\/nav>/,
-    )?.[0];
-    expect(overview).toBeDefined();
-    expect(overview).toContain('href="#analyse"');
-    expect(overview).toContain("Portfolio");
-    expect(overview).toContain("Top Picks");
-    expect(overview).toContain('href="#follow"');
-    expect(overview).toContain("Watchlist");
-    expect(overview).toContain("Market News");
-    expect(overview).toContain('href="#experience"');
-    expect(overview).toContain("Guide");
-    expect(overview).toContain("Community");
+describe("HomeProductSection", () => {
+  it("keeps the Portfolio demonstration before three independently readable research tasks", () => {
+    const markup = renderProduct();
 
     expect(markup.match(/<h2[^>]*>[\s\S]*?<\/h2>/g)).toEqual([
       expect.stringContaining("Analyse an idea"),
-      expect.stringContaining("Follow your research"),
-      expect.stringContaining("Learn and exchange views"),
+      expect.stringContaining("What would you like to do?"),
     ]);
-    for (const label of [
-      "Portfolio",
-      "Top Picks",
-      "Watchlist",
-      "Market News",
-      "Guide",
-      "Community",
-    ]) {
-      expect(markup).toMatch(new RegExp(`<h3[^>]*>${label}</h3>`));
-    }
+    expect(markup.match(/<h3[^>]*>[\s\S]*?<\/h3>/g)).toEqual([
+      expect.stringContaining("Portfolio"),
+      expect.stringContaining("Find a company to research"),
+      expect.stringContaining("Follow your research"),
+      expect.stringContaining("Understand what you find"),
+    ]);
     const analyse = markup.slice(
       markup.indexOf('<section id="analyse"'),
-      markup.indexOf('<section id="follow"'),
+      markup.indexOf('<section id="research-tasks"'),
     );
     expect(analyse).toContain("<figure");
-    expect(analyse).toContain("Top Picks");
-    const follow = markup.slice(
-      markup.indexOf('<section id="follow"'),
-      markup.indexOf('<section id="experience"'),
-    );
-    expect(follow).toContain("Watchlist");
-    expect(follow).toContain("Market News");
-    expect(follow).not.toContain("<figure");
+    expect(analyse).toContain("Return is only half the story.");
+    expect(analyse).not.toContain("Top Picks");
+    expect(markup).not.toContain('aria-label="Explore the tools"');
+    expect(markup).not.toContain("A simple workflow");
+    expect(markup).not.toContain("Example research note");
+    expect(markup).not.toContain("Example question");
+    expect(markup).toContain('id="product"');
+    expect(markup).toContain('id="discover"');
+    expect(markup).toContain('id="follow"');
+    expect(markup).toContain('id="experience"');
   });
 
-  it("marks gated product entries before a signed-out user clicks", () => {
-    const markup = renderToStaticMarkup(
-      <HomeProductSection
-        authLoading={false}
-        signedIn={false}
-        onRouteSelect={jest.fn()}
-      />,
-    );
+  it("marks every gated destination before a signed-out user clicks", () => {
+    const markup = renderProduct();
 
-    expect(markup).toContain(
-      'aria-label="Explore portfolio, sign in required"',
+    for (const route of homeRouteLinks) {
+      expect(markup).toContain(
+        `aria-label="${homeTools[route.href].actionLabel}, sign in required"`,
+      );
+      expect(markup).not.toContain(`href="${route.href}"`);
+    }
+    const gatedButtons = (markup.match(/<button[^>]*>/g) ?? []).filter(
+      (button) => button.includes("sign in required"),
     );
-    expect(markup).toContain('aria-label="Read market news, sign in required"');
-    expect(markup).toContain(
-      'aria-label="Explore community, sign in required"',
-    );
-    expect(markup).not.toContain('href="/Portfolio"');
-    expect(markup).toContain('aria-label="Open watchlist, sign in required"');
-    expect(markup).toContain("Return is only half the story.");
-    expect(markup).toContain("Your companies. Your notes.");
-    expect(markup).toContain("Market news, with context.");
-    expect(markup).toContain("Share a view. Hear another.");
-    expect(markup).not.toContain('role="list"');
+    expect(gatedButtons).toHaveLength(homeRouteLinks.length);
+    expect(
+      gatedButtons.every((button) => !button.includes('disabled=""')),
+    ).toBe(true);
+    expect(markup).toContain('href="/Guide"');
+    expect(markup).toContain('href="/Help"');
   });
 
-  it("locks every gated product entry during the session check", () => {
-    const markup = renderToStaticMarkup(
-      <HomeProductSection
-        authLoading
-        signedIn={false}
-        onRouteSelect={jest.fn()}
-      />,
-    );
+  it("locks every gated destination while preserving public help during the session check", () => {
+    const markup = renderProduct({ authLoading: true });
 
     for (const route of homeRouteLinks) {
       expect(markup).not.toContain(`href="${route.href}"`);
     }
-    const buttons = (markup.match(/<button[^>]*>/g) ?? []).filter((button) =>
-      button.includes("sign in required"),
+    const gatedButtons = (markup.match(/<button[^>]*>/g) ?? []).filter(
+      (button) => button.includes("sign in required"),
     );
-    expect(buttons).toHaveLength(homeRouteLinks.length);
-    expect(buttons.every((button) => button.includes('disabled=""'))).toBe(
+    expect(gatedButtons).toHaveLength(homeRouteLinks.length);
+    expect(gatedButtons.every((button) => button.includes('disabled=""'))).toBe(
       true,
     );
+    expect(markup).toContain('href="/Guide"');
+    expect(markup).toContain('href="/Help"');
   });
 
-  it("renders product entries as links once the user is signed in", () => {
-    const markup = renderToStaticMarkup(
-      <HomeProductSection
-        authLoading={false}
-        signedIn
-        onRouteSelect={jest.fn()}
-      />,
-    );
+  it("renders every product destination as a native link once signed in", () => {
+    const markup = renderProduct({ signedIn: true });
 
-    expect(markup).toContain('href="/Portfolio"');
-    expect(markup).toContain('href="/MarketNews"');
-    expect(markup).toContain('href="/Community"');
-    expect(markup).toContain('href="/Watchlist"');
+    for (const route of homeRouteLinks) {
+      expect(markup).toContain(`href="${route.href}"`);
+      expect(markup).toContain(
+        `aria-label="${homeTools[route.href].actionLabel}"`,
+      );
+    }
+    expect(markup).not.toContain("sign in required");
   });
 });

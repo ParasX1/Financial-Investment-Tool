@@ -237,11 +237,9 @@ describe("HomeScreenView", () => {
       product.findAllByType("h3").map((heading) => heading.children.join("")),
     ).toEqual([
       "Portfolio",
-      "Top Picks",
-      "Watchlist",
-      "Market News",
-      "Guide",
-      "Community",
+      "Find a company to research",
+      "Follow your research",
+      "Understand what you find",
     ]);
     act(() => renderer.unmount());
   });
