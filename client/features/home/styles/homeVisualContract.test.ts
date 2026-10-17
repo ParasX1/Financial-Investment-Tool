@@ -41,7 +41,13 @@ describe("Home visual contract", () => {
 
   it("keeps essential content visible without a motion or observation script", () => {
     expect(cssBlock(source, ".heroContent")).not.toMatch(/opacity:\s*0/);
-    expect(cssBlock(source, ".heroVisual")).not.toMatch(/opacity:\s*0/);
+    const researchSource = readFileSync(
+      join(process.cwd(), "features/home/styles/ResearchDesk.module.css"),
+      "utf8",
+    );
+    expect(cssBlock(researchSource, ".desk")).not.toMatch(/opacity:\s*0/);
+    expect(source).not.toContain(".heroVisual");
+    expect(source).not.toContain(".previewMetrics");
     expect(source).not.toMatch(/infinite|visibility:\s*hidden/);
     expect(source).toContain("prefers-reduced-motion: reduce");
   });

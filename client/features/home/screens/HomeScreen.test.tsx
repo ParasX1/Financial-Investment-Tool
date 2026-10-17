@@ -52,6 +52,11 @@ beforeAll(async () => {
       },
   );
   jest.doMock("next/router", () => ({ useRouter: () => mockRouter }));
+  jest.doMock("react-bootstrap/Modal", () => ({
+    __esModule: true,
+    default: ({ children, show, ...props }: any) =>
+      show ? <section {...props}>{children}</section> : null,
+  }));
   jest.doMock("@/features/auth", () => ({
     useAuth: () => mockAuthState,
     AuthDialog: ({ initialMode, onHide, redirectTo, show }: any) =>
@@ -251,7 +256,11 @@ describe("HomeScreenView", () => {
     for (const route of homeRouteLinks) {
       expect(links.some((link) => link.props.href === route.href)).toBe(true);
     }
-    expect(renderer.root.findAllByType("button")).toHaveLength(0);
+    expect(
+      renderer.root
+        .findAllByType("button")
+        .map((button) => button.children.join("")),
+    ).toEqual(["Inspect return", "Inspect volatility", "Inspect drawdown"]);
     expect(mockRouter.push).not.toHaveBeenCalled();
     act(() => renderer.unmount());
   });
@@ -272,11 +281,25 @@ describe("HomeScreenView", () => {
           button.children.includes("Sign in") ||
           button.children.includes("Get started") ||
           button.children.includes("Create an account") ||
-          typeof button.props["aria-label"] === "string",
+          button.props["aria-label"]?.endsWith(", sign in required"),
       );
 
     expect(entryButtons.length).toBeGreaterThan(0);
     expect(entryButtons.every((button) => button.props.disabled)).toBe(true);
+
+    const researchControls = renderer.root
+      .findAllByType("button")
+      .filter((button) => button.props["aria-haspopup"] === "dialog");
+    expect(researchControls).toHaveLength(3);
+    expect(researchControls.every((button) => !button.props.disabled)).toBe(
+      true,
+    );
+    act(() => researchControls[0].props.onClick());
+    expect(
+      renderer.root.findByProps({ id: "home-research-dialog-title" }).children,
+    ).toEqual(["Cumulative return"]);
+    expect(mockController.openLogin).not.toHaveBeenCalled();
+    expect(mockController.openSignUp).not.toHaveBeenCalled();
 
     act(() => renderer.unmount());
   });

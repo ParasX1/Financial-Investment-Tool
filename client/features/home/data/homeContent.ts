@@ -17,21 +17,6 @@ export const homeHeroActions = {
   secondary: "Explore the tools",
 };
 
-export const homePreviewMetrics = [
-  {
-    label: "Historical return",
-    description: "How the value changed over the selected period.",
-  },
-  {
-    label: "Volatility",
-    description: "How widely returns varied along the way.",
-  },
-  {
-    label: "Drawdown",
-    description: "How far the value fell from a previous high.",
-  },
-] as const;
-
 export const homeCta = {
   body: "Choose the companies you want to analyse. Take a closer look at return and risk.",
   primarySignedIn: "Open portfolio",

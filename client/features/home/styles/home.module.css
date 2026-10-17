@@ -410,152 +410,6 @@
   line-height: 1.75;
 }
 
-.heroVisual {
-  margin: 0;
-  padding: clamp(1.5rem, 3.5vw, 4.5rem);
-  border-top: 1px solid #40354f;
-  background: linear-gradient(145deg, #15111c, #0e0d12 65%);
-}
-
-.visualTopline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem 2rem;
-}
-
-.visualCaption {
-  max-width: 35rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  line-height: 1.6;
-}
-
-.visualHeading {
-  display: flex;
-  justify-content: space-between;
-  gap: 2rem;
-  align-items: end;
-  margin-top: 2.75rem;
-}
-
-.visualHeading .visualTitle {
-  max-width: 20ch;
-  margin: 0;
-  font-size: clamp(1.75rem, 2.7vw, 3.25rem);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.04em;
-  text-wrap: balance;
-}
-
-.visualHeading > p:not(.visualTitle) {
-  max-width: 29ch;
-  margin: 0;
-  color: var(--home-muted);
-  font-size: 0.875rem;
-  line-height: 1.65;
-}
-
-.visualChart {
-  margin-top: 2.75rem;
-}
-
-.chartLegend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.75rem;
-  color: var(--home-body);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
-.chartLegend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.returnKey,
-.benchmarkKey {
-  display: inline-block;
-  width: 1.5rem;
-  height: 0;
-  border-top: 2px solid #b8a2ff;
-}
-
-.benchmarkKey {
-  border-top: 2px dashed #8b879c;
-}
-
-.chartPlot {
-  display: block;
-  width: 100%;
-  height: clamp(11rem, 20vw, 24rem);
-  margin-top: 1.5rem;
-  overflow: visible;
-}
-
-.chartGrid {
-  stroke: #c3b0f0;
-  stroke-opacity: 0.12;
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.chartArea {
-  fill: #a78bfa;
-  fill-opacity: 0.04;
-}
-
-.chartReturn {
-  stroke: #b8a2ff;
-  stroke-width: 2.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.chartBenchmark {
-  stroke: #8b879c;
-  stroke-width: 1.5;
-  stroke-dasharray: 6 6;
-  vector-effect: non-scaling-stroke;
-}
-
-.chartTimeline {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 0.75rem;
-  color: var(--home-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
-.previewMetrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1.5rem, 4vw, 4rem);
-  margin: 2.25rem 0 0;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--home-border);
-}
-
-.previewMetrics dt {
-  color: var(--home-body);
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.previewMetrics dd {
-  max-width: 32ch;
-  margin: 0.5rem 0 0;
-  color: var(--home-muted);
-  font-size: 0.8125rem;
-  line-height: 1.65;
-}
-
 .discoveryStrip {
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr) auto;
@@ -812,17 +666,6 @@
   .chapterDetail {
     max-width: 34rem;
   }
-  .visualCaption,
-  .chartLegend,
-  .chartTimeline {
-    font-size: 0.875rem;
-  }
-  .previewMetrics dt {
-    font-size: 1rem;
-  }
-  .previewMetrics dd {
-    font-size: 0.9375rem;
-  }
 }
 
 @media (max-width: 1000px) {
@@ -912,17 +755,6 @@
   .helpRow > .helpLink {
     grid-column: 2;
     grid-row: 1 / 3;
-  }
-  .visualHeading {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  .visualHeading p {
-    max-width: 38ch;
-  }
-  .previewMetrics {
-    gap: 1rem;
   }
   .footer {
     grid-template-columns: 1fr;
@@ -1017,38 +849,6 @@
     font-size: 0.75rem;
     letter-spacing: 0.08em;
   }
-  .heroVisual {
-    padding: 1.25rem;
-  }
-  .visualTopline {
-    gap: 0.75rem;
-  }
-  .visualHeading {
-    margin-top: 2rem;
-  }
-  .visualHeading .visualTitle {
-    max-width: 18ch;
-    font-size: 1.75rem;
-  }
-  .visualChart {
-    margin-top: 2rem;
-  }
-  .chartLegend {
-    gap: 0.625rem;
-  }
-  .previewMetrics {
-    grid-template-columns: 1fr;
-    gap: 1.125rem;
-    margin-top: 1.5rem;
-  }
-  .previewMetrics dd {
-    max-width: none;
-    margin-top: 0.25rem;
-    font-size: 0.8125rem;
-  }
-  .previewMetrics dt {
-    font-size: 0.875rem;
-  }
   .ctaSection {
     padding-block: 5.5rem;
   }
@@ -1113,14 +913,5 @@
   .navPrimary,
   .primaryButton {
     border-color: ButtonText;
-  }
-  .chartReturn,
-  .chartBenchmark,
-  .chartGrid {
-    stroke: CanvasText;
-  }
-  .returnKey,
-  .benchmarkKey {
-    border-color: CanvasText;
   }
 }

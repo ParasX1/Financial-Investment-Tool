@@ -3,7 +3,6 @@ import {
   homeCta,
   homeFooterGroups,
   homeMetadata,
-  homePreviewMetrics,
   homeRouteLinks,
 } from "./homeContent";
 
@@ -17,17 +16,6 @@ describe("homeContent", () => {
       "/Community",
     ]);
     expect(homeRouteLinks.every((route) => route.gated)).toBe(true);
-  });
-
-  it("explains the three measures shown by the portfolio illustration", () => {
-    expect(homePreviewMetrics.map((metric) => metric.label)).toEqual([
-      "Historical return",
-      "Volatility",
-      "Drawdown",
-    ]);
-    expect(
-      homePreviewMetrics.every((metric) => metric.description.length > 30),
-    ).toBe(true);
   });
 
   it("links only to real FIT routes and sections", () => {

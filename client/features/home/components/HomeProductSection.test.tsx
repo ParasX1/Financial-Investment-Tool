@@ -94,7 +94,9 @@ describe("HomeProductSection", () => {
     for (const route of homeRouteLinks) {
       expect(markup).not.toContain(`href="${route.href}"`);
     }
-    const buttons = markup.match(/<button[^>]*>/g) ?? [];
+    const buttons = (markup.match(/<button[^>]*>/g) ?? []).filter((button) =>
+      button.includes("sign in required"),
+    );
     expect(buttons).toHaveLength(homeRouteLinks.length);
     expect(buttons.every((button) => button.includes('disabled=""'))).toBe(
       true,

@@ -86,14 +86,17 @@ for (const viewport of [
     }
     await assertNoOverflow(page);
     const preview = page.getByRole("figure", {
-      name: "Read the journey, as well as the result.",
+      name: "Compare companies across return and risk.",
     });
-    await expect(preview).toContainText("Illustration only.");
-    await expect(preview).toContainText(
-      "No account data or calculated results.",
-    );
-    for (const label of ["Historical return", "Volatility", "Drawdown"]) {
-      await expect(preview.getByText(label, { exact: true })).toBeVisible();
+    await expect(preview).toContainText("Historical sample");
+    for (const label of [
+      "Cumulative return",
+      "Annualised volatility",
+      "Drawdown history",
+    ]) {
+      await expect(
+        preview.getByRole("heading", { name: label, exact: true }),
+      ).toBeVisible();
     }
     await page.screenshot({
       path: testInfo.outputPath("home.png"),
@@ -208,7 +211,14 @@ test("renders direct destinations for a restored signed-in fixture", async ({
   ]) {
     await expect(product.locator(`a[href="${href}"]`)).toBeVisible();
   }
-  await expect(product.getByRole("button")).toHaveCount(0);
+  await expect(
+    product.getByRole("button", { name: /sign in required$/ }),
+  ).toHaveCount(0);
+  await expect(
+    product.getByRole("button", {
+      name: /^Inspect (return|volatility|drawdown)$/,
+    }),
+  ).toHaveCount(3);
   await hero.getByRole("link", { name: "Open portfolio" }).click();
   await expect(page).toHaveURL(/\/Portfolio$/);
   await expect(page.getByRole("dialog")).toBeHidden();
@@ -335,7 +345,7 @@ test.describe("Home without JavaScript", () => {
     await expect(
       page.getByText(/Enable JavaScript to sign in or create an account/),
     ).toBeVisible();
-    await expect(page.getByText(/Illustration only\./)).toBeVisible();
+    await expect(page.getByText(/Historical sample/).first()).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Read the guide", exact: false }),
     ).toHaveAttribute("href", "/Guide");
