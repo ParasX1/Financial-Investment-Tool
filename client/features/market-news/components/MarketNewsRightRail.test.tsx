@@ -5,6 +5,14 @@ import { MARKET_NEWS_MARKET_SCOPES } from "@/lib/news/tickerStrip";
 import { MarketNewsRightRail } from "./MarketNewsRightRail";
 
 describe("MarketNewsRightRail", () => {
+  const emptyRailSummary = {
+    mentionedTickers: [],
+    totalLinkedStoryCount: 0,
+    watchlistHitCount: 0,
+    watchlistStoryCount: 0,
+    watchlistTickers: [],
+  };
+
   it("shows feed context without opening quote reference by default", () => {
     const marketScope = MARKET_NEWS_MARKET_SCOPES[0]!;
     const html = renderToStaticMarkup(
@@ -69,13 +77,7 @@ describe("MarketNewsRightRail", () => {
       <MarketNewsRightRail
         authenticated={false}
         lookupDraft="^AXJO"
-        railSummary={{
-          mentionedTickers: [],
-          totalLinkedStoryCount: 0,
-          watchlistHitCount: 0,
-          watchlistStoryCount: 0,
-          watchlistTickers: [],
-        }}
+        railSummary={emptyRailSummary}
         selectedTicker={selectedTicker}
         watchlistError={null}
         watchlistLoading={false}
@@ -97,13 +99,7 @@ describe("MarketNewsRightRail", () => {
       <MarketNewsRightRail
         authenticated
         lookupDraft=""
-        railSummary={{
-          mentionedTickers: [],
-          totalLinkedStoryCount: 0,
-          watchlistHitCount: 0,
-          watchlistStoryCount: 0,
-          watchlistTickers: [],
-        }}
+        railSummary={emptyRailSummary}
         selectedTicker={null}
         watchlistError="Saved tickers could not be loaded. Watchlist news may be incomplete."
         watchlistLoading={false}
@@ -123,13 +119,7 @@ describe("MarketNewsRightRail", () => {
       <MarketNewsRightRail
         authenticated
         lookupDraft=""
-        railSummary={{
-          mentionedTickers: [],
-          totalLinkedStoryCount: 0,
-          watchlistHitCount: 0,
-          watchlistStoryCount: 0,
-          watchlistTickers: [],
-        }}
+        railSummary={emptyRailSummary}
         selectedTicker={null}
         watchlistError={null}
         watchlistLoading
@@ -143,4 +133,5 @@ describe("MarketNewsRightRail", () => {
     expect(html).toContain("Loading saved tickers…");
     expect(html).not.toContain("Loading saved tickers...");
   });
+
 });

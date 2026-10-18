@@ -1,5 +1,6 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import TestRenderer, { act } from "react-test-renderer";
 import type { Article } from "@/lib/news/contracts";
 import { MarketNewsArticleLayout } from "./MarketNewsArticleLayout";
 
@@ -251,6 +252,36 @@ describe("MarketNewsArticleLayout", () => {
     expect(html).toContain("Story 1");
     expect(html).toContain("Yahoo Finance AU");
     expect(html).not.toContain("Market News</span>");
+  });
+
+  it("falls back to the text-only row layout when a provider image fails", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = TestRenderer.create(
+        <MarketNewsArticleLayout
+          articles={[article(1)]}
+          emptyState={{
+            message: "No stories",
+            title: "Empty",
+          }}
+          error={null}
+          loading={false}
+          title="Cost of Living"
+        />,
+      );
+    });
+
+    expect(renderer.root.findAllByType("img")).toHaveLength(1);
+
+    act(() => {
+      renderer.root.findByType("img").props.onError();
+    });
+
+    expect(renderer.root.findAllByType("img")).toHaveLength(0);
+    expect(
+      renderer.root.findByType("a").props.className,
+    ).toContain("topicArticleLinkTextOnly");
   });
 
   it("announces that source links open in a new tab", () => {
