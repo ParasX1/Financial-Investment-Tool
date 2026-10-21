@@ -9,7 +9,7 @@ import {
 } from "./communityValidation";
 
 describe("validateCommunityCommentContent", () => {
-  it.each(["x", "界", "😀"])(
+  it.each(["x", "\u754c", "😀"])(
     "accepts exactly 2,000 %s code points",
     (character) => {
       expect(

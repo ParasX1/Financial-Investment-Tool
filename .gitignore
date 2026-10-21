@@ -78,7 +78,6 @@ COMMUNITY_CHAT*_BACKUP_*.md
 what changed.md
 /TL26S1-Sprint*.pdf
 /docs/TL26S1-Sprint*.pdf
-/docs/codebase-structure-guide.zh-CN.md
 supabase/schema_snapshot_2026_05_08_new.sql
 supabase/.temp/
 

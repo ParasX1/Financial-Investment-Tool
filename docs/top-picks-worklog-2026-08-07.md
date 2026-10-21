@@ -319,8 +319,8 @@ Observed:
 
 ## Performance Comparison
 
-A local mocked benchmark compared old no-snapshot-cache behavior against the
-new snapshot cache.
+A local benchmark with mocked market data and calculator delays compared old
+no-snapshot-cache behavior against the new snapshot cache.
 
 Old behavior, simulated with `cache_ttl=0`:
 
@@ -398,7 +398,7 @@ Recommended before a real hosted demo:
 - restrict Flask CORS to the frontend domain
 - add basic API rate limiting
 - confirm Supabase RLS and key usage
-- keep frontend keys browser-safe
+- keep frontend keys browser-safe (publishable / anon only)
 - do not commit `.env`
 - consider a private demo gate such as Vercel Deployment Protection,
   Cloudflare Access, or a simple password gate
