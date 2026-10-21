@@ -161,7 +161,7 @@ test("preserves numeric alignment and CJK fallback in a MUI table fixture", asyn
           rows: [1, 8].map((digit, index) => ({
             rank: index + 1,
             symbol: `FONT${digit}`,
-            name: "投资组合字体样本",
+            name: "\u6295\u8d44\u7ec4\u5408\u5b57\u4f53\u6837\u672c",
             category: "Equity",
             issuer: "Example",
             expenseRatio: 0,

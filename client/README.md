@@ -2,7 +2,7 @@
 
 This directory contains the Next.js Pages Router application.
 
-For the full architecture, change-location matrix and contribution workflow, read the [English contributor guide](../CONTRIBUTING.md) or [中文贡献指南](../CONTRIBUTING.zh-CN.md).
+For the full architecture, change-location matrix and contribution workflow, read the [contributor guide](../CONTRIBUTING.md).
 
 ## Start
 

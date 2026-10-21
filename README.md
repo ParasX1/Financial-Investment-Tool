@@ -30,7 +30,7 @@ server/src/routes -> analytics or domain services -> repositories/calculators
 supabase/migrations -> Postgres schema and authorization
 ```
 
-For a folder-by-folder map, debugging routes, and guidance on where to add code, read the [English contributor guide](CONTRIBUTING.md) or [中文贡献指南](CONTRIBUTING.zh-CN.md).
+For a folder-by-folder map, debugging routes, and guidance on where to add code, read the [contributor guide](CONTRIBUTING.md).
 
 ## Quick start
 
@@ -190,7 +190,6 @@ python -m flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statis
 Start with:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — canonical English repository map and workflow
-- [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md) — 中文代码结构与贡献指南
 - [client/README.md](client/README.md) — concise frontend workspace commands
 
 Keep product code in its owning feature, promote code to a shared layer only after it has a genuinely feature-neutral contract, and include tests for behavioral or architectural boundaries.

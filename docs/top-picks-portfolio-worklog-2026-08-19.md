@@ -101,7 +101,8 @@ risk-free rate 4.35% (RBA cash rate target, effective 2026-06-17)
 ```
 
 `effective` is used instead of `as of` because the date is the effective date of
-the RBA cash rate target used as the risk-free-rate assumption.
+the RBA cash rate target used as the risk-free-rate assumption, not a market-data
+freshness cutoff.
 
 Several mojibake display issues in TopPicks text were also cleaned up, including
 metric empty-state formatting and loading text.
@@ -146,7 +147,7 @@ The Portfolio symbol input keeps the existing rules:
 - Uppercase normalization.
 
 The autocomplete behavior was tightened so partial search text such as `A` is
-not accidentally submitted when suggestions are visible. If the user types an
+not accidentally submitted on blur when suggestions are visible. If the user types an
 exact result symbol such as `VOO`, it can still be committed as a ticker.
 
 ## Verification

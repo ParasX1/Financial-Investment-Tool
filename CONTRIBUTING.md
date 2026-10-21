@@ -1,7 +1,5 @@
 # Contributing to Financial-Investment-Tool
 
-English · [简体中文](CONTRIBUTING.zh-CN.md)
-
 This is the repository map and contributor runbook. It answers four practical questions:
 
 1. Which folder owns a behavior?
@@ -90,7 +88,6 @@ The ownership rule is:
 | `supabase/`             | local config, migrations, seed data, schema reference       | tables, grants, RLS, storage, or persisted preferences change |
 | `README.md`             | product overview and shortest setup path                    | the project entry point changes                               |
 | `CONTRIBUTING.md`       | canonical English map and workflow                          | ownership, setup, or contributor rules change                 |
-| `CONTRIBUTING.zh-CN.md` | canonical Chinese map and workflow                          | the English guide changes                                     |
 
 The root `package.json` is not the frontend install boundary. Run application npm commands from `client/`.
 
@@ -519,7 +516,9 @@ UI changes need screenshots; financial semantics need explicit assumptions; sche
 
 ## Documentation strategy
 
-GitHub automatically surfaces a root `CONTRIBUTING.md` during contribution flows. The Chinese guide lives beside it and links back here. Both are versioned with code so path and workflow changes are reviewed together.
+Repository documentation and contributor instructions are maintained in English.
+
+GitHub automatically surfaces the root `CONTRIBUTING.md` during contribution flows. This English guide is versioned with code so path and workflow changes are reviewed together.
 
 A Wiki is not the primary repository map today. It may later hold product tutorials or operational/community material that changes independently. Code ownership and migration workflow belong beside the code.
 

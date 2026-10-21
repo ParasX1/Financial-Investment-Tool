@@ -50,7 +50,7 @@ describe("Community comment write boundaries", () => {
   );
 
   it("preserves accepted text through the supported legacy adapter", async () => {
-    const text = "界".repeat(2000);
+    const text = "\u754c".repeat(2000);
     const { db, insert, query } = createDatabase();
     query.single
       .mockResolvedValueOnce({
@@ -79,7 +79,7 @@ describe("Community comment write boundaries", () => {
 
   it.each([
     "x".repeat(2000),
-    "界".repeat(2000),
+    "\u754c".repeat(2000),
     "😀".repeat(2000),
     "e\u0301".repeat(1000),
     "",

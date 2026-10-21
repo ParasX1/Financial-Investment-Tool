@@ -32,7 +32,7 @@ State whether this PR needs environment variables, a database migration, provide
 
 ## Checklist
 
-- [ ] I read [CONTRIBUTING.md](https://github.com/ParasX1/Financial-Investment-Tool/blob/Dev/CONTRIBUTING.md) or the [中文贡献指南](https://github.com/ParasX1/Financial-Investment-Tool/blob/Dev/CONTRIBUTING.zh-CN.md).
+- [ ] I read [CONTRIBUTING.md](https://github.com/ParasX1/Financial-Investment-Tool/blob/Dev/CONTRIBUTING.md).
 - [ ] The change lives in the correct feature, shared layer or backend domain.
 - [ ] New behavior or a bug fix has a regression test.
 - [ ] Financial units, direction and assumptions are explicit and tested.
