@@ -1,0 +1,229 @@
+{
+  "mode": "live",
+  "as_of": "2026-10-03",
+  "symbols": [
+    "360.AX",
+    "A",
+    "A2M.AX",
+    "AAI.AX",
+    "AAPL"
+  ],
+  "runs": [
+    {
+      "strategy": "separate",
+      "initial_window": "1D",
+      "cold_seconds": 3.6434154000598937,
+      "cold_downloads": [
+        {
+          "start": "2026-09-28",
+          "end": "2026-10-03",
+          "seconds": 3.5818013000534847,
+          "usable_symbols": 6
+        }
+      ],
+      "cold_rows_with_return": 5,
+      "prewarm_seconds": 7.294372299918905,
+      "prewarm_downloads": [
+        {
+          "start": "2026-09-23",
+          "end": "2026-10-03",
+          "seconds": 2.1474268999882042,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-08-19",
+          "end": "2026-10-03",
+          "seconds": 2.7446995000354946,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.2037241000216454,
+          "usable_symbols": 6
+        }
+      ],
+      "refresh_response_seconds": 0.0001686000032350421,
+      "refresh_complete_seconds": 10.827925399993546,
+      "refresh_downloads": [
+        {
+          "start": "2026-09-28",
+          "end": "2026-10-03",
+          "seconds": 2.7434200000716373,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-09-23",
+          "end": "2026-10-03",
+          "seconds": 2.808618600014597,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-08-19",
+          "end": "2026-10-03",
+          "seconds": 2.2098023999715224,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.795851800008677,
+          "usable_symbols": 6
+        }
+      ],
+      "refreshed_windows": [
+        "1D",
+        "1W",
+        "1M",
+        "1Y"
+      ]
+    },
+    {
+      "strategy": "separate",
+      "initial_window": "1Y",
+      "cold_seconds": 2.306506699998863,
+      "cold_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.2500412999652326,
+          "usable_symbols": 6
+        }
+      ],
+      "cold_rows_with_return": 5,
+      "prewarm_seconds": 6.7887251999927685,
+      "prewarm_downloads": [
+        {
+          "start": "2026-09-28",
+          "end": "2026-10-03",
+          "seconds": 2.158393600024283,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-09-23",
+          "end": "2026-10-03",
+          "seconds": 2.2165749000851065,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-08-19",
+          "end": "2026-10-03",
+          "seconds": 2.2115854000439867,
+          "usable_symbols": 6
+        }
+      ],
+      "refresh_response_seconds": 0.0001425000373274088,
+      "refresh_complete_seconds": 10.313742400030605,
+      "refresh_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.3095177999930456,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-09-28",
+          "end": "2026-10-03",
+          "seconds": 2.158505699946545,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-09-23",
+          "end": "2026-10-03",
+          "seconds": 2.1905378999654204,
+          "usable_symbols": 6
+        },
+        {
+          "start": "2026-08-19",
+          "end": "2026-10-03",
+          "seconds": 3.3857620999915525,
+          "usable_symbols": 6
+        }
+      ],
+      "refreshed_windows": [
+        "1D",
+        "1W",
+        "1M",
+        "1Y"
+      ]
+    },
+    {
+      "strategy": "shared",
+      "initial_window": "1D",
+      "cold_seconds": 2.8282415000721812,
+      "cold_downloads": [
+        {
+          "start": "2026-09-28",
+          "end": "2026-10-03",
+          "seconds": 2.7657775999978185,
+          "usable_symbols": 6
+        }
+      ],
+      "cold_rows_with_return": 5,
+      "prewarm_seconds": 2.343317700084299,
+      "prewarm_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.255054899957031,
+          "usable_symbols": 6
+        }
+      ],
+      "refresh_response_seconds": 0.00013120006769895554,
+      "refresh_complete_seconds": 2.352410599938594,
+      "refresh_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.232124499976635,
+          "usable_symbols": 6
+        }
+      ],
+      "refreshed_windows": [
+        "1D",
+        "1W",
+        "1M",
+        "1Y"
+      ]
+    },
+    {
+      "strategy": "shared",
+      "initial_window": "1Y",
+      "cold_seconds": 2.885791499982588,
+      "cold_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.8286384999519214,
+          "usable_symbols": 6
+        }
+      ],
+      "cold_rows_with_return": 5,
+      "prewarm_seconds": 0.10938030004035681,
+      "prewarm_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 0.002714899950660765,
+          "usable_symbols": 6
+        }
+      ],
+      "refresh_response_seconds": 0.00014109991025179625,
+      "refresh_complete_seconds": 2.9042816000292078,
+      "refresh_downloads": [
+        {
+          "start": "2025-10-03",
+          "end": "2026-10-03",
+          "seconds": 2.789474099990912,
+          "usable_symbols": 6
+        }
+      ],
+      "refreshed_windows": [
+        "1D",
+        "1W",
+        "1M",
+        "1Y"
+      ]
+    }
+  ]
+}

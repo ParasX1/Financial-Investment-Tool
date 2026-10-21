@@ -1,0 +1,195 @@
+{
+  "mode": "isolated_full_universe_seven_day_download_with_existing_retries",
+  "yfinance_version": "0.2.65",
+  "stock_count": 699,
+  "symbol_count": 700,
+  "runs": [
+    {
+      "threads": false,
+      "seconds": 532.1624083999777,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "date_rows": 5,
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 531.6266229000175
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.41128299990668893
+        }
+      ],
+      "missing": [
+        "QUB.AX"
+      ],
+      "price_differences_from_first_run": [],
+      "round": 1
+    },
+    {
+      "threads": 16,
+      "seconds": 40.578661200008355,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "date_rows": 5,
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 39.28783059993293
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.4110849000280723
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.7461689999327064
+        }
+      ],
+      "missing": [
+        "QUB.AX",
+        "URI"
+      ],
+      "price_differences_from_first_run": [],
+      "round": 2,
+      "requested_threads": 4,
+      "note": "Exploratory run: existing multitasking pool retained default capacity 16; peak was not instrumented."
+    },
+    {
+      "threads": 16,
+      "seconds": 42.61233690008521,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "date_rows": 5,
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 40.67416509997565
+        },
+        {
+          "symbols": 1,
+          "seconds": 1.4091103000100702
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.4080098000122234
+        }
+      ],
+      "missing": [
+        "ASB.AX",
+        "QUB.AX"
+      ],
+      "price_differences_from_first_run": [],
+      "round": 3,
+      "requested_threads": 8,
+      "note": "Exploratory run: existing multitasking pool retained default capacity 16; peak was not instrumented."
+    }
+  ],
+  "verified_bounded_runs": [
+    {
+      "threads": 4,
+      "measured_peak_concurrent_downloads": 4,
+      "seconds": 150.36360550008249,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "date_rows": 5,
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 148.17011629999615
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.7872447000117972
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.8243535999208689
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.45418840006459504
+        }
+      ],
+      "missing": [
+        "HUB.AX",
+        "PH",
+        "QUB.AX"
+      ],
+      "price_differences_from_verified_4_thread_run": [],
+      "round": 1
+    },
+    {
+      "threads": 8,
+      "measured_peak_concurrent_downloads": 8,
+      "seconds": 77.53894280001987,
+      "symbol_count": 700,
+      "start": "2026-09-27",
+      "end": "2026-10-04",
+      "date_rows": 5,
+      "calls": [
+        {
+          "symbols": 700,
+          "seconds": 76.08154210005887
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.8740694000152871
+        },
+        {
+          "symbols": 1,
+          "seconds": 0.44349410000722855
+        }
+      ],
+      "missing": [
+        "ABT",
+        "QUB.AX"
+      ],
+      "price_differences_from_verified_4_thread_run": [],
+      "round": 2
+    }
+  ],
+  "separate_sequential_recovery_check": {
+    "threads": false,
+    "measured_peak_concurrent_downloads": 1,
+    "seconds": 5.6584623999660835,
+    "symbol_count": 4,
+    "start": "2026-09-27",
+    "end": "2026-10-04",
+    "date_rows": 5,
+    "calls": [
+      {
+        "symbols": 4,
+        "seconds": 5.242892400012352
+      },
+      {
+        "symbols": 1,
+        "seconds": 0.4108090999070555
+      }
+    ],
+    "missing": [
+      "QUB.AX"
+    ],
+    "checked_symbols": [
+      "ABT",
+      "HUB.AX",
+      "PH",
+      "QUB.AX"
+    ],
+    "recovered_symbols": [
+      "ABT",
+      "HUB.AX",
+      "PH"
+    ]
+  },
+  "limitations": [
+    "One measured run per verified bounded setting; network timing can vary.",
+    "Seven-day download and existing retries only, not browser latency or full refresh computation.",
+    "Separate sequential recovery is diagnostic and is not included in full-universe run timings.",
+    "Common returned adjusted-close prices match; missing symbols are listed separately."
+  ]
+}

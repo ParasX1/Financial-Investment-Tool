@@ -1,0 +1,6 @@
+-r requirements.txt
+
+autopep8>=2.3,<3
+flake8>=7.3,<8
+matplotlib>=3.8,<3.10
+pytest>=8.4,<10

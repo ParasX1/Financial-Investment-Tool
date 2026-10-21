@@ -1,0 +1,287 @@
+{
+  "baseline_commit": "3e36a257ca27a522deac6724876a6ca5adc7cb1e",
+  "purpose": "Original repository bytes and local replay mapping; never proof of hosted effects or authority to repair a deployed ledger.",
+  "migrations": [
+    {
+      "original_file": "20240922110723_remote_schema.sql",
+      "original_version": "20240922110723",
+      "original_sha256": "4b48d8441a2527794a1fa8483f89af6e3417136c6455c43f0233029971dc7603",
+      "replay_file": "20240922110723_remote_schema.sql",
+      "change": "create missing pgsodium schema and retain unused pgjwt only on Postgres below 17",
+      "original_checkout_sha256": "d01176f6f28386d19f4b09c4f071cca22b9a524b6b22df90551f9fefee9104c9",
+      "replay_sha256": "b68e4b7a3a92ba01beb48fb2bd97fc8f6bd962f4b4369972d45390340d26396e",
+      "effect": "2024 base extensions and legacy Stocks/Symbols/Users table/RLS/default-grant surface"
+    },
+    {
+      "original_file": "20240922112057_remote_schema.sql",
+      "original_version": "20240922112057",
+      "original_sha256": "21a6a34a242b73e4a3ae41f1dde8b1566187daf6b83d7d000ebcd2dc368b2338",
+      "replay_file": "20240922112057_remote_schema.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "9f3bec70d0a812910b6898573d3fba6dfc950a547e4eef05aaccb13af41e6ba6",
+      "replay_sha256": "21a6a34a242b73e4a3ae41f1dde8b1566187daf6b83d7d000ebcd2dc368b2338",
+      "effect": "auth.users signup trigger installation"
+    },
+    {
+      "original_file": "20260508000000_community_delete_ownership_rls.sql",
+      "original_version": "20260508000000",
+      "original_sha256": "077807df3dacd840bfbfa3c6453cc52f2a9adbfc0db6646714ef02a66270564f",
+      "replay_file": "20260508000000_community_delete_ownership_rls.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "0c2de04ebfd15fd34e0b4daa13cae3f5d8df0e57f56191b4990679597a595f6f",
+      "replay_sha256": "077807df3dacd840bfbfa3c6453cc52f2a9adbfc0db6646714ef02a66270564f",
+      "effect": "conditional legacy post/comment policies before community table bootstrap"
+    },
+    {
+      "original_file": "20260508000000_create_avatars_bucket.sql",
+      "original_version": "20260508000000",
+      "original_sha256": "9bfd92dacf97747e3c056f2937aef69d4cc59285f1e19f73bea39bb0db932001",
+      "replay_file": "20260508000001_create_avatars_bucket.sql",
+      "change": "distinct fresh-bootstrap version; original deployed 20260508000000 remains ambiguous",
+      "original_checkout_sha256": "042bef50cd6f82f59fc3d1492102a13a263087f6afaabb24dc6da8e5d0a4b913",
+      "replay_sha256": "9bfd92dacf97747e3c056f2937aef69d4cc59285f1e19f73bea39bb0db932001",
+      "effect": "public avatars bucket, five MiB image allowlist, per-user avatar storage policies"
+    },
+    {
+      "original_file": "20260508010000_current_community_schema_rls_storage.sql",
+      "original_version": "20260508010000",
+      "original_sha256": "4c21b38eb0bbcd11c929c190c243e0e01c554cfcc9f36cf6464dd76f4e7dec44",
+      "replay_file": "20260508010000_current_community_schema_rls_storage.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "bd8aaf1ae9bfd51b019d4ccfb623f282ce40244dfd2435ff79bbd35884ae30c8",
+      "replay_sha256": "4c21b38eb0bbcd11c929c190c243e0e01c554cfcc9f36cf6464dd76f4e7dec44",
+      "effect": "profiles/tickers/posts/comments schema, public reads and initial community-image bucket/policies"
+    },
+    {
+      "original_file": "20260508020000_community_post_likes.sql",
+      "original_version": "20260508020000",
+      "original_sha256": "7306c739031cb7e00adcb95385025937b8467055b34b221bf61e0916e24a5341",
+      "replay_file": "20260508020000_community_post_likes.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "2f56e811be78c4f9ceb341d7b3e82d3287f80c7ee01e391d90c8cebd539ec5cb",
+      "replay_sha256": "7306c739031cb7e00adcb95385025937b8467055b34b221bf61e0916e24a5341",
+      "effect": "owner-visible likes and authenticated like/unlike definer RPCs"
+    },
+    {
+      "original_file": "20260508030000_community_post_body.sql",
+      "original_version": "20260508030000",
+      "original_sha256": "2cfc3c7ca227d2f858b80bc3997d98a45451977eca754662d6cfae89a04af289",
+      "replay_file": "20260508030000_community_post_body.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "6bac1057428079b93aa3dceba3b664530a9f8ed0b6c1d5d2b5112cbb6c9c8746",
+      "replay_sha256": "2cfc3c7ca227d2f858b80bc3997d98a45451977eca754662d6cfae89a04af289",
+      "effect": "post Markdown body"
+    },
+    {
+      "original_file": "20260509000000_community_post_tags.sql",
+      "original_version": "20260509000000",
+      "original_sha256": "07d3dbf5965f487c871e94b51c0b268485c787c6f1fdbd60735e33b06b9f67d7",
+      "replay_file": "20260509000000_community_post_tags.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "ffc81380b2e349a23413ea0d1dc8fe8d50d5f9926f56640c25b330c301428bff",
+      "replay_sha256": "07d3dbf5965f487c871e94b51c0b268485c787c6f1fdbd60735e33b06b9f67d7",
+      "effect": "post tag array"
+    },
+    {
+      "original_file": "20260509010000_community_post_images.sql",
+      "original_version": "20260509010000",
+      "original_sha256": "fcbd68f6e15d59e0630827547cbb4d2ef7b4a1ce4d32d491ef7a73d0f0643262",
+      "replay_file": "20260509010000_community_post_images.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "917ecbca6eaf22243a27ef25c8e75659a48edc9d9e425bebc60afe19ce5e1fdd",
+      "replay_sha256": "fcbd68f6e15d59e0630827547cbb4d2ef7b4a1ce4d32d491ef7a73d0f0643262",
+      "effect": "post image URL"
+    },
+    {
+      "original_file": "20260509020000_community_image_paths_cleanup.sql",
+      "original_version": "20260509020000",
+      "original_sha256": "b63abfe92aa208f934f4e98734815b271f720e878554064bf5d8755c6d90869e",
+      "replay_file": "20260509020000_community_image_paths_cleanup.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "ab0615c729783efbe4098e174eb106ee3040c9dc8726aaeee7abf2840884de28",
+      "replay_sha256": "b63abfe92aa208f934f4e98734815b271f720e878554064bf5d8755c6d90869e",
+      "effect": "post/comment image paths and initial cleanup grants"
+    },
+    {
+      "original_file": "20260509030000_community_auth_and_storage_policy_tightening.sql",
+      "original_version": "20260509030000",
+      "original_sha256": "0f14de48a994054098e67ee25e48bb8fece281ff88b3842f1a1da0d2f73de062",
+      "replay_file": "20260509030000_community_auth_and_storage_policy_tightening.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "e147e8931f96f2389a9a36eeaf9e8c5d52afa7ce9bdb9e185275174d3b917adf",
+      "replay_sha256": "0f14de48a994054098e67ee25e48bb8fece281ff88b3842f1a1da0d2f73de062",
+      "effect": "authenticated author writes and community upload namespace"
+    },
+    {
+      "original_file": "20260509040000_community_comment_delete_author_only.sql",
+      "original_version": "20260509040000",
+      "original_sha256": "949d4d397a8401391f385864b507f90d823a3190de0982ffa8831476b7b5dd93",
+      "replay_file": "20260509040000_community_comment_delete_author_only.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "63d6972a83445815838cf6c1074e674ca0ca2f783a800664c02ecca7a0864433",
+      "replay_sha256": "949d4d397a8401391f385864b507f90d823a3190de0982ffa8831476b7b5dd93",
+      "effect": "author-only comment delete"
+    },
+    {
+      "original_file": "20260517090000_add_user_phone.sql",
+      "original_version": "20260517090000",
+      "original_sha256": "1b14d758f6e322454df0933b6c147d418bb2703458f48cfc7afc54375d3f5af0",
+      "replay_file": "20260517090000_add_user_phone.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "86ebf402f0118d5517e5caea653ea924bd401a0eaf6b4f7ff9cfb04faa3d453b",
+      "replay_sha256": "1b14d758f6e322454df0933b6c147d418bb2703458f48cfc7afc54375d3f5af0",
+      "effect": "private account phone field"
+    },
+    {
+      "original_file": "20260628090000_add_user_handle.sql",
+      "original_version": "20260628090000",
+      "original_sha256": "11be0dddf1495b9c179da57aa145957014928b31b694bdc00b7798322ac65883",
+      "replay_file": "20260628090000_add_user_handle.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "d500d6df6dc4f00bd21c961f9dad8e439d06266e6846d74585201627c08a8461",
+      "replay_sha256": "11be0dddf1495b9c179da57aa145957014928b31b694bdc00b7798322ac65883",
+      "effect": "private account handle field and uniqueness"
+    },
+    {
+      "original_file": "20260714173009_watchlist_research_queue.sql",
+      "original_version": "20260714173009",
+      "original_sha256": "60ae3615a5984334b567ad6c8d90ab1c4fafeb89dd99262960fcaac44097b3a6",
+      "replay_file": "20260714173009_watchlist_research_queue.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "f2998ee81258fb1e7bc8eee9eea574307a91ef603283b24f9816f764db33cc78",
+      "replay_sha256": "60ae3615a5984334b567ad6c8d90ab1c4fafeb89dd99262960fcaac44097b3a6",
+      "effect": "private owner watchlist, normalization, validation, reordering/removal RPCs"
+    },
+    {
+      "original_file": "20260717090000_secure_profile_users.sql",
+      "original_version": "20260717090000",
+      "original_sha256": "385a66f4eab510eeac9eed755b4374dfb29614b1c427b0e84da21c1e00ec10d8",
+      "replay_file": "20260717090000_secure_profile_users.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "ed9e0eb7d16fb24e183b098c31ee751632c241fec18ee52382aab559986f96e2",
+      "replay_sha256": "385a66f4eab510eeac9eed755b4374dfb29614b1c427b0e84da21c1e00ec10d8",
+      "effect": "private Users grants, auth-trigger/backfill, canonical avatar path ownership"
+    },
+    {
+      "original_file": "20260717110000_harden_community_feed_permissions.sql",
+      "original_version": "20260717110000",
+      "original_sha256": "c62ba5e599a6324389aeb3013f23612daa9c2185f548ed887c5344ebf8e98b71",
+      "replay_file": "20260717110000_harden_community_feed_permissions.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "30ae8253930ae6ec6e8419efde6e5ef11efefdb857e8eeede63dc54ee2ea031f",
+      "replay_sha256": "c62ba5e599a6324389aeb3013f23612daa9c2185f548ed887c5344ebf8e98b71",
+      "effect": "least-privilege posts/comments and like RPCs, remove community metadata enumeration"
+    },
+    {
+      "original_file": "20260718131804_community_research_loop.sql",
+      "original_version": "20260718131804",
+      "original_sha256": "fe7596c47209b3863e4e13be6f5a115ea13964aca3dbce295c06f698e4981e9d",
+      "replay_file": "20260718131804_community_research_loop.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "e08574f4c448448bd04135794785707e9895d65e1be8b56e68f3450a38de8ec7",
+      "replay_sha256": "fe7596c47209b3863e4e13be6f5a115ea13964aca3dbce295c06f698e4981e9d",
+      "effect": "typed post context, private saves, owner-visible moderation reports"
+    },
+    {
+      "original_file": "20260719030238_community_post_tickers.sql",
+      "original_version": "20260719030238",
+      "original_sha256": "df5753c5ebea6f0b9e670b36f9a31e76da7ea0dd104426bd510475b437ddd931",
+      "replay_file": "20260719030238_community_post_tickers.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "b0c75106b1c9f1419a7393e3877c502f8f709e7e0f8b2490e173ce4feb31d607",
+      "replay_sha256": "df5753c5ebea6f0b9e670b36f9a31e76da7ea0dd104426bd510475b437ddd931",
+      "effect": "ordered post tickers and owner insert policy"
+    },
+    {
+      "original_file": "20260719053615_atomic_community_post_tickers.sql",
+      "original_version": "20260719053615",
+      "original_sha256": "6cde81da72028a83261228a01752e8cd0480876ae27f185b4c3fa160f131a0d4",
+      "replay_file": "20260719053615_atomic_community_post_tickers.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "6368c3ca08c6980780b41e3855341547154541c04b60a3104fa2b09ecc2aa41c",
+      "replay_sha256": "6cde81da72028a83261228a01752e8cd0480876ae27f185b4c3fa160f131a0d4",
+      "effect": "atomic post/ticker RPC and deferred primary-ticker consistency"
+    },
+    {
+      "original_file": "20260724013151_community_post_content_limits.sql",
+      "original_version": "20260724013151",
+      "original_sha256": "b781c175a9ec701942b0b6b87f4d5e7da4fc955e16e9afb47bde50667b15586b",
+      "replay_file": "20260724013151_community_post_content_limits.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "be8d46d1429fd44437da040737c1bc237675b19483695c0f794d9991563e28c8",
+      "replay_sha256": "b781c175a9ec701942b0b6b87f4d5e7da4fc955e16e9afb47bde50667b15586b",
+      "effect": "post title/body size constraints"
+    },
+    {
+      "original_file": "20260724014324_community_post_image_references.sql",
+      "original_version": "20260724014324",
+      "original_sha256": "358a0dd85d760fbd5ed098b7ac6b00129772b1bc5323e6b4d515dab3654dc5ce",
+      "replay_file": "20260724014324_community_post_image_references.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "955e8104c4710c831aa39fe068ddbce493275bd04803d59546b6e03d55f2dd4c",
+      "replay_sha256": "358a0dd85d760fbd5ed098b7ac6b00129772b1bc5323e6b4d515dab3654dc5ce",
+      "effect": "post paired URL/path constraint"
+    },
+    {
+      "original_file": "20260724015410_community_image_path_integrity.sql",
+      "original_version": "20260724015410",
+      "original_sha256": "2439cf678c2b1143f48fbbb4bab3960cf99213e5aa83f89782bb4c77479cf594",
+      "replay_file": "20260724015410_community_image_path_integrity.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "7ff5b8d294d0678a4ff2944c24d56017f0f0e87bc37ecfc088e642c54f65f058",
+      "replay_sha256": "2439cf678c2b1143f48fbbb4bab3960cf99213e5aa83f89782bb4c77479cf594",
+      "effect": "post/comment image-path conversion and URL removal"
+    },
+    {
+      "original_file": "20260731093733_create_top_picks_preferences.sql",
+      "original_version": "20260731093733",
+      "original_sha256": "1277c8d68484c31c7c8b29302d071a487d71145ea6e432ce5215c6e4a8af60e0",
+      "replay_file": "20260731093733_create_top_picks_preferences.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "c1590ff74dc40bab2dc1598890f69c8d2fa9da8a1c0d3d5851846154a09f0688",
+      "replay_sha256": "1277c8d68484c31c7c8b29302d071a487d71145ea6e432ce5215c6e4a8af60e0",
+      "effect": "private owner Top Picks preferences"
+    },
+    {
+      "original_file": "20260731094217_seed_top_picks_universe.sql",
+      "original_version": "20260731094217",
+      "original_sha256": "758644497d742b723451d2e2838d5ef26e10afa83930a7ae49ededdd010c4bbd",
+      "replay_file": "20260731094217_seed_top_picks_universe.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "44bd4531598886f17dca9e857fac17ef28b1c73c1e1f03d62a65dcb6e133897a",
+      "replay_sha256": "758644497d742b723451d2e2838d5ef26e10afa83930a7ae49ededdd010c4bbd",
+      "effect": "twelve Australian reference ticker seed entries"
+    },
+    {
+      "original_file": "20260731094703_improve_profile_rls_and_community_indexes.sql",
+      "original_version": "20260731094703",
+      "original_sha256": "3513e3ca22fdf916383c2b69d38087e9bd56f962086a982598e49e4888b45a2a",
+      "replay_file": "20260731094703_improve_profile_rls_and_community_indexes.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "d48ca4b481b4d736af377e1bfaa4539b18481880340f36185a95467b5dcd8c47",
+      "replay_sha256": "3513e3ca22fdf916383c2b69d38087e9bd56f962086a982598e49e4888b45a2a",
+      "effect": "profile owner checks, comments author/post and posts author indexes"
+    },
+    {
+      "original_file": "20260731124305_create_portfolio_preferences.sql",
+      "original_version": "20260731124305",
+      "original_sha256": "e8fa8c7052293bdb8b46baefcd1775e9e1c7c0d56da8528c338e54785b85a51e",
+      "replay_file": "20260731124305_create_portfolio_preferences.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "da631e6509009359eda0372b8f672236ae7ca89a12d452b99c27915da6155164",
+      "replay_sha256": "e8fa8c7052293bdb8b46baefcd1775e9e1c7c0d56da8528c338e54785b85a51e",
+      "effect": "private owner Portfolio preferences and legacy compatibility checks"
+    },
+    {
+      "original_file": "20260808010000_create_top_picks_universe.sql",
+      "original_version": "20260808010000",
+      "original_sha256": "b2733ea9602ed031212cf5cbb4f45a99d0b411c61ed34f824ee915a16c538ce5",
+      "replay_file": "20260808010000_create_top_picks_universe.sql",
+      "change": "unchanged",
+      "original_checkout_sha256": "e7fb12d65d437b9a38bee901c9d7f45c9bdca21a7674dea9d10c8aed635e12a2",
+      "replay_sha256": "b2733ea9602ed031212cf5cbb4f45a99d0b411c61ed34f824ee915a16c538ce5",
+      "effect": "curated universe, active-only read policy and legacy backfill"
+    }
+  ],
+  "hash_format": "original_sha256 hashes exact Git blob bytes; replay_sha256 hashes UTF-8 SQL after BOM removal and CRLF-to-LF normalization"
+}

@@ -1,0 +1,299 @@
+import { readFile } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
+import { installWatchlistMockBackend } from "../watchlist/watchlistMockBackend";
+import {
+  installTopPicksMockBackend,
+  type TopPicksRequest,
+} from "./topPicksMockBackend";
+
+const expectRequest = async (
+  requests: () => readonly TopPicksRequest[],
+  expected: TopPicksRequest,
+) => {
+  await expect.poll(requests).toContainEqual(expected);
+};
+
+const columnIndex = async (
+  page: import("@playwright/test").Page,
+  name: string,
+) => {
+  const labels = await page.getByRole("columnheader").allTextContents();
+  const index = labels.findIndex((label) => label.trim() === name);
+  expect(index, `Expected a ${name} column`).toBeGreaterThanOrEqual(0);
+  return index;
+};
+
+test("uses server ranking for sorting and pagination while preserving metric semantics", async ({
+  page,
+}) => {
+  const backend = await installTopPicksMockBackend(page);
+  const dataRows = page.locator("tbody tr");
+
+  await page.goto("/TopPicks");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Top Picks" }),
+  ).toBeVisible();
+  await expectRequest(backend.requests, {
+    page: 1,
+    page_size: 25,
+    sort_key: "sharpe",
+    sort_dir: "desc",
+  });
+  await expect(page.getByText(/27 results.*Showing page 1 of 2/)).toBeVisible();
+  await expect(dataRows).toHaveCount(25);
+  await expect(dataRows.nth(0)).toContainText("CBA.AX");
+  await expect(dataRows.nth(1)).toContainText("BHP.AX");
+  await expect(dataRows.nth(2)).toContainText("WES.AX");
+
+  const cbaRow = dataRows.filter({ hasText: "CBA.AX" });
+  await expect(
+    cbaRow.getByRole("cell").nth(await columnIndex(page, "Sortino ratio")),
+  ).toHaveText("Unbounded");
+  await expect(
+    cbaRow.getByRole("cell").nth(await columnIndex(page, "Alpha vs benchmark")),
+  ).toHaveText("—");
+  const bhpRow = dataRows.filter({ hasText: "BHP.AX" });
+  await expect(
+    bhpRow.getByRole("cell").nth(await columnIndex(page, "Price return")),
+  ).toHaveText("—");
+
+  await page.getByRole("button", { name: /^Price return:/ }).click();
+  await expectRequest(backend.requests, {
+    page: 1,
+    page_size: 25,
+    sort_key: "ret1y",
+    sort_dir: "desc",
+  });
+  await expect(dataRows.nth(0)).toContainText("WES.AX");
+  await expect(dataRows.nth(1)).toContainText("CBA.AX");
+
+  await page.getByRole("button", { name: "Go to page 2" }).click();
+  await expectRequest(backend.requests, {
+    page: 2,
+    page_size: 25,
+    sort_key: "ret1y",
+    sort_dir: "desc",
+  });
+  await expect(page.getByText(/27 results.*Showing page 2 of 2/)).toBeVisible();
+  await expect(dataRows).toHaveCount(2);
+  await expect(dataRows.nth(0).getByRole("cell").first()).toHaveText("26");
+
+  await page.getByRole("combobox").click();
+  await page.getByRole("option", { exact: true, name: "10" }).click();
+  await expectRequest(backend.requests, {
+    page: 1,
+    page_size: 10,
+    sort_key: "ret1y",
+    sort_dir: "desc",
+  });
+  await expect(page.getByText(/27 results.*Showing page 1 of 3/)).toBeVisible();
+  await expect(dataRows).toHaveCount(10);
+  await expect(dataRows.nth(0).getByRole("cell").first()).toHaveText("1");
+  await expect(dataRows.nth(0)).toContainText("WES.AX");
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export page CSV" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("top-picks.csv");
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const csv = await readFile(downloadPath!, "utf8");
+  expect(csv.trimEnd().split(/\r?\n/)).toHaveLength(11);
+  expect(csv).toContain('"Rank","Symbol","Company","Price return"');
+  expect(csv.indexOf('"WES.AX"')).toBeLessThan(csv.indexOf('"CBA.AX"'));
+  expect(csv).toContain('"Unbounded"');
+  expect(csv).toContain('"—"');
+  expect(backend.supabaseRequests()).toEqual([]);
+});
+
+test("never allows column visibility to reach zero", async ({ page }) => {
+  await installTopPicksMockBackend(page);
+  await page.goto("/TopPicks");
+  await expect(page.locator("tbody tr")).toHaveCount(25);
+
+  await page.getByRole("button", { name: "Edit Columns" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Edit columns", { exact: true })).toBeVisible();
+
+  const columnsToHide = [
+    "Rank",
+    "Company",
+    "Price return",
+    "Sharpe ratio",
+    "Sortino ratio",
+    "Annualised volatility",
+    "Max drawdown",
+    "Beta exposure",
+    "Alpha vs benchmark",
+    "Information ratio",
+  ];
+  for (const label of columnsToHide) {
+    await dialog.getByRole("checkbox", { exact: true, name: label }).uncheck();
+  }
+
+  const finalColumn = dialog.getByRole("checkbox", {
+    exact: true,
+    name: "Symbol",
+  });
+  await expect(finalColumn).toBeChecked();
+  await expect(finalColumn).toBeDisabled();
+  await expect(dialog.getByRole("checkbox", { checked: true })).toHaveCount(1);
+
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("columnheader")).toHaveCount(1);
+  await expect(page.getByRole("columnheader")).toHaveText("Symbol");
+  await expect(page.locator("tbody tr").first().getByRole("cell")).toHaveText(
+    "CBA.AX",
+  );
+});
+
+test("updates the visible snapshot as soon as the server announces completion", async ({
+  page,
+}) => {
+  const backend = await installTopPicksMockBackend(page, {
+    holdEventsUntilRefresh: true,
+  });
+  await page.goto("/TopPicks");
+  await expect(page.locator("tbody tr")).toHaveCount(25);
+  const returnCell = page
+    .locator("tbody tr")
+    .filter({ hasText: "CBA.AX" })
+    .getByRole("cell")
+    .nth(await columnIndex(page, "Price return"));
+  await expect(returnCell).toHaveText("+18.0%");
+  await expect.poll(() => backend.eventRequests().length).toBe(1);
+  const updatedStatus = page
+    .getByRole("status")
+    .filter({ hasText: /^Updated / });
+  const previousUpdatedAt = await updatedStatus.textContent();
+
+  backend.completeRefresh();
+
+  await expect(returnCell).toHaveText("+28.0%", { timeout: 5_000 });
+  await expect(updatedStatus).not.toHaveText(previousUpdatedAt!);
+  expect(backend.requests().length).toBeGreaterThan(1);
+  expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+    true,
+  );
+});
+
+test("keeps one shared live stream and refreshes snapshots while visiting another page", async ({
+  page,
+}) => {
+  await installWatchlistMockBackend(page);
+  const backend = await installTopPicksMockBackend(page, {
+    persistentEvents: true,
+  });
+  const eventWindows = () =>
+    backend
+      .eventRequests()
+      .map((url) => new URL(url).searchParams.get("window"));
+  const guideHeading = page.getByRole("heading", { level: 1, name: "Guide" });
+  const returnCell = async () =>
+    page
+      .locator("tbody tr")
+      .filter({ hasText: "CBA.AX" })
+      .getByRole("cell")
+      .nth(await columnIndex(page, "Price return"));
+
+  try {
+    await page.goto("/Guide");
+    await expect(guideHeading).toBeVisible();
+    await expect.poll(eventWindows).toEqual(["1Y"]);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    expect(backend.requests()).toEqual([]);
+
+    const requestsBeforeFirstRefresh = backend.requests().length;
+    backend.completeRefresh();
+    await expect.poll(backend.receivedEventRevisions).toContain(1);
+    expect(backend.requests()).toHaveLength(requestsBeforeFirstRefresh);
+    await expect(guideHeading).toBeVisible();
+
+    await page.getByRole("link", { name: "Top Picks", exact: true }).click();
+    await expect(page).toHaveURL(/\/TopPicks$/);
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect(await returnCell()).toHaveText("+28.0%");
+    expect(eventWindows()).toEqual(["1Y"]);
+    expect(backend.activeEventWindows()).toEqual(["1Y"]);
+
+    await page.getByRole("link", { name: "Guide", exact: true }).click();
+    await expect(page).toHaveURL(/\/Guide$/);
+    await expect(guideHeading).toBeVisible();
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+
+    const requestsBeforeSecondRefresh = backend.requests().length;
+    backend.completeRefresh();
+    await expect.poll(backend.receivedEventRevisions).toContain(2);
+    expect(backend.requests()).toHaveLength(requestsBeforeSecondRefresh);
+    await expect(guideHeading).toBeVisible();
+
+    await page.getByRole("link", { name: "Top Picks", exact: true }).click();
+    await expect(page).toHaveURL(/\/TopPicks$/);
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect(await returnCell()).toHaveText("+38.0%");
+    expect(eventWindows()).toEqual(["1Y"]);
+    expect(backend.activeEventWindows()).toEqual(["1Y"]);
+    expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+      true,
+    );
+  } finally {
+    await backend.dispose();
+  }
+});
+
+test("pauses a hidden or offline page and catches up without losing matching rows", async ({
+  page,
+  context,
+}) => {
+  const backend = await installTopPicksMockBackend(page, {
+    persistentEvents: true,
+  });
+  try {
+    await page.goto("/TopPicks");
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    const returnCell = page
+      .locator("tbody tr")
+      .filter({ hasText: "CBA.AX" })
+      .getByRole("cell")
+      .nth(await columnIndex(page, "Price return"));
+    await expect(returnCell).toHaveText("+18.0%");
+
+    // Controlled visibility fixture, executed in the real browser. Offline
+    // state below uses the browser context's native network emulation.
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "hidden",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(backend.activeEventWindows).toEqual([]);
+    const requestsWhilePaused = backend.requests().length;
+    backend.completeRefresh();
+    await expect(returnCell).toHaveText("+18.0%");
+    await context.setOffline(true);
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(backend.activeEventWindows).toEqual([]);
+    expect(backend.requests()).toHaveLength(requestsWhilePaused);
+    backend.completeRefresh();
+    await context.setOffline(false);
+    await expect.poll(backend.activeEventWindows).toEqual(["1Y"]);
+    await expect(returnCell).toHaveText("+38.0%");
+    await expect(page.locator("tbody tr")).toHaveCount(25);
+    expect(backend.requests().every((request) => !request.force_refresh)).toBe(
+      true,
+    );
+    expect(backend.supabaseRequests()).toEqual([]);
+  } finally {
+    await context.setOffline(false);
+    await backend.dispose();
+  }
+});

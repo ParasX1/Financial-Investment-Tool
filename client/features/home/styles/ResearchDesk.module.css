@@ -1,0 +1,455 @@
+.desk,
+.dialogContent {
+  --desk-text: var(--fit-color-text-strong);
+  --desk-body: var(--fit-color-text-body);
+  --desk-muted: var(--fit-color-text-muted);
+  --desk-border: var(--fit-color-border-subtle);
+  --desk-first: #b8a2ff;
+  --desk-second: #9bcafb;
+  color: var(--desk-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.desk {
+  margin: 0;
+  padding: clamp(1.25rem, 2.4vw, 3rem);
+  border-top: 1px solid var(--desk-border);
+  background: var(--fit-color-surface);
+}
+
+.topline,
+.context,
+.intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.topline {
+  flex-wrap: wrap;
+  align-items: baseline;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  color: var(--desk-first);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intro {
+  align-items: end;
+  margin-top: 1.75rem;
+}
+
+.intro .title {
+  max-width: 24ch;
+  margin: 0;
+  color: var(--desk-text);
+  font-size: clamp(1.75rem, 2.4vw, 3rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.intro > p:not(.title) {
+  max-width: 31ch;
+  margin: 0;
+  color: var(--desk-muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.context {
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.companies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.companies li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--desk-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.companyKey {
+  width: 1rem;
+  height: 0;
+  border-top: 2px solid var(--desk-first);
+}
+
+.companies li:nth-child(2) .companyKey {
+  border-color: var(--desk-second);
+}
+
+.symbol {
+  margin-left: 0.35rem;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+}
+
+.period {
+  margin: 0;
+  color: var(--desk-text);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.period span {
+  display: block;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+}
+
+.measureLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin-block: 1.25rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.measureLinks a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--desk-body);
+  text-decoration-color: var(--desk-border);
+  text-underline-offset: 0.3em;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: clamp(1.25rem, 2.2vw, 2.5rem);
+}
+
+.metricCard {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--desk-border);
+  scroll-margin-top: 1rem;
+}
+
+.metricCard h4 {
+  margin: 0;
+  color: var(--desk-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.measureDescription {
+  margin: 0.25rem 0 0;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.chart {
+  display: flex;
+  min-height: 210px;
+  align-items: center;
+  margin: 0.875rem 0 0.375rem;
+}
+
+.chartCanvas {
+  width: 100%;
+  min-width: 0;
+}
+
+.chartCanvas > svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.chartFallback {
+  max-width: 29ch;
+  margin: 0;
+  color: var(--desk-muted);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.75rem;
+  margin: 1rem 0 0;
+}
+
+.figures dt {
+  color: var(--desk-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.figures dd {
+  margin: 0.2rem 0 0;
+  color: var(--desk-first);
+  font-size: clamp(1.375rem, 1.7vw, 2rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.figures > div:nth-child(2) dd {
+  color: var(--desk-second);
+}
+
+.interpretation,
+.definition,
+.method {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.metricCard .interpretation {
+  flex: 1;
+}
+
+.inspectButton,
+.closeButton {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  margin-top: 1rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--fit-color-border-control);
+  border-radius: 0.25rem;
+  color: var(--desk-text);
+  background: var(--fit-color-surface-soft);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.inspectButton[aria-expanded="true"],
+.inspectButton:enabled:hover,
+.closeButton:hover {
+  border-color: var(--desk-first);
+  background: var(--fit-color-accent-soft);
+}
+
+.inspectButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.dataDetails,
+.provenance {
+  margin-top: 1rem;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.dataDetails summary,
+.provenance summary {
+  width: fit-content;
+  min-height: 2.75rem;
+  padding-block: 0.65rem;
+  color: var(--desk-body);
+  cursor: pointer;
+}
+
+.dataDetails p,
+.provenance p {
+  margin: 0.75rem 0;
+}
+
+.dataDetails .tableNote {
+  font-size: 0.6875rem;
+}
+
+.tableScroll {
+  max-width: 100%;
+  max-height: 16rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.tableScroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.tableScroll caption {
+  caption-side: top;
+  padding: 0.5rem 0;
+  color: var(--desk-body);
+  text-align: left;
+}
+
+.tableScroll th,
+.tableScroll td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--desk-border);
+  text-align: right;
+}
+
+.tableScroll th {
+  color: var(--desk-body);
+  font-weight: 500;
+}
+
+.tableScroll th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.provenance {
+  padding-top: 1rem;
+  border-top: 1px solid var(--desk-border);
+}
+
+.provenance p {
+  max-width: 90ch;
+}
+
+.dialog {
+  width: min(48rem, calc(100% - 2rem));
+  max-width: none;
+  margin-inline: auto;
+}
+
+.dialogContent {
+  border: 1px solid var(--fit-color-border-control);
+  border-radius: 0.5rem;
+  background: var(--fit-color-surface);
+}
+
+.dialogBody {
+  max-height: calc(100dvh - 3.5rem);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialogHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.dialogHeader h2 {
+  max-width: 26ch;
+  margin: 0;
+  color: var(--desk-text);
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.closeButton {
+  margin-top: 0;
+}
+
+.dialogContext {
+  margin: 1rem 0;
+  color: var(--desk-muted);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.dialogBody .figures {
+  margin-top: 0.75rem;
+}
+
+.dialogBody .method {
+  color: var(--desk-muted);
+}
+
+.backdrop {
+  background: var(--fit-color-page-bg);
+}
+
+.desk a:focus-visible,
+.desk button:focus-visible,
+.desk summary:focus-visible,
+.desk .tableScroll:focus-visible,
+.dialogContent button:focus-visible,
+.dialogContent summary:focus-visible,
+.dialogContent .tableScroll:focus-visible {
+  outline: 2px solid var(--fit-color-focus-ring, #c4b5fd);
+  outline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+  .intro {
+    flex-direction: column;
+    align-items: start;
+  }
+  .intro > p:not(.title) {
+    max-width: 46ch;
+  }
+  .metricGrid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+  .chart {
+    max-width: 42rem;
+  }
+  .figures dd {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .context {
+    flex-direction: column;
+    align-items: start;
+  }
+  .period {
+    text-align: left;
+  }
+  .measureLinks {
+    gap: 0.25rem 1rem;
+  }
+  .desk {
+    padding-inline: 1rem;
+  }
+  .dialog {
+    width: calc(100% - 1rem);
+  }
+}
+
+@media (forced-colors: active) {
+  .companyKey,
+  .inspectButton,
+  .closeButton {
+    border-color: CanvasText;
+  }
+}

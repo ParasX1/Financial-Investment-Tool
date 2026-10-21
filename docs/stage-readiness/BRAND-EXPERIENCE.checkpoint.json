@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "dev": "b9fa09f93003133ed1225b869683b0120839197e",
+    "mainHeld": "c04875ef5d18d4134554fe36320bb05679125be4"
+  },
+  "originalBranch": "feature/brand-experience",
+  "unitSnapshot": {
+    "suites": 252,
+    "tests": 1649,
+    "status": "PASS final source; earlier aggregate included ignored prototype suite"
+  },
+  "nativeSnapshot": {
+    "auth": 10,
+    "home": 15,
+    "sharedTheme": 28,
+    "status": "PASS"
+  },
+  "strengthenedProductionAuth": {
+    "tests": 10,
+    "status": "PASS",
+    "provider": "synthetic fixture"
+  },
+  "finalNoJs": {
+    "status": "PASS",
+    "motion": "normal",
+    "navigation": ["Features", "Guide initial topic", "Help initial topic"],
+    "accountAccess": "requires JavaScript"
+  },
+  "realAccount": {
+    "loginRedirect": "PASS",
+    "signedInHome": "PASS",
+    "signupOAuthEmailDelivery": "NOT RUN"
+  },
+  "production": {
+    "generatedAt": "2026-10-11T17:33:02.698Z",
+    "method": "Offline assertions over retained actual Chromium records, with one bounded CDP error-classification control; no third matrix",
+    "uiCriteria": "PASS",
+    "nativeRunners": [
+      {
+        "run": "original",
+        "outcome": "2 passed,1 failed",
+        "reason": "extra no-backend-GET assumption; workerrestart erased rawperformance, originaloutcomes preserved"
+      },
+      {
+        "run": "replacement",
+        "outcome": "1 passed,1 failed",
+        "reason": "wrong CDP errorstring expectation; all12 retained requests blockedReasoninspector, actualUIcriteria supported"
+      }
+    ],
+    "currentNativeFailures": 12,
+    "productFindings": [],
+    "harnessFindings": [
+      "Original worker-restart aggregate persistence erased rawperformance; replacement individual SSR/performance/auth files retain records.",
+      "CDP blocked failure is inspector in Chromium149, not expected net::ERR_BLOCKED_BY_CLIENT. No third matrix performed."
+    ],
+    "ssr": {
+      "status": 200,
+      "browserDocumentStatus": 200,
+      "headlineInInitialHtml": true,
+      "inlineMarkInInitialHtml": true,
+      "faviconIcoInInitialHtml": true,
+      "faviconSvgInInitialHtml": true,
+      "essentialNoJsContent": true,
+      "authDisabledAndNoticeVisible": true,
+      "publicFeaturesHashWorked": true,
+      "logoBounds": {
+        "x": 20,
+        "y": 18,
+        "width": 36,
+        "height": 36
+      },
+      "assets": [
+        {
+          "path": "/brand/fit-mark.svg",
+          "status": 200,
+          "type": "image/svg+xml",
+          "bytes": 242
+        },
+        {
+          "path": "/brand/fit-favicon.svg",
+          "status": 200,
+          "type": "image/svg+xml",
+          "bytes": 217
+        },
+        {
+          "path": "/favicon.ico",
+          "status": 200,
+          "type": "image/x-icon",
+          "bytes": 5430
+        }
+      ],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 375,
+        "bodyScrollWidth": 375,
+        "overflow": false
+      }
+    },
+    "viewportMotionContexts": 6,
+    "performanceVisits": 12,
+    "authFlows": 6,
+    "clsMax": 0,
+    "runningAnimationsAtSettle": 0,
+    "cold": {
+      "fcpMs": {
+        "min": 224,
+        "max": 312
+      },
+      "lcpMs": {
+        "min": 224,
+        "max": 312
+      },
+      "longTaskCount": {
+        "min": 4,
+        "max": 4
+      },
+      "longTaskTotalMs": {
+        "min": 350,
+        "max": 534
+      }
+    },
+    "warm": {
+      "fcpMs": {
+        "min": 116,
+        "max": 184
+      },
+      "lcpMs": {
+        "min": 116,
+        "max": 184
+      },
+      "longTaskCount": {
+        "min": 0,
+        "max": 0
+      },
+      "longTaskTotalMs": {
+        "min": 0,
+        "max": 0
+      }
+    },
+    "frameIntervalMs": {
+      "p95": {
+        "min": 16.7,
+        "max": 16.8
+      },
+      "max": {
+        "min": 66.6,
+        "max": 250
+      }
+    },
+    "copyFollowup": "Root clarified no-JS notice after frozen build: first Guide/Help topics remain readable; selecting topics and analytics need JavaScript. Verify notice on final rebuilt server separately.",
+    "limits": [
+      "Controlled local Chromium measurements, not field Web Vitals or a production SLO.",
+      "Emulated viewport, not physical device; no network throttling.",
+      "No live authentication, OAuth, email confirmation, real-user A/B or screen-reader trial.",
+      "Normal/reduced comparison is a limited technical paired comparison; timings remain noisy."
+    ]
+  },
+  "nonPortfolioUx": {
+    "review": "source and retained synthetic native screenshots",
+    "materialFindings": [
+      "narrow Community editor clipping",
+      "Top Picks retained-results recovery below table",
+      "missing document titles outside Home"
+    ],
+    "issue": 344,
+    "refinement": "PASS: 61 affected unit tests;3 native dummy journeys;3 final production isolated-fixture journeys;fresh independent static review;shared-title SSR/comment-marker refinement48units+2native+11HTTPchecks PASS"
+  },
+  "publication": {
+    "target": "DevBranch",
+    "mainHeld": true,
+    "promotion319Draft": true,
+    "finalEvidence": "attached PR checks/conversation and issues343/344 after exact-head validation"
+  }
+}
