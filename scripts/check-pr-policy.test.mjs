@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -16,6 +22,182 @@ const event = (overrides = {}) => ({
     body: "## Related issue\n\nCloses #250\n\n## Why\n\nRestore CI checks.",
     ...overrides,
   },
+});
+
+const repositoryName = "ParasX1/Financial-Investment-Tool";
+const routedEvent = (
+  head,
+  base,
+  body = "Relates to #250.",
+  repository = repositoryName,
+) =>
+  event({
+    base: { ref: base },
+    head: { ref: head, repo: { full_name: repository } },
+    body,
+  });
+
+test("ordinary descriptive and fork contributions target Dev without naming restrictions", () => {
+  for (const head of [
+    "feature/research",
+    "fix/cache",
+    "docs/guide",
+    "maintenance",
+  ]) {
+    assert.deepEqual(auditPullRequest(routedEvent(head, "Dev")), []);
+    assert.deepEqual(
+      auditPullRequest(
+        routedEvent(head, "Dev", "Small change.", "fork/project"),
+      ),
+      [],
+    );
+  }
+});
+
+test("fork default and stage-named branches remain ordinary Dev contributions", () => {
+  for (const head of ["main", "Dev", "DevBranch", "Test", "Prod"]) {
+    assert.deepEqual(
+      auditPullRequest(
+        routedEvent(head, "Dev", "Relates to #250.", "fork/project"),
+      ),
+      [],
+      `fork ${head} -> Dev`,
+    );
+  }
+});
+
+test("trusted promotions and staged backmerges preserve the allowed route matrix", () => {
+  for (const [head, base] of [
+    ["Dev", "Test"],
+    ["Test", "Prod"],
+    ["Prod", "Test"],
+    ["Test", "Dev"],
+  ]) {
+    assert.deepEqual(
+      auditPullRequest(routedEvent(head, base)),
+      [],
+      `${head} -> ${base}`,
+    );
+    if (base !== "Dev")
+      assert.ok(
+        auditPullRequest(
+          routedEvent(head, base, "Relates to #250.", "fork/project"),
+        ).length,
+        `fork ${head} -> ${base}`,
+      );
+  }
+});
+
+test("promotions reject missing repository identity and direct or arbitrary release routes", () => {
+  for (const [head, base] of [
+    ["Dev", "Prod"],
+    ["feature/research", "Test"],
+    ["fix/cache", "Prod"],
+    ["Prod", "Dev"],
+    ["DevBranch", "Test"],
+  ]) {
+    assert.ok(
+      auditPullRequest(routedEvent(head, base)).length,
+      `${head} -> ${base}`,
+    );
+  }
+  for (const [head, base] of [
+    ["Dev", "Test"],
+    ["Test", "Prod"],
+    ["Prod", "Test"],
+  ]) {
+    const payload = routedEvent(head, base);
+    delete payload.pull_request.head.repo;
+    assert.ok(
+      auditPullRequest(payload).length,
+      `missing head identity ${head} -> ${base}`,
+    );
+    delete payload.repository;
+    assert.ok(
+      auditPullRequest(payload).length,
+      `missing repository ${head} -> ${base}`,
+    );
+  }
+});
+
+test("same-repository stabilization and emergency branches require real explanations", () => {
+  for (const [head, base, heading] of [
+    ["stabilize/release", "Test", "Stabilization exception"],
+    ["hotfix/outage", "Prod", "Emergency exception"],
+  ]) {
+    const body = `Relates to #250.\n## ${heading}\nRelease owner Li reviews this bounded fix and the staged backmerge.`;
+    assert.deepEqual(auditPullRequest(routedEvent(head, base, body)), []);
+    for (const invalid of [
+      "",
+      `## ${heading}`,
+      `## ${heading}\n<!-- Pending -->`,
+      `## ${heading}\n\`Example only\``,
+      `## ${heading}\n\n\`\`\`\nExample only\n\`\`\``,
+    ]) {
+      assert.ok(
+        auditPullRequest(routedEvent(head, base, invalid)).length,
+        `${head}: ${invalid}`,
+      );
+    }
+    assert.ok(
+      auditPullRequest(routedEvent(head, base, body, "fork/project")).length,
+    );
+    assert.ok(auditPullRequest(routedEvent(head, base, body, "")).length);
+  }
+  assert.ok(
+    auditPullRequest(
+      routedEvent("stabilize/", "Test", "## Stabilization exception\nFix."),
+    ).length,
+  );
+  assert.ok(
+    auditPullRequest(
+      routedEvent("hotfix/", "Prod", "## Emergency exception\nFix."),
+    ).length,
+  );
+});
+
+test("legacy promotion remains compatible and emits migration guidance without release approval", () => {
+  const result = inspectPullRequest(routedEvent("DevBranch", "main"));
+  assert.deepEqual(result.errors, []);
+  assert.match(result.warnings.join(" "), /Dev.*Test.*Prod/);
+  assert.match(result.warnings.join(" "), /approval/);
+});
+
+test("all modern workflows cover new and legacy targets and retain six check names", () => {
+  const names = new Set();
+  for (const file of [
+    "node.js",
+    "python-app",
+    "root-tooling",
+    "supabase",
+    "pr-policy",
+  ]) {
+    const workflow = readFileSync(
+      new URL(`../.github/workflows/${file}.yml`, import.meta.url),
+      "utf8",
+    );
+    const filters = [...workflow.matchAll(/^    branches: (\[[^\n]+\])/gm)];
+    assert.equal(filters.length, file === "pr-policy" ? 1 : 2, file);
+    for (const filter of filters)
+      assert.deepEqual(
+        JSON.parse(filter[1]),
+        ["Dev", "Test", "Prod", "DevBranch", "main"],
+        file,
+      );
+    for (const match of workflow.matchAll(/^    name: (.+)$/gm))
+      names.add(match[1].trim());
+  }
+  assert.deepEqual(
+    [...names].sort(),
+    [
+      "Frontend quality",
+      "Mocked browser journeys",
+      "Backend quality",
+      "Database replay and authorization",
+      "Development launcher safety",
+      "Issue and branch policy",
+    ].sort(),
+  );
 });
 
 test("accepts an issue-number branch into the development branch", () => {

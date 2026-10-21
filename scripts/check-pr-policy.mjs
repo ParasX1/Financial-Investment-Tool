@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const developmentBranch = "DevBranch";
+const legacyDevelopmentBranch = "DevBranch";
 
 function prose(body) {
   const output = [];
@@ -211,14 +211,57 @@ export function inspectPullRequest(event) {
   const head = typeof pr.head?.ref === "string" ? pr.head.ref : "";
   const headRepository =
     typeof pr.head?.repo?.full_name === "string" ? pr.head.repo.full_name : "";
-  const promotion =
-    base === "main" &&
-    head === developmentBranch &&
+  const sameRepository =
     repository !== "" &&
     headRepository.toLowerCase() === repository.toLowerCase();
+  const promotion =
+    base === "main" && head === legacyDevelopmentBranch && sameRepository;
 
-  if (base !== developmentBranch && base !== "main") {
-    errors.push("The pull request target branch must be DevBranch or main.");
+  if (
+    !["Dev", "Test", "Prod", legacyDevelopmentBranch, "main"].includes(base)
+  ) {
+    errors.push(
+      "The pull request target branch must be Dev, Test, Prod, DevBranch or main.",
+    );
+  }
+  // Stage names constrain same-repository backmerges. Fork branches targeting
+  // Dev remain ordinary contributions regardless of their source name.
+  if (
+    base === "Dev" &&
+    sameRepository &&
+    ["Dev", "Test", "Prod", legacyDevelopmentBranch, "main"].includes(head)
+  ) {
+    if (head !== "Test")
+      errors.push(
+        "Backmerge into Dev from the same repository's Test branch; normal contributions target Dev.",
+      );
+  }
+  if (base === "Test" || base === "Prod") {
+    const stagedRoute =
+      base === "Test" ? ["Dev", "Prod"].includes(head) : head === "Test";
+    const exceptionPrefix =
+      base === "Test" ? /^stabilize\/\S+$/ : /^hotfix\/\S+$/;
+    const explanation =
+      base === "Test" ? "Stabilization exception" : "Emergency exception";
+    if (!sameRepository) {
+      errors.push(
+        "Promotions, backmerges and release exceptions must use a same-repository branch.",
+      );
+    } else if (!stagedRoute) {
+      if (!exceptionPrefix.test(head))
+        errors.push(
+          `Target ${base} through ${base === "Test" ? "Dev (or Prod for a backmerge), or a documented stabilize/ branch" : "Test, or a documented hotfix/ branch"}.`,
+        );
+      else if (!section(source, explanation))
+        errors.push(
+          `Explain this release exception in a ${explanation} section and obtain release-owner review.`,
+        );
+    }
+  }
+  if (promotion) {
+    warnings.push(
+      "Legacy DevBranch -> main route retained during migration; use Dev -> Test -> Prod for new releases. Passing metadata checks does not grant release approval.",
+    );
   }
   if (base === "main" && !promotion) {
     if (!/^hotfix\/\S+$/.test(head)) {

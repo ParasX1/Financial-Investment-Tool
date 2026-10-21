@@ -415,7 +415,7 @@ npm run test:e2e
 
 Portfolio/Top Picks 和 Watchlist 的 configured surface 要求 statements、branches、functions、lines 均至少 80%。这是这些指定范围的 coverage gate，不代表整个 application 已达到 80% coverage。Jest 只发现 `.test.*` unit/contract file，Playwright 负责 `.spec.*` browser journey。
 
-Frontend CI 在 push 和 PR 进入 `DevBranch` 或 `main` 时运行 typecheck、lint、unit/contract test、两个 coverage gate 和 production build。独立的 `Mocked browser journeys` job 使用 Chromium、公开的 dummy Supabase value 和 mock critical flow，无需 production secret；test 失败时仍上传 HTML report、screenshot、video 和 trace。这些 browser check 验证 fixture 下的 UI behavior，不能证明 live Supabase policy 或 market provider 可用。
+Frontend CI 在 candidate tree 已包含这些 workflow 后，push 和 PR 进入 `Dev`、`Test`、`Prod` 及过渡期的 `DevBranch`、`main` 时运行 typecheck、lint、unit/contract test、两个 coverage gate 和 production build。独立的 `Mocked browser journeys` job 使用 Chromium、公开的 dummy Supabase value 和 mock critical flow，无需 production secret；test 失败时仍上传 HTML report、screenshot、video 和 trace。这些 browser check 验证 fixture 下的 UI behavior，不能证明 live Supabase policy 或 market provider 可用。
 
 `npm run typecheck` 先执行 `next typegen`，确保 clean checkout 在 TypeScript 检查前已有 Next.js route 和 static-image declaration。生成的 `next-env.d.ts` 和 `.next/` artifact 保持 ignored。
 
@@ -469,22 +469,26 @@ cache 可能继续保留副本。权限、并发、local API 验证和 hosted de
 
 ## 贡献流程
 
-1. 搜索已有 issue 和 PR。在 substantive work 前创建或采用 issue，写明 problem、可复现 evidence、scope 和 acceptance criteria。
-2. Fetch 后从 `origin/DevBranch` 建 branch。使用描述清楚的 branch name，例如 `fix/quality-gates`。常见 prefix 包括 `feature`、`fix`、`refactor`、`docs`、`chore`、`test`、`perf`、`ci`。可选地加入 issue number，例如 `fix/250-quality-gates` 或 `chore/250-251-quality-gates`；这只是建议，不是 CI requirement。
-3. 先用失败的 behavior 或 boundary test 复现 defect。Docs/configuration 使用 native validator，不创建 artificial application test。
-4. 实现最小 coherent change，在 focused test 保持 green 时 refactor。
-5. 运行受影响的 full-stack check 并获得 independent review；检查最终 diff 中的 secret、artifact 和无关 formatting。
-6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `DevBranch` 的 PR。说明 user impact、test 和 deployment/migration requirement；如有关联的 local issue，可在 description 任意位置引用。Template 的 `Related issue` heading 是可选的，branch number 不需要与固定 section 匹配。
-7. 解决 review finding，检查实际 GitHub run。只有获得授权的 maintainer 批准后才 merge 到 development branch。创建或 push PR 不代表获得 merge 授权。
-8. 用独立 PR 从 `DevBranch` 到 `main` release，提供 release note、关联 issue 和明确的 release approval。获得授权的 release maintainer 负责 main merge、deployment 和 remote Supabase migration。
+当前规则与迁移状态见 [Branch workflow](docs/branch-workflow.md)。新工作从 `origin/Dev` 建 branch，PR 指向 `Dev`。本次采用 additive migration，保留旧 `DevBranch` 和 `main`。
 
-`Closes #250` 等 GitHub closing keyword 只有在 PR 的 target 是 repository default branch（`main`）且 merge 后才生效。DevBranch PR 仍应关联 issue 并写明 acceptance criteria；修复尚未 merge 或必要验证未完成时，issue 保持 open，不能因为已有 PR 就 close。若某个 work item 在 release 前已经完成，获得授权的 maintainer 可在提供 merged PR 和 verification evidence 后手动 close。
+1. 搜索已有 issue 和 PR。Substantive work 应采用或创建 issue，写明 problem、evidence、scope 和 acceptance criteria。
+2. Fetch 后从 `origin/Dev` 建 branch，使用描述清楚的名称，例如 `feature/research`、`fix/quality-gates`、`docs/guide`。Prefix 和 issue number 只是建议，不是 CI requirement。
+3. 用失败的 behavior 或 boundary test 复现 defect；docs/configuration 使用 native validator。
+4. 实现小而完整的 change，在 focused test 保持 green 时 refactor。
+5. 运行相关 check 并获得 independent review；检查最终 diff 中的 secret、artifact 和无关改动。
+6. 用 `<type>: <description>` 提交 coherent commit，创建目标为 `Dev` 的 PR。说明 impact、check 和 deployment/migration requirement；有相关 local issue 时，可在普通 prose 任意位置引用。
+7. 解决 review finding，核实实际 GitHub run。只在 maintainer 的明确授权范围内 merge；feature PR 可 squash merge。
+8. 使用同一 repository 的 `Dev` 到 `Test` PR 验收 candidate，再在获得明确 release approval 后通过 `Test` 到 `Prod` PR 发布。Promotion 与 backmerge 必须使用 **merge commit** 保留 ancestry。Green check 不代表 release approval 或 deployment 成功。
 
-紧急 production fix 仍需要 issue、`hotfix/<description>` branch、test 和 reviewed PR；branch name 中的 issue number 是可选的。例外情况下直接到 `main` 的 PR 必须增加 `## Emergency exception`，解释原因并写明 release owner，解释中可以使用 nested heading。Owner 必须明确批准例外，并安排 follow-up PR 回到 DevBranch，避免丢失修复。Metadata audit 检查是否有解释，不判断是否已经获得人工批准。
+有明确范围的 `stabilize/<description>` PR 可指向 `Test`，必须用 `## Stabilization exception` 说明 scope、release owner 与 follow-up。`hotfix/<description>` PR 可指向 `Prod`，必须有真实的 `## Emergency exception` 解释，并获得 release owner approval。这两类 branch 必须来自同一 repository。Hotfix 通过 `Prod` 到 `Test`、再 `Test` 到 `Dev` 的 merge commit 回流。Policy 拒绝 `Dev` 直接到 `Prod`、普通 feature 进入 release stage、fork 冒充 release-stage promotion，以及同一 repository 的 `Prod` 直接到 `Dev`。普通 fork contribution 可用任何 source branch name 指向 `Dev`，包括 fork default branch 或同名 stage branch；这不会赋予 promotion 权限。
 
-`Issue and branch policy` check 读取 PR JSON event file。普通 branch name 和 description heading 不会阻止贡献；缺少 local issue link 只会产生不阻塞的提醒。它识别 prose 任意位置的 local `#number`、同一 repository 的 `owner/repo#number` 和 GitHub issue URL，忽略 comment 和 code example。它仍会阻止不支持的 target，以及既不是同一 repository 的 DevBranch promotion、也不是已写明 `hotfix/` emergency exception 的直接到 main 改动。Workflow 使用只读 `pull_request`，不把 PR text 插入 shell code，不发布 comment，也不修改 issue。它只检查语法；reviewer 必须确认 issue 存在、与改动相关，并核实 release approval。在 repository root 运行 `node --test scripts/check-pr-policy.test.mjs` 可本地验证 audit。
+旧 `DevBranch` contribution、同一 repository 的 `DevBranch` 到 `main` promotion，以及已说明 emergency exception 的 `hotfix/` 到 `main` PR 保持兼容。这不代表批准任何现有 release PR，包括 #319。旧 main hotfix 仍需 owner approval，并安排回流到当前 stage。
 
-Workflow file 会生成 `Frontend quality`、`Mocked browser journeys`、`Backend quality` 和 `Issue and branch policy` check，但不会配置 branch protection。Repository administrator 必须另行配置 DevBranch 和 main 的 required check 与 review rule，并用真实 PR 验证。Contributor 的 write access 不代表有权限修改 repository setting。
+GitHub closing keyword 只在 PR merge 到 **当时的 default branch** 时生效；迁移 setup 时仍为 `main`。目前 `Dev` 或 `DevBranch` PR 不会自动 close issue。Administrator 将 default 改为 `Dev` 后，Dev PR 的 closing keyword 才可随 merge 生效；这与 production release 是两件事。实际 acceptance 尚未完成时，issue 保持 open。Maintainer 可用 merged PR 和 verification evidence 手动关闭已完成的 implementation work；未完成的 admin/deployment follow-up 必须继续跟踪。
+
+`Issue and branch policy` 使用只读 `pull_request` workflow 读取 PR JSON event file。缺少 local issue link 只提醒，不阻塞；普通 prose 中的 local `#number`、同 repository qualified reference 和 issue URL 可被识别，comment 与 code example 不计入。它检查 branch route 与 exception explanation 的语法，不核实 human approval、issue relevance、merge method 或 branch protection。PR text 不会插入 executable shell code。在 root 运行 `node --test scripts/check-pr-policy.test.mjs`。
+
+六个可信 check name 保持为 `Frontend quality`、`Mocked browser journeys`、`Backend quality`、`Database replay and authorization`、`Development launcher safety`、`Issue and branch policy`。Workflow file 不会配置 required-check enforcement。Administrator handoff 和初始 Test/Prod workflow 限制见 [Branch workflow](docs/branch-workflow.md)。
 
 UI change 要提供 screenshot；financial semantics 要说明 assumption；schema change 要写明 migration 和 target environment。
 
