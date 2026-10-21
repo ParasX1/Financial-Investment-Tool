@@ -2,9 +2,9 @@ name: Supabase CI
 
 on:
   push:
-    branches: ["DevBranch", "main"]
+    branches: ["Dev", "Test", "Prod", "DevBranch", "main"]
   pull_request:
-    branches: ["DevBranch", "main"]
+    branches: ["Dev", "Test", "Prod", "DevBranch", "main"]
   workflow_dispatch:
 
 permissions:

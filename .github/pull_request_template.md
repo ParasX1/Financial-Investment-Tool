@@ -2,7 +2,7 @@
 
 <!-- Link related local issues when available, for example: Closes #123. References can appear anywhere in the description; this heading is optional. -->
 <!-- Descriptive branch names are welcome. Including an issue number is optional; missing issue linkage produces guidance, not a failing policy check. -->
-<!-- For a PR into DevBranch, closing keywords do not close the issue on merge. See CONTRIBUTING.md. -->
+<!-- Closing keywords follow the actual default branch (currently main; Dev is pending administrator cutover). Link issues without implying incomplete admin/deployment work is done. See docs/branch-workflow.md. -->
 
 ## Why
 
@@ -32,7 +32,7 @@ State whether this PR needs environment variables, a database migration, provide
 
 ## Checklist
 
-- [ ] I read [CONTRIBUTING.md](https://github.com/ParasX1/Financial-Investment-Tool/blob/main/CONTRIBUTING.md) or the [中文贡献指南](https://github.com/ParasX1/Financial-Investment-Tool/blob/main/CONTRIBUTING.zh-CN.md).
+- [ ] I read [CONTRIBUTING.md](https://github.com/ParasX1/Financial-Investment-Tool/blob/Dev/CONTRIBUTING.md) or the [中文贡献指南](https://github.com/ParasX1/Financial-Investment-Tool/blob/Dev/CONTRIBUTING.zh-CN.md).
 - [ ] The change lives in the correct feature, shared layer or backend domain.
 - [ ] New behavior or a bug fix has a regression test.
 - [ ] Financial units, direction and assumptions are explicit and tested.
@@ -42,4 +42,5 @@ State whether this PR needs environment variables, a database migration, provide
 - [ ] Database changes include reviewed SQL, minimum grants, RLS and contract tests.
 - [ ] No secret, service-role key, production data or generated artifact is committed.
 - [ ] Documentation changed when paths, behavior or contributor workflow changed.
-- [ ] The PR targets `DevBranch`, or this is a separately approved development-to-main release/emergency exception. A main hotfix uses `hotfix/<description>` and explains `## Emergency exception`.
+- [ ] Normal work targets `Dev`; promotions use same-repository `Dev` -> `Test` -> `Prod`. Promotion/backmerge PRs require merge commits and their own review/approval.
+- [ ] A release exception documents `## Stabilization exception` (`stabilize/*` -> `Test`) or `## Emergency exception` (`hotfix/*` -> `Prod`) and its owner/follow-up. Legacy `DevBranch`/`main` compatibility is explained when used.

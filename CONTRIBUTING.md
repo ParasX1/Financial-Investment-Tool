@@ -438,7 +438,7 @@ npm run test:e2e
 
 Portfolio/Top Picks and Watchlist configured surfaces require at least 80% statements, branches, functions and lines. Coverage belongs to those configured surfaces; it is not a claim of 80% coverage across the entire application. Jest discovers `.test.*` unit/contract files; Playwright owns `.spec.*` browser journeys.
 
-Frontend CI runs typecheck, lint, unit/contract tests, both coverage gates and the production build on pushes and PRs into `DevBranch` and `main`. The separate `Mocked browser journeys` job runs Chromium with public dummy Supabase values and mocked critical flows; it needs no production secrets and uploads its HTML report, screenshots, videos and traces even when tests fail. These browser checks verify UI behavior against fixtures, not live Supabase policies or market-provider availability.
+Frontend CI runs typecheck, lint, unit/contract tests, both coverage gates and the production build on pushes and PRs into `Dev`, `Test`, `Prod`, and the transitional `DevBranch` and `main` targets once these workflows are present on the candidate tree. The separate `Mocked browser journeys` job runs Chromium with public dummy Supabase values and mocked critical flows; it needs no production secrets and uploads its HTML report, screenshots, videos and traces even when tests fail. These browser checks verify UI behavior against fixtures, not live Supabase policies or market-provider availability.
 
 `npm run typecheck` first runs `next typegen` so a clean checkout has Next.js route and static-image declarations before TypeScript checks it. Keep the generated `next-env.d.ts` and `.next/` artifacts ignored.
 
@@ -494,24 +494,28 @@ for authority, concurrency, local API controls and hosted deployment/schedule ga
 
 ## Contribution workflow
 
-1. Search existing issues and PRs. Create or adopt an issue with the problem, reproducible evidence, scope and acceptance criteria before substantive work.
-2. Fetch and branch from `origin/DevBranch`. Use a descriptive branch name, for example `fix/quality-gates`. Conventional prefixes include `feature`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf` and `ci`. Adding issue numbers, such as `fix/250-quality-gates` or `chore/250-251-quality-gates`, is optional guidance rather than a CI requirement.
-3. Reproduce the defect with a failing behavior or boundary test. For docs/configuration use the native validator instead of artificial application tests.
-4. Implement the smallest coherent change; refactor while focused tests stay green.
-5. Run the affected full-stack checks and obtain an independent review. Inspect the final diff for secrets, artifacts and unrelated formatting.
-6. Commit coherent units as `<type>: <description>` and open a PR targeting `DevBranch`. Explain user impact, tests and deployment/migration needs. Link related local issues anywhere in the description when available; the template's `Related issue` heading is optional, and branch numbers need not match a fixed section.
-7. Address review findings and check the actual GitHub runs. Merge into the development branch only when an authorized maintainer approves the merge. Creating or pushing a PR does not authorize merging it.
-8. Release through a separate PR from `DevBranch` to `main`, with release notes, linked issues and explicit release approval. The authorized release maintainer owns the main merge, deployment and any remote Supabase migration.
+The current branch rules and migration status are in [Branch workflow](docs/branch-workflow.md). New work starts from `origin/Dev` and targets `Dev`. `DevBranch` and `main` remain legacy branches during the additive migration.
 
-GitHub closing keywords such as `Closes #250` only take effect when a PR targets and merges into the repository's default branch (`main`). A DevBranch PR should still list the issue and its acceptance criteria, but the issue stays open until the fix is merged and the required validation is complete. Do not close an issue simply because a PR exists. For a work item complete before release, an authorized maintainer can close it manually with links to the merged PR and verification evidence.
+1. Search existing issues and PRs. Adopt or create an issue for substantive work with the problem, evidence, scope and acceptance criteria.
+2. Fetch and branch from `origin/Dev`. Use a descriptive name such as `feature/research`, `fix/quality-gates` or `docs/guide`. Prefixes and issue numbers are suggestions, not CI requirements.
+3. Reproduce defects with a failing behavioral or boundary test. Validate documentation and configuration with native tools.
+4. Implement a small coherent change and refactor while focused tests stay green.
+5. Run relevant checks and obtain independent review. Inspect the final diff for secrets, artifacts and unrelated changes.
+6. Commit coherent units as `<type>: <description>` and open a PR into `Dev`. Explain impact, checks and deployment/migration needs; link related local issues anywhere in ordinary prose when available.
+7. Resolve review findings and verify the actual GitHub runs. Merge only under the maintainer's scoped authorization. Feature PRs may be squash merged.
+8. Promote the same repository's `Dev` to `Test` for candidate acceptance, then `Test` to `Prod` only with explicit release approval. Use **merge commits** for promotions and backmerges to preserve ancestry. A green check is not release approval or proof of deployment.
 
-Emergency production fixes still require an issue, a `hotfix/<description>` branch, tests and a reviewed PR. An issue number in that branch name is optional. An exceptional PR directly to `main` must add `## Emergency exception` with the reason and named release owner; nested headings can organize the explanation. That owner must explicitly approve the exception and arrange a follow-up PR into DevBranch so the fix is preserved. The metadata audit checks for an explanation, not whether a person has approved it.
+A bounded `stabilize/<description>` PR may target `Test` with a real `## Stabilization exception` explanation naming scope, release owner and follow-up. A `hotfix/<description>` PR may target `Prod` with a real `## Emergency exception` explanation and release-owner approval. Both must be same-repository branches. Backmerge `Prod` to `Test`, then `Test` to `Dev` with merge commits; this carries hotfixes through both stages. Direct `Dev` to `Prod`, arbitrary feature changes into release stages, fork impersonation of release-stage promotions, and same-repository direct `Prod` to `Dev` are rejected. Ordinary fork contributions target `Dev` with any source branch name, including a fork default branch or stage-named branch; this grants no promotion privilege.
 
-The `Issue and branch policy` check reads the PR JSON event file. General branch naming and description headings do not block contribution; a missing local issue link produces a nonblocking reminder. It recognizes local `#number`, same-repository `owner/repo#number` and GitHub issue URLs anywhere in prose, ignoring comments and code examples. It still blocks unsupported targets and direct-to-main changes that are neither a same-repository DevBranch promotion nor a documented `hotfix/` exception. It uses a read-only `pull_request` workflow, does not interpolate PR text into shell code, and does not post comments or mutate issues. It checks syntax only; reviewers must confirm issue existence, relevance and release approval. To test the audit locally, run `node --test scripts/check-pr-policy.test.mjs` from the repository root.
+The policy retains legacy `DevBranch` contributions, same-repository `DevBranch` to `main` promotions and documented `hotfix/` exceptions into `main`. This compatibility does not approve any existing release PR, including #319. Legacy main hotfixes must still receive owner approval and be reconciled into the active stages.
 
-Workflow files emit `Frontend quality`, `Mocked browser journeys`, `Backend quality` and `Issue and branch policy` checks. They do not configure branch protection. A repository administrator must separately configure required checks and review rules for DevBranch and main, then verify them with a real PR. Contributors with write access cannot assume they have permission to change repository settings.
+GitHub closing keywords take effect when a PR merges into the **current default branch**, still `main` at migration setup. A PR into `Dev` or `DevBranch` does not currently auto-close its linked issue. After an administrator changes the default to `Dev`, merged Dev PRs can use closing keywords; this is independent of production release. Keep issues open while their actual acceptance criteria remain pending. Maintainers may close completed implementation work manually with merged-PR and verification evidence; admin/deployment follow-ups remain separately tracked.
 
-For UI changes include screenshots. For financial semantics state assumptions. For schema changes identify the migration and target environment.
+`Issue and branch policy` reads the PR JSON event file using a read-only `pull_request` workflow. Missing local issue links produce advisory guidance. It recognizes local `#number`, same-repository qualified references and issue URLs in prose, excluding comments and code examples. It checks branch routes and exception explanation syntax, not human approval, issue relevance, merge method or branch protection. PR text is never interpolated into executable shell code. Run `node --test scripts/check-pr-policy.test.mjs` from the root.
+
+Six trusted check names are retained: `Frontend quality`, `Mocked browser journeys`, `Backend quality`, `Database replay and authorization`, `Development launcher safety`, and `Issue and branch policy`. Workflow files do not configure required-check enforcement. The exact administrator handoff and initial Test/Prod workflow limitations are in [Branch workflow](docs/branch-workflow.md).
+
+UI changes need screenshots; financial semantics need explicit assumptions; schema changes need the migration and intended environment.
 
 ## Documentation strategy
 
